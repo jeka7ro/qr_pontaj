@@ -6,7 +6,8 @@ export function parseIdCardText(text) {
     last_name: null,
     first_name: null,
     birth_date: null,
-    gender: null
+    gender: null,
+    address: null
   };
 
   // 1. Extract CNP
@@ -82,7 +83,8 @@ export function parseIdCardText(text) {
   if (!mrz_surname) {
     for (const line of lines) {
       const cleaned = line.replace(/\s/g, '').toUpperCase();
-      if (cleaned.startsWith('IDROU') && cleaned.includes('<<')) {
+      // Relaxed MRZ matching
+      if ((cleaned.startsWith('IDROU') || cleaned.startsWith('1DROU') || cleaned.startsWith('IDR0U')) && cleaned.includes('<<')) {
         const afterIdrou = cleaned.substring(5);
         const parts = afterIdrou.split('<<');
         const nameParts = parts.map(p => p.replace(/</g, '').trim()).filter(p => p.length > 0);
@@ -98,8 +100,63 @@ export function parseIdCardText(text) {
     }
   }
 
-  if (mrz_surname) result.last_name = mrz_surname;
-  if (mrz_firstname) result.first_name = mrz_firstname;
+  // 4. Fallback: Search for keywords 'Nume' and 'Prenume' if MRZ fails
+  if (!mrz_surname || !mrz_firstname) {
+    for (let i = 0; i < lines.length; i++) {
+      const upperLine = lines[i].toUpperCase();
+      
+      // Căutare Nume
+      if (!mrz_surname && (upperLine.includes('NUME') || upperLine.includes('NOM') || upperLine.includes('SURNAME'))) {
+        if (i + 1 < lines.length && !lines[i + 1].toUpperCase().includes('PRENUME')) {
+          mrz_surname = lines[i + 1].trim();
+        }
+      }
+      
+      // Căutare Prenume
+      if (!mrz_firstname && (upperLine.includes('PRENUME') || upperLine.includes('PRENOM') || upperLine.includes('GIVEN'))) {
+        if (i + 1 < lines.length && !lines[i + 1].toUpperCase().includes('CETATENIE') && !lines[i + 1].toUpperCase().includes('NATIONALITATE')) {
+          mrz_firstname = lines[i + 1].trim();
+        }
+      }
+    }
+  }
+
+  if (mrz_surname) result.last_name = mrz_surname.replace(/[^a-zA-ZĂÂÎȘȚăâîșț \-]/g, '');
+  if (mrz_firstname) result.first_name = mrz_firstname.replace(/[^a-zA-ZĂÂÎȘȚăâîșț \-]/g, '');
+
+  // 5. Extract Address (Fuzzy & Keyword matching)
+  let foundAddress = false;
+  for (let i = 0; i < lines.length; i++) {
+    const upperLine = lines[i].toUpperCase();
+    
+    // Cazul 1: Găsim clar titlul "DOMICILIU" sau o variantă stâlcită (D0MICILIU, ADRE55E)
+    const isDomiciliuTitle = upperLine.includes('DOMICILI') || upperLine.includes('D0MICILI') || upperLine.includes('ADRESS') || upperLine.includes('ADRE55');
+    
+    // Cazul 2: OCR-ul a sărit complet peste titlu și suntem direct pe rândul cu adresa
+    const hasAddressMarkers = upperLine.includes('JUD.') || upperLine.includes('MUN.') || upperLine.includes('STR.') || upperLine.includes('COM.') || upperLine.includes('SAT ') || upperLine.includes('SECTOR');
+
+    if (isDomiciliuTitle) {
+      let addrLines = [];
+      if (i + 1 < lines.length && !lines[i + 1].toUpperCase().includes('EMIS DE')) addrLines.push(lines[i + 1].trim());
+      if (i + 2 < lines.length && !lines[i + 2].toUpperCase().includes('EMIS DE') && !lines[i + 2].toUpperCase().includes('VALABILITATE')) addrLines.push(lines[i + 2].trim());
+      
+      const combined = addrLines.join(', ').replace(/[^a-zA-ZĂÂÎȘȚăâîșț0-9 \-,.\/]/g, '').trim();
+      if (combined.length > 5) {
+        result.address = combined;
+        foundAddress = true;
+        break;
+      }
+    } else if (hasAddressMarkers && !foundAddress) {
+      // Linia curentă E DEJA adresa! O salvăm și pe următoarea dacă aparține adresei.
+      let addrLines = [lines[i].trim()];
+      if (i + 1 < lines.length && !lines[i + 1].toUpperCase().includes('EMIS DE') && !lines[i + 1].toUpperCase().includes('VALABILITATE') && !lines[i + 1].toUpperCase().match(/IDROU/)) {
+        addrLines.push(lines[i + 1].trim());
+      }
+      result.address = addrLines.join(', ').replace(/[^a-zA-ZĂÂÎȘȚăâîșț0-9 \-,.\/]/g, '').trim();
+      foundAddress = true;
+      break;
+    }
+  }
 
   return result;
 }

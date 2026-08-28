@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Clock } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Clock, LogIn, LogOut } from 'lucide-react';
 import DataTable from './DataTable';
 
 export default function TimesheetReport({ tenant, themeColor }) {
@@ -88,7 +88,7 @@ export default function TimesheetReport({ tenant, themeColor }) {
 
   const fetchLocations = async () => {
     try {
-      const res = await fetch(`http://localhost:5001/api/tenants/${tenant.id}/locations`);
+      const res = await fetch(`${window.location.protocol}//${window.location.hostname}:5001/api/tenants/${tenant.id}/locations`);
       if (res.ok) {
         const data = await res.json();
         setLocations(data);
@@ -106,7 +106,7 @@ export default function TimesheetReport({ tenant, themeColor }) {
       if (endDate) params.append('endDate', endDate);
       if (locationId) params.append('locationId', locationId);
 
-      const res = await fetch(`http://localhost:5001/api/tenants/${tenant.id}/timesheets?${params.toString()}`);
+      const res = await fetch(`${window.location.protocol}//${window.location.hostname}:5001/api/tenants/${tenant.id}/timesheets?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
         setTimesheets(data);
@@ -123,14 +123,63 @@ export default function TimesheetReport({ tenant, themeColor }) {
     return t.action_type.toLowerCase() === actionFilter;
   });
 
+  const groupedTimesheets = useMemo(() => {
+    const groups = {};
+    
+    filteredTimesheets.forEach(t => {
+      // 1. Determine local date (YYYY-MM-DD)
+      const date = new Date(t.timestamp).toLocaleDateString('en-CA'); 
+      
+      const key = `${t.employee_id}_${date}`;
+      if (!groups[key]) {
+        groups[key] = {
+          id: key,
+          employee_id: t.employee_id,
+          first_name: t.first_name,
+          last_name: t.last_name,
+          employee_code: t.employee_code,
+          avatar_path: t.avatar_path,
+          date: date,
+          raw_logs: []
+        };
+      }
+      groups[key].raw_logs.push(t);
+    });
+
+    // Post-process groups to calculate hours and first/last
+    return Object.values(groups).map(group => {
+      group.raw_logs.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+      
+      group.first_in = group.raw_logs.find(l => l.action_type === 'IN');
+      group.last_out = [...group.raw_logs].reverse().find(l => l.action_type === 'OUT');
+      
+      let totalMs = 0;
+      let lastIn = null;
+      for (const log of group.raw_logs) {
+        if (log.action_type === 'IN') {
+          lastIn = new Date(log.timestamp);
+        } else if (log.action_type === 'OUT' && lastIn) {
+          totalMs += (new Date(log.timestamp) - lastIn);
+          lastIn = null;
+        }
+      }
+      
+      const totalHours = Math.floor(totalMs / (1000 * 60 * 60));
+      const totalMinutes = Math.floor((totalMs % (1000 * 60 * 60)) / (1000 * 60));
+      group.total_time_str = totalMs > 0 ? `${totalHours}h ${totalMinutes}m` : '-';
+      
+      return group;
+    });
+  }, [filteredTimesheets]);
+
   const columns = [
     {
-      key: 'first_name', // We use first_name as the sort key
+      key: 'first_name',
       label: 'Angajat',
       render: (row) => (
         <div className="flex items-center gap-3">
           {row.avatar_path ? (
-            <img src={`http://localhost:5001${row.avatar_path}`} alt="Avatar" className="w-10 h-10 rounded-full object-cover border border-slate-200" />
+            <img src={`${window.location.protocol}//${window.location.hostname}:5001${row.avatar_path}`} alt="Avatar" className="w-10 h-10 rounded-full object-cover border border-slate-200" />
           ) : (
             <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold">
               {row.first_name[0]}{row.last_name[0]}
@@ -138,49 +187,73 @@ export default function TimesheetReport({ tenant, themeColor }) {
           )}
           <div>
             <div className="text-sm font-bold text-slate-800 dark:text-white">{row.first_name} {row.last_name}</div>
-            <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">CNP: {row.cnp || '-'}</div>
+            <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">Cod: {row.employee_code || '-'}</div>
           </div>
         </div>
       ),
       sortable: true
     },
     {
-      key: 'action_type',
-      label: 'Acțiune',
-      render: (row) => row.action_type === 'IN' ? (
-        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">
-          🟢 INTRARE
+      key: 'date',
+      label: 'Data',
+      render: (row) => (
+        <span className="text-sm font-bold text-slate-800 dark:text-white">
+          {new Date(row.date).toLocaleDateString('ro-RO')}
         </span>
-      ) : (
-        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700">
-          🔴 IEȘIRE
-        </span>
-      )
+      ),
+      sortable: true
     },
     {
-      key: 'timestamp',
-      label: 'Data și Ora',
-      render: (row) => (
-        <div className="flex flex-col">
-          <span className="text-sm font-mono font-bold text-slate-800 dark:text-white">
-            {new Date(row.scanned_at).toLocaleDateString('ro-RO')}
-          </span>
-          <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-            {new Date(row.scanned_at).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' })}
-          </span>
+      key: 'first_in',
+      label: 'Prima Intrare',
+      render: (row) => row.first_in ? (
+        <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 font-bold text-sm bg-emerald-50 dark:bg-emerald-900/30 px-2.5 py-1 rounded-full w-fit">
+          <LogIn size={14} />
+          {new Date(row.first_in.timestamp).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' })}
         </div>
-      )
+      ) : <span className="text-slate-400">-</span>
     },
     {
-      key: 'location_name',
-      label: 'Locație scanare',
+      key: 'last_out',
+      label: 'Ultima Ieșire',
+      render: (row) => row.last_out ? (
+        <div className="flex items-center gap-1.5 text-blue-700 dark:text-blue-400 font-bold text-sm bg-blue-50 dark:bg-blue-900/30 px-2.5 py-1 rounded-full w-fit">
+          <LogOut size={14} />
+          {new Date(row.last_out.timestamp).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' })}
+        </div>
+      ) : <span className="text-slate-400">-</span>
+    },
+    {
+      key: 'total_time_str',
+      label: 'Total Ore',
       render: (row) => (
-        <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
-          {row.location_name || '- Fără locație fixă -'}
+        <span className="text-sm font-bold text-slate-700 dark:text-slate-300">
+          {row.total_time_str}
         </span>
       )
     }
   ];
+
+  const expandedRowRender = (group) => (
+    <div className="p-4 pl-14 pr-6 bg-slate-50 dark:bg-slate-900/50">
+      <h4 className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3">Istoric Scanări ({new Date(group.date).toLocaleDateString('ro-RO')})</h4>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        {group.raw_logs.map((log, idx) => (
+          <div key={idx} className="flex items-center gap-3 bg-white dark:bg-slate-800 p-3 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${log.action_type === 'IN' ? 'bg-emerald-100 text-emerald-600' : 'bg-blue-100 text-blue-600'}`}>
+              {log.action_type === 'IN' ? <LogIn size={14} /> : <LogOut size={14} />}
+            </div>
+            <div>
+              <div className="text-xs font-bold text-slate-800 dark:text-white">
+                {log.action_type === 'IN' ? 'Intrare' : 'Ieșire'} la {new Date(log.timestamp).toLocaleTimeString('ro-RO', {hour:'2-digit', minute:'2-digit'})}
+              </div>
+              <div className="text-[10px] text-slate-500 font-medium">Locație: {log.location_name || '-'}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 
   const tableFilters = (
     <div className="flex flex-nowrap items-center gap-3 w-full overflow-x-auto py-1" style={{ scrollbarWidth: 'none' }}>
@@ -251,10 +324,12 @@ export default function TimesheetReport({ tenant, themeColor }) {
 
       <div className="flex-1">
         <DataTable 
-          data={filteredTimesheets}
+          data={groupedTimesheets}
           columns={columns}
           searchPlaceholder="Caută după nume sau locație..."
           filters={tableFilters}
+          expandable={true}
+          expandedRowRender={expandedRowRender}
         />
       </div>
     </div>

@@ -44,8 +44,8 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
 
     try {
       const url = editTenant 
-        ? `http://localhost:5001/api/tenants/${editTenant.id}` 
-        : 'http://localhost:5001/api/tenants';
+        ? `${window.location.protocol}//${window.location.hostname}:5001/api/tenants/${editTenant.id}` 
+        : `${window.location.protocol}//${window.location.hostname}:5001/api/tenants`;
       const method = editTenant ? 'PUT' : 'POST';
 
       const response = await fetch(url, {
@@ -147,7 +147,7 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
                     </div>
                     <div className="border-2 border-dashed border-slate-200 rounded-2xl p-3 text-center hover:bg-slate-50 transition-colors cursor-pointer flex flex-col items-center justify-center h-24 overflow-hidden relative">
                       {formData.logo_url ? (
-                        <img src={formData.logo_url} alt="Logo Preview" className="w-full h-full object-contain" />
+                        <img src={formData.logo_url} alt="Logo Preview" className="w-full h-full object-cover" />
                       ) : (
                         <>
                           <Upload size={16} className="text-slate-400 mb-1" />

@@ -6,6 +6,8 @@ import TimesheetReport from '../../components/TimesheetReport';
 import DashboardCharts from '../../components/DashboardCharts';
 import EmployeeProfile from '../../components/EmployeeProfile';
 import LocationsList from '../../components/LocationsList';
+import QrSelector from './QrSelector';
+import RolesList from './RolesList';
 import { QRCodeSVG } from 'qrcode.react';
 
 export default function TenantDashboard() {
@@ -36,7 +38,7 @@ export default function TenantDashboard() {
         const token = localStorage.getItem('token');
         if (!token) throw new Error('Nu ești autentificat');
 
-        const res = await fetch('http://localhost:5001/api/tenant/dashboard/info', {
+        const res = await fetch(`${window.location.protocol}//${window.location.hostname}:5001/api/tenant/dashboard/info`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -116,7 +118,9 @@ export default function TenantDashboard() {
         <div className="h-16 flex items-center px-6 border-b border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 justify-between">
           <div className="flex items-center gap-3 overflow-hidden">
             {tenant.logo_url ? (
-              <img src={tenant.logo_url} alt={tenant.name} className="h-8 w-auto object-contain drop-shadow-[0_1px_3px_rgba(0,0,0,0.5)]" />
+              <div className="h-10 w-10 shrink-0 bg-slate-800 dark:bg-transparent rounded-lg flex items-center justify-center p-1 shadow-sm border border-slate-700/50">
+                <img src={tenant.logo_url} alt={tenant.name} className="max-h-full max-w-full object-contain drop-shadow-sm" />
+              </div>
             ) : (
               <div 
                 className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold shrink-0"
@@ -142,11 +146,11 @@ export default function TenantDashboard() {
         {/* Navigation */}
         <nav className="flex-1 px-4 py-6 space-y-2">
           <Link 
-            to="/tenant/dashboard"
+            to="/admin/dashboard"
             onClick={() => setSidebarOpen(false)}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm
-              ${location.pathname === '/tenant/dashboard' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
-            style={location.pathname === '/tenant/dashboard' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
+              ${location.pathname === '/admin/dashboard' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+            style={location.pathname === '/admin/dashboard' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
           >
             <div className="w-5 h-5 flex items-center justify-center">
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
@@ -155,11 +159,11 @@ export default function TenantDashboard() {
           </Link>
           
           <Link 
-            to="/tenant/timesheets"
+            to="/admin/timesheets"
             onClick={() => setSidebarOpen(false)}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm
-              ${location.pathname === '/tenant/timesheets' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
-            style={location.pathname === '/tenant/timesheets' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
+              ${location.pathname === '/admin/timesheets' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+            style={location.pathname === '/admin/timesheets' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
           >
             <div className="w-5 h-5 flex items-center justify-center">
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
@@ -168,31 +172,31 @@ export default function TenantDashboard() {
           </Link>
           
           <Link 
-            to="/tenant/employees"
+            to="/admin/employees"
             onClick={() => setSidebarOpen(false)}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm
-              ${location.pathname.startsWith('/tenant/employees') ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
-            style={location.pathname.startsWith('/tenant/employees') ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
+              ${location.pathname.startsWith('/admin/employees') ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+            style={location.pathname.startsWith('/admin/employees') ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
           >
             <Users size={18} /> Modul HR (Angajați)
           </Link>
 
           <Link 
-            to="/tenant/locations"
+            to="/admin/locations"
             onClick={() => setSidebarOpen(false)}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm
-              ${location.pathname === '/tenant/locations' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
-            style={location.pathname === '/tenant/locations' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
+              ${location.pathname === '/admin/locations' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+            style={location.pathname === '/admin/locations' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
           >
             <MapPin size={18} /> Puncte de Lucru
           </Link>
 
           <Link 
-            to="/tenant/qr"
+            to="/admin/qr"
             onClick={() => setSidebarOpen(false)}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm
-              ${location.pathname === '/tenant/qr' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
-            style={location.pathname === '/tenant/qr' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
+              ${location.pathname === '/admin/qr' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+            style={location.pathname === '/admin/qr' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
           >
             <QrCode size={18} /> Afișaj Cod QR
           </Link>
@@ -244,7 +248,43 @@ export default function TenantDashboard() {
             } />
 
             <Route path="employees" element={
-              <EmployeesList tenant={tenant} themeColor={themeColor} />
+              <div className="max-w-6xl mx-auto">
+                <div className="mb-6 flex gap-4 border-b border-slate-200 dark:border-slate-700">
+                  <Link 
+                    to="/admin/employees"
+                    className={`pb-3 px-2 font-bold text-sm border-b-2 transition-colors ${location.pathname === '/admin/employees' ? 'text-slate-800 dark:text-white border-slate-800 dark:border-white' : 'text-slate-500 border-transparent hover:text-slate-700 dark:hover:text-slate-300'}`}
+                  >
+                    Angajați
+                  </Link>
+                  <Link 
+                    to="/admin/employees/roles"
+                    className={`pb-3 px-2 font-bold text-sm border-b-2 transition-colors ${location.pathname === '/admin/employees/roles' ? 'text-slate-800 dark:text-white border-slate-800 dark:border-white' : 'text-slate-500 border-transparent hover:text-slate-700 dark:hover:text-slate-300'}`}
+                  >
+                    Roluri (Funcții)
+                  </Link>
+                </div>
+                <EmployeesList tenant={tenant} themeColor={themeColor} />
+              </div>
+            } />
+
+            <Route path="employees/roles" element={
+              <div className="max-w-6xl mx-auto">
+                <div className="mb-6 flex gap-4 border-b border-slate-200 dark:border-slate-700">
+                  <Link 
+                    to="/admin/employees"
+                    className={`pb-3 px-2 font-bold text-sm border-b-2 transition-colors ${location.pathname === '/admin/employees' ? 'text-slate-800 dark:text-white border-slate-800 dark:border-white' : 'text-slate-500 border-transparent hover:text-slate-700 dark:hover:text-slate-300'}`}
+                  >
+                    Angajați
+                  </Link>
+                  <Link 
+                    to="/admin/employees/roles"
+                    className={`pb-3 px-2 font-bold text-sm border-b-2 transition-colors ${location.pathname === '/admin/employees/roles' ? 'text-slate-800 dark:text-white border-slate-800 dark:border-white' : 'text-slate-500 border-transparent hover:text-slate-700 dark:hover:text-slate-300'}`}
+                  >
+                    Roluri (Funcții)
+                  </Link>
+                </div>
+                <RolesList tenant={tenant} themeColor={themeColor} />
+              </div>
             } />
 
             <Route path="employees/:id" element={
@@ -256,58 +296,8 @@ export default function TenantDashboard() {
             } />
 
             <Route path="qr" element={
-              <div className="max-w-3xl mx-auto">
-                <div className="mb-6">
-                  <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Cod QR pentru Pontaj</h1>
-                  <p className="text-slate-500 dark:text-slate-400 mt-1">Acesta este codul unic de pontaj pentru locația: <strong>{site?.tip_modul || 'Sediu Principal'}</strong></p>
-                </div>
-
-                <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center text-center">
-                  {site?.qr_mode === 'DYNAMIC' ? (
-                    <div className="mb-8 w-full max-w-sm bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700/50 p-4 rounded-xl text-left">
-                      <p className="text-sm text-amber-800 dark:text-amber-500 font-bold mb-1">Mod Dinamic Activat</p>
-                      <p className="text-xs text-amber-700 dark:text-amber-400">Codul QR se va reîmprospăta automat la fiecare 15 secunde pentru a preveni scanările false. Lasă acest ecran deschis pe tabletă.</p>
-                    </div>
-                  ) : (
-                    <div className="mb-8 w-full max-w-sm bg-blue-50 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-800/50 p-4 rounded-xl text-left flex items-start gap-3">
-                      <Info size={20} className="text-blue-500 dark:text-blue-400 shrink-0 mt-0.5" />
-                      <div>
-                        <p className="text-sm text-blue-800 dark:text-blue-400 font-bold mb-1">Mod Static Activat</p>
-                        <p className="text-xs text-blue-700 dark:text-blue-300">Poți descărca și printa acest cod QR. Angajații vor trebui să fie într-o rază de {site?.allowed_radius_meters || 100}m pentru a scana.</p>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="p-6 bg-white border-2 border-slate-100 rounded-3xl shadow-sm mb-6 inline-block">
-                    <QRCodeSVG 
-                      value={qrUrl} 
-                      size={280} 
-                      fgColor={themeColor} 
-                      level="H" 
-                      includeMargin={true}
-                      imageSettings={tenant.logo_url ? {
-                        src: tenant.logo_url,
-                        x: undefined,
-                        y: undefined,
-                        height: 50,
-                        width: 50,
-                        excavate: true,
-                      } : undefined}
-                    />
-                  </div>
-
-                  <div className="text-2xl font-black tracking-widest text-slate-800 mb-8 font-mono bg-slate-50 px-6 py-2 rounded-xl">
-                    SCAN ME
-                  </div>
-
-                  <button 
-                    className="px-8 h-12 rounded-full text-white font-bold shadow-md transition-transform hover:scale-105 active:scale-95"
-                    style={{ backgroundColor: themeColor }}
-                    onClick={() => window.print()}
-                  >
-                    Printează Codul QR A4
-                  </button>
-                </div>
+              <div className="max-w-4xl mx-auto">
+                <QrSelector tenant={tenant} themeColor={themeColor} />
               </div>
             } />
           </Routes>

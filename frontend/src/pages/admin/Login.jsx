@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { KeyRound, Mail } from 'lucide-react';
+import { KeyRound, Mail, Eye, EyeOff } from 'lucide-react';
 
 export default function AdminLogin() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(localStorage.getItem('saved_admin_email') || '');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(!!localStorage.getItem('saved_admin_email'));
 
   const [error, setError] = useState('');
 
@@ -14,7 +16,13 @@ export default function AdminLogin() {
     setError('');
     
     try {
-      const res = await fetch('http://localhost:5001/api/auth/login', {
+      if (rememberMe) {
+        localStorage.setItem('saved_admin_email', email);
+      } else {
+        localStorage.removeItem('saved_admin_email');
+      }
+
+      const res = await fetch(`${window.location.protocol}//${window.location.hostname}:5001/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
@@ -33,7 +41,7 @@ export default function AdminLogin() {
       if (data.user.role === 'SUPERADMIN') {
         navigate('/admin/dashboard');
       } else {
-        navigate('/tenant/dashboard');
+        navigate('/admin/dashboard');
       }
     } catch (err) {
       setError('Eroare de rețea. Verificați conexiunea la server.');
@@ -87,14 +95,33 @@ export default function AdminLogin() {
                   <KeyRound className="h-5 w-5 text-slate-400" />
                 </div>
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full pl-10 px-4 h-10 border border-slate-200 rounded-full focus:ring-2 focus:ring-primary-500 bg-white outline-none sm:text-sm transition-all shadow-sm"
+                  className="block w-full pl-10 pr-10 px-4 h-10 border border-slate-200 rounded-full focus:ring-2 focus:ring-primary-500 bg-white outline-none sm:text-sm transition-all shadow-sm"
                   placeholder="••••••••"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none"
+                >
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
               </div>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <label className="flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="w-4 h-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
+                />
+                <span className="ml-2 text-sm text-slate-600 font-medium">Ține-mă minte</span>
+              </label>
             </div>
 
             <div className="pt-2">

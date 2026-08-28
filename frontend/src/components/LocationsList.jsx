@@ -26,7 +26,7 @@ export default function LocationsList({ tenant, themeColor }) {
 
   const fetchLocations = async () => {
     try {
-      const res = await fetch(`http://localhost:5001/api/tenants/${tenant.id}/locations`);
+      const res = await fetch(`${window.location.protocol}//${window.location.hostname}:5001/api/tenants/${tenant.id}/locations`);
       if (!res.ok) throw new Error('Eroare la preluarea locațiilor');
       const data = await res.json();
       setLocations(data);
@@ -64,8 +64,8 @@ export default function LocationsList({ tenant, themeColor }) {
 
     try {
       const url = editingId 
-        ? `http://localhost:5001/api/tenants/${tenant.id}/locations/${editingId}`
-        : `http://localhost:5001/api/tenants/${tenant.id}/locations`;
+        ? `${window.location.protocol}//${window.location.hostname}:5001/api/tenants/${tenant.id}/locations/${editingId}`
+        : `${window.location.protocol}//${window.location.hostname}:5001/api/tenants/${tenant.id}/locations`;
         
       const method = editingId ? 'PUT' : 'POST';
 
@@ -91,7 +91,7 @@ export default function LocationsList({ tenant, themeColor }) {
 
   const handleDelete = async (id) => {
     try {
-      const res = await fetch(`http://localhost:5001/api/tenants/${tenant.id}/locations/${id}`, {
+      const res = await fetch(`${window.location.protocol}//${window.location.hostname}:5001/api/tenants/${tenant.id}/locations/${id}`, {
         method: 'DELETE'
       });
       if (!res.ok) throw new Error('Nu s-a putut șterge locația.');
@@ -175,7 +175,7 @@ export default function LocationsList({ tenant, themeColor }) {
                   onChange={e => setFormData({...formData, address: e.target.value})}
                 />
               </div>
-              
+
               <div className="pt-4 flex justify-end gap-3">
                 <button
                   type="button"
@@ -260,17 +260,23 @@ export default function LocationsList({ tenant, themeColor }) {
                           <button 
                             onClick={() => { 
                               setEditingId(loc.id); 
-                              setFormData({ name: loc.name, address: loc.address || '' });
+                              setFormData({ 
+                                name: loc.name, 
+                                address: loc.address || '', 
+                                kiosk_pin: loc.kiosk_pin || '', 
+                                kiosk_show_photo: loc.kiosk_show_photo !== false,
+                                kiosk_orientation: loc.kiosk_orientation || 'horizontal'
+                              }); 
                               setShowAddForm(true); 
                             }}
-                            className="w-8 h-8 flex items-center justify-center text-slate-500 bg-slate-100 dark:bg-slate-800 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded-full transition-colors"
+                            className="p-2 text-slate-500 bg-white border border-slate-200 shadow-sm hover:text-primary-600 hover:bg-primary-50 hover:border-primary-200 rounded-full transition-all"
                             title="Editează"
                           >
                             <Edit2 size={16} />
                           </button>
                           <button 
                             onClick={() => setDeleteConfirmId(loc.id)}
-                            className="w-8 h-8 flex items-center justify-center text-slate-500 bg-slate-100 dark:bg-slate-800 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-full transition-colors"
+                            className="p-2 text-slate-500 bg-white border border-slate-200 shadow-sm hover:text-red-600 hover:bg-red-50 hover:border-red-200 rounded-full transition-all"
                             title="Șterge"
                           >
                             <Trash2 size={16} />

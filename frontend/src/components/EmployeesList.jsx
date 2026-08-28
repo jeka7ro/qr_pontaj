@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, UserPlus, Search, Edit2, Trash2, Loader2, ScanLine, Plus, Check, X, ChevronLeft, ChevronRight, MapPin } from 'lucide-react';
+import { Users, UserPlus, Search, Edit2, Edit, KeyRound, Trash2, Loader2, ScanLine, Plus, Check, X, ChevronLeft, ChevronRight, MapPin } from 'lucide-react';
 import { extractTextFromImageOrPdf, cropFaceFromIdCard } from '../lib/pdfOcr';
 import { parseIdCardText } from '../lib/idParser';
 
@@ -14,9 +14,11 @@ export default function EmployeesList({ tenant, themeColor }) {
   const [newJobName, setNewJobName] = useState('');
   
   // Form state
+  const [activeTab, setActiveTab] = useState('identificare'); // identificare, contract, evaluare
   const [formData, setFormData] = useState({
-    first_name: '', last_name: '', cnp: '', id_card_series: '', birth_date: '', address: '', job_title: '', pin_code: '', location_id: '',
-    contract_start_date: '', contract_notes: '', salary: '', existing_avatar: '', existing_id_card: ''
+    first_name: '', last_name: '', cnp: '', id_card_series: '', birth_date: '', address: '', phone: '', email: '', job_title: '', pin_code: '', location_id: '',
+    contract_start_date: '', contract_notes: '', salary: '', existing_avatar: '', existing_id_card: '',
+    eval_punctuality: 0, eval_attendance: 0, eval_attitude: 0, eval_performance: 0, eval_reliability: 0
   });
   const [avatarBlob, setAvatarBlob] = useState(null);
   const [avatarUrl, setAvatarUrl] = useState(null);
@@ -55,7 +57,7 @@ export default function EmployeesList({ tenant, themeColor }) {
 
   const fetchLocations = async () => {
     try {
-      const res = await fetch(`http://localhost:5001/api/tenants/${tenant.id}/locations`);
+      const res = await fetch(`${window.location.protocol}//${window.location.hostname}:5001/api/tenants/${tenant.id}/locations`);
       if (res.ok) {
         setLocations(await res.json());
       }
@@ -66,7 +68,7 @@ export default function EmployeesList({ tenant, themeColor }) {
 
   const fetchJobTitles = async () => {
     try {
-      const res = await fetch(`http://localhost:5001/api/tenants/${tenant.id}/job-titles`);
+      const res = await fetch(`${window.location.protocol}//${window.location.hostname}:5001/api/tenants/${tenant.id}/job-titles`);
       if (res.ok) {
         setJobTitles(await res.json());
       }
@@ -78,7 +80,7 @@ export default function EmployeesList({ tenant, themeColor }) {
   const fetchEmployees = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:5001/api/tenants/${tenant.id}/employees`);
+      const res = await fetch(`${window.location.protocol}//${window.location.hostname}:5001/api/tenants/${tenant.id}/employees`);
       if (res.ok) {
         const data = await res.json();
         setEmployees(data);
@@ -118,6 +120,7 @@ export default function EmployeesList({ tenant, themeColor }) {
           last_name: parsedData.last_name || prev.last_name,
           cnp: newCnp,
           id_card_series: parsedData.id_card_series || prev.id_card_series,
+          address: parsedData.address || prev.address,
           birth_date: parsedData.birth_date || prev.birth_date,
           pin_code: autoPin
         };
@@ -154,8 +157,8 @@ export default function EmployeesList({ tenant, themeColor }) {
       }
 
       const url = editingId 
-        ? `http://localhost:5001/api/tenants/${tenant.id}/employees/${editingId}`
-        : `http://localhost:5001/api/tenants/${tenant.id}/employees`;
+        ? `${window.location.protocol}//${window.location.hostname}:5001/api/tenants/${tenant.id}/employees/${editingId}`
+        : `${window.location.protocol}//${window.location.hostname}:5001/api/tenants/${tenant.id}/employees`;
         
       const res = await fetch(url, {
         method: editingId ? 'PUT' : 'POST',
@@ -165,8 +168,9 @@ export default function EmployeesList({ tenant, themeColor }) {
         setShowAddModal(false);
         setEditingId(null);
         setFormData({
-          first_name: '', last_name: '', cnp: '', id_card_series: '', birth_date: '', address: '', job_title: '', pin_code: '', location_id: '',
-          contract_start_date: '', work_schedule: '', contract_notes: '', salary: ''
+          first_name: '', last_name: '', cnp: '', id_card_series: '', birth_date: '', address: '', phone: '', email: '', job_title: '', pin_code: '', location_id: '',
+          contract_start_date: '', work_schedule: '', contract_notes: '', salary: '',
+          eval_punctuality: 0, eval_attendance: 0, eval_attitude: 0, eval_performance: 0, eval_reliability: 0
         });
         setAvatarBlob(null);
         setAvatarUrl(null);
@@ -182,10 +186,27 @@ export default function EmployeesList({ tenant, themeColor }) {
     }
   };
 
+  const handleResetPin = async (empId) => {
+    if (!window.confirm('Sigur doriți să resetați PIN-ul pentru acest angajat? Acesta va primi un PIN nou.')) return;
+    try {
+      const res = await fetch(`${window.location.protocol}//${window.location.hostname}:5001/api/tenants/${tenant.id}/employees/${empId}/reset-pin`, { method: 'POST' });
+      if (res.ok) {
+        const data = await res.json();
+        alert(`PIN-ul a fost resetat cu succes!\nNoul PIN este: ${data.newPin}`);
+        fetchEmployees();
+      } else {
+        alert('Eroare la resetarea PIN-ului.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Eroare la conexiunea cu serverul.');
+    }
+  };
+
   const handleDelete = async () => {
     if (!employeeToDelete) return;
     try {
-      const res = await fetch(`http://localhost:5001/api/tenants/${tenant.id}/employees/${employeeToDelete.id}`, { method: 'DELETE' });
+      const res = await fetch(`${window.location.protocol}//${window.location.hostname}:5001/api/tenants/${tenant.id}/employees/${employeeToDelete.id}`, { method: 'DELETE' });
       if (res.ok) {
         setEmployeeToDelete(null);
         fetchEmployees();
@@ -236,7 +257,7 @@ export default function EmployeesList({ tenant, themeColor }) {
             </div>
           </div>
 
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+          <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
@@ -271,15 +292,20 @@ export default function EmployeesList({ tenant, themeColor }) {
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           {emp.avatar_path ? (
-                            <img src={`http://localhost:5001${emp.avatar_path}`} alt="Avatar" className="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-slate-700" />
+                            <img src={`${window.location.protocol}//${window.location.hostname}:5001${emp.avatar_path}`} alt="Avatar" className="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-slate-700" />
                           ) : (
                             <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 font-bold">
                               {emp.first_name?.[0] || '?'}{emp.last_name?.[0] || ''}
                             </div>
                           )}
                           <div>
-                            <Link to={`/tenant/employees/${emp.id}`} className="text-sm font-bold text-primary-600 dark:text-primary-400 hover:underline">{emp.first_name} {emp.last_name}</Link>
+                            <Link to={`/admin/employees/${emp.id}`} className="text-sm font-bold text-primary-600 dark:text-primary-400 hover:underline">{emp.first_name} {emp.last_name}</Link>
                             <div className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">CNP: {emp.cnp || '-'}</div>
+                            {emp.pin_reset_requested && (
+                              <div className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-[10px] font-bold uppercase tracking-wider">
+                                ⚠️ Resetare PIN cerută
+                              </div>
+                            )}
                           </div>
                         </div>
                       </td>
@@ -293,35 +319,55 @@ export default function EmployeesList({ tenant, themeColor }) {
                         )}
                       </td>
                       <td className="px-6 py-4">
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 font-mono">
-                          {emp.pin_code || 'Fără PIN'}
-                        </span>
+                        <div className="flex flex-col gap-1">
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 w-fit">
+                            #{emp.employee_code}
+                          </span>
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 w-fit">
+                            PIN: {emp.pin_code || 'N/A'}
+                          </span>
+                        </div>
                       </td>
                       <td className="px-6 py-4 text-right flex justify-end gap-1">
+                        {emp.pin_reset_requested && (
+                          <button
+                            onClick={() => handleResetPin(emp.id)}
+                            title="Resetează PIN (A cerut resetare)"
+                            className="p-1.5 text-red-600 bg-red-50 hover:bg-red-100 dark:bg-red-900/30 dark:hover:bg-red-900/50 rounded transition-colors"
+                          >
+                            <KeyRound size={16} />
+                          </button>
+                        )}
                         <button 
                           onClick={() => {
                             setFormData({
                               first_name: emp.first_name, last_name: emp.last_name, cnp: emp.cnp, id_card_series: emp.id_card_series || '',
                               birth_date: emp.birth_date ? emp.birth_date.split('T')[0] : '', address: emp.address || '',
+                              phone: emp.phone || '', email: emp.email || '',
                               job_title: emp.job_title || '', pin_code: emp.pin_code || '', location_id: emp.location_id || '',
                               contract_start_date: emp.contract_start_date ? emp.contract_start_date.split('T')[0] : '',
                               contract_notes: emp.contract_notes || '', salary: emp.salary || '',
-                              existing_avatar: emp.avatar_path, existing_id_card: emp.id_card_path
+                              existing_avatar: emp.avatar_path, existing_id_card: emp.id_card_path,
+                              eval_punctuality: emp.eval_punctuality || 0,
+                              eval_attendance: emp.eval_attendance || 0,
+                              eval_attitude: emp.eval_attitude || 0,
+                              eval_performance: emp.eval_performance || 0,
+                              eval_reliability: emp.eval_reliability || 0
                             });
-                            setAvatarUrl(emp.avatar_path ? `http://localhost:5001${emp.avatar_path}` : null);
+                            setAvatarUrl(emp.avatar_path ? `${window.location.protocol}//${window.location.hostname}:5001${emp.avatar_path}` : null);
                             setIdCardBlob(null);
                             setEditingId(emp.id);
                             setSaveError(null);
                             setOcrError(null);
                             setShowAddModal(true);
                           }}
-                          className="w-8 h-8 flex items-center justify-center text-slate-500 bg-slate-100 dark:bg-slate-800 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded-full transition-colors"
+                          className="p-2 text-slate-500 bg-white border border-slate-200 shadow-sm hover:text-primary-600 hover:bg-primary-50 hover:border-primary-200 rounded-full transition-all"
                         >
-                          <Edit2 size={16} />
+                          <Edit size={16} />
                         </button>
                         <button 
                           onClick={() => setEmployeeToDelete(emp)}
-                          className="w-8 h-8 flex items-center justify-center text-slate-500 bg-slate-100 dark:bg-slate-800 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-full transition-colors"
+                          className="p-2 text-slate-500 bg-white border border-slate-200 shadow-sm hover:text-red-600 hover:bg-red-50 hover:border-red-200 rounded-full transition-all"
                         >
                           <Trash2 size={16} />
                         </button>
@@ -360,7 +406,7 @@ export default function EmployeesList({ tenant, themeColor }) {
       {/* Delete Confirmation Modal */}
       {employeeToDelete && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-sm shadow-2xl p-6 text-center border border-transparent dark:border-slate-700">
+          <div className="bg-white dark:bg-slate-800 rounded-lg w-full max-w-sm shadow-2xl p-6 text-center border border-transparent dark:border-slate-700">
             <div className="w-16 h-16 mx-auto bg-red-50 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-4">
               <Trash2 size={24} className="text-red-500" />
             </div>
@@ -377,7 +423,7 @@ export default function EmployeesList({ tenant, themeColor }) {
       {/* Add Employee Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-transparent dark:border-slate-700">
+          <div className="bg-white dark:bg-slate-800 rounded-lg w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-transparent dark:border-slate-700">
             <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 flex justify-between items-center">
               <div>
                 <h2 className="text-lg font-bold text-slate-800 dark:text-white leading-tight">Adaugă Angajat Nou</h2>
@@ -387,8 +433,9 @@ export default function EmployeesList({ tenant, themeColor }) {
                 setShowAddModal(false);
                 setEditingId(null);
                 setFormData({
-                  first_name: '', last_name: '', cnp: '', id_card_series: '', birth_date: '', address: '', job_title: '', pin_code: '', location_id: '',
-                  contract_start_date: '', contract_notes: '', salary: '', existing_avatar: '', existing_id_card: ''
+                  first_name: '', last_name: '', cnp: '', id_card_series: '', birth_date: '', address: '', phone: '', email: '', job_title: '', pin_code: '', location_id: '',
+                  contract_start_date: '', contract_notes: '', salary: '', existing_avatar: '', existing_id_card: '',
+                  eval_punctuality: 0, eval_attendance: 0, eval_attitude: 0, eval_performance: 0, eval_reliability: 0
                 });
                 setAvatarBlob(null);
                 setAvatarUrl(null);
@@ -398,6 +445,27 @@ export default function EmployeesList({ tenant, themeColor }) {
               </button>
             </div>
             
+            <div className="flex border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-6 pt-2 gap-6">
+              <button 
+                className={`pb-3 text-sm font-bold border-b-2 transition-colors ${activeTab === 'identificare' ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                onClick={() => setActiveTab('identificare')}
+              >
+                1. Date & Contact
+              </button>
+              <button 
+                className={`pb-3 text-sm font-bold border-b-2 transition-colors ${activeTab === 'contract' ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                onClick={() => setActiveTab('contract')}
+              >
+                2. Funcție & Contract
+              </button>
+              <button 
+                className={`pb-3 text-sm font-bold border-b-2 transition-colors ${activeTab === 'evaluare' ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                onClick={() => setActiveTab('evaluare')}
+              >
+                3. Evaluare Performanță
+              </button>
+            </div>
+
             <div className="flex-1 overflow-y-auto p-6 bg-slate-50/50 dark:bg-slate-900/30">
               {saveError && (
                 <div className="bg-red-50 border-l-4 border-red-500 p-3 mb-6 rounded-r-xl">
@@ -414,30 +482,27 @@ export default function EmployeesList({ tenant, themeColor }) {
                 </div>
               )}
               {/* OCR Box */}
-              <div className="mb-6 p-5 bg-white dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl text-center relative hover:border-primary-300 dark:hover:border-primary-500 transition-colors">
-                <input 
-                  type="file" 
-                  accept="image/*,application/pdf" 
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+              <div className="relative border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-lg p-8 text-center hover:border-primary-500 transition-colors group cursor-pointer bg-slate-50 dark:bg-slate-800/50 mb-6">
+                <input
+                  type="file"
+                  accept="image/*,application/pdf"
                   onChange={handleFileUpload}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                   disabled={ocrLoading}
                 />
-                <div className="pointer-events-none">
+                <div className="flex flex-col items-center">
                   {ocrLoading ? (
-                    <div className="flex flex-col items-center text-primary-600">
-                      <Loader2 className="w-8 h-8 animate-spin mb-2" />
-                      <span className="text-sm font-bold">Se analizează buletinul...</span>
-                    </div>
+                    <Loader2 className="w-10 h-10 text-primary-500 animate-spin mb-3" />
                   ) : (
-                    <div className="flex flex-col items-center text-slate-500 dark:text-slate-400">
-                      <ScanLine className="w-8 h-8 text-slate-400 dark:text-slate-500 mb-2" />
-                      <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Apasă aici pentru a scana un Buletin (C.I.)</span>
-                      <span className="text-xs mt-1">Poți face poză sau încărca din galerie. Completăm datele automat!</span>
-                    </div>
+                    <ScanLine className="w-10 h-10 text-slate-400 group-hover:text-primary-500 mb-3 transition-colors" />
                   )}
+                  <h4 className="font-bold text-slate-800 dark:text-white mb-1">
+                    {ocrLoading ? 'Scanare automată în curs...' : 'Apasă aici pentru a scana un Buletin (C.I.)'}
+                  </h4>
+                  <p className="text-sm text-slate-500">
+                    Sistemul va tăia și extrage automat poza angajatului.
+                  </p>
                 </div>
-                
-
               </div>
 
               {ocrError && <div className="mb-4 text-sm text-red-600 font-bold text-center bg-red-50 p-2 rounded">{ocrError}</div>}
@@ -452,14 +517,17 @@ export default function EmployeesList({ tenant, themeColor }) {
               )}
 
               {/* Form */}
-              <form id="add-employee-form" onSubmit={handleSave} className="grid grid-cols-2 gap-4">
+              <form id="add-employee-form" onSubmit={handleSave} className="flex flex-col gap-6">
+                
+                {/* TAB 1: IDENTIFICARE */}
+                <div className={activeTab === 'identificare' ? 'grid grid-cols-2 gap-4' : 'hidden'}>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 ml-1">Nume *</label>
-                  <input type="text" required value={formData.last_name} onChange={e => setFormData({...formData, last_name: e.target.value})} className="w-full px-4 h-10 text-sm rounded-2xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm" />
+                  <input type="text" required value={formData.last_name} onChange={e => setFormData({...formData, last_name: e.target.value})} className="w-full px-4 h-10 text-sm rounded-lg border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm" />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 ml-1">Prenume *</label>
-                  <input type="text" required value={formData.first_name} onChange={e => setFormData({...formData, first_name: e.target.value})} className="w-full px-4 h-10 text-sm rounded-2xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm" />
+                  <input type="text" required value={formData.first_name} onChange={e => setFormData({...formData, first_name: e.target.value})} className="w-full px-4 h-10 text-sm rounded-lg border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm" />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 ml-1">CNP *</label>
@@ -470,142 +538,190 @@ export default function EmployeesList({ tenant, themeColor }) {
                       autoPin = newCnp.slice(-4);
                     }
                     setFormData({...formData, cnp: newCnp, pin_code: autoPin});
-                  }} className="w-full px-4 h-10 text-sm rounded-2xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm" />
+                  }} className="w-full px-4 h-10 text-sm rounded-lg border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm" />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 ml-1">Serie și Număr C.I.</label>
-                  <input type="text" value={formData.id_card_series} onChange={e => setFormData({...formData, id_card_series: e.target.value})} className="w-full px-4 h-10 text-sm rounded-2xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm" />
+                  <input type="text" value={formData.id_card_series} onChange={e => setFormData({...formData, id_card_series: e.target.value})} className="w-full px-4 h-10 text-sm rounded-lg border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm" />
                 </div>
-                <div className="col-span-1">
-                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 ml-1">Meserie (Funcția din Firmă)</label>
-                  {!showNewJobInput ? (
-                    <div className="flex gap-2">
-                      <select 
-                        value={formData.job_title} 
-                        onChange={e => setFormData({...formData, job_title: e.target.value})} 
-                        className="flex-1 px-4 h-10 text-sm rounded-2xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm"
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 ml-1">Adresă (din C.I.)</label>
+                  <input type="text" value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} className="w-full px-4 h-10 text-sm rounded-lg border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 ml-1">Telefon</label>
+                  <input type="tel" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full px-4 h-10 text-sm rounded-lg border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 ml-1">Email</label>
+                  <input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full px-4 h-10 text-sm rounded-lg border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm" />
+                </div>
+                </div>
+
+                {/* TAB 2: CONTRACT */}
+                <div className={activeTab === 'contract' ? 'grid grid-cols-2 gap-4' : 'hidden'}>
+                  <div className="col-span-1">
+                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 ml-1">Meserie (Funcția din Firmă)</label>
+                    {!showNewJobInput ? (
+                      <div className="flex gap-2">
+                        <select 
+                          value={formData.job_title} 
+                          onChange={e => setFormData({...formData, job_title: e.target.value})} 
+                          className="flex-1 px-4 h-10 text-sm rounded-lg border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm"
+                        >
+                          <option value="">-- Alege o meserie --</option>
+                          {jobTitles.map(job => (
+                            <option key={job.id} value={job.name}>{job.name}</option>
+                          ))}
+                        </select>
+                        <button 
+                          type="button" 
+                          onClick={() => setShowNewJobInput(true)} 
+                          className="h-10 px-4 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors flex items-center gap-1 shadow-sm"
+                        >
+                          <Plus size={16} /> Nou
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2">
+                        <input 
+                          type="text" 
+                          value={newJobName} 
+                          onChange={e => setNewJobName(e.target.value)} 
+                          className="flex-1 px-4 h-10 text-sm rounded-lg border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm" 
+                          placeholder="Nume meserie nouă..." 
+                          autoFocus
+                        />
+                        <button 
+                          type="button" 
+                          onClick={async () => {
+                            if (!newJobName.trim()) return;
+                            try {
+                              const res = await fetch(`${window.location.protocol}//${window.location.hostname}:5001/api/tenants/${tenant.id}/job-titles`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ name: newJobName.trim() })
+                              });
+                              if (res.ok) {
+                                const newJob = await res.json();
+                                setJobTitles([...jobTitles, newJob]);
+                                setFormData({...formData, job_title: newJob.name});
+                                setNewJobName('');
+                                setShowNewJobInput(false);
+                              }
+                            } catch (err) {
+                              console.error(err);
+                            }
+                          }}
+                          className="h-10 w-10 shrink-0 flex items-center justify-center rounded-full bg-green-500 text-white hover:bg-green-600 transition-colors shadow-sm"
+                        >
+                          <Check size={18} />
+                        </button>
+                        <button 
+                          type="button" 
+                          onClick={() => { setShowNewJobInput(false); setNewJobName(''); }} 
+                          className="h-10 w-10 shrink-0 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors shadow-sm border border-slate-200 dark:border-slate-600"
+                        >
+                          <X size={18} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="col-span-1">
+                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 ml-1">PIN Acces (Din CNP)</label>
+                    <input type="text" maxLength="4" value={formData.pin_code} onChange={e => setFormData({...formData, pin_code: e.target.value})} className="w-full px-4 h-10 text-sm rounded-lg border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm" />
+                  </div>
+
+                  <div className="col-span-2 -mt-2">
+                    <p className="text-xs text-slate-400 dark:text-slate-500 ml-1">Acest PIN (parolă scurtă) este extras din ultimele 4 cifre ale CNP-ului. Angajatul îl va folosi exclusiv pentru a scana codul QR pe tabletă la intrare/ieșire.</p>
+                  </div>
+
+                  <div className="col-span-2 mt-2">
+                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Punct de Lucru</label>
+                    <div className="relative">
+                      <MapPin className="w-5 h-5 text-slate-400 dark:text-slate-500 absolute left-3 top-1/2 transform -translate-y-1/2" />
+                      <select
+                        className="w-full pl-10 pr-4 h-10 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm focus:ring-2 focus:ring-primary-500 outline-none transition-all text-sm text-slate-700 dark:text-slate-200 appearance-none cursor-pointer"
+                        value={formData.location_id}
+                        onChange={e => setFormData({...formData, location_id: e.target.value})}
                       >
-                        <option value="">-- Alege o meserie --</option>
-                        {jobTitles.map(job => (
-                          <option key={job.id} value={job.name}>{job.name}</option>
+                        <option value="">-- Fără punct de lucru fix --</option>
+                        {locations.map(loc => (
+                          <option key={loc.id} value={loc.id}>{loc.name} {loc.address ? `(${loc.address})` : ''}</option>
                         ))}
                       </select>
-                      <button 
-                        type="button" 
-                        onClick={() => setShowNewJobInput(true)} 
-                        className="h-10 px-4 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors flex items-center gap-1 shadow-sm"
-                      >
-                        <Plus size={16} /> Nou
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="flex gap-2">
-                      <input 
-                        type="text" 
-                        value={newJobName} 
-                        onChange={e => setNewJobName(e.target.value)} 
-                        className="flex-1 px-4 h-10 text-sm rounded-2xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm" 
-                        placeholder="Nume meserie nouă..." 
-                        autoFocus
-                      />
-                      <button 
-                        type="button" 
-                        onClick={async () => {
-                          if (!newJobName.trim()) return;
-                          try {
-                            const res = await fetch(`http://localhost:5001/api/tenants/${tenant.id}/job-titles`, {
-                              method: 'POST',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({ name: newJobName.trim() })
-                            });
-                            if (res.ok) {
-                              const newJob = await res.json();
-                              setJobTitles([...jobTitles, newJob]);
-                              setFormData({...formData, job_title: newJob.name});
-                              setNewJobName('');
-                              setShowNewJobInput(false);
-                            }
-                          } catch (err) {
-                            console.error(err);
-                          }
-                        }}
-                        className="h-10 w-10 shrink-0 flex items-center justify-center rounded-full bg-green-500 text-white hover:bg-green-600 transition-colors shadow-sm"
-                      >
-                        <Check size={18} />
-                      </button>
-                      <button 
-                        type="button" 
-                        onClick={() => { setShowNewJobInput(false); setNewJobName(''); }} 
-                        className="h-10 w-10 shrink-0 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors shadow-sm border border-slate-200 dark:border-slate-600"
-                      >
-                        <X size={18} />
-                      </button>
-                    </div>
-                  )}
-                </div>
-                
-                <div className="col-span-1">
-                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 ml-1">PIN Acces (Din CNP)</label>
-                  <input type="text" maxLength="4" value={formData.pin_code} onChange={e => setFormData({...formData, pin_code: e.target.value})} className="w-full px-4 h-10 text-sm rounded-2xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm" />
-                </div>
-
-                <div className="col-span-2 -mt-2">
-                  <p className="text-xs text-slate-400 dark:text-slate-500 ml-1">Acest PIN (parolă scurtă) este extras din ultimele 4 cifre ale CNP-ului. Angajatul îl va folosi exclusiv pentru a scana codul QR pe tabletă la intrare/ieșire.</p>
-                </div>
-
-                {/* Location Dropdown */}
-                <div className="col-span-2 pt-4 border-t border-slate-100 dark:border-slate-700 mt-2">
-                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Punct de Lucru</label>
-                  <div className="relative">
-                    <MapPin className="w-5 h-5 text-slate-400 dark:text-slate-500 absolute left-3 top-1/2 transform -translate-y-1/2" />
-                    <select
-                      className="w-full pl-10 pr-4 py-3 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm focus:ring-2 focus:ring-primary-500 outline-none transition-all font-medium text-slate-700 dark:text-slate-200 appearance-none cursor-pointer"
-                      value={formData.location_id}
-                      onChange={e => setFormData({...formData, location_id: e.target.value})}
-                    >
-                      <option value="">-- Fără punct de lucru fix --</option>
-                      {locations.map(loc => (
-                        <option key={loc.id} value={loc.id}>{loc.name} {loc.address ? `(${loc.address})` : ''}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                
-                {/* Contract / HR Data */}
-                <div className="col-span-2 pt-4 border-t border-slate-100 dark:border-slate-700">
-                  <h4 className="text-sm font-bold text-slate-800 dark:text-white mb-4">Date Contractuale</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Data Angajării</label>
-                      <input
-                        type="date"
-                        className="w-full px-4 py-3 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm focus:ring-2 focus:ring-primary-500 outline-none transition-all font-medium text-slate-700 dark:text-slate-200"
-                        value={formData.contract_start_date}
-                        onChange={e => setFormData({...formData, contract_start_date: e.target.value})}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Salariu</label>
-                      <input
-                        type="text"
-                        placeholder="Ex: 4000 RON"
-                        className="w-full px-4 py-3 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm focus:ring-2 focus:ring-primary-500 outline-none transition-all font-medium text-slate-700 dark:text-slate-200"
-                        value={formData.salary}
-                        onChange={e => setFormData({...formData, salary: e.target.value})}
-                      />
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Notițe Contract</label>
-                      <textarea
-                        rows="2"
-                        placeholder="Detalii adiționale..."
-                        className="w-full px-4 py-3 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm focus:ring-2 focus:ring-primary-500 outline-none transition-all font-medium text-slate-700 dark:text-slate-200 resize-none"
-                        value={formData.contract_notes}
-                        onChange={e => setFormData({...formData, contract_notes: e.target.value})}
-                      ></textarea>
                     </div>
                   </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Data Angajării</label>
+                    <input
+                      type="date"
+                      className="w-full px-4 h-10 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm focus:ring-2 focus:ring-primary-500 outline-none transition-all text-sm text-slate-700 dark:text-slate-200"
+                      value={formData.contract_start_date}
+                      onChange={e => setFormData({...formData, contract_start_date: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Salariu</label>
+                    <input
+                      type="text"
+                      placeholder="Ex: 4000 RON"
+                      className="w-full px-4 h-10 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm focus:ring-2 focus:ring-primary-500 outline-none transition-all text-sm text-slate-700 dark:text-slate-200"
+                      value={formData.salary}
+                      onChange={e => setFormData({...formData, salary: e.target.value})}
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Notițe Contract</label>
+                    <textarea
+                      rows="2"
+                      placeholder="Detalii adiționale..."
+                      className="w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm focus:ring-2 focus:ring-primary-500 outline-none transition-all text-sm text-slate-700 dark:text-slate-200 resize-none"
+                      value={formData.contract_notes}
+                      onChange={e => setFormData({...formData, contract_notes: e.target.value})}
+                    ></textarea>
+                  </div>
                 </div>
+
+                {/* TAB 3: EVALUARE PERFORMANTA */}
+                <div className={activeTab === 'evaluare' ? 'flex flex-col gap-5' : 'hidden'}>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 mb-2">Acordă o notă de la 0 la 5 pentru fiecare categorie. Aceste note te vor ajuta la evaluarea anuală.</p>
+                  
+                  {[
+                    { key: 'eval_punctuality', label: 'Punctualitate (Întârzieri/Ore Suplimentare)', icon: '⏱️' },
+                    { key: 'eval_attendance', label: 'Prezență (Absențe/Zile Libere)', icon: '📅' },
+                    { key: 'eval_attitude', label: 'Atitudine (Relația cu Colegii/Clienții)', icon: '🤝' },
+                    { key: 'eval_performance', label: 'Performanță (Calitatea Muncii)', icon: '⭐' },
+                    { key: 'eval_reliability', label: 'Seriozitate (Responsabilitate)', icon: '🛡️' }
+                  ].map(metric => (
+                    <div key={metric.key} className="flex items-center justify-between bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-700">
+                      <div className="flex items-center gap-3">
+                        <span className="text-xl">{metric.icon}</span>
+                        <span className="font-bold text-sm text-slate-700 dark:text-slate-300">{metric.label}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {[1, 2, 3, 4, 5].map(star => (
+                          <button
+                            key={star}
+                            type="button"
+                            onClick={() => setFormData({...formData, [metric.key]: formData[metric.key] === star ? 0 : star})}
+                            className="p-1 transition-transform hover:scale-110 focus:outline-none"
+                          >
+                            <svg 
+                              className={`w-6 h-6 ${formData[metric.key] >= star ? 'text-yellow-400 drop-shadow-sm' : 'text-slate-200 dark:text-slate-600'}`} 
+                              fill="currentColor" viewBox="0 0 20 20"
+                            >
+                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
               </form>
             </div>
             

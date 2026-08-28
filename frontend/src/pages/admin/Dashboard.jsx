@@ -168,7 +168,7 @@ function TenantsList() {
   const fetchTenants = async () => {
     try {
       setLoading(true);
-      const res = await fetch('http://localhost:5001/api/tenants');
+      const res = await fetch(`${window.location.protocol}//${window.location.hostname}:5001/api/tenants`);
       if (!res.ok) throw new Error('Eroare la preluarea datelor');
       const json = await res.json();
       setData(json);
@@ -214,7 +214,7 @@ function TenantsList() {
               <img 
                 src={row.logo_url} 
                 alt={row.nume} 
-                className="w-full h-full object-contain p-1" 
+                className="w-full h-full object-cover p-1" 
               />
             </div>
           ) : (

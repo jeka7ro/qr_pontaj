@@ -19,13 +19,16 @@ export default function DataTable({
   filters = null,
   selectable = false,
   bulkActions = null,
-  rowKey = 'id'
+  rowKey = 'id',
+  expandable = false,
+  expandedRowRender = null
 }) {
   const [search, setSearch] = useState('');
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [selectedRowIds, setSelectedRowIds] = useState(new Set());
+  const [expandedRowIds, setExpandedRowIds] = useState(new Set());
 
   // 1. Căutare Globală
   const filteredData = useMemo(() => {
@@ -89,6 +92,16 @@ export default function DataTable({
       newSelected.add(id);
     }
     setSelectedRowIds(newSelected);
+  };
+
+  const toggleRowExpanded = (id) => {
+    const newExpanded = new Set(expandedRowIds);
+    if (newExpanded.has(id)) {
+      newExpanded.delete(id);
+    } else {
+      newExpanded.add(id);
+    }
+    setExpandedRowIds(newExpanded);
   };
 
   const isAllPageSelected = paginatedData.length > 0 && paginatedData.every(item => selectedRowIds.has(item[rowKey]));
@@ -222,8 +235,11 @@ export default function DataTable({
                       onChange={handleSelectAll}
                       className="w-4 h-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
                     />
-                </th>
-              )}
+                  </th>
+                )}
+                {expandable && (
+                  <th className="px-3 py-3 w-10"></th>
+                )}
               {/* Coloana Nr. Crt. */}
               <th className="px-3 py-3 text-slate-800 dark:text-slate-300 text-[11px] font-bold uppercase tracking-wider w-14">
                 #
@@ -252,27 +268,46 @@ export default function DataTable({
             {paginatedData.length > 0 ? (
               paginatedData.map((row, rowIndex) => {
                 const isSelected = selectable && selectedRowIds.has(row[rowKey]);
+                const isExpanded = expandable && expandedRowIds.has(row[rowKey]);
+                
                 return (
-                  <tr key={row[rowKey] || rowIndex} className={`transition-colors group ${isSelected ? 'bg-primary-50/50 dark:bg-primary-900/20' : 'hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}>
-                    {selectable && (
-                      <td className="pl-4 pr-2 py-3 text-center">
-                        <input 
-                          type="checkbox" 
-                          checked={isSelected}
-                          onChange={() => handleSelectRow(row[rowKey])}
-                          className="w-4 h-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
-                        />
+                  <React.Fragment key={row[rowKey] || rowIndex}>
+                    <tr 
+                      className={`transition-colors group ${isSelected ? 'bg-primary-50/50 dark:bg-primary-900/20' : 'hover:bg-slate-50 dark:hover:bg-slate-700/50'} ${expandable ? 'cursor-pointer' : ''}`}
+                      onClick={() => expandable && toggleRowExpanded(row[rowKey])}
+                    >
+                      {selectable && (
+                        <td className="pl-4 pr-2 py-3 text-center" onClick={e => e.stopPropagation()}>
+                          <input 
+                            type="checkbox" 
+                            checked={isSelected}
+                            onChange={() => handleSelectRow(row[rowKey])}
+                            className="w-4 h-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
+                          />
+                        </td>
+                      )}
+                      {expandable && (
+                        <td className="px-3 py-3 text-center text-slate-400">
+                          {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                        </td>
+                      )}
+                      <td className="px-3 py-3 text-slate-800 dark:text-slate-200 font-medium text-xs">
+                        {startIndex + rowIndex + 1}
                       </td>
+                      {columns.map((col, colIdx) => (
+                        <td key={colIdx} className="px-4 py-3 text-slate-800 dark:text-slate-200 font-medium">
+                          {col.render ? col.render(row) : row[col.key] || '-'}
+                        </td>
+                      ))}
+                    </tr>
+                    {isExpanded && expandedRowRender && (
+                      <tr>
+                        <td colSpan={columns.length + (selectable ? 1 : 0) + (expandable ? 2 : 1)} className="p-0 border-b border-slate-100 bg-slate-50/50 dark:bg-slate-900/50">
+                          {expandedRowRender(row)}
+                        </td>
+                      </tr>
                     )}
-                    <td className="px-3 py-3 text-slate-800 dark:text-slate-200 font-medium text-xs">
-                      {startIndex + rowIndex + 1}
-                    </td>
-                    {columns.map((col, colIdx) => (
-                      <td key={colIdx} className="px-4 py-3 text-slate-800 dark:text-slate-200 font-medium">
-                        {col.render ? col.render(row) : row[col.key] || '-'}
-                      </td>
-                    ))}
-                  </tr>
+                  </React.Fragment>
                 );
               })
             ) : (

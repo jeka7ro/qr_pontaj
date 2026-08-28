@@ -24,7 +24,7 @@ export default function TenantAdminsModal({ isOpen, onClose, tenant }) {
     try {
       setLoading(true);
       setError(null);
-      const res = await fetch(`http://localhost:5001/api/tenants/${tenant.id}/admins`);
+      const res = await fetch(`${window.location.protocol}//${window.location.hostname}:5001/api/tenants/${tenant.id}/admins`);
       if (!res.ok) throw new Error('Eroare la preluarea adminilor locali.');
       const data = await res.json();
       setAdmins(data);
@@ -40,7 +40,7 @@ export default function TenantAdminsModal({ isOpen, onClose, tenant }) {
     setIsSubmitting(true);
     setError(null);
     try {
-      const res = await fetch(`http://localhost:5001/api/tenants/${tenant.id}/admins`, {
+      const res = await fetch(`${window.location.protocol}//${window.location.hostname}:5001/api/tenants/${tenant.id}/admins`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: newAdmin.email, password: newAdmin.password })
@@ -69,7 +69,7 @@ export default function TenantAdminsModal({ isOpen, onClose, tenant }) {
     setIsResetting(true);
     setError(null);
     try {
-      const res = await fetch(`http://localhost:5001/api/tenants/${tenant.id}/admins/${adminId}/password`, {
+      const res = await fetch(`${window.location.protocol}//${window.location.hostname}:5001/api/tenants/${tenant.id}/admins/${adminId}/password`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password: newPassword })
