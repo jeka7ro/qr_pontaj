@@ -266,17 +266,27 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
               <div className="space-y-4 pt-4 border-t border-slate-100">
                 <h4 className="text-sm font-semibold text-slate-800 uppercase tracking-wider">5. Link-uri Rapide</h4>
                 <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl space-y-4">
+                  {(() => {
+                    let hostname = window.location.hostname;
+                    if (hostname.startsWith('admin.')) hostname = hostname.replace('admin.', '');
+                    if (hostname.startsWith('www.')) hostname = hostname.replace('www.', '');
+                    
+                    const managerLink = `${window.location.protocol}//${editTenant.subdomain}.${hostname}/admin/login`;
+                    const scanLink = `${window.location.protocol}//${editTenant.subdomain}.${hostname}/`;
+                    
+                    return (
+                      <>
                   <div>
                     <p className="text-xs font-bold text-slate-700 mb-1">Link Panou Manager Locație</p>
                     <div className="flex items-center gap-2">
                       <input 
                         type="text" 
                         readOnly 
-                        value={`${window.location.origin}/login`} 
+                        value={managerLink} 
                         className="flex-1 px-3 h-9 text-xs rounded-full border border-slate-200 bg-white outline-none text-slate-600 font-mono" 
                       />
                       <a 
-                        href={`${window.location.origin}/login`} 
+                        href={managerLink} 
                         target="_blank" 
                         rel="noopener noreferrer" 
                         className="px-4 h-9 bg-slate-800 hover:bg-slate-900 text-white rounded-md text-xs font-bold flex items-center transition-colors"
@@ -288,19 +298,22 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
                   <div className="pt-2">
                     <p className="text-xs font-bold text-slate-700 mb-1">Aplicație Scanare Angajați (URL Cod QR)</p>
                     <div className="flex items-center gap-2">
-                      <input type="text" readOnly value={`${window.location.origin}/s/${editTenant.id}`} className="flex-1 px-3 h-9 text-xs rounded-full border border-slate-200 bg-white outline-none text-slate-600 font-mono" />
+                      <input type="text" readOnly value={scanLink} className="flex-1 px-3 h-9 text-xs rounded-full border border-slate-200 bg-white outline-none text-slate-600 font-mono" />
                       <button 
                         type="button"
-                        onClick={() => navigator.clipboard.writeText(`${window.location.origin}/s/${editTenant.id}`)}
+                        onClick={() => navigator.clipboard.writeText(scanLink)}
                         className="px-4 h-9 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-md text-xs font-bold flex items-center transition-colors"
                       >
                         Copiază
                       </button>
                     </div>
                   </div>
-                </div>
-              </div>
-            )}
+                </>
+              );
+            })()}
+            </div>
+          </div>
+        )}
           </form>
         </div>
         
