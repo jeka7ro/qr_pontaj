@@ -187,17 +187,24 @@ function TenantsList() {
     { 
       key: 'nume', 
       label: 'Nume Locație',
-      render: (row) => (
-        <a 
-          href={`${window.location.origin}/s/${row.id}`} 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="font-semibold text-primary-600 hover:text-primary-700 hover:underline flex items-center gap-1"
-          title="Deschide aplicația de scanare QR pentru acest tenant"
-        >
-          {row.nume}
-        </a>
-      )
+      render: (row) => {
+        let hostname = window.location.hostname;
+        if (hostname.startsWith('admin.')) hostname = hostname.replace('admin.', '');
+        if (hostname.startsWith('www.')) hostname = hostname.replace('www.', '');
+        const scanUrl = `${window.location.protocol}//${row.subdomain}.${hostname}/`;
+        
+        return (
+          <a 
+            href={scanUrl} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="font-semibold text-primary-600 hover:text-primary-700 hover:underline flex items-center gap-1"
+            title="Deschide aplicația de scanare QR pentru acest tenant"
+          >
+            {row.nume}
+          </a>
+        );
+      }
     },
     { key: 'tip_modul', label: 'Modul' },
     { 
