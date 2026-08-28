@@ -27,7 +27,7 @@ router.get('/', async (req, res) => {
   try {
     const query = `
       SELECT 
-        t.id, t.name as nume, t.theme_color as culoare, t.logo_url,
+        t.id, t.name as nume, t.subdomain, t.theme_color as culoare, t.logo_url,
         s.qr_mode as mod_qr, s.allowed_radius_meters as raza_gps, s.name as tip_modul
       FROM qrp_tenants t
       LEFT JOIN qrp_sites s ON s.tenant_id = t.id
@@ -131,7 +131,7 @@ router.post('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const query = `
-      SELECT id, name, logo_url, favicon_url, theme_color 
+      SELECT id, name, subdomain, logo_url, favicon_url, theme_color 
       FROM qrp_tenants 
       WHERE id = $1
     `;
