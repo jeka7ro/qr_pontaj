@@ -11,8 +11,14 @@ const getIsSubdomain = () => {
   // Regex for IPv4
   const isIp = /^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$/.test(hostname);
   
-  // If it's just 'localhost', an IP address, or the main domains, it's the root domain.
-  if (hostname === 'localhost' || isIp || hostname === 'qrpontaj.ro' || hostname === 'scan.pontaj.app') {
+  // If it's just 'localhost', an IP address, the main domains, or a Railway domain, it's the root domain.
+  if (
+    hostname === 'localhost' || 
+    isIp || 
+    hostname === 'qrpontaj.ro' || 
+    hostname === 'scan.pontaj.app' || 
+    hostname.endsWith('.up.railway.app')
+  ) {
     return false;
   }
   return true;
