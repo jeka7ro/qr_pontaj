@@ -23,7 +23,8 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
       shifts: false,
       face_recognition: false,
       whatsapp: false,
-      assets: false
+      assets: false,
+      show_upsells: true
     }
   });
   
@@ -50,7 +51,8 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
           shifts: false,
           face_recognition: false,
           whatsapp: false,
-          assets: false
+          assets: false,
+          show_upsells: true
         }
       });
     }
@@ -299,8 +301,24 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
             </div>
 
             <div className="space-y-4 pt-4 border-t border-slate-100">
-              <h4 className="text-sm font-semibold text-slate-800 uppercase tracking-wider">5. Funcționalități / Upsell (Feature Flags)</h4>
-              <p className="text-xs text-slate-500 mb-2">Activează modulele pe care acest client le-a achiziționat. Dacă nu sunt active, vor vedea un ecran de "Lăcățel" prin care să te contacteze.</p>
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="text-sm font-semibold text-slate-800 uppercase tracking-wider">5. Funcționalități / Upsell (Feature Flags)</h4>
+                
+                {/* Global Upsell Toggle */}
+                <label className="flex items-center gap-2 cursor-pointer group">
+                  <span className="text-xs font-bold text-slate-500 group-hover:text-slate-700 transition-colors">Afișează modulele inactive (cu lăcățel)</span>
+                  <div className="relative inline-flex items-center">
+                    <input 
+                      type="checkbox" 
+                      className="sr-only peer" 
+                      checked={formData.modules?.show_upsells !== false} // Default true
+                      onChange={() => handleModuleToggle('show_upsells')}
+                    />
+                    <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-500"></div>
+                  </div>
+                </label>
+              </div>
+              <p className="text-xs text-slate-500 mb-2">Activează modulele pe care acest client le-a achiziționat. Dacă nu sunt active (și toggle-ul de sus e pornit), vor vedea un ecran de "Lăcățel" prin care să te contacteze.</p>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {[

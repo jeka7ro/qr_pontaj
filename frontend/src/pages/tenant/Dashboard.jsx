@@ -202,115 +202,137 @@ export default function TenantDashboard() {
             <QrCode size={18} /> Afișaj Cod QR
           </Link>
 
-          <Link 
-            to="/admin/leaves"
-            onClick={() => setSidebarOpen(false)}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm
-              ${location.pathname === '/admin/leaves' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
-            style={location.pathname === '/admin/leaves' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
-          >
-            <CalendarDays size={18} /> Zile Libere (CO/CM)
-          </Link>
+          {(tenant.modules?.show_upsells !== false || tenant.modules?.leaves) && (
+            <Link 
+              to="/admin/leaves"
+              onClick={() => setSidebarOpen(false)}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm
+                ${location.pathname === '/admin/leaves' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+              style={location.pathname === '/admin/leaves' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
+            >
+              <CalendarDays size={18} /> Zile Libere (CO/CM)
+            </Link>
+          )}
 
-          <Link 
-            to="/admin/export"
-            onClick={() => setSidebarOpen(false)}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm
-              ${location.pathname === '/admin/export' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
-            style={location.pathname === '/admin/export' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
-          >
-            <FileSpreadsheet size={18} /> Export Conta (SAGA)
-          </Link>
+          {(tenant.modules?.show_upsells !== false || tenant.modules?.export_saga) && (
+            <Link 
+              to="/admin/export"
+              onClick={() => setSidebarOpen(false)}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm
+                ${location.pathname === '/admin/export' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+              style={location.pathname === '/admin/export' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
+            >
+              <FileSpreadsheet size={18} /> Export Conta (SAGA)
+            </Link>
+          )}
 
-          <Link 
-            to="/admin/geofence"
-            onClick={() => setSidebarOpen(false)}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm
-              ${location.pathname === '/admin/geofence' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
-            style={location.pathname === '/admin/geofence' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
-          >
-            <Map size={18} /> Hartă Geofence
-          </Link>
+          {(tenant.modules?.show_upsells !== false || tenant.modules?.geofence) && (
+            <Link 
+              to="/admin/geofence"
+              onClick={() => setSidebarOpen(false)}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm
+                ${location.pathname === '/admin/geofence' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+              style={location.pathname === '/admin/geofence' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
+            >
+              <Map size={18} /> Hartă Geofence
+            </Link>
+          )}
           
-          <Link 
-            to="/admin/offline"
-            onClick={() => setSidebarOpen(false)}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm
-              ${location.pathname === '/admin/offline' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
-            style={location.pathname === '/admin/offline' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
-          >
-            <Globe size={18} /> Mod Offline
-          </Link>
+          {(tenant.modules?.show_upsells !== false || tenant.modules?.offline) && (
+            <Link 
+              to="/admin/offline"
+              onClick={() => setSidebarOpen(false)}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm
+                ${location.pathname === '/admin/offline' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+              style={location.pathname === '/admin/offline' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
+            >
+              <Globe size={18} /> Mod Offline
+            </Link>
+          )}
 
-          <Link 
-            to="/admin/billing"
-            onClick={() => setSidebarOpen(false)}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm
-              ${location.pathname === '/admin/billing' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
-            style={location.pathname === '/admin/billing' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
-          >
-            <CreditCard size={18} /> Abonament & Facturi
-          </Link>
+          {(tenant.modules?.show_upsells !== false || tenant.modules?.billing) && (
+            <Link 
+              to="/admin/billing"
+              onClick={() => setSidebarOpen(false)}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm
+                ${location.pathname === '/admin/billing' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+              style={location.pathname === '/admin/billing' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
+            >
+              <CreditCard size={18} /> Abonament & Facturi
+            </Link>
+          )}
 
-          <Link 
-            to="/admin/revisal"
-            onClick={() => setSidebarOpen(false)}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm
-              ${location.pathname === '/admin/revisal' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
-            style={location.pathname === '/admin/revisal' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
-          >
-            <BookOpenCheck size={18} /> Integrare REVISAL
-          </Link>
+          {(tenant.modules?.show_upsells !== false || tenant.modules?.revisal) && (
+            <Link 
+              to="/admin/revisal"
+              onClick={() => setSidebarOpen(false)}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm
+                ${location.pathname === '/admin/revisal' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+              style={location.pathname === '/admin/revisal' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
+            >
+              <BookOpenCheck size={18} /> Integrare REVISAL
+            </Link>
+          )}
 
-          <Link 
-            to="/admin/erp"
-            onClick={() => setSidebarOpen(false)}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm
-              ${location.pathname === '/admin/erp' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
-            style={location.pathname === '/admin/erp' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
-          >
-            <Calculator size={18} /> Gestiune & ERP
-          </Link>
+          {(tenant.modules?.show_upsells !== false || tenant.modules?.erp) && (
+            <Link 
+              to="/admin/erp"
+              onClick={() => setSidebarOpen(false)}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm
+                ${location.pathname === '/admin/erp' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+              style={location.pathname === '/admin/erp' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
+            >
+              <Calculator size={18} /> Gestiune & ERP
+            </Link>
+          )}
 
-          <Link 
-            to="/admin/shifts"
-            onClick={() => setSidebarOpen(false)}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm
-              ${location.pathname === '/admin/shifts' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
-            style={location.pathname === '/admin/shifts' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
-          >
-            <CalendarClock size={18} /> Planificator Ture
-          </Link>
+          {(tenant.modules?.show_upsells !== false || tenant.modules?.shifts) && (
+            <Link 
+              to="/admin/shifts"
+              onClick={() => setSidebarOpen(false)}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm
+                ${location.pathname === '/admin/shifts' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+              style={location.pathname === '/admin/shifts' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
+            >
+              <CalendarClock size={18} /> Planificator Ture
+            </Link>
+          )}
 
-          <Link 
-            to="/admin/face"
-            onClick={() => setSidebarOpen(false)}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm
-              ${location.pathname === '/admin/face' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
-            style={location.pathname === '/admin/face' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
-          >
-            <ScanFace size={18} /> Recunoaștere Facială
-          </Link>
+          {(tenant.modules?.show_upsells !== false || tenant.modules?.face_recognition) && (
+            <Link 
+              to="/admin/face"
+              onClick={() => setSidebarOpen(false)}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm
+                ${location.pathname === '/admin/face' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+              style={location.pathname === '/admin/face' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
+            >
+              <ScanFace size={18} /> Recunoaștere Facială
+            </Link>
+          )}
 
-          <Link 
-            to="/admin/whatsapp"
-            onClick={() => setSidebarOpen(false)}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm
-              ${location.pathname === '/admin/whatsapp' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
-            style={location.pathname === '/admin/whatsapp' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
-          >
-            <MessageSquare size={18} /> Alerte WhatsApp
-          </Link>
+          {(tenant.modules?.show_upsells !== false || tenant.modules?.whatsapp) && (
+            <Link 
+              to="/admin/whatsapp"
+              onClick={() => setSidebarOpen(false)}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm
+                ${location.pathname === '/admin/whatsapp' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+              style={location.pathname === '/admin/whatsapp' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
+            >
+              <MessageSquare size={18} /> Alerte WhatsApp
+            </Link>
+          )}
 
-          <Link 
-            to="/admin/assets"
-            onClick={() => setSidebarOpen(false)}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm
-              ${location.pathname === '/admin/assets' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
-            style={location.pathname === '/admin/assets' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
-          >
-            <Wrench size={18} /> Gestiune Echipamente
-          </Link>
+          {(tenant.modules?.show_upsells !== false || tenant.modules?.assets) && (
+            <Link 
+              to="/admin/assets"
+              onClick={() => setSidebarOpen(false)}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm
+                ${location.pathname === '/admin/assets' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+              style={location.pathname === '/admin/assets' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
+            >
+              <Wrench size={18} /> Gestiune Echipamente
+            </Link>
+          )}
         </nav>
 
         {/* User / Footer */}
