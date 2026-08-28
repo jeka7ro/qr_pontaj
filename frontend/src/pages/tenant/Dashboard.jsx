@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Routes, Route, Link, Navigate } from 'react-router-dom';
-import { QrCode, Users, LogOut, Menu, X, Info, MapPin, Sun, Moon } from 'lucide-react';
+import { QrCode, Users, LogOut, Menu, X, Info, MapPin, Sun, Moon, CreditCard, CalendarDays, FileSpreadsheet, Globe, Map, BookOpenCheck, Calculator, CalendarClock, ScanFace, MessageSquare, Wrench } from 'lucide-react';
 import EmployeesList from '../../components/EmployeesList';
 import TimesheetReport from '../../components/TimesheetReport';
 import DashboardCharts from '../../components/DashboardCharts';
 import EmployeeProfile from '../../components/EmployeeProfile';
 import LocationsList from '../../components/LocationsList';
+import UpsellLock from '../../components/UpsellLock';
 import QrSelector from './QrSelector';
 import RolesList from './RolesList';
 import { QRCodeSVG } from 'qrcode.react';
@@ -200,6 +201,116 @@ export default function TenantDashboard() {
           >
             <QrCode size={18} /> Afișaj Cod QR
           </Link>
+
+          <Link 
+            to="/admin/leaves"
+            onClick={() => setSidebarOpen(false)}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm
+              ${location.pathname === '/admin/leaves' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+            style={location.pathname === '/admin/leaves' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
+          >
+            <CalendarDays size={18} /> Zile Libere (CO/CM)
+          </Link>
+
+          <Link 
+            to="/admin/export"
+            onClick={() => setSidebarOpen(false)}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm
+              ${location.pathname === '/admin/export' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+            style={location.pathname === '/admin/export' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
+          >
+            <FileSpreadsheet size={18} /> Export Conta (SAGA)
+          </Link>
+
+          <Link 
+            to="/admin/geofence"
+            onClick={() => setSidebarOpen(false)}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm
+              ${location.pathname === '/admin/geofence' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+            style={location.pathname === '/admin/geofence' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
+          >
+            <Map size={18} /> Hartă Geofence
+          </Link>
+          
+          <Link 
+            to="/admin/offline"
+            onClick={() => setSidebarOpen(false)}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm
+              ${location.pathname === '/admin/offline' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+            style={location.pathname === '/admin/offline' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
+          >
+            <Globe size={18} /> Mod Offline
+          </Link>
+
+          <Link 
+            to="/admin/billing"
+            onClick={() => setSidebarOpen(false)}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm
+              ${location.pathname === '/admin/billing' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+            style={location.pathname === '/admin/billing' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
+          >
+            <CreditCard size={18} /> Abonament & Facturi
+          </Link>
+
+          <Link 
+            to="/admin/revisal"
+            onClick={() => setSidebarOpen(false)}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm
+              ${location.pathname === '/admin/revisal' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+            style={location.pathname === '/admin/revisal' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
+          >
+            <BookOpenCheck size={18} /> Integrare REVISAL
+          </Link>
+
+          <Link 
+            to="/admin/erp"
+            onClick={() => setSidebarOpen(false)}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm
+              ${location.pathname === '/admin/erp' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+            style={location.pathname === '/admin/erp' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
+          >
+            <Calculator size={18} /> Gestiune & ERP
+          </Link>
+
+          <Link 
+            to="/admin/shifts"
+            onClick={() => setSidebarOpen(false)}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm
+              ${location.pathname === '/admin/shifts' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+            style={location.pathname === '/admin/shifts' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
+          >
+            <CalendarClock size={18} /> Planificator Ture
+          </Link>
+
+          <Link 
+            to="/admin/face"
+            onClick={() => setSidebarOpen(false)}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm
+              ${location.pathname === '/admin/face' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+            style={location.pathname === '/admin/face' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
+          >
+            <ScanFace size={18} /> Recunoaștere Facială
+          </Link>
+
+          <Link 
+            to="/admin/whatsapp"
+            onClick={() => setSidebarOpen(false)}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm
+              ${location.pathname === '/admin/whatsapp' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+            style={location.pathname === '/admin/whatsapp' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
+          >
+            <MessageSquare size={18} /> Alerte WhatsApp
+          </Link>
+
+          <Link 
+            to="/admin/assets"
+            onClick={() => setSidebarOpen(false)}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm
+              ${location.pathname === '/admin/assets' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+            style={location.pathname === '/admin/assets' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
+          >
+            <Wrench size={18} /> Gestiune Echipamente
+          </Link>
         </nav>
 
         {/* User / Footer */}
@@ -300,6 +411,95 @@ export default function TenantDashboard() {
                 <QrSelector tenant={tenant} themeColor={themeColor} />
               </div>
             } />
+            
+            <Route path="leaves" element={
+              tenant.modules?.leaves ? (
+                <div className="flex items-center justify-center h-64 text-slate-500 font-medium bg-white rounded-2xl shadow-sm border border-slate-100">Modulul Zile Libere este în dezvoltare.</div>
+              ) : (
+                <UpsellLock title="Zile Libere (CO/CM)" description="Gestionează concediile de odihnă și medicale ale angajaților direct din platformă." themeColor={themeColor} />
+              )
+            } />
+
+            <Route path="export" element={
+              tenant.modules?.export_saga ? (
+                <div className="flex items-center justify-center h-64 text-slate-500 font-medium bg-white rounded-2xl shadow-sm border border-slate-100">Modulul Export SAGA este în dezvoltare.</div>
+              ) : (
+                <UpsellLock title="Export Conta (SAGA)" description="Generează automat fișierele de import pentru programul de contabilitate SAGA C." themeColor={themeColor} />
+              )
+            } />
+
+            <Route path="geofence" element={
+              tenant.modules?.geofence ? (
+                <div className="flex items-center justify-center h-64 text-slate-500 font-medium bg-white rounded-2xl shadow-sm border border-slate-100">Modulul Hartă Geofence este în dezvoltare.</div>
+              ) : (
+                <UpsellLock title="Hartă Geofence" description="Trasează limitele perimetrului de pontaj direct pe hartă cu precizie maximă." themeColor={themeColor} />
+              )
+            } />
+
+            <Route path="offline" element={
+              tenant.modules?.offline ? (
+                <div className="flex items-center justify-center h-64 text-slate-500 font-medium bg-white rounded-2xl shadow-sm border border-slate-100">Modulul Offline este în dezvoltare.</div>
+              ) : (
+                <UpsellLock title="Mod Offline (Reziliență)" description="Permite tabletei să rețină scanările chiar și atunci când pică conexiunea la internet." themeColor={themeColor} />
+              )
+            } />
+
+            <Route path="billing" element={
+              tenant.modules?.billing ? (
+                <div className="flex items-center justify-center h-64 text-slate-500 font-medium bg-white rounded-2xl shadow-sm border border-slate-100">Modulul Facturare este în dezvoltare.</div>
+              ) : (
+                <UpsellLock title="Abonament & Facturi" description="Gestionează abonamentul firmei și descarcă facturile direct de aici." themeColor={themeColor} />
+              )
+            } />
+
+            <Route path="revisal" element={
+              tenant.modules?.revisal ? (
+                <div className="flex items-center justify-center h-64 text-slate-500 font-medium bg-white rounded-2xl shadow-sm border border-slate-100">Integrare REVISAL în dezvoltare.</div>
+              ) : (
+                <UpsellLock title="Integrare API REVISAL" description="Sincronizează automat contractele de muncă și absențele cu baza de date a Inspecției Muncii." themeColor={themeColor} />
+              )
+            } />
+
+            <Route path="erp" element={
+              tenant.modules?.erp ? (
+                <div className="flex items-center justify-center h-64 text-slate-500 font-medium bg-white rounded-2xl shadow-sm border border-slate-100">Modul ERP în dezvoltare.</div>
+              ) : (
+                <UpsellLock title="Modul ERP & Contracte" description="Asociază pontajul cu centre de cost, emite rapoarte de profitabilitate și atașează contracte comerciale pe fiecare punct de lucru." themeColor={themeColor} />
+              )
+            } />
+
+            <Route path="shifts" element={
+              tenant.modules?.shifts ? (
+                <div className="flex items-center justify-center h-64 text-slate-500 font-medium bg-white rounded-2xl shadow-sm border border-slate-100">Planificator Ture în dezvoltare.</div>
+              ) : (
+                <UpsellLock title="Planificator de Ture" description="Asignează angajații pe schimburi (tura de zi/noapte). Primește alerte dacă o persoană programată nu s-a pontat la timp." themeColor={themeColor} />
+              )
+            } />
+
+            <Route path="face" element={
+              tenant.modules?.face_recognition ? (
+                <div className="flex items-center justify-center h-64 text-slate-500 font-medium bg-white rounded-2xl shadow-sm border border-slate-100">Recunoaștere Facială în dezvoltare.</div>
+              ) : (
+                <UpsellLock title="Recunoaștere Facială (Biometrie AI)" description="Securitate supremă: la momentul scanării QR, tableta realizează o poză și validează fața angajatului folosind Inteligența Artificială." themeColor={themeColor} />
+              )
+            } />
+
+            <Route path="whatsapp" element={
+              tenant.modules?.whatsapp ? (
+                <div className="flex items-center justify-center h-64 text-slate-500 font-medium bg-white rounded-2xl shadow-sm border border-slate-100">Alerte WhatsApp în dezvoltare.</div>
+              ) : (
+                <UpsellLock title="Notificări WhatsApp" description="Primește instant pe telefonul mobil (SMS sau WhatsApp) rapoartele de sfârșit de zi sau alertele privind orele suplimentare." themeColor={themeColor} />
+              )
+            } />
+
+            <Route path="assets" element={
+              tenant.modules?.assets ? (
+                <div className="flex items-center justify-center h-64 text-slate-500 font-medium bg-white rounded-2xl shadow-sm border border-slate-100">Gestiune Echipamente în dezvoltare.</div>
+              ) : (
+                <UpsellLock title="Gestiune Echipamente" description="Nu doar angajații se pontează. Urmărește cine a preluat tableta, bormașina sau mașina de serviciu și calculează costul de uzură." themeColor={themeColor} />
+              )
+            } />
+
           </Routes>
         </main>
       </div>

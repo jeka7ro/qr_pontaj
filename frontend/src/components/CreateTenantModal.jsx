@@ -11,7 +11,20 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
     email_admin: '',
     parola_initiala: '',
     distanta_gps: '100',
-    mod_qr: 'STATIC'
+    mod_qr: 'STATIC',
+    modules: {
+      billing: false,
+      leaves: false,
+      export_saga: false,
+      geofence: false,
+      offline: false,
+      revisal: false,
+      erp: false,
+      shifts: false,
+      face_recognition: false,
+      whatsapp: false,
+      assets: false
+    }
   });
   
   useEffect(() => {
@@ -25,7 +38,20 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
         email_admin: '', // Nu e folosit la editare
         parola_initiala: '',
         distanta_gps: editTenant.raza_gps?.toString() || '100',
-        mod_qr: editTenant.mod_qr || 'STATIC'
+        mod_qr: editTenant.mod_qr || 'STATIC',
+        modules: editTenant.modules || {
+          billing: false,
+          leaves: false,
+          export_saga: false,
+          geofence: false,
+          offline: false,
+          revisal: false,
+          erp: false,
+          shifts: false,
+          face_recognition: false,
+          whatsapp: false,
+          assets: false
+        }
       });
     }
   }, [editTenant]);
@@ -35,6 +61,16 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleModuleToggle = (moduleName) => {
+    setFormData(prev => ({
+      ...prev,
+      modules: {
+        ...prev.modules,
+        [moduleName]: !prev.modules[moduleName]
+      }
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -262,9 +298,43 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
               </div>
             </div>
 
+            <div className="space-y-4 pt-4 border-t border-slate-100">
+              <h4 className="text-sm font-semibold text-slate-800 uppercase tracking-wider">5. Funcționalități / Upsell (Feature Flags)</h4>
+              <p className="text-xs text-slate-500 mb-2">Activează modulele pe care acest client le-a achiziționat. Dacă nu sunt active, vor vedea un ecran de "Lăcățel" prin care să te contacteze.</p>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {[
+                  { id: 'billing', label: 'Facturare / Plăți Online', color: 'bg-emerald-500' },
+                  { id: 'leaves', label: 'Zile Libere (CO/CM)', color: 'bg-blue-500' },
+                  { id: 'export_saga', label: 'Export Conta (SAGA)', color: 'bg-purple-500' },
+                  { id: 'geofence', label: 'Geofence Avansat pe Hartă', color: 'bg-orange-500' },
+                  { id: 'offline', label: 'Mod Offline (Reziliență)', color: 'bg-slate-700' },
+                  { id: 'revisal', label: 'Integrare API REVISAL', color: 'bg-red-500' },
+                  { id: 'erp', label: 'Modul ERP & Contracte', color: 'bg-indigo-500' },
+                  { id: 'shifts', label: 'Planificator Ture (Shifts)', color: 'bg-cyan-500' },
+                  { id: 'face_recognition', label: 'Recunoaștere Facială (AI)', color: 'bg-rose-500' },
+                  { id: 'whatsapp', label: 'Alerte WhatsApp/SMS', color: 'bg-green-500' },
+                  { id: 'assets', label: 'Gestiune Echipamente', color: 'bg-yellow-500' }
+                ].map(mod => (
+                  <label key={mod.id} className="flex items-center justify-between p-3 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors">
+                    <span className="text-sm font-semibold text-slate-700">{mod.label}</span>
+                    <div className="relative inline-flex items-center cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        className="sr-only peer" 
+                        checked={formData.modules[mod.id]}
+                        onChange={() => handleModuleToggle(mod.id)}
+                      />
+                      <div className={`w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:${mod.color}`}></div>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+
             {editTenant && (
               <div className="space-y-4 pt-4 border-t border-slate-100">
-                <h4 className="text-sm font-semibold text-slate-800 uppercase tracking-wider">5. Link-uri Rapide</h4>
+                <h4 className="text-sm font-semibold text-slate-800 uppercase tracking-wider">6. Link-uri Rapide</h4>
                 <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl space-y-4">
                   {(() => {
                     let hostname = window.location.hostname;
