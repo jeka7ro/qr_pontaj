@@ -49,7 +49,7 @@ export default function ScanScreen() {
     // Fetch tenant data for branding
     const fetchTenant = async () => {
       try {
-        const apiUrl = `${window.location.protocol}//${window.location.hostname}:5001`;
+        const apiUrl = `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}`;
         const res = await fetch(`${apiUrl}/api/tenants/${tenantId}`);
         if (!res.ok) throw new Error('Nu am putut încărca datele companiei.');
         const data = await res.json();
@@ -79,7 +79,7 @@ export default function ScanScreen() {
     setError(null);
 
     try {
-      const apiUrl = `${window.location.protocol}//${window.location.hostname}:5001`;
+      const apiUrl = `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}`;
       const res = await fetch(`${apiUrl}/api/scan`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -115,7 +115,7 @@ export default function ScanScreen() {
         setCheckingStatus(true);
         setError(null);
         try {
-          const apiUrl = `${window.location.protocol}//${window.location.hostname}:5001`;
+          const apiUrl = `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}`;
           const res = await fetch(`${apiUrl}/api/scan/status`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -154,7 +154,7 @@ export default function ScanScreen() {
 
     setForgotStatus('loading');
     try {
-      const apiUrl = `${window.location.protocol}//${window.location.hostname}:5001`;
+      const apiUrl = `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}`;
       const res = await fetch(`${apiUrl}/api/scan/reset-pin-request`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -209,7 +209,7 @@ export default function ScanScreen() {
           {employeeInfo && employeeInfo.showPhoto !== false && (
             <div className="bg-slate-50 rounded-2xl p-4 flex items-center gap-4 text-left">
               {employeeInfo.avatar_path ? (
-                <img src={`${window.location.protocol}//${window.location.hostname}:5001${employeeInfo.avatar_path}`} alt="Avatar" className="w-12 h-12 rounded-full object-cover border border-slate-200" />
+                <img src={`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${employeeInfo.avatar_path}`} alt="Avatar" className="w-12 h-12 rounded-full object-cover border border-slate-200" />
               ) : (
                 <div className="w-12 h-12 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 font-bold border border-slate-300">
                   {employeeInfo.first_name[0]}{employeeInfo.last_name[0]}
@@ -236,7 +236,7 @@ export default function ScanScreen() {
           {/* Header */}
           <div className="p-6 text-center border-b border-slate-800 bg-slate-950">
             {tenant.logo_url ? (
-              <img src={tenant.logo_url.startsWith('http') ? tenant.logo_url : `${window.location.protocol}//${window.location.hostname}:5001${tenant.logo_url}`} alt="Logo" className="h-14 object-contain mx-auto mb-3 filter drop-shadow-md" />
+              <img src={tenant.logo_url.startsWith('http') ? tenant.logo_url : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${tenant.logo_url}`} alt="Logo" className="h-14 object-contain mx-auto mb-3 filter drop-shadow-md" />
             ) : (
               <div
                 className="w-14 h-14 rounded-2xl flex items-center justify-center text-xl font-black shadow-sm mx-auto mb-3"

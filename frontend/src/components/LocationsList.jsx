@@ -26,7 +26,7 @@ export default function LocationsList({ tenant, themeColor }) {
 
   const fetchLocations = async () => {
     try {
-      const res = await fetch(`${window.location.protocol}//${window.location.hostname}:5001/api/tenants/${tenant.id}/locations`);
+      const res = await fetch(`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenants/${tenant.id}/locations`);
       if (!res.ok) throw new Error('Eroare la preluarea locațiilor');
       const data = await res.json();
       setLocations(data);
@@ -64,8 +64,8 @@ export default function LocationsList({ tenant, themeColor }) {
 
     try {
       const url = editingId 
-        ? `${window.location.protocol}//${window.location.hostname}:5001/api/tenants/${tenant.id}/locations/${editingId}`
-        : `${window.location.protocol}//${window.location.hostname}:5001/api/tenants/${tenant.id}/locations`;
+        ? `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenants/${tenant.id}/locations/${editingId}`
+        : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenants/${tenant.id}/locations`;
         
       const method = editingId ? 'PUT' : 'POST';
 
@@ -91,7 +91,7 @@ export default function LocationsList({ tenant, themeColor }) {
 
   const handleDelete = async (id) => {
     try {
-      const res = await fetch(`${window.location.protocol}//${window.location.hostname}:5001/api/tenants/${tenant.id}/locations/${id}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenants/${tenant.id}/locations/${id}`, {
         method: 'DELETE'
       });
       if (!res.ok) throw new Error('Nu s-a putut șterge locația.');

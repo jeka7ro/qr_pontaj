@@ -168,7 +168,7 @@ function TenantsList() {
   const fetchTenants = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${window.location.protocol}//${window.location.hostname}:5001/api/tenants`);
+      const res = await fetch(`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenants`);
       if (!res.ok) throw new Error('Eroare la preluarea datelor');
       const json = await res.json();
       setData(json);

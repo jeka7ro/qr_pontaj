@@ -38,7 +38,7 @@ export default function TenantDashboard() {
         const token = localStorage.getItem('token');
         if (!token) throw new Error('Nu ești autentificat');
 
-        const res = await fetch(`${window.location.protocol}//${window.location.hostname}:5001/api/tenant/dashboard/info`, {
+        const res = await fetch(`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenant/dashboard/info`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }

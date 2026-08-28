@@ -44,8 +44,8 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
 
     try {
       const url = editTenant 
-        ? `${window.location.protocol}//${window.location.hostname}:5001/api/tenants/${editTenant.id}` 
-        : `${window.location.protocol}//${window.location.hostname}:5001/api/tenants`;
+        ? `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenants/${editTenant.id}` 
+        : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenants`;
       const method = editTenant ? 'PUT' : 'POST';
 
       const response = await fetch(url, {

@@ -88,7 +88,7 @@ export default function TimesheetReport({ tenant, themeColor }) {
 
   const fetchLocations = async () => {
     try {
-      const res = await fetch(`${window.location.protocol}//${window.location.hostname}:5001/api/tenants/${tenant.id}/locations`);
+      const res = await fetch(`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenants/${tenant.id}/locations`);
       if (res.ok) {
         const data = await res.json();
         setLocations(data);
@@ -106,7 +106,7 @@ export default function TimesheetReport({ tenant, themeColor }) {
       if (endDate) params.append('endDate', endDate);
       if (locationId) params.append('locationId', locationId);
 
-      const res = await fetch(`${window.location.protocol}//${window.location.hostname}:5001/api/tenants/${tenant.id}/timesheets?${params.toString()}`);
+      const res = await fetch(`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenants/${tenant.id}/timesheets?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
         setTimesheets(data);
@@ -179,7 +179,7 @@ export default function TimesheetReport({ tenant, themeColor }) {
       render: (row) => (
         <div className="flex items-center gap-3">
           {row.avatar_path ? (
-            <img src={`${window.location.protocol}//${window.location.hostname}:5001${row.avatar_path}`} alt="Avatar" className="w-10 h-10 rounded-full object-cover border border-slate-200" />
+            <img src={`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${row.avatar_path}`} alt="Avatar" className="w-10 h-10 rounded-full object-cover border border-slate-200" />
           ) : (
             <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold">
               {row.first_name[0]}{row.last_name[0]}

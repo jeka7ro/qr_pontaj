@@ -27,7 +27,7 @@ export default function RolesList({ tenant, themeColor }) {
   const fetchRoles = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${window.location.protocol}//${window.location.hostname}:5001/api/tenants/${tenant.id}/job-titles`);
+      const res = await fetch(`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenants/${tenant.id}/job-titles`);
       if (!res.ok) throw new Error('Eroare la preluarea rolurilor');
       const data = await res.json();
       setRoles(data);
@@ -64,8 +64,8 @@ export default function RolesList({ tenant, themeColor }) {
 
     try {
       const url = editingId 
-        ? `${window.location.protocol}//${window.location.hostname}:5001/api/tenants/${tenant.id}/job-titles/${editingId}`
-        : `${window.location.protocol}//${window.location.hostname}:5001/api/tenants/${tenant.id}/job-titles`;
+        ? `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenants/${tenant.id}/job-titles/${editingId}`
+        : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenants/${tenant.id}/job-titles`;
         
       const method = editingId ? 'PUT' : 'POST';
 
@@ -91,7 +91,7 @@ export default function RolesList({ tenant, themeColor }) {
 
   const handleDelete = async (id) => {
     try {
-      const res = await fetch(`${window.location.protocol}//${window.location.hostname}:5001/api/tenants/${tenant.id}/job-titles/${id}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenants/${tenant.id}/job-titles/${id}`, {
         method: 'DELETE'
       });
       if (!res.ok) throw new Error('Nu s-a putut șterge rolul.');

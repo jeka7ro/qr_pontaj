@@ -35,7 +35,7 @@ export default function KioskDisplay() {
   useEffect(() => {
     const fetchTenant = async () => {
       try {
-        const apiUrl = `${window.location.protocol}//${window.location.hostname}:5001`;
+        const apiUrl = `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}`;
         const res = await fetch(`${apiUrl}/api/tenants/${tenantId}`);
         if (!res.ok) throw new Error('Nu am putut încărca datele tenantului.');
         const data = await res.json();
@@ -68,7 +68,7 @@ export default function KioskDisplay() {
     const getNetworkIp = async () => {
       if (window.location.hostname.includes('localhost') && !resolvedIp) {
         try {
-          const apiUrl = `${window.location.protocol}//${window.location.hostname}:5001`;
+          const apiUrl = `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}`;
           const res = await fetch(`${apiUrl}/api/system/ip`);
           if (res.ok) {
             const data = await res.json();
@@ -98,7 +98,7 @@ export default function KioskDisplay() {
 
       // Fetch kiosk settings silently
       try {
-        const apiUrl = `${window.location.protocol}//${window.location.hostname}:5001`;
+        const apiUrl = `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}`;
         const kiosksRes = await fetch(`${apiUrl}/api/tenants/${tenantId}/kiosks`);
         if (kiosksRes.ok) {
           const kiosksData = await kiosksRes.json();
@@ -144,7 +144,7 @@ export default function KioskDisplay() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const apiUrl = `${window.location.protocol}//${window.location.hostname}:5001`;
+        const apiUrl = `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}`;
 
 
         if (localStorage.getItem(`kiosk_auth_${kioskId}`) === 'true') {
@@ -187,7 +187,7 @@ export default function KioskDisplay() {
     
     setPinError('');
     try {
-      const apiUrl = `${window.location.protocol}//${window.location.hostname}:5001`;
+      const apiUrl = `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}`;
       const res = await fetch(`${apiUrl}/api/tenants/${tenantId}/kiosks/${kioskId}/auth_kiosk`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -383,7 +383,7 @@ export default function KioskDisplay() {
             }}
           >
             <img 
-              src={tenant.logo_url.startsWith('http') ? tenant.logo_url : `${window.location.protocol}//${window.location.hostname}:5001${tenant.logo_url}`} 
+              src={tenant.logo_url.startsWith('http') ? tenant.logo_url : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${tenant.logo_url}`} 
               alt={tenant.name} 
               className="object-contain transition-all"
               style={{ height: `${(kioskColors.logo_size || 1) * 1.5 + 2}rem` }}

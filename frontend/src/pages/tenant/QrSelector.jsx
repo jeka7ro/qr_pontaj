@@ -28,7 +28,7 @@ export default function QrSelector({ tenant, themeColor }) {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const apiUrl = `${window.location.protocol}//${window.location.hostname}:5001`;
+      const apiUrl = `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}`;
 
       const [kRes, lRes] = await Promise.all([
         fetch(`${apiUrl}/api/tenants/${tenant.id}/kiosks`),
@@ -73,8 +73,8 @@ export default function QrSelector({ tenant, themeColor }) {
 
     try {
       const url = editingId
-        ? `${window.location.protocol}//${window.location.hostname}:5001/api/tenants/${tenant.id}/kiosks/${editingId}`
-        : `${window.location.protocol}//${window.location.hostname}:5001/api/tenants/${tenant.id}/kiosks`;
+        ? `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenants/${tenant.id}/kiosks/${editingId}`
+        : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenants/${tenant.id}/kiosks`;
 
       const method = editingId ? 'PUT' : 'POST';
 
@@ -101,7 +101,7 @@ export default function QrSelector({ tenant, themeColor }) {
   const handleDelete = async (id) => {
     if (!window.confirm('Ești sigur că vrei să ștergi acest Kiosk?')) return;
     try {
-      const res = await fetch(`${window.location.protocol}//${window.location.hostname}:5001/api/tenants/${tenant.id}/kiosks/${id}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenants/${tenant.id}/kiosks/${id}`, {
         method: 'DELETE'
       });
       if (!res.ok) throw new Error('Nu s-a putut șterge Kiosk-ul.');

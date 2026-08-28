@@ -57,7 +57,7 @@ export default function EmployeesList({ tenant, themeColor }) {
 
   const fetchLocations = async () => {
     try {
-      const res = await fetch(`${window.location.protocol}//${window.location.hostname}:5001/api/tenants/${tenant.id}/locations`);
+      const res = await fetch(`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenants/${tenant.id}/locations`);
       if (res.ok) {
         setLocations(await res.json());
       }
@@ -68,7 +68,7 @@ export default function EmployeesList({ tenant, themeColor }) {
 
   const fetchJobTitles = async () => {
     try {
-      const res = await fetch(`${window.location.protocol}//${window.location.hostname}:5001/api/tenants/${tenant.id}/job-titles`);
+      const res = await fetch(`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenants/${tenant.id}/job-titles`);
       if (res.ok) {
         setJobTitles(await res.json());
       }
@@ -80,7 +80,7 @@ export default function EmployeesList({ tenant, themeColor }) {
   const fetchEmployees = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${window.location.protocol}//${window.location.hostname}:5001/api/tenants/${tenant.id}/employees`);
+      const res = await fetch(`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenants/${tenant.id}/employees`);
       if (res.ok) {
         const data = await res.json();
         setEmployees(data);
@@ -157,8 +157,8 @@ export default function EmployeesList({ tenant, themeColor }) {
       }
 
       const url = editingId 
-        ? `${window.location.protocol}//${window.location.hostname}:5001/api/tenants/${tenant.id}/employees/${editingId}`
-        : `${window.location.protocol}//${window.location.hostname}:5001/api/tenants/${tenant.id}/employees`;
+        ? `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenants/${tenant.id}/employees/${editingId}`
+        : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenants/${tenant.id}/employees`;
         
       const res = await fetch(url, {
         method: editingId ? 'PUT' : 'POST',
@@ -189,7 +189,7 @@ export default function EmployeesList({ tenant, themeColor }) {
   const handleResetPin = async (empId) => {
     if (!window.confirm('Sigur doriți să resetați PIN-ul pentru acest angajat? Acesta va primi un PIN nou.')) return;
     try {
-      const res = await fetch(`${window.location.protocol}//${window.location.hostname}:5001/api/tenants/${tenant.id}/employees/${empId}/reset-pin`, { method: 'POST' });
+      const res = await fetch(`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenants/${tenant.id}/employees/${empId}/reset-pin`, { method: 'POST' });
       if (res.ok) {
         const data = await res.json();
         alert(`PIN-ul a fost resetat cu succes!\nNoul PIN este: ${data.newPin}`);
@@ -206,7 +206,7 @@ export default function EmployeesList({ tenant, themeColor }) {
   const handleDelete = async () => {
     if (!employeeToDelete) return;
     try {
-      const res = await fetch(`${window.location.protocol}//${window.location.hostname}:5001/api/tenants/${tenant.id}/employees/${employeeToDelete.id}`, { method: 'DELETE' });
+      const res = await fetch(`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenants/${tenant.id}/employees/${employeeToDelete.id}`, { method: 'DELETE' });
       if (res.ok) {
         setEmployeeToDelete(null);
         fetchEmployees();
@@ -292,7 +292,7 @@ export default function EmployeesList({ tenant, themeColor }) {
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           {emp.avatar_path ? (
-                            <img src={`${window.location.protocol}//${window.location.hostname}:5001${emp.avatar_path}`} alt="Avatar" className="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-slate-700" />
+                            <img src={`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${emp.avatar_path}`} alt="Avatar" className="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-slate-700" />
                           ) : (
                             <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 font-bold">
                               {emp.first_name?.[0] || '?'}{emp.last_name?.[0] || ''}
@@ -354,7 +354,7 @@ export default function EmployeesList({ tenant, themeColor }) {
                               eval_performance: emp.eval_performance || 0,
                               eval_reliability: emp.eval_reliability || 0
                             });
-                            setAvatarUrl(emp.avatar_path ? `${window.location.protocol}//${window.location.hostname}:5001${emp.avatar_path}` : null);
+                            setAvatarUrl(emp.avatar_path ? `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${emp.avatar_path}` : null);
                             setIdCardBlob(null);
                             setEditingId(emp.id);
                             setSaveError(null);
@@ -597,7 +597,7 @@ export default function EmployeesList({ tenant, themeColor }) {
                           onClick={async () => {
                             if (!newJobName.trim()) return;
                             try {
-                              const res = await fetch(`${window.location.protocol}//${window.location.hostname}:5001/api/tenants/${tenant.id}/job-titles`, {
+                              const res = await fetch(`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenants/${tenant.id}/job-titles`, {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ name: newJobName.trim() })
