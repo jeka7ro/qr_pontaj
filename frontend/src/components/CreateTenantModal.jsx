@@ -40,7 +40,7 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
         parola_initiala: '',
         distanta_gps: editTenant.raza_gps?.toString() || '100',
         mod_qr: editTenant.mod_qr || 'STATIC',
-        modules: editTenant.modules || {
+        modules: {
           billing: false,
           leaves: false,
           export_saga: false,
@@ -52,7 +52,8 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
           face_recognition: false,
           whatsapp: false,
           assets: false,
-          show_upsells: true
+          show_upsells: true,
+          ...(editTenant.modules || {})
         }
       });
     }
@@ -322,17 +323,17 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
               
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {[
-                  { id: 'billing', label: 'Facturare / Plăți Online', color: 'bg-emerald-500' },
-                  { id: 'leaves', label: 'Zile Libere (CO/CM)', color: 'bg-blue-500' },
-                  { id: 'export_saga', label: 'Export Conta (SAGA)', color: 'bg-purple-500' },
-                  { id: 'geofence', label: 'Geofence Avansat pe Hartă', color: 'bg-orange-500' },
-                  { id: 'offline', label: 'Mod Offline (Reziliență)', color: 'bg-slate-700' },
-                  { id: 'revisal', label: 'Integrare API REVISAL', color: 'bg-red-500' },
-                  { id: 'erp', label: 'Modul ERP & Contracte', color: 'bg-indigo-500' },
-                  { id: 'shifts', label: 'Planificator Ture (Shifts)', color: 'bg-cyan-500' },
-                  { id: 'face_recognition', label: 'Recunoaștere Facială (AI)', color: 'bg-rose-500' },
-                  { id: 'whatsapp', label: 'Alerte WhatsApp/SMS', color: 'bg-green-500' },
-                  { id: 'assets', label: 'Gestiune Echipamente', color: 'bg-yellow-500' }
+                  { id: 'billing', label: 'Facturare / Plăți Online', color: 'peer-checked:bg-emerald-500' },
+                  { id: 'leaves', label: 'Zile Libere (CO/CM)', color: 'peer-checked:bg-blue-500' },
+                  { id: 'export_saga', label: 'Export Conta (SAGA)', color: 'peer-checked:bg-purple-500' },
+                  { id: 'geofence', label: 'Geofence Avansat pe Hartă', color: 'peer-checked:bg-orange-500' },
+                  { id: 'offline', label: 'Mod Offline (Reziliență)', color: 'peer-checked:bg-slate-700' },
+                  { id: 'revisal', label: 'Integrare API REVISAL', color: 'peer-checked:bg-red-500' },
+                  { id: 'erp', label: 'Modul ERP & Contracte', color: 'peer-checked:bg-indigo-500' },
+                  { id: 'shifts', label: 'Planificator Ture (Shifts)', color: 'peer-checked:bg-cyan-500' },
+                  { id: 'face_recognition', label: 'Recunoaștere Facială (AI)', color: 'peer-checked:bg-rose-500' },
+                  { id: 'whatsapp', label: 'Alerte WhatsApp/SMS', color: 'peer-checked:bg-green-500' },
+                  { id: 'assets', label: 'Gestiune Echipamente', color: 'peer-checked:bg-yellow-500' }
                 ].map(mod => (
                   <label key={mod.id} className="flex items-center justify-between p-3 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors">
                     <span className="text-sm font-semibold text-slate-700">{mod.label}</span>
@@ -340,10 +341,10 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
                       <input 
                         type="checkbox" 
                         className="sr-only peer" 
-                        checked={formData.modules[mod.id]}
+                        checked={formData.modules[mod.id] || false}
                         onChange={() => handleModuleToggle(mod.id)}
                       />
-                      <div className={`w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:${mod.color}`}></div>
+                      <div className={`w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all ${mod.color}`}></div>
                     </div>
                   </label>
                 ))}
