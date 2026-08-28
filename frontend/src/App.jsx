@@ -5,6 +5,7 @@ import AdminDashboard from './pages/admin/Dashboard';
 import TenantDashboard from './pages/tenant/Dashboard';
 import KioskDisplay from './pages/kiosk/KioskDisplay';
 import ScanScreen from './pages/scan/ScanScreen';
+import LandingPage from './pages/LandingPage';
 
 const getIsSubdomain = () => {
   const hostname = window.location.hostname;
@@ -17,6 +18,7 @@ const getIsSubdomain = () => {
     isIp || 
     hostname === 'qrpontaj.ro' || 
     hostname === 'scan.pontaj.app' || 
+    hostname === 'qr.pontaj.app' ||
     hostname.endsWith('.up.railway.app')
   ) {
     return false;
@@ -56,11 +58,11 @@ function App() {
           </>
         )}
 
-        {/* Dacă suntem pe domeniul root, /login duce la Admin Login */}
+        {/* Dacă suntem pe domeniul root, arătăm Landing Page pe /, iar /login duce la Admin Login */}
         {!isSubdomain && (
           <>
+            <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<AdminLogin />} />
-            <Route path="/" element={<Navigate to="/admin/login" replace />} />
           </>
         )}
 
