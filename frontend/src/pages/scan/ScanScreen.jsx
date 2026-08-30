@@ -209,7 +209,7 @@ export default function ScanScreen() {
           {employeeInfo && employeeInfo.showPhoto !== false && (
             <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4 flex items-center gap-4 text-left">
               {employeeInfo.avatar_path ? (
-                <img src={`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${employeeInfo.avatar_path}`} alt="Avatar" className="w-12 h-12 rounded-full object-cover border border-slate-200 dark:border-slate-700" />
+                <img src={( employeeInfo.avatar_path?.startsWith('http') ? employeeInfo.avatar_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${employeeInfo.avatar_path}` )} alt="Avatar" className="w-12 h-12 rounded-full object-cover border border-slate-200 dark:border-slate-700" />
               ) : (
                 <div className="w-12 h-12 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 font-bold border border-slate-300 dark:border-slate-600">
                   {employeeInfo.first_name[0]}{employeeInfo.last_name[0]}
@@ -236,7 +236,7 @@ export default function ScanScreen() {
           {/* Header */}
           <div className="p-6 text-center border-b border-slate-800 bg-slate-950">
             {tenant.logo_url ? (
-              <img src={tenant.logo_url.startsWith('http') ? tenant.logo_url : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${tenant.logo_url}`} alt="Logo" className="h-14 object-contain mx-auto mb-3 filter drop-shadow-md" />
+              <img src={tenant.logo_url.startsWith('http') ? tenant.logo_url : ( tenant.logo_url?.startsWith('http') ? tenant.logo_url : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${tenant.logo_url}` )} alt="Logo" className="h-14 object-contain mx-auto mb-3 filter drop-shadow-md" />
             ) : (
               <div
                 className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-black shadow-sm mx-auto mb-3"

@@ -110,7 +110,7 @@ export default function CreateShiftModal({ onClose, onShiftCreated, tenantId, em
                           >
                             <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-[10px] font-bold overflow-hidden shrink-0">
                               {emp.avatar_path ? (
-                                <img src={`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${emp.avatar_path}`} className="w-full h-full object-cover" />
+                                <img src={( emp.avatar_path?.startsWith('http') ? emp.avatar_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${emp.avatar_path}` )} className="w-full h-full object-cover" />
                               ) : (
                                 (emp.first_name + ' ' + emp.last_name).substring(0, 2).toUpperCase()
                               )}

@@ -456,7 +456,7 @@ export default function KioskDisplay() {
             }}
           >
             <img 
-              src={tenant.logo_url.startsWith('http') ? tenant.logo_url : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${tenant.logo_url}`} 
+              src={tenant.logo_url.startsWith('http') ? tenant.logo_url : ( tenant.logo_url?.startsWith('http') ? tenant.logo_url : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${tenant.logo_url}` )} 
               alt={tenant.name} 
               className="object-contain transition-all"
               style={{ height: `${(kioskColors.logo_size || 1) * 1.5 + 2}rem` }}
@@ -534,7 +534,7 @@ export default function KioskDisplay() {
                 <div className={`w-[320px] h-[320px] ${isVertical ? 'w-[280px] h-[280px]' : ''} flex flex-col items-center justify-center text-center animate-in fade-in zoom-in duration-300 relative z-10`}>
                   <div className={`w-24 h-24 rounded-full mb-4 flex items-center justify-center border-4 ${scanSuccess.action === 'INTRARE' ? 'border-green-500 bg-green-50' : 'border-orange-500 bg-orange-50'} shadow-lg overflow-hidden`}>
                     {scanSuccess.employee?.avatar_path ? (
-                      <img src={`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${scanSuccess.employee.avatar_path}`} alt="Avatar" className="w-full h-full object-cover" />
+                      <img src={( scanSuccess.employee.avatar_path?.startsWith('http') ? scanSuccess.employee.avatar_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${scanSuccess.employee.avatar_path}` )} alt="Avatar" className="w-full h-full object-cover" />
                     ) : (
                       <User size={40} className={scanSuccess.action === 'INTRARE' ? 'text-green-500' : 'text-orange-500'} />
                     )}

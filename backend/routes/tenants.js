@@ -16,19 +16,31 @@ const whatsappRouter = require('./whatsapp');
 const assetsRouter = require('./assets');
 const hardwareScanRouter = require('./hardwareScan');
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const dir = path.join(__dirname, '../uploads/avatars');
-    if (!fs.existsSync(dir)){
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    cb(null, dir);
-  },
-  filename: (req, file, cb) => {
-    cb(null, `avatar_${Date.now()}_${Math.round(Math.random() * 1E9)}${path.extname(file.originalname)}`);
-  }
-});
+const storage = multer.memoryStorage();
 const upload = multer({ storage });
+const supabase = require('../supabaseClient');
+
+const uploadToSupabase = async (file, folder = 'avatars') => {
+  if (!file) return null;
+  const fileName = `${folder}/${Date.now()}_${Math.round(Math.random() * 1E9)}${path.extname(file.originalname)}`;
+  const { data, error } = await supabase.storage
+    .from('uploads')
+    .upload(fileName, file.buffer, {
+      contentType: file.mimetype,
+      upsert: true
+    });
+    
+  if (error) {
+    console.error('Supabase upload error:', error);
+    throw error;
+  }
+  
+  const { data: publicUrlData } = supabase.storage
+    .from('uploads')
+    .getPublicUrl(fileName);
+    
+  return publicUrlData.publicUrl;
+};
 
 // Mount sub-routers
 router.use('/:id/shifts', shiftsRouter);
@@ -371,10 +383,10 @@ router.post('/:id/employees', upload.fields([{ name: 'avatar', maxCount: 1 }, { 
     let idCardPath = null;
     if (req.files) {
       if (req.files.avatar && req.files.avatar.length > 0) {
-        avatarPath = `/uploads/avatars/${req.files.avatar[0].filename}`;
+        avatarPath = await uploadToSupabase(req.files.avatar[0], 'avatars');
       }
       if (req.files.id_card && req.files.id_card.length > 0) {
-        idCardPath = `/uploads/avatars/${req.files.id_card[0].filename}`; // using same folder for now or we could use /uploads/documents/
+        idCardPath = await uploadToSupabase(req.files.id_card[0], 'documents');
       }
     }
 
@@ -659,10 +671,10 @@ router.put('/:id/employees/:empId', upload.fields([{ name: 'avatar', maxCount: 1
     
     if (req.files) {
       if (req.files.avatar && req.files.avatar.length > 0) {
-        avatarPath = `/uploads/avatars/${req.files.avatar[0].filename}`;
+        avatarPath = await uploadToSupabase(req.files.avatar[0], 'avatars');
       }
       if (req.files.id_card && req.files.id_card.length > 0) {
-        idCardPath = `/uploads/avatars/${req.files.id_card[0].filename}`;
+        idCardPath = await uploadToSupabase(req.files.id_card[0], 'documents');
       }
     }
 
@@ -939,7 +951,7 @@ router.get('/:id/employees/:empId/history', async (req, res) => {
 router.post('/:id/employees/:empId/avatar', upload.single('avatar'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'Niciun fișier selectat.' });
-    const avatarPath = `/uploads/avatars/${req.file.filename}`;
+    const avatarPath = await uploadToSupabase(req.file, 'avatars');
     
     await pool.query('UPDATE qrp_employees SET avatar_path = $1 WHERE id = $2', [avatarPath, req.params.empId]);
     res.json({ success: true, avatar_path: avatarPath });
@@ -965,7 +977,7 @@ router.post('/:id/employees/:empId/documents', upload.single('document'), async 
   try {
     if (!req.file) return res.status(400).json({ error: 'Niciun document selectat.' });
     
-    const filePath = `/uploads/avatars/${req.file.filename}`; // Reusing the avatars folder for simplicity, or we can use another folder.
+    const filePath = await uploadToSupabase(req.file, 'documents');
     const fileName = req.body.file_name || req.file.originalname;
     
     const result = await pool.query(

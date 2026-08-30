@@ -302,7 +302,7 @@ export default function LeavesModule({ tenant, themeColor }) {
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-3">
                         {leave.avatar_path ? (
-                          <img src={`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${leave.avatar_path}`} className="w-8 h-8 rounded-lg object-cover border border-slate-200 dark:border-slate-700" alt="avatar" />
+                          <img src={( leave.avatar_path?.startsWith('http') ? leave.avatar_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${leave.avatar_path}` )} className="w-8 h-8 rounded-lg object-cover border border-slate-200 dark:border-slate-700" alt="avatar" />
                         ) : (
                           <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-xs text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
                             {leave.employee_name?.[0] || 'U'}

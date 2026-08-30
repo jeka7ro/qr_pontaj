@@ -185,7 +185,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
       render: (row) => (
         <div className="flex items-center gap-3">
           {row.avatar_path ? (
-            <img src={`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${row.avatar_path}`} alt="Avatar" className="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-slate-700" />
+            <img src={( row.avatar_path?.startsWith('http') ? row.avatar_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${row.avatar_path}` )} alt="Avatar" className="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-slate-700" />
           ) : (
             <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 font-bold">
               {row.first_name[0]}{row.last_name[0]}

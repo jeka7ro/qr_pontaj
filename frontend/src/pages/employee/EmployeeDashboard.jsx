@@ -155,7 +155,7 @@ export default function EmployeeDashboard() {
           <div className="flex flex-col gap-3">
             {employee.tenant_logo ? (
               <img 
-                src={`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${employee.tenant_logo}`} 
+                src={( employee.tenant_logo?.startsWith('http') ? employee.tenant_logo : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${employee.tenant_logo}` )} 
                 alt="Logo" 
                 className="h-10 max-w-[120px] object-contain object-left drop-shadow-md"
               />
@@ -172,7 +172,7 @@ export default function EmployeeDashboard() {
           <div className="flex flex-col items-end gap-2">
             {employee.avatar_path && !avatarError ? (
               <img 
-                src={`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${employee.avatar_path}`} 
+                src={( employee.avatar_path?.startsWith('http') ? employee.avatar_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${employee.avatar_path}` )} 
                 alt="Avatar" 
                 className="w-14 h-14 rounded-full border-2 border-white/30 object-cover shadow-lg"
                 onError={() => setAvatarError(true)}
@@ -289,7 +289,7 @@ export default function EmployeeDashboard() {
                   imageSettings={
                     employee.tenant_logo
                       ? {
-                          src: `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${employee.tenant_logo}`,
+                          src: ( employee.tenant_logo?.startsWith('http') ? employee.tenant_logo : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${employee.tenant_logo}` ),
                           height: 48,
                           width: 48,
                           excavate: true,

@@ -203,7 +203,7 @@ export default function ShiftsModule({ tenant, themeColor }) {
                   <div className="p-4 flex items-center gap-3 border-r border-slate-100 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 group-hover/row:bg-transparent transition-colors">
                     <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-sm font-black text-slate-600 dark:text-slate-300 shrink-0 shadow-sm overflow-hidden">
                       {emp.avatar_path ? (
-                        <img src={`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${emp.avatar_path}`} alt={emp.first_name + ' ' + emp.last_name} className="w-full h-full object-cover" />
+                        <img src={( emp.avatar_path?.startsWith('http') ? emp.avatar_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${emp.avatar_path}` )} alt={emp.first_name + ' ' + emp.last_name} className="w-full h-full object-cover" />
                       ) : (
                         (emp.first_name + ' ' + emp.last_name).substring(0, 2).toUpperCase()
                       )}

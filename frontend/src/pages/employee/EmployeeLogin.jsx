@@ -75,7 +75,7 @@ export default function EmployeeLogin() {
         <div className="p-8 text-center text-white" style={{ backgroundColor: tc }}>
           <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4 backdrop-blur-sm overflow-hidden">
             {tenant?.logo_url ? (
-              <img src={`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${tenant.logo_url}`} alt="Logo" className="w-full h-full object-contain p-2" />
+              <img src={( tenant.logo_url?.startsWith('http') ? tenant.logo_url : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${tenant.logo_url}` )} alt="Logo" className="w-full h-full object-contain p-2" />
             ) : (
               <User size={32} />
             )}

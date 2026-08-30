@@ -193,8 +193,8 @@ const EmployeeProfile = ({ tenant, themeColor }) => {
     return <div className="p-8 text-center text-slate-500 dark:text-slate-400 font-medium">Angajatul nu a fost găsit.</div>;
   }
 
-  const avatarSrc = employee.avatar_path ? `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${employee.avatar_path}` : 'https://ui-avatars.com/api/?name=' + employee.first_name + '+' + employee.last_name + '&background=random';
-  const idCardSrc = employee.id_card_path ? `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${employee.id_card_path}` : null;
+  const avatarSrc = employee.avatar_path ? ( employee.avatar_path?.startsWith('http') ? employee.avatar_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${employee.avatar_path}` ) : 'https://ui-avatars.com/api/?name=' + employee.first_name + '+' + employee.last_name + '&background=random';
+  const idCardSrc = employee.id_card_path ? ( employee.id_card_path?.startsWith('http') ? employee.id_card_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${employee.id_card_path}` ) : null;
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-6">
@@ -600,23 +600,23 @@ const EmployeeProfile = ({ tenant, themeColor }) => {
                 <span className="px-3 py-1 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-lg">{lightboxIndex + 1} / {documents.length}</span>
                 <h3 className="font-bold text-slate-800 dark:text-white truncate max-w-xs md:max-w-md">{documents[lightboxIndex].file_name}</h3>
               </div>
-              <a href={`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${documents[lightboxIndex].file_path}`} target="_blank" rel="noreferrer" className="flex items-center px-4 py-2 rounded-lg text-sm font-bold bg-primary-50 text-primary-600 hover:bg-primary-100 transition-colors">
+              <a href={( documents[lightboxIndex].file_path?.startsWith('http') ? documents[lightboxIndex].file_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${documents[lightboxIndex].file_path}` )} target="_blank" rel="noreferrer" className="flex items-center px-4 py-2 rounded-lg text-sm font-bold bg-primary-50 text-primary-600 hover:bg-primary-100 transition-colors">
                 <Download size={16} className="mr-2" /> Descarcă originalul
               </a>
             </div>
             <div className="flex-1 bg-slate-200 dark:bg-slate-700 overflow-hidden flex justify-center items-center p-4">
                {documents[lightboxIndex].file_path.toLowerCase().endsWith('.pdf') ? (
-                 <object data={`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${documents[lightboxIndex].file_path}`} type="application/pdf" className="w-full h-full rounded-lg shadow-sm bg-white">
+                 <object data={( documents[lightboxIndex].file_path?.startsWith('http') ? documents[lightboxIndex].file_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${documents[lightboxIndex].file_path}` )} type="application/pdf" className="w-full h-full rounded-lg shadow-sm bg-white">
                     <div className="p-12 text-center text-slate-500 dark:text-slate-400 flex flex-col items-center justify-center h-full bg-white rounded-lg">
                       <FileText size={48} className="text-slate-300 mb-4" />
                       <p className="text-lg font-medium mb-4">Browserul (sau telefonul tău) nu suportă previzualizarea directă a PDF-urilor.</p>
-                      <a href={`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${documents[lightboxIndex].file_path}`} className="px-6 py-3 bg-primary-600 text-white rounded-lg font-bold shadow-sm">
+                      <a href={( documents[lightboxIndex].file_path?.startsWith('http') ? documents[lightboxIndex].file_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${documents[lightboxIndex].file_path}` )} className="px-6 py-3 bg-primary-600 text-white rounded-lg font-bold shadow-sm">
                         Descarcă PDF-ul pentru a-l vizualiza
                       </a>
                     </div>
                  </object>
                ) : (
-                 <img src={`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${documents[lightboxIndex].file_path}`} alt="Document" className="max-w-full max-h-full object-contain rounded-lg shadow-sm" />
+                 <img src={( documents[lightboxIndex].file_path?.startsWith('http') ? documents[lightboxIndex].file_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${documents[lightboxIndex].file_path}` )} alt="Document" className="max-w-full max-h-full object-contain rounded-lg shadow-sm" />
                )}
             </div>
           </div>

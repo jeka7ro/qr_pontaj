@@ -307,7 +307,7 @@ export default function EmployeesList({ tenant, themeColor }) {
                           {emp.avatar_path ? (
                             <>
                               <img 
-                                src={`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${emp.avatar_path}`} 
+                                src={( emp.avatar_path?.startsWith('http') ? emp.avatar_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${emp.avatar_path}` )} 
                                 alt="Avatar" 
                                 className="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-slate-700 dark:border-slate-700" 
                                 onError={(e) => {
@@ -385,7 +385,7 @@ export default function EmployeesList({ tenant, themeColor }) {
                               eval_performance: emp.eval_performance || 0,
                               eval_reliability: emp.eval_reliability || 0
                             });
-                            setAvatarUrl(emp.avatar_path ? `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${emp.avatar_path}` : null);
+                            setAvatarUrl(emp.avatar_path ? ( emp.avatar_path?.startsWith('http') ? emp.avatar_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${emp.avatar_path}` ) : null);
                             setIdCardBlob(null);
                             setEditingId(emp.id);
                             setSaveError(null);
