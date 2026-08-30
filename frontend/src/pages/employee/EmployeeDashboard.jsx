@@ -115,12 +115,17 @@ export default function EmployeeDashboard() {
 
   const getWeekDays = () => {
     const curr = new Date(currentDate);
-    const first = curr.getDate() - curr.getDay() + (curr.getDay() === 0 ? -6 : 1);
+    const dayOfWeek = curr.getDay();
+    const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    
+    const monday = new Date(curr);
+    monday.setDate(curr.getDate() + mondayOffset);
     
     const days = [];
     for (let i = 0; i < 7; i++) {
-      const next = new Date(curr.setDate(first + i));
-      days.push(next);
+      const day = new Date(monday);
+      day.setDate(monday.getDate() + i);
+      days.push(day);
     }
     return days;
   };
@@ -131,8 +136,11 @@ export default function EmployeeDashboard() {
     const dateStr = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
     return shifts.find(s => {
       if (!s.date) return false;
-      const shiftDate = new Date(s.date);
-      const sDateStr = `${shiftDate.getFullYear()}-${String(shiftDate.getMonth()+1).padStart(2,'0')}-${String(shiftDate.getDate()).padStart(2,'0')}`;
+      // API returnează date ca string "2026-08-31" sau "2026-08-31T00:00:00.000Z"
+      const sDateStr = typeof s.date === 'string' ? s.date.slice(0, 10) : (() => {
+        const d = new Date(s.date);
+        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      })();
       return sDateStr === dateStr;
     });
   };

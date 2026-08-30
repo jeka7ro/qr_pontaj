@@ -1,0 +1,29 @@
+--- backend/routes/tenants.js
++++ backend/routes/tenants.js
+@@ -162,6 +162,26 @@
+   }
+ });
+ 
++// GET /api/tenants/subdomain/:subdomain - Detalii tenant prin subdomeniu (pentru login angajat/kiosk)
++router.get('/subdomain/:subdomain', async (req, res) => {
++  try {
++    const sub = req.params.subdomain.replace(/-/g, ''); // Ignoră cratimele pentru a fi mai flexibil
++    const query = `
++      SELECT t.id, t.name, t.subdomain, t.logo_url, t.theme_color, t.portal_bg_image_url, t.portal_bg_color
++      FROM qrp_tenants t
++      WHERE REPLACE(t.subdomain, '-', '') = $1
++      LIMIT 1
++    `;
++    const result = await pool.query(query, [sub]);
++    if (result.rows.length === 0) {
++      return res.status(404).json({ error: 'Tenant nu a fost găsit' });
++    }
++    res.json(result.rows[0]);
++  } catch (error) {
++    console.error('Error fetching tenant by subdomain:', error);
++    res.status(500).json({ error: 'Eroare server' });
++  }
++});
++
+ // GET /api/tenants/:id - Detalii tenant
+ router.get('/:id', async (req, res) => {
