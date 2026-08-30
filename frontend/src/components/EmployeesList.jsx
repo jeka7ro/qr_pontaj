@@ -566,12 +566,6 @@ export default function EmployeesList({ tenant, themeColor }) {
               >
                 2. Funcție & Contract
               </button>
-              <button 
-                className={`pb-3 text-sm font-bold border-b-2 transition-colors ${activeTab === 'evaluare' ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300 dark:hover:text-slate-300'}`}
-                onClick={() => setActiveTab('evaluare')}
-              >
-                3. Evaluare Performanță
-              </button>
             </div>
 
             <div className="flex-1 overflow-y-auto p-6 bg-slate-50 dark:bg-slate-800/50/50 dark:bg-slate-900/30">
@@ -793,42 +787,7 @@ export default function EmployeesList({ tenant, themeColor }) {
                   </div>
                 </div>
 
-                {/* TAB 3: EVALUARE PERFORMANTA */}
-                <div className={activeTab === 'evaluare' ? 'flex flex-col gap-5' : 'hidden'}>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 dark:text-slate-400 mb-2">Acordă o notă de la 0 la 5 pentru fiecare categorie. Aceste note te vor ajuta la evaluarea anuală.</p>
-                  
-                  {[
-                    { key: 'eval_punctuality', label: 'Punctualitate (Întârzieri/Ore Suplimentare)', icon: '⏱️' },
-                    { key: 'eval_attendance', label: 'Prezență (Absențe/Zile Libere)', icon: '📅' },
-                    { key: 'eval_attitude', label: 'Atitudine (Relația cu Colegii/Clienții)', icon: '🤝' },
-                    { key: 'eval_performance', label: 'Performanță (Calitatea Muncii)', icon: '⭐' },
-                    { key: 'eval_reliability', label: 'Seriozitate (Responsabilitate)', icon: '🛡️' }
-                  ].map(metric => (
-                    <div key={metric.key} className="flex items-center justify-between bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-800/50 p-4 rounded-lg border border-slate-100 dark:border-slate-700/50 dark:border-slate-700">
-                      <div className="flex items-center gap-3">
-                        <span className="text-xl">{metric.icon}</span>
-                        <span className="font-bold text-sm text-slate-700 dark:text-slate-300 dark:text-slate-300">{metric.label}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        {[1, 2, 3, 4, 5].map(star => (
-                          <button
-                            key={star}
-                            type="button"
-                            onClick={() => setFormData({...formData, [metric.key]: formData[metric.key] === star ? 0 : star})}
-                            className="p-1 transition-transform hover:scale-110 focus:outline-none"
-                          >
-                            <svg 
-                              className={`w-6 h-6 ${formData[metric.key] >= star ? 'text-yellow-400 drop-shadow-sm' : 'text-slate-200 dark:text-slate-600'}`} 
-                              fill="currentColor" viewBox="0 0 20 20"
-                            >
-                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                            </svg>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+
 
               </form>
             </div>
