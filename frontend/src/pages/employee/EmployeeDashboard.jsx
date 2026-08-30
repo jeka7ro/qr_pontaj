@@ -277,12 +277,12 @@ export default function EmployeeDashboard() {
             )}
           </>
         ) : (
-          <div className="flex flex-col items-center justify-center py-8">
-            <div className="bg-white p-8 rounded-3xl shadow-xl border border-slate-100 mb-6 flex flex-col items-center">
-              <div className="p-6 rounded-2xl border mb-6 bg-[var(--tc-50)] border-[var(--tc-100)]">
+          <div className="flex flex-col items-center justify-center py-4">
+            <div className="bg-white p-5 rounded-3xl shadow-xl border border-slate-100 mb-6 flex flex-col items-center w-full max-w-[340px]">
+              <div className="p-3 rounded-2xl border mb-6 bg-[var(--tc-50)] border-[var(--tc-100)]">
                 <QRCodeSVG 
                   value={`QRP-EMP-${employee.tenant_id}-${employee.id}`}
-                  size={200}
+                  size={260}
                   level="H"
                   includeMargin={true}
                   fgColor={tc}
