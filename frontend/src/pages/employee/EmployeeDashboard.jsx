@@ -541,34 +541,29 @@ export default function EmployeeDashboard() {
 
       {/* Bottom Navigation Bar */}
       <div 
-        className="fixed bottom-0 left-0 right-0 border-t border-transparent px-6 py-3 flex justify-around items-center z-50 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.15)] text-white"
+        className="fixed bottom-0 left-0 right-0 border-t border-transparent px-4 py-2.5 flex justify-around items-end z-50 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.15)] text-white"
         style={{ backgroundColor: 'var(--tc)' }}
       >
         <button 
           onClick={() => setActiveTab('schedule')}
-          className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'schedule' ? 'text-white' : 'text-white/60 hover:text-white/80'}`}
+          className={`flex flex-col items-center gap-1 transition-colors min-w-[60px] ${activeTab === 'schedule' ? 'text-white' : 'text-white/50 hover:text-white/80'}`}
         >
-          <CalendarDays size={24} className={activeTab === 'schedule' ? 'drop-shadow-md' : ''} />
-          <span className="text-[10px] font-bold uppercase tracking-wider">Program</span>
+          <CalendarDays size={22} />
+          <span className="text-[9px] font-bold uppercase tracking-wider">Program</span>
         </button>
         <button 
           onClick={() => setActiveTab('qr')}
-          className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'qr' ? 'text-white' : 'text-white/60 hover:text-white/80'}`}
+          className={`flex flex-col items-center gap-1 transition-colors min-w-[60px] ${activeTab === 'qr' ? 'text-white' : 'text-white/50 hover:text-white/80'}`}
         >
-          <div 
-            className={`p-2 rounded-full -mt-3 mb-1 border-2 border-white/20 ${activeTab === 'qr' ? 'bg-white shadow-[0_4px_15px_rgba(255,255,255,0.3)]' : 'bg-white/10 text-white/80'}`}
-            style={activeTab === 'qr' ? { color: 'var(--tc)' } : {}}
-          >
-            <QrCode size={28} />
-          </div>
-          <span className="text-[10px] font-bold uppercase tracking-wider -mt-1">Ecuson</span>
+          <QrCode size={22} />
+          <span className="text-[9px] font-bold uppercase tracking-wider">Ecuson</span>
         </button>
         <button 
           onClick={() => setActiveTab('profile')}
-          className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'profile' ? 'text-white' : 'text-white/60 hover:text-white/80'}`}
+          className={`flex flex-col items-center gap-1 transition-colors min-w-[60px] ${activeTab === 'profile' ? 'text-white' : 'text-white/50 hover:text-white/80'}`}
         >
-          <User size={24} className={activeTab === 'profile' ? 'drop-shadow-md' : ''} />
-          <span className="text-[10px] font-bold uppercase tracking-wider">Profil</span>
+          <User size={22} />
+          <span className="text-[9px] font-bold uppercase tracking-wider">Profil</span>
         </button>
         <button 
           onClick={async () => {
@@ -579,10 +574,10 @@ export default function EmployeeDashboard() {
               if (res.ok) setLeaves(await res.json());
             } catch(e) { /* silent */ }
           }}
-          className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'leaves' ? 'text-white' : 'text-white/60 hover:text-white/80'}`}
+          className={`flex flex-col items-center gap-1 transition-colors min-w-[60px] ${activeTab === 'leaves' ? 'text-white' : 'text-white/50 hover:text-white/80'}`}
         >
-          <FileText size={24} className={activeTab === 'leaves' ? 'drop-shadow-md' : ''} />
-          <span className="text-[10px] font-bold uppercase tracking-wider">Concedii</span>
+          <FileText size={22} />
+          <span className="text-[9px] font-bold uppercase tracking-wider">Concedii</span>
         </button>
       </div>
 
