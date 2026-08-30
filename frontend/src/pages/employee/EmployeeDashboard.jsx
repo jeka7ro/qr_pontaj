@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, CalendarDays, Clock, MapPin, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { LogOut, CalendarDays, Clock, MapPin, ChevronLeft, ChevronRight, Loader2, QrCode } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 
 export default function EmployeeDashboard() {
   const [employee, setEmployee] = useState(null);
@@ -11,6 +12,16 @@ export default function EmployeeDashboard() {
 
   // Pentru navigare prin saptamani
   const [currentDate, setCurrentDate] = useState(new Date());
+  
+  const [activeTab, setActiveTab] = useState('schedule');
+  const [dynamicTs, setDynamicTs] = useState(Math.floor(Date.now() / 10000) * 10);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDynamicTs(Math.floor(Date.now() / 10000) * 10);
+    }, 10000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem('employee_token');
@@ -147,75 +158,121 @@ export default function EmployeeDashboard() {
       </div>
 
       {/* Continut */}
-      <div className="p-4 max-w-md mx-auto space-y-4 pb-10">
-        <div className="flex items-center gap-2 mb-2 px-1">
-          <CalendarDays size={18} className="text-primary-600" />
-          <h2 className="font-bold text-slate-700">Programul meu</h2>
-        </div>
+      <div className="p-4 max-w-md mx-auto space-y-4 pb-24">
+        {activeTab === 'schedule' ? (
+          <>
+            <div className="flex items-center gap-2 mb-2 px-1">
+              <CalendarDays size={18} className="text-primary-600" />
+              <h2 className="font-bold text-slate-700">Programul meu</h2>
+            </div>
 
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-12 text-slate-400">
-            <Loader2 className="animate-spin mb-2" size={32} />
-            <p className="text-sm">Se încarcă orarul...</p>
-          </div>
-        ) : error ? (
-          <div className="bg-red-50 text-red-600 p-4 rounded-2xl text-center text-sm">
-            {error}
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {weekDays.map((day, idx) => {
-              const shift = getShiftForDate(day);
-              const isToday = new Date().toDateString() === day.toDateString();
-              
-              const dayName = day.toLocaleDateString('ro-RO', { weekday: 'long' });
-              const dayNum = day.getDate();
-              const monthName = day.toLocaleDateString('ro-RO', { month: 'short' });
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+                <Loader2 className="animate-spin mb-2" size={32} />
+                <p className="text-sm">Se încarcă orarul...</p>
+              </div>
+            ) : error ? (
+              <div className="bg-red-50 text-red-600 p-4 rounded-2xl text-center text-sm">
+                {error}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {weekDays.map((day, idx) => {
+                  const shift = getShiftForDate(day);
+                  const isToday = new Date().toDateString() === day.toDateString();
+                  
+                  const dayName = day.toLocaleDateString('ro-RO', { weekday: 'long' });
+                  const dayNum = day.getDate();
+                  const monthName = day.toLocaleDateString('ro-RO', { month: 'short' });
 
-              return (
-                <div key={idx} className={`bg-white rounded-2xl p-4 shadow-sm border ${isToday ? 'border-primary-500 shadow-primary-500/10' : 'border-slate-100'}`}>
-                  <div className="flex items-start gap-4">
-                    <div className="flex flex-col items-center justify-center min-w-[50px]">
-                      <span className={`text-xs font-bold uppercase tracking-wider ${isToday ? 'text-primary-600' : 'text-slate-400'}`}>
-                        {dayName.slice(0, 3)}
-                      </span>
-                      <span className={`text-2xl font-bold ${isToday ? 'text-primary-600' : 'text-slate-700'}`}>
-                        {dayNum}
-                      </span>
-                      <span className="text-[10px] font-bold text-slate-400 uppercase">{monthName}</span>
-                    </div>
-                    
-                    <div className="flex-1 border-l border-slate-100 pl-4 py-1">
-                      {shift ? (
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <Clock size={16} className="text-primary-500" />
-                            <span className="font-bold text-slate-700">
-                              {shift.start_time.slice(0,5)} - {shift.end_time.slice(0,5)}
-                            </span>
-                            <span className="text-[10px] font-bold text-slate-500 uppercase ml-auto">
-                              {shift.shift_type === 'NIGHT' ? 'NOAPTE' : 'ZI'}
-                            </span>
-                          </div>
-                          {shift.notes && (
-                            <div className="flex items-start gap-2 text-sm text-slate-500">
-                              <MapPin size={14} className="mt-0.5 shrink-0" />
-                              <span className="leading-snug">{shift.notes}</span>
+                  return (
+                    <div key={idx} className={`bg-white rounded-2xl p-4 shadow-sm border ${isToday ? 'border-primary-500 shadow-primary-500/10' : 'border-slate-100'}`}>
+                      <div className="flex items-start gap-4">
+                        <div className="flex flex-col items-center justify-center min-w-[50px]">
+                          <span className={`text-xs font-bold uppercase tracking-wider ${isToday ? 'text-primary-600' : 'text-slate-400'}`}>
+                            {dayName.slice(0, 3)}
+                          </span>
+                          <span className={`text-2xl font-bold ${isToday ? 'text-primary-600' : 'text-slate-700'}`}>
+                            {dayNum}
+                          </span>
+                          <span className="text-[10px] font-bold text-slate-400 uppercase">{monthName}</span>
+                        </div>
+                        
+                        <div className="flex-1 border-l border-slate-100 pl-4 py-1">
+                          {shift ? (
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2">
+                                <Clock size={16} className="text-primary-500" />
+                                <span className="font-bold text-slate-700">
+                                  {shift.start_time.slice(0,5)} - {shift.end_time.slice(0,5)}
+                                </span>
+                                <span className="text-[10px] font-bold text-slate-500 uppercase ml-auto">
+                                  {shift.shift_type === 'NIGHT' ? 'NOAPTE' : 'ZI'}
+                                </span>
+                              </div>
+                              {shift.notes && (
+                                <div className="flex items-start gap-2 text-sm text-slate-500">
+                                  <MapPin size={14} className="mt-0.5 shrink-0" />
+                                  <span className="leading-snug">{shift.notes}</span>
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="h-full flex items-center py-2">
+                              <span className="text-sm font-medium text-slate-400 italic">Liber (fără tură)</span>
                             </div>
                           )}
                         </div>
-                      ) : (
-                        <div className="h-full flex items-center py-2">
-                          <span className="text-sm font-medium text-slate-400 italic">Liber (fără tură)</span>
-                        </div>
-                      )}
+                      </div>
                     </div>
-                  </div>
-                </div>
-              );
-            })}
+                  );
+                })}
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-8">
+            <div className="bg-white p-8 rounded-3xl shadow-xl border border-slate-100 mb-6 flex flex-col items-center">
+              <div className="bg-primary-50 p-6 rounded-2xl border border-primary-100 mb-6">
+                <QRCodeSVG 
+                  value={JSON.stringify({ 
+                    employee_id: employee.id, 
+                    code: employee.employee_code,
+                    t: employee.tenant_id,
+                    ts: dynamicTs
+                  })}
+                  size={200}
+                  level="H"
+                  includeMargin={true}
+                />
+              </div>
+              <h2 className="text-xl font-black text-slate-800 text-center uppercase tracking-tight">Ecuson Digital</h2>
+              <p className="text-sm text-slate-500 text-center mt-2 max-w-[200px] leading-relaxed">
+                Apropie acest cod de scanerul locației pentru a te ponta.
+              </p>
+            </div>
           </div>
         )}
+      </div>
+
+      {/* Bottom Navigation Bar */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-6 py-3 flex justify-around items-center z-50 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+        <button 
+          onClick={() => setActiveTab('schedule')}
+          className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'schedule' ? 'text-primary-600' : 'text-slate-400 hover:text-slate-600'}`}
+        >
+          <CalendarDays size={24} className={activeTab === 'schedule' ? 'drop-shadow-sm' : ''} />
+          <span className="text-[10px] font-bold uppercase tracking-wider">Program</span>
+        </button>
+        <button 
+          onClick={() => setActiveTab('qr')}
+          className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'qr' ? 'text-primary-600' : 'text-slate-400 hover:text-slate-600'}`}
+        >
+          <div className={`p-2 rounded-full -mt-6 mb-1 border-4 border-slate-50 ${activeTab === 'qr' ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/30' : 'bg-slate-200 text-slate-500'}`}>
+            <QrCode size={28} />
+          </div>
+          <span className="text-[10px] font-bold uppercase tracking-wider -mt-1">Ecuson</span>
+        </button>
       </div>
     </div>
   );
