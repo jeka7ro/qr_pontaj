@@ -32,11 +32,20 @@ export default function EmployeeDashboard() {
       return;
     }
     setEmployee(JSON.parse(empData));
-    fetchShifts(token, currentDate);
+    fetchShifts(token, currentDate, false);
+
+    // Refresh pe focus/revenire in aplicatie
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchShifts(token, currentDate, true);
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [currentDate, navigate]);
 
-  const fetchShifts = async (token, date) => {
-    setLoading(true);
+  const fetchShifts = async (token, date, isBackground = false) => {
+    if (!isBackground) setLoading(true);
     try {
       // Calculăm start și end pentru săptămâna curentă selectată
       const curr = new Date(date);
@@ -48,8 +57,13 @@ export default function EmployeeDashboard() {
       const endStr = `${end.getFullYear()}-${String(end.getMonth()+1).padStart(2,'0')}-${String(end.getDate()).padStart(2,'0')}`;
 
       const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
-      const res = await fetch(`${baseUrl}/api/employee/shifts?start_date=${startStr}&end_date=${endStr}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+      const res = await fetch(`${baseUrl}/api/employee/shifts?start_date=${startStr}&end_date=${endStr}&_t=${Date.now()}`, {
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        },
+        cache: 'no-store'
       });
 
       if (!res.ok) {
@@ -63,9 +77,9 @@ export default function EmployeeDashboard() {
       const data = await res.json();
       setShifts(data);
     } catch (err) {
-      setError(err.message);
+      if (!isBackground) setError(err.message);
     } finally {
-      setLoading(false);
+      if (!isBackground) setLoading(false);
     }
   };
 
