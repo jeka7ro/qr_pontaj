@@ -529,25 +529,36 @@ export default function KioskDisplay() {
               {/* Pulsing glow behind */}
               <div className="absolute inset-0 rounded-[3rem] animate-pulse-slow opacity-20" style={{ backgroundColor: themeColor, filter: 'blur(30px)', zIndex: -1 }}></div>
               
-              {scanSuccess ? (
+              {scanSuccess ? (() => {
+                // Normalizăm acțiunea: IN/INTRARE = intrare, OUT/IESIRE = ieșire
+                const isEntry = scanSuccess.action === 'INTRARE' || scanSuccess.action === 'IN' || scanSuccess.type === 'IN';
+                const actionLabel = isEntry ? 'INTRARE' : 'IEȘIRE';
+                return (
                 // SUCCESS SCREEN (HARDWARE)
                 <div className={`w-[320px] h-[320px] ${isVertical ? 'w-[280px] h-[280px]' : ''} flex flex-col items-center justify-center text-center animate-in fade-in zoom-in duration-300 relative z-10`}>
-                  <div className={`w-24 h-24 rounded-full mb-4 flex items-center justify-center border-4 ${scanSuccess.action === 'INTRARE' ? 'border-green-500 bg-green-50' : 'border-orange-500 bg-orange-50'} shadow-lg overflow-hidden`}>
+                  <div className={`w-24 h-24 rounded-full mb-4 flex items-center justify-center border-4 ${isEntry ? 'border-green-500 bg-green-50' : 'border-orange-500 bg-orange-50'} shadow-lg overflow-hidden`}>
                     {scanSuccess.employee?.avatar_path ? (
                       <img src={( scanSuccess.employee.avatar_path?.startsWith('http') ? scanSuccess.employee.avatar_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${scanSuccess.employee.avatar_path}` )} alt="Avatar" className="w-full h-full object-cover" />
                     ) : (
-                      <User size={40} className={scanSuccess.action === 'INTRARE' ? 'text-green-500' : 'text-orange-500'} />
+                      <User size={40} className={isEntry ? 'text-green-500' : 'text-orange-500'} />
                     )}
                   </div>
+                  <p className={`text-base font-bold mb-1 ${isEntry ? 'text-green-600' : 'text-orange-600'}`}>
+                    {isEntry ? '👋 Bine ai venit!' : '👋 La revedere!'}
+                  </p>
                   <h3 className="text-2xl font-black text-slate-900 leading-tight">
                     {scanSuccess.employee?.first_name} {scanSuccess.employee?.last_name}
                   </h3>
-                  <div className={`mt-3 inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-bold uppercase tracking-wider ${scanSuccess.action === 'INTRARE' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
+                  <p className="text-sm text-slate-500 mt-1 font-medium">
+                    {isEntry ? 'Tura ta a început. Spor la muncă!' : 'Tura ta s-a terminat. Odihnă plăcută!'}
+                  </p>
+                  <div className={`mt-3 inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-bold uppercase tracking-wider ${isEntry ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
                     <CheckCircle2 size={18} />
-                    {scanSuccess.action} ÎNREGISTRATĂ
+                    {actionLabel} ÎNREGISTRATĂ
                   </div>
                 </div>
-              ) : scanError ? (
+                );
+              })() : scanError ? (
                 // ERROR SCREEN (HARDWARE)
                 <div className={`w-[320px] h-[320px] ${isVertical ? 'w-[280px] h-[280px]' : ''} flex flex-col items-center justify-center text-center animate-in fade-in zoom-in duration-300 relative z-10`}>
                   <div className="w-24 h-24 rounded-full mb-4 flex items-center justify-center border-4 border-red-500 bg-red-50 shadow-lg">

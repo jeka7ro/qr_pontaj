@@ -1,16 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogIn, KeyRound, User, Loader2, AlertCircle } from 'lucide-react';
+import { LogIn, KeyRound, User, Loader2, AlertCircle, Eye, EyeOff } from 'lucide-react';
 
 export default function EmployeeLogin() {
   const [employeeCode, setEmployeeCode] = useState('');
   const [pinCode, setPinCode] = useState('');
+  const [showPin, setShowPin] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [tenant, setTenant] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Încarcă credențialele memorate
+    const saved = localStorage.getItem('emp_saved_credentials');
+    if (saved) {
+      try {
+        const { code, pin } = JSON.parse(saved);
+        setEmployeeCode(code || '');
+        setPinCode(pin || '');
+        setRememberMe(true);
+      } catch(e) { /* ignore */ }
+    }
+
     const fetchTenant = async () => {
       try {
         const hostname = window.location.hostname;
@@ -55,6 +68,13 @@ export default function EmployeeLogin() {
         throw new Error(data.error || 'Eroare la autentificare');
       }
 
+      // Salvează sau șterge credențialele memorate
+      if (rememberMe) {
+        localStorage.setItem('emp_saved_credentials', JSON.stringify({ code: employeeCode, pin: pinCode }));
+      } else {
+        localStorage.removeItem('emp_saved_credentials');
+      }
+
       // Salvează tokenul și detaliile
       localStorage.setItem('employee_token', data.token);
       localStorage.setItem('employee_data', JSON.stringify(data.employee));
@@ -73,7 +93,7 @@ export default function EmployeeLogin() {
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-white rounded-3xl shadow-xl overflow-hidden">
         <div className="p-8 text-center text-white" style={{ backgroundColor: tc }}>
-          <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4 backdrop-blur-sm overflow-hidden">
+          <div className="w-[84px] h-[84px] bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4 backdrop-blur-sm overflow-hidden">
             {tenant?.logo_url ? (
               <img src={( tenant.logo_url?.startsWith('http') ? tenant.logo_url : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${tenant.logo_url}` )} alt="Logo" className="w-full h-full object-contain p-2" />
             ) : (
@@ -117,23 +137,48 @@ export default function EmployeeLogin() {
                   <KeyRound size={18} />
                 </div>
                 <input
-                  type="password"
+                  type={showPin ? 'text' : 'password'}
                   inputMode="numeric"
                   maxLength="4"
                   value={pinCode}
                   onChange={(e) => setPinCode(e.target.value.replace(/\D/g, ''))}
-                  className="w-full pl-11 pr-4 py-3 bg-slate-50 border-0 rounded-2xl focus:ring-2 focus:ring-primary-500 font-bold text-slate-700 tracking-widest outline-none transition-shadow"
+                  className="w-full pl-11 pr-12 py-3 bg-slate-50 border-0 rounded-2xl focus:ring-2 focus:ring-primary-500 font-bold text-slate-700 tracking-widest outline-none transition-shadow"
                   placeholder="••••"
                   required
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPin(!showPin)}
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
+                >
+                  {showPin ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
               </div>
             </div>
           </div>
 
+          {/* Memorare credențiale */}
+          <label className="flex items-center gap-3 cursor-pointer select-none">
+            <div className="relative">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="sr-only peer"
+              />
+              <div 
+                className="w-10 h-5 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all"
+                style={rememberMe ? { backgroundColor: tc } : {}}
+              ></div>
+            </div>
+            <span className="text-sm text-slate-600 font-medium">Ține-mă minte</span>
+          </label>
+
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-4 rounded-full transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary-500/30 disabled:opacity-70"
+            className="w-full text-white font-bold py-4 rounded-full transition-all flex items-center justify-center gap-2 shadow-lg disabled:opacity-70"
+            style={{ backgroundColor: tc }}
           >
             {loading ? <Loader2 className="animate-spin" size={20} /> : <LogIn size={20} />}
             <span>{loading ? 'Se verifică...' : 'Intră în cont'}</span>

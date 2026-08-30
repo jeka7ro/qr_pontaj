@@ -36,35 +36,56 @@ router.post('/', async (req, res) => {
     }
     const employee = empResult.rows[0];
 
-    // Găsim ultimul pontaj de azi
-    const todayStr = new Date().toISOString().split('T')[0];
+    // Rezolvăm location_id din kiosk
+    let location_id = null;
+    let showPhoto = true;
+    if (kiosk_id) {
+      const kioskRes = await pool.query('SELECT location_id, kiosk_show_photo FROM qrp_kiosks WHERE id = $1', [kiosk_id]);
+      if (kioskRes.rows.length > 0) {
+        location_id = kioskRes.rows[0].location_id;
+        showPhoto = kioskRes.rows[0].kiosk_show_photo;
+      }
+    }
+
+    // Găsim ultimul pontaj (indiferent de ziua de azi, pentru a preveni dubla acțiune)
     const lastScanRes = await pool.query(
       `SELECT action_type 
        FROM qrp_timesheets 
-       WHERE employee_id = $1 AND DATE(timestamp) = $2
-       ORDER BY timestamp DESC LIMIT 1`,
-      [employeeId, todayStr]
+       WHERE employee_id = $1
+       ORDER BY created_at DESC LIMIT 1`,
+      [employeeId]
     );
 
-    let nextAction = 'INTRARE';
-    if (lastScanRes.rows.length > 0 && lastScanRes.rows[0].action_type === 'INTRARE') {
-      nextAction = 'IESIRE';
+    // Normalizăm: IN/INTRARE = intrat, OUT/IESIRE = ieșit
+    let nextAction = 'IN';
+    if (lastScanRes.rows.length > 0) {
+      const lastAction = lastScanRes.rows[0].action_type;
+      if (lastAction === 'IN' || lastAction === 'INTRARE') {
+        nextAction = 'OUT';
+      }
     }
 
-    // Salvăm pontajul
+    // Salvăm pontajul cu location_id corect (nu kiosk_id)
     const insertRes = await pool.query(
       'INSERT INTO qrp_timesheets (tenant_id, employee_id, action_type, site_id) VALUES ($1, $2, $3, $4) RETURNING *',
-      [tenantId, employeeId, nextAction, kiosk_id || null]
+      [tenantId, employeeId, nextAction, location_id]
+    );
+
+    // Salvare în istoric
+    await pool.query(
+      'INSERT INTO qrp_employee_history (employee_id, change_type, new_value) VALUES ($1, $2, $3)',
+      [employeeId, 'pontaj', `Pontaj ${nextAction === 'IN' ? 'INTRARE' : 'IEȘIRE'} via QR hardware. Kiosk ID: ${kiosk_id}`]
     );
 
     res.json({
       success: true,
       action: nextAction,
-      timestamp: insertRes.rows[0].timestamp,
+      type: nextAction,
+      timestamp: insertRes.rows[0].created_at,
       employee: {
         first_name: employee.first_name,
         last_name: employee.last_name,
-        avatar_path: employee.avatar_path
+        avatar_path: showPhoto ? employee.avatar_path : null
       }
     });
 

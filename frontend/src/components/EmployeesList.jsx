@@ -309,18 +309,18 @@ export default function EmployeesList({ tenant, themeColor }) {
                               <img 
                                 src={( emp.avatar_path?.startsWith('http') ? emp.avatar_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${emp.avatar_path}` )} 
                                 alt="Avatar" 
-                                className="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-slate-700 dark:border-slate-700" 
+                                className="w-10 h-10 rounded-xl object-cover border border-slate-200 dark:border-slate-700 dark:border-slate-700" 
                                 onError={(e) => {
                                   e.target.style.display = 'none';
                                   if (e.target.nextElementSibling) e.target.nextElementSibling.style.display = 'flex';
                                 }}
                               />
-                              <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 dark:text-slate-300 font-bold" style={{ display: 'none' }}>
+                              <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 dark:text-slate-300 font-bold" style={{ display: 'none' }}>
                                 {emp.first_name?.[0] || '?'}{emp.last_name?.[0] || ''}
                               </div>
                             </>
                           ) : (
-                            <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 dark:text-slate-300 font-bold">
+                            <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 dark:text-slate-300 font-bold">
                               {emp.first_name?.[0] || '?'}{emp.last_name?.[0] || ''}
                             </div>
                           )}
