@@ -47,14 +47,39 @@ router.post('/', async (req, res) => {
       }
     }
 
-    // Găsim ultimul pontaj (indiferent de ziua de azi, pentru a preveni dubla acțiune)
+    // Găsim ultimul pontaj + verificăm cooldown anti-dublu-scan
     const lastScanRes = await pool.query(
-      `SELECT action_type 
+      `SELECT action_type, created_at
        FROM qrp_timesheets 
        WHERE employee_id = $1
        ORDER BY created_at DESC LIMIT 1`,
       [employeeId]
     );
+
+    // Protecție: dacă ultimul scan a fost în ultimele 60 secunde, refuză
+    if (lastScanRes.rows.length > 0) {
+      const lastScanTime = new Date(lastScanRes.rows[0].created_at);
+      const secondsSinceLastScan = (Date.now() - lastScanTime.getTime()) / 1000;
+      if (secondsSinceLastScan < 60) {
+        const lastAction = lastScanRes.rows[0].action_type;
+        const wasEntry = lastAction === 'IN' || lastAction === 'INTRARE';
+        return res.json({
+          success: true,
+          duplicate: true,
+          action: lastAction,
+          type: lastAction,
+          timestamp: lastScanRes.rows[0].created_at,
+          message: wasEntry 
+            ? `Ești deja pontat la INTRARE. Așteaptă ${Math.ceil(60 - secondsSinceLastScan)} secunde.`
+            : `Ești deja pontat la IEȘIRE. Așteaptă ${Math.ceil(60 - secondsSinceLastScan)} secunde.`,
+          employee: {
+            first_name: employee.first_name,
+            last_name: employee.last_name,
+            avatar_path: showPhoto ? employee.avatar_path : null
+          }
+        });
+      }
+    }
 
     // Normalizăm: IN/INTRARE = intrat, OUT/IESIRE = ieșit
     let nextAction = 'IN';

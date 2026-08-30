@@ -90,13 +90,21 @@ router.post('/', async (req, res) => {
 
     const employee = empResult.rows[0];
 
-    // 2. Prevent consecutive duplicate actions
+    // 2. Prevent consecutive duplicate actions + cooldown 60s
     const lastEntryRes = await pool.query(
-      'SELECT action_type FROM qrp_timesheets WHERE employee_id = $1 ORDER BY created_at DESC LIMIT 1',
+      'SELECT action_type, created_at FROM qrp_timesheets WHERE employee_id = $1 ORDER BY created_at DESC LIMIT 1',
       [employee.id]
     );
     if (lastEntryRes.rows.length > 0) {
       const lastAction = lastEntryRes.rows[0].action_type;
+      const lastTime = new Date(lastEntryRes.rows[0].created_at);
+      const secondsSince = (Date.now() - lastTime.getTime()) / 1000;
+      
+      // Cooldown 60 secunde
+      if (secondsSince < 60) {
+        return res.status(400).json({ error: `Ai scanat prea repede. Așteaptă ${Math.ceil(60 - secondsSince)} secunde.` });
+      }
+      
       if (type === 'IN' && lastAction === 'IN') {
         return res.status(400).json({ error: 'Sunteți deja pontat la intrare!' });
       }
