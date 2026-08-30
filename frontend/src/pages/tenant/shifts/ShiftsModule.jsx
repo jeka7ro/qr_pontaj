@@ -247,7 +247,7 @@ export default function ShiftsModule({ tenant, themeColor }) {
                             `}
                           >
                             <div className="flex justify-between items-center">
-                              <span className="font-bold text-slate-800 dark:text-slate-200">
+                              <span className="font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
                                 {shift.start_time.substring(0,5)} - {shift.end_time.substring(0,5)}
                               </span>
                               {!isEmpty && (
