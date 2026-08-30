@@ -308,19 +308,19 @@ export default function EmployeeDashboard() {
       </div>
 
       {/* Bottom Navigation Bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-6 py-3 flex justify-around items-center z-50 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+      <div className="fixed bottom-0 left-0 right-0 bg-[var(--tc)] border-t border-transparent px-6 py-3 flex justify-around items-center z-50 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.15)] text-white">
         <button 
           onClick={() => setActiveTab('schedule')}
-          className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'schedule' ? 'text-[var(--tc)]' : 'text-slate-400 hover:text-slate-600'}`}
+          className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'schedule' ? 'text-white' : 'text-white/60 hover:text-white/80'}`}
         >
-          <CalendarDays size={24} className={activeTab === 'schedule' ? 'drop-shadow-sm' : ''} />
+          <CalendarDays size={24} className={activeTab === 'schedule' ? 'drop-shadow-md' : ''} />
           <span className="text-[10px] font-bold uppercase tracking-wider">Program</span>
         </button>
         <button 
           onClick={() => setActiveTab('qr')}
-          className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'qr' ? 'text-[var(--tc)]' : 'text-slate-400 hover:text-slate-600'}`}
+          className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'qr' ? 'text-white' : 'text-white/60 hover:text-white/80'}`}
         >
-          <div className={`p-2 rounded-full -mt-6 mb-1 border-4 border-slate-50 ${activeTab === 'qr' ? 'text-white shadow-[0_4px_15px_var(--tc-shadow)] bg-[var(--tc)]' : 'bg-slate-200 text-slate-500'}`}>
+          <div className={`p-2 rounded-full -mt-3 mb-1 border-2 border-white/20 ${activeTab === 'qr' ? 'bg-white text-[var(--tc)] shadow-[0_4px_15px_rgba(255,255,255,0.3)]' : 'bg-white/10 text-white/80'}`}>
             <QrCode size={28} />
           </div>
           <span className="text-[10px] font-bold uppercase tracking-wider -mt-1">Ecuson</span>
