@@ -165,11 +165,11 @@ router.post('/', async (req, res) => {
 // GET /api/tenants/subdomain/:subdomain - Detalii tenant prin subdomeniu
 router.get('/subdomain/:subdomain', async (req, res) => {
   try {
-    const sub = req.params.subdomain.replace(/-/g, ''); // Ignoră cratimele
+    const sub = req.params.subdomain.replace(/-/g, '').toLowerCase();
     const query = `
       SELECT t.id, t.name, t.subdomain, t.logo_url, t.theme_color, t.portal_bg_image_url, t.portal_bg_color
       FROM qrp_tenants t
-      WHERE REPLACE(t.subdomain, '-', '') = $1
+      WHERE LOWER(t.subdomain) = $1
       LIMIT 1
     `;
     const result = await pool.query(query, [sub]);
