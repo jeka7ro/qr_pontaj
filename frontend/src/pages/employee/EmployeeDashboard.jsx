@@ -119,7 +119,8 @@ export default function EmployeeDashboard() {
     const dateStr = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
     return shifts.find(s => {
       if (!s.date) return false;
-      const sDateStr = s.date.split('T')[0];
+      const shiftDate = new Date(s.date);
+      const sDateStr = `${shiftDate.getFullYear()}-${String(shiftDate.getMonth()+1).padStart(2,'0')}-${String(shiftDate.getDate()).padStart(2,'0')}`;
       return sDateStr === dateStr;
     });
   };

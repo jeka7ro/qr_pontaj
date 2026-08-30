@@ -222,13 +222,10 @@ export default function ShiftsModule({ tenant, themeColor }) {
                     const dateStr = `${yyyy}-${mm}-${dd}`;
                     
                     const dayShifts = displayShifts.filter(s => {
-                      if (!s.date || s.employee_id !== emp.id) return false;
-                      // The backend returns a UTC ISO string like "2026-08-28T21:00:00.000Z".
-                      // The backend returns a UTC ISO string like "2026-08-28T21:00:00.000Z".
-                      // We can just extract the YYYY-MM-DD from the string directly to ignore the timezone shift 
-                      // applied by JS Date object creation
-                      const sDateStr = s.date.split('T')[0];
-                      return sDateStr === dateStr;
+                      if (!s.date) return false;
+                      const shiftDate = new Date(s.date);
+                      const sDateStr = `${shiftDate.getFullYear()}-${String(shiftDate.getMonth()+1).padStart(2,'0')}-${String(shiftDate.getDate()).padStart(2,'0')}`;
+                      return s.employee_id === emp.id && sDateStr === dateStr;
                     });
                   const isToday = new Date().toDateString() === day.toDateString();
                     
