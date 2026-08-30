@@ -203,8 +203,8 @@ export default function EmployeeDashboard() {
         </div>
       </div>
 
-      {/* Continut */}
-      <div className="p-4 max-w-md mx-auto space-y-4 pb-24">
+      {/* Main Content */}
+      <div className="p-4 max-w-md mx-auto space-y-4 pb-32">
         {activeTab === 'schedule' ? (
           <>
             <div className="flex items-center gap-2 mb-2 px-1">
@@ -308,7 +308,10 @@ export default function EmployeeDashboard() {
       </div>
 
       {/* Bottom Navigation Bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-[var(--tc)] border-t border-transparent px-6 py-3 flex justify-around items-center z-50 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.15)] text-white">
+      <div 
+        className="fixed bottom-0 left-0 right-0 border-t border-transparent px-6 py-3 flex justify-around items-center z-50 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.15)] text-white"
+        style={{ backgroundColor: 'var(--tc)' }}
+      >
         <button 
           onClick={() => setActiveTab('schedule')}
           className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'schedule' ? 'text-white' : 'text-white/60 hover:text-white/80'}`}
@@ -320,7 +323,10 @@ export default function EmployeeDashboard() {
           onClick={() => setActiveTab('qr')}
           className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'qr' ? 'text-white' : 'text-white/60 hover:text-white/80'}`}
         >
-          <div className={`p-2 rounded-full -mt-3 mb-1 border-2 border-white/20 ${activeTab === 'qr' ? 'bg-white text-[var(--tc)] shadow-[0_4px_15px_rgba(255,255,255,0.3)]' : 'bg-white/10 text-white/80'}`}>
+          <div 
+            className={`p-2 rounded-full -mt-3 mb-1 border-2 border-white/20 ${activeTab === 'qr' ? 'bg-white shadow-[0_4px_15px_rgba(255,255,255,0.3)]' : 'bg-white/10 text-white/80'}`}
+            style={activeTab === 'qr' ? { color: 'var(--tc)' } : {}}
+          >
             <QrCode size={28} />
           </div>
           <span className="text-[10px] font-bold uppercase tracking-wider -mt-1">Ecuson</span>
