@@ -168,44 +168,46 @@ export default function EmployeeDashboard() {
       }}
     >
       {/* Header Mobil */}
-      <div className="text-white px-4 py-6 rounded-b-3xl shadow-lg relative overflow-hidden bg-[var(--tc)]">
+      <div className="text-white px-4 pt-5 pb-6 rounded-b-3xl shadow-lg relative overflow-hidden bg-[var(--tc)]">
         <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -mr-10 -mt-10"></div>
-        <div className="relative flex justify-between items-start mb-6">
-          {/* Stanga: Logo Tenant + Nume Angajat */}
-          <div className="flex flex-col gap-3">
-            {employee.tenant_logo ? (
-              <img 
-                src={( employee.tenant_logo?.startsWith('http') ? employee.tenant_logo : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${employee.tenant_logo}` )} 
-                alt="Logo" 
-                className="h-10 max-w-[120px] object-contain object-left drop-shadow-md"
-              />
-            ) : (
-              <div className="h-10 text-xl font-black flex items-center">Companie</div>
-            )}
-            <div>
-              <h1 className="font-bold text-lg leading-tight">{employee.first_name} {employee.last_name}</h1>
-              <p className="text-white/80 text-sm font-medium">{employee.job_title}</p>
+        
+        {/* Logout sus-dreapta */}
+        <button onClick={handleLogout} className="absolute top-4 right-4 z-10 text-xs text-white/80 hover:text-white flex items-center gap-1 transition-colors bg-white/10 px-2.5 py-1.5 rounded-xl">
+          <LogOut size={12} />
+          <span>Ieșire</span>
+        </button>
+
+        {/* Layout centrat: Logo → Poză → Nume */}
+        <div className="relative flex flex-col items-center gap-3">
+          {/* Logo companie */}
+          {employee.tenant_logo ? (
+            <img 
+              src={( employee.tenant_logo?.startsWith('http') ? employee.tenant_logo : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${employee.tenant_logo}` )} 
+              alt="Logo" 
+              className="h-9 max-w-[140px] object-contain drop-shadow-md"
+            />
+          ) : (
+            <div className="h-9 text-xl font-black flex items-center">Companie</div>
+          )}
+
+          {/* Poză angajat - MARE */}
+          {employee.avatar_path && !avatarError ? (
+            <img 
+              src={( employee.avatar_path?.startsWith('http') ? employee.avatar_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${employee.avatar_path}` )} 
+              alt="Avatar" 
+              className="w-20 h-20 rounded-2xl border-3 border-white/30 object-cover shadow-xl"
+              onError={() => setAvatarError(true)}
+            />
+          ) : (
+            <div className="w-20 h-20 rounded-2xl bg-white/20 flex items-center justify-center border-3 border-white/30 shadow-xl">
+              <span className="font-black text-2xl">{employee.first_name?.[0] || '?'}{employee.last_name?.[0] || ''}</span>
             </div>
-          </div>
-          
-          {/* Dreapta: Avatar + Logout */}
-          <div className="flex flex-col items-end gap-2">
-            {employee.avatar_path && !avatarError ? (
-              <img 
-                src={( employee.avatar_path?.startsWith('http') ? employee.avatar_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${employee.avatar_path}` )} 
-                alt="Avatar" 
-                className="w-14 h-14 rounded-full border-2 border-white/30 object-cover shadow-lg"
-                onError={() => setAvatarError(true)}
-              />
-            ) : (
-              <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center border-2 border-white/30 shadow-lg">
-                <span className="font-bold text-lg">{employee.first_name?.[0] || '?'}{employee.last_name?.[0] || ''}</span>
-              </div>
-            )}
-            <button onClick={handleLogout} className="text-xs text-white/80 hover:text-white flex items-center gap-1 transition-colors mt-1 bg-white/10 px-2 py-1 rounded-lg">
-              <LogOut size={12} />
-              <span>Ieșire</span>
-            </button>
+          )}
+
+          {/* Nume + funcție */}
+          <div className="text-center">
+            <h1 className="font-black text-lg leading-tight">{employee.first_name} {employee.last_name}</h1>
+            <p className="text-white/70 text-sm font-medium mt-0.5">{employee.job_title}</p>
           </div>
         </div>
         
