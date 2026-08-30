@@ -40,6 +40,8 @@ router.post('/login', async (req, res) => {
       token,
       employee: {
         id: emp.id,
+        tenant_id: emp.tenant_id,
+        employee_code: employee_code,
         first_name: emp.first_name,
         last_name: emp.last_name,
         avatar_path: emp.avatar_path,

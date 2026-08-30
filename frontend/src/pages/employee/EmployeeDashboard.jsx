@@ -15,6 +15,7 @@ export default function EmployeeDashboard() {
   
   const [activeTab, setActiveTab] = useState('schedule');
   const [dynamicTs, setDynamicTs] = useState(Math.floor(Date.now() / 10000) * 10);
+  const [avatarError, setAvatarError] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -126,11 +127,16 @@ export default function EmployeeDashboard() {
         <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -mr-10 -mt-10"></div>
         <div className="relative flex justify-between items-start mb-6">
           <div className="flex items-center gap-3">
-            {employee.avatar_path ? (
-              <img src={`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${employee.avatar_path}`} alt="Avatar" className="w-12 h-12 rounded-full border-2 border-white/30 object-cover" />
+            {employee.avatar_path && !avatarError ? (
+              <img 
+                src={`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${employee.avatar_path}`} 
+                alt="Avatar" 
+                className="w-12 h-12 rounded-full border-2 border-white/30 object-cover"
+                onError={() => setAvatarError(true)}
+              />
             ) : (
               <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center border-2 border-white/30">
-                <span className="font-bold text-lg">{employee.first_name[0]}{employee.last_name[0]}</span>
+                <span className="font-bold text-lg">{employee.first_name?.[0] || '?'}{employee.last_name?.[0] || ''}</span>
               </div>
             )}
             <div>
