@@ -120,10 +120,20 @@ export default function EmployeeDashboard() {
 
   if (!employee) return null;
 
+  const tc = employee.tenant_culoare || '#2563eb'; // blue-600 as default
+
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800">
+    <div 
+      className="min-h-screen bg-slate-50 text-slate-800"
+      style={{
+        '--tc': tc,
+        '--tc-50': `${tc}1A`,
+        '--tc-100': `${tc}33`,
+        '--tc-shadow': `${tc}4D`
+      }}
+    >
       {/* Header Mobil */}
-      <div className="bg-primary-600 text-white px-4 py-6 rounded-b-3xl shadow-lg relative overflow-hidden">
+      <div className="text-white px-4 py-6 rounded-b-3xl shadow-lg relative overflow-hidden bg-[var(--tc)]">
         <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -mr-10 -mt-10"></div>
         <div className="relative flex justify-between items-start mb-6">
           <div className="flex items-center gap-3">
@@ -141,7 +151,7 @@ export default function EmployeeDashboard() {
             )}
             <div>
               <h1 className="font-bold text-lg leading-tight">{employee.first_name} {employee.last_name}</h1>
-              <p className="text-primary-100 text-sm font-medium">{employee.job_title}</p>
+              <p className="text-white/80 text-sm font-medium">{employee.job_title}</p>
             </div>
           </div>
           <button onClick={handleLogout} className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors">
@@ -154,7 +164,7 @@ export default function EmployeeDashboard() {
             <ChevronLeft size={20} />
           </button>
           <div className="text-center">
-            <span className="block text-xs text-primary-100 font-medium mb-0.5 uppercase tracking-wider">Săptămâna curentă</span>
+            <span className="block text-xs text-white/80 font-medium mb-0.5 uppercase tracking-wider">Săptămâna curentă</span>
             <span className="font-bold text-sm">{formatWeekRange()}</span>
           </div>
           <button onClick={nextWeek} className="p-2 hover:bg-white/20 rounded-full transition-colors">
@@ -168,7 +178,7 @@ export default function EmployeeDashboard() {
         {activeTab === 'schedule' ? (
           <>
             <div className="flex items-center gap-2 mb-2 px-1">
-              <CalendarDays size={18} className="text-primary-600" />
+              <CalendarDays size={18} className="text-[var(--tc)]" />
               <h2 className="font-bold text-slate-700">Programul meu</h2>
             </div>
 
@@ -192,13 +202,13 @@ export default function EmployeeDashboard() {
                   const monthName = day.toLocaleDateString('ro-RO', { month: 'short' });
 
                   return (
-                    <div key={idx} className={`bg-white rounded-2xl p-4 shadow-sm border ${isToday ? 'border-primary-500 shadow-primary-500/10' : 'border-slate-100'}`}>
+                    <div key={idx} className={`bg-white rounded-2xl p-4 shadow-sm border ${isToday ? 'border-[var(--tc)] shadow-[0_4px_20px_var(--tc-50)]' : 'border-slate-100'}`}>
                       <div className="flex items-start gap-4">
                         <div className="flex flex-col items-center justify-center min-w-[50px]">
-                          <span className={`text-xs font-bold uppercase tracking-wider ${isToday ? 'text-primary-600' : 'text-slate-400'}`}>
+                          <span className={`text-xs font-bold uppercase tracking-wider ${isToday ? 'text-[var(--tc)]' : 'text-slate-400'}`}>
                             {dayName.slice(0, 3)}
                           </span>
-                          <span className={`text-2xl font-bold ${isToday ? 'text-primary-600' : 'text-slate-700'}`}>
+                          <span className={`text-2xl font-bold ${isToday ? 'text-[var(--tc)]' : 'text-slate-700'}`}>
                             {dayNum}
                           </span>
                           <span className="text-[10px] font-bold text-slate-400 uppercase">{monthName}</span>
@@ -208,7 +218,7 @@ export default function EmployeeDashboard() {
                           {shift ? (
                             <div className="space-y-2">
                               <div className="flex items-center gap-2">
-                                <Clock size={16} className="text-primary-500" />
+                                <Clock size={16} className="text-[var(--tc)]" />
                                 <span className="font-bold text-slate-700">
                                   {shift.start_time.slice(0,5)} - {shift.end_time.slice(0,5)}
                                 </span>
@@ -239,17 +249,13 @@ export default function EmployeeDashboard() {
         ) : (
           <div className="flex flex-col items-center justify-center py-8">
             <div className="bg-white p-8 rounded-3xl shadow-xl border border-slate-100 mb-6 flex flex-col items-center">
-              <div className="bg-primary-50 p-6 rounded-2xl border border-primary-100 mb-6">
+              <div className="p-6 rounded-2xl border mb-6 bg-[var(--tc-50)] border-[var(--tc-100)]">
                 <QRCodeSVG 
-                  value={JSON.stringify({ 
-                    employee_id: employee.id, 
-                    code: employee.employee_code,
-                    t: employee.tenant_id,
-                    ts: dynamicTs
-                  })}
+                  value={`QRP-EMP-${employee.tenant_id}-${employee.id}`}
                   size={200}
                   level="H"
                   includeMargin={true}
+                  fgColor={tc}
                 />
               </div>
               <h2 className="text-xl font-black text-slate-800 text-center uppercase tracking-tight">Ecuson Digital</h2>
@@ -265,16 +271,16 @@ export default function EmployeeDashboard() {
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-6 py-3 flex justify-around items-center z-50 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
         <button 
           onClick={() => setActiveTab('schedule')}
-          className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'schedule' ? 'text-primary-600' : 'text-slate-400 hover:text-slate-600'}`}
+          className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'schedule' ? 'text-[var(--tc)]' : 'text-slate-400 hover:text-slate-600'}`}
         >
           <CalendarDays size={24} className={activeTab === 'schedule' ? 'drop-shadow-sm' : ''} />
           <span className="text-[10px] font-bold uppercase tracking-wider">Program</span>
         </button>
         <button 
           onClick={() => setActiveTab('qr')}
-          className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'qr' ? 'text-primary-600' : 'text-slate-400 hover:text-slate-600'}`}
+          className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'qr' ? 'text-[var(--tc)]' : 'text-slate-400 hover:text-slate-600'}`}
         >
-          <div className={`p-2 rounded-full -mt-6 mb-1 border-4 border-slate-50 ${activeTab === 'qr' ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/30' : 'bg-slate-200 text-slate-500'}`}>
+          <div className={`p-2 rounded-full -mt-6 mb-1 border-4 border-slate-50 ${activeTab === 'qr' ? 'text-white shadow-[0_4px_15px_var(--tc-shadow)] bg-[var(--tc)]' : 'bg-slate-200 text-slate-500'}`}>
             <QrCode size={28} />
           </div>
           <span className="text-[10px] font-bold uppercase tracking-wider -mt-1">Ecuson</span>

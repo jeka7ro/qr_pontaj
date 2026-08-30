@@ -15,7 +15,10 @@ router.post('/login', async (req, res) => {
     }
 
     const result = await db.query(
-      'SELECT id, tenant_id, first_name, last_name, avatar_path, job_title FROM qrp_employees WHERE employee_code = $1 AND pin_code = $2',
+      `SELECT e.id, e.tenant_id, e.first_name, e.last_name, e.avatar_path, e.job_title, t.culoare as tenant_culoare
+       FROM qrp_employees e
+       JOIN qrp_tenants t ON e.tenant_id = t.id
+       WHERE e.employee_code = $1 AND e.pin_code = $2`,
       [employee_code, pin_code]
     );
 
@@ -45,7 +48,8 @@ router.post('/login', async (req, res) => {
         first_name: emp.first_name,
         last_name: emp.last_name,
         avatar_path: emp.avatar_path,
-        job_title: emp.job_title
+        job_title: emp.job_title,
+        tenant_culoare: emp.tenant_culoare
       }
     });
 
@@ -78,7 +82,10 @@ router.get('/dashboard', employeeAuthMiddleware, async (req, res) => {
   try {
     const { employee_id } = req.user;
     const result = await db.query(
-      'SELECT id, first_name, last_name, avatar_path, job_title FROM qrp_employees WHERE id = $1',
+      `SELECT e.id, e.first_name, e.last_name, e.avatar_path, e.job_title, t.culoare as tenant_culoare 
+       FROM qrp_employees e 
+       JOIN qrp_tenants t ON e.tenant_id = t.id 
+       WHERE e.id = $1`,
       [employee_id]
     );
     if (result.rows.length === 0) {
