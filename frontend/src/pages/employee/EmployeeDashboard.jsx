@@ -150,27 +150,42 @@ export default function EmployeeDashboard() {
       <div className="text-white px-4 py-6 rounded-b-3xl shadow-lg relative overflow-hidden bg-[var(--tc)]">
         <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -mr-10 -mt-10"></div>
         <div className="relative flex justify-between items-start mb-6">
-          <div className="flex items-center gap-3">
-            {employee.avatar_path && !avatarError ? (
+          {/* Stanga: Logo Tenant + Nume Angajat */}
+          <div className="flex flex-col gap-3">
+            {employee.tenant_logo ? (
               <img 
-                src={`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${employee.avatar_path}`} 
-                alt="Avatar" 
-                className="w-12 h-12 rounded-full border-2 border-white/30 object-cover"
-                onError={() => setAvatarError(true)}
+                src={`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${employee.tenant_logo}`} 
+                alt="Logo" 
+                className="h-10 max-w-[120px] object-contain object-left drop-shadow-md"
               />
             ) : (
-              <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center border-2 border-white/30">
-                <span className="font-bold text-lg">{employee.first_name?.[0] || '?'}{employee.last_name?.[0] || ''}</span>
-              </div>
+              <div className="h-10 text-xl font-black flex items-center">Companie</div>
             )}
             <div>
               <h1 className="font-bold text-lg leading-tight">{employee.first_name} {employee.last_name}</h1>
               <p className="text-white/80 text-sm font-medium">{employee.job_title}</p>
             </div>
           </div>
-          <button onClick={handleLogout} className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors">
-            <LogOut size={20} />
-          </button>
+          
+          {/* Dreapta: Avatar + Logout */}
+          <div className="flex flex-col items-end gap-2">
+            {employee.avatar_path && !avatarError ? (
+              <img 
+                src={`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${employee.avatar_path}`} 
+                alt="Avatar" 
+                className="w-14 h-14 rounded-full border-2 border-white/30 object-cover shadow-lg"
+                onError={() => setAvatarError(true)}
+              />
+            ) : (
+              <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center border-2 border-white/30 shadow-lg">
+                <span className="font-bold text-lg">{employee.first_name?.[0] || '?'}{employee.last_name?.[0] || ''}</span>
+              </div>
+            )}
+            <button onClick={handleLogout} className="text-xs text-white/80 hover:text-white flex items-center gap-1 transition-colors mt-1 bg-white/10 px-2 py-1 rounded-lg">
+              <LogOut size={12} />
+              <span>Ieșire</span>
+            </button>
+          </div>
         </div>
         
         <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 flex items-center justify-between border border-white/20">

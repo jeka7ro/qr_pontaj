@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LogIn, KeyRound, User, Loader2, AlertCircle } from 'lucide-react';
 
@@ -7,7 +7,29 @@ export default function EmployeeLogin() {
   const [pinCode, setPinCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [tenant, setTenant] = useState(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchTenant = async () => {
+      try {
+        const hostname = window.location.hostname;
+        const parts = hostname.split('.');
+        const subdomain = parts[0];
+        if (subdomain === 'localhost' || /^[0-9]+$/.test(parts[0])) return;
+
+        const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
+        const res = await fetch(`${baseUrl}/api/tenants/subdomain/${subdomain}`);
+        if (res.ok) {
+          const data = await res.json();
+          setTenant(data);
+        }
+      } catch (err) {
+        console.error('Error fetching tenant for login:', err);
+      }
+    };
+    fetchTenant();
+  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -45,15 +67,21 @@ export default function EmployeeLogin() {
     }
   };
 
+  const tc = tenant?.theme_color || '#2563eb';
+
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-white rounded-3xl shadow-xl overflow-hidden">
-        <div className="bg-primary-600 p-8 text-center text-white">
-          <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
-            <User size={32} />
+        <div className="p-8 text-center text-white" style={{ backgroundColor: tc }}>
+          <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4 backdrop-blur-sm overflow-hidden">
+            {tenant?.logo_url ? (
+              <img src={`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${tenant.logo_url}`} alt="Logo" className="w-full h-full object-contain p-2" />
+            ) : (
+              <User size={32} />
+            )}
           </div>
           <h1 className="text-2xl font-bold mb-1">Portal Angajați</h1>
-          <p className="text-primary-100 text-sm">Autentifică-te pentru a-ți vedea orarul</p>
+          <p className="text-white/80 text-sm">Autentifică-te pentru a-ți vedea orarul</p>
         </div>
 
         <form onSubmit={handleLogin} className="p-8 space-y-6">
