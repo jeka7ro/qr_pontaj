@@ -270,6 +270,16 @@ export default function EmployeeDashboard() {
                   level="H"
                   includeMargin={true}
                   fgColor={tc}
+                  imageSettings={
+                    employee.tenant_logo
+                      ? {
+                          src: `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${employee.tenant_logo}`,
+                          height: 48,
+                          width: 48,
+                          excavate: true,
+                        }
+                      : undefined
+                  }
                 />
               </div>
               <h2 className="text-xl font-black text-slate-800 text-center uppercase tracking-tight">Ecuson Digital</h2>
