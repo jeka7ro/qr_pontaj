@@ -158,8 +158,8 @@ export default function EmployeeLogin() {
           </div>
 
           {/* Memorare credențiale */}
-          <label className="flex items-center gap-3 cursor-pointer select-none">
-            <div className="relative">
+          <label className="flex items-center gap-3 cursor-pointer select-none bg-slate-50 p-3 rounded-2xl">
+            <div className="relative shrink-0">
               <input
                 type="checkbox"
                 checked={rememberMe}
@@ -167,11 +167,14 @@ export default function EmployeeLogin() {
                 className="sr-only peer"
               />
               <div 
-                className="w-10 h-5 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all"
+                className="w-11 h-6 bg-slate-300 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:rounded-full after:h-[18px] after:w-[18px] after:transition-all after:shadow-sm"
                 style={rememberMe ? { backgroundColor: tc } : {}}
               ></div>
             </div>
-            <span className="text-sm text-slate-600 font-medium">Ține-mă minte</span>
+            <div>
+              <span className="text-sm text-slate-700 font-bold block">Ține-mă minte</span>
+              <span className="text-[10px] text-slate-400">Salvează codul și PIN-ul pe acest dispozitiv</span>
+            </div>
           </label>
 
           <button
