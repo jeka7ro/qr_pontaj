@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, User, MapPin, Briefcase, Calendar, Clock, Banknote, Shield, History, Activity, Image as ImageIcon, Camera, FileText, Upload, Trash2, Download, Loader2, X, ArrowRight, Eye } from 'lucide-react';
+import { ArrowLeft, User, MapPin, Briefcase, Calendar, Clock, Banknote, Shield, History, Activity, Image as ImageIcon, Camera, FileText, Upload, Trash2, Download, Loader2, X, ArrowRight, Eye, CalendarDays } from 'lucide-react';
+import TimesheetReport from './TimesheetReport';
+import ConfirmModal from './ConfirmModal';
 
 const EmployeeProfile = ({ tenant, themeColor }) => {
   const { id } = useParams();
@@ -21,6 +23,7 @@ const EmployeeProfile = ({ tenant, themeColor }) => {
   const [evalReliability, setEvalReliability] = useState(10);
   const [savingEval, setSavingEval] = useState(false);
   const [notification, setNotification] = useState(null);
+  const [docToDelete, setDocToDelete] = useState(null);
 
   // Keyboard navigation for Lightbox
   useEffect(() => {
@@ -166,26 +169,28 @@ const EmployeeProfile = ({ tenant, themeColor }) => {
     }
   };
 
-  const handleDeleteDocument = async (docId) => {
-    if (!window.confirm('Ești sigur că vrei să ștergi acest document?')) return;
+  const confirmDeleteDocument = async () => {
+    if (!docToDelete) return;
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenants/${tenant.id}/employees/${id}/documents/${docId}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenants/${tenant.id}/employees/${id}/documents/${docToDelete}`, {
         method: 'DELETE'
       });
       if (res.ok) {
-        setDocuments(prev => prev.filter(d => d.id !== docId));
+        setDocuments(prev => prev.filter(d => d.id !== docToDelete));
       }
     } catch (err) {
       console.error(err);
+    } finally {
+      setDocToDelete(null);
     }
   };
 
   if (loading) {
-    return <div className="p-8 flex justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div></div>;
+    return <div className="p-8 flex justify-center"><div className="animate-spin rounded-lg h-8 w-8 border-b-2 border-primary-600"></div></div>;
   }
 
   if (!employee) {
-    return <div className="p-8 text-center text-slate-500 font-medium">Angajatul nu a fost găsit.</div>;
+    return <div className="p-8 text-center text-slate-500 dark:text-slate-400 font-medium">Angajatul nu a fost găsit.</div>;
   }
 
   const avatarSrc = employee.avatar_path ? `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${employee.avatar_path}` : 'https://ui-avatars.com/api/?name=' + employee.first_name + '+' + employee.last_name + '&background=random';
@@ -195,14 +200,14 @@ const EmployeeProfile = ({ tenant, themeColor }) => {
     <div className="p-8 max-w-7xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4 mb-6">
-        <Link to="/admin/employees" className="p-2 rounded-lg bg-white border border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-50 transition-colors">
+        <Link to="/admin/employees" className="p-2 rounded-full bg-white border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 transition-colors">
           <ArrowLeft size={20} />
         </Link>
         <div>
-          <h1 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
+          <h1 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight flex items-center gap-2">
             Profil Angajat
           </h1>
-          <p className="text-sm font-medium text-slate-500 mt-1">Dosar digital și istoric contract</p>
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Dosar digital și istoric contract</p>
         </div>
       </div>
       {notification && (
@@ -213,25 +218,37 @@ const EmployeeProfile = ({ tenant, themeColor }) => {
       )}
 
       {/* Tabs Navigation */}
-      <div className="flex items-center gap-6 border-b border-slate-200 mb-6">
+      <div className="flex flex-wrap items-center gap-6 border-b border-slate-200 dark:border-slate-700 mb-6">
         <button 
           onClick={() => setActiveTab('details')}
-          className={`pb-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'details' ? 'border-primary-600 text-primary-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+          className={`pb-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'details' ? 'border-primary-600 text-primary-600' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300'}`}
         >
-          Detalii & Pontaj
+          Detalii Angajat
+        </button>
+        <button 
+          onClick={() => setActiveTab('history')}
+          className={`pb-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'history' ? 'border-primary-600 text-primary-600' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300'}`}
+        >
+          Istoric Angajat
+        </button>
+        <button 
+          onClick={() => setActiveTab('timesheets')}
+          className={`pb-4 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'timesheets' ? 'border-primary-600 text-primary-600' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300'}`}
+        >
+          <CalendarDays size={16} /> Istoric Pontaj
         </button>
         <button 
           onClick={() => setActiveTab('evaluation')}
-          className={`pb-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'evaluation' ? 'border-primary-600 text-primary-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+          className={`pb-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'evaluation' ? 'border-primary-600 text-primary-600' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300'}`}
         >
           Evaluare Performanță
         </button>
         <button 
           onClick={() => setActiveTab('documents')}
-          className={`pb-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'documents' ? 'border-primary-600 text-primary-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+          className={`pb-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'documents' ? 'border-primary-600 text-primary-600' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300'}`}
         >
           Dosar Documente
-          <span className="ml-2 px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px]">{documents.length}</span>
+          <span className="ml-2 px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10px]">{documents.length}</span>
         </button>
       </div>
 
@@ -240,11 +257,11 @@ const EmployeeProfile = ({ tenant, themeColor }) => {
           
           {/* Coloana Stânga: Date Personale & Buletin */}
         <div className="space-y-6">
-          <div className="bg-white rounded-lg p-6 border border-slate-100 shadow-sm relative overflow-hidden group">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-100 dark:border-slate-700/50 shadow-sm relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary-500/10 to-transparent rounded-bl-full -mr-16 -mt-16 transition-transform group-hover:scale-110" />
             
             <div className="flex flex-col items-center text-center">
-              <div className="relative w-24 h-24 rounded-full border-4 border-white shadow-lg overflow-hidden bg-slate-100 mb-4 group cursor-pointer">
+              <div className="relative w-24 h-24 rounded-full border-4 border-white shadow-lg overflow-hidden bg-slate-100 dark:bg-slate-800 mb-4 group cursor-pointer">
                 {uploadingAvatar && (
                   <div className="absolute inset-0 z-20 bg-black/50 flex items-center justify-center">
                     <Loader2 className="w-6 h-6 text-white animate-spin" />
@@ -258,7 +275,7 @@ const EmployeeProfile = ({ tenant, themeColor }) => {
                   <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} disabled={uploadingAvatar} />
                 </label>
               </div>
-              <h2 className="text-xl font-bold text-slate-800">{employee.first_name} {employee.last_name}</h2>
+              <h2 className="text-xl font-bold text-slate-800 dark:text-white">{employee.first_name} {employee.last_name}</h2>
               <span className="inline-flex items-center px-3 py-1 mt-2 rounded-full text-xs font-bold bg-primary-50 text-primary-600">
                 <Briefcase size={12} className="mr-1" /> {employee.job_title || 'Fără funcție'}
               </span>
@@ -266,16 +283,16 @@ const EmployeeProfile = ({ tenant, themeColor }) => {
 
             <div className="mt-8 space-y-4">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-slate-500 font-medium flex items-center"><Shield size={16} className="mr-2" /> CNP</span>
-                <span className="font-bold text-slate-800">{employee.cnp || '-'}</span>
+                <span className="text-slate-500 dark:text-slate-400 font-medium flex items-center"><Shield size={16} className="mr-2" /> CNP</span>
+                <span className="font-bold text-slate-800 dark:text-white">{employee.cnp || '-'}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-slate-500 font-medium flex items-center"><User size={16} className="mr-2" /> Serie/Nr ID</span>
-                <span className="font-bold text-slate-800">{employee.id_card_series || '-'}</span>
+                <span className="text-slate-500 dark:text-slate-400 font-medium flex items-center"><User size={16} className="mr-2" /> Serie/Nr ID</span>
+                <span className="font-bold text-slate-800 dark:text-white">{employee.id_card_series || '-'}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-slate-500 font-medium flex items-center"><Calendar size={16} className="mr-2" /> Data Nașterii</span>
-                <span className="font-bold text-slate-800">{employee.birth_date ? new Date(employee.birth_date).toLocaleDateString('ro-RO') : '-'}</span>
+                <span className="text-slate-500 dark:text-slate-400 font-medium flex items-center"><Calendar size={16} className="mr-2" /> Data Nașterii</span>
+                <span className="font-bold text-slate-800 dark:text-white">{employee.birth_date ? new Date(employee.birth_date).toLocaleDateString('ro-RO') : '-'}</span>
               </div>
             </div>
           </div>        </div>
@@ -285,31 +302,31 @@ const EmployeeProfile = ({ tenant, themeColor }) => {
           
           {/* Statistici Quick (Mockup pt viitor) */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-white rounded-lg p-4 border border-slate-100 shadow-sm">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-100 dark:border-slate-700/50 shadow-sm">
               <div className="text-slate-400 mb-1"><Activity size={18} /></div>
-              <div className="text-2xl font-black text-slate-800">142h</div>
-              <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-1">Ore luna curentă</div>
+              <div className="text-2xl font-black text-slate-800 dark:text-white">142h</div>
+              <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-1">Ore luna curentă</div>
             </div>
-            <div className="bg-white rounded-lg p-4 border border-slate-100 shadow-sm">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-100 dark:border-slate-700/50 shadow-sm">
               <div className="text-slate-400 mb-1"><Calendar size={18} /></div>
-              <div className="text-2xl font-black text-slate-800">18</div>
-              <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-1">Zile pontate</div>
+              <div className="text-2xl font-black text-slate-800 dark:text-white">18</div>
+              <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-1">Zile pontate</div>
             </div>
-            <div className="bg-white rounded-lg p-4 border border-slate-100 shadow-sm">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-100 dark:border-slate-700/50 shadow-sm">
               <div className="text-blue-400 mb-1"><Shield size={18} /></div>
-              <div className="text-2xl font-black text-slate-800">10</div>
-              <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-1">Zile concediu ramase</div>
+              <div className="text-2xl font-black text-slate-800 dark:text-white">10</div>
+              <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-1">Zile concediu ramase</div>
             </div>
-            <div className="bg-white rounded-lg p-4 border border-slate-100 shadow-sm">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-100 dark:border-slate-700/50 shadow-sm">
               <div className="text-red-400 mb-1"><User size={18} /></div>
-              <div className="text-2xl font-black text-slate-800">0</div>
-              <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-1">Absențe nemotivate</div>
+              <div className="text-2xl font-black text-slate-800 dark:text-white">0</div>
+              <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-1">Absențe nemotivate</div>
             </div>
           </div>
 
           {/* Date Contact */}
-          <div className="bg-white rounded-lg p-6 border border-slate-100 shadow-sm">
-            <h3 className="text-sm font-bold text-slate-800 mb-6 flex items-center border-b border-slate-100 pb-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-100 dark:border-slate-700/50 shadow-sm">
+            <h3 className="text-sm font-bold text-slate-800 dark:text-white mb-6 flex items-center border-b border-slate-100 dark:border-slate-700/50 pb-4">
               <MapPin size={18} className="mr-2 text-primary-500" /> 
               Date de Contact
             </h3>
@@ -317,19 +334,19 @@ const EmployeeProfile = ({ tenant, themeColor }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <div>
                 <span className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Telefon</span>
-                <span className="text-base font-bold text-slate-800">
+                <span className="text-base font-bold text-slate-800 dark:text-white">
                   {employee.phone || 'Nespecificat'}
                 </span>
               </div>
               <div>
                 <span className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Email</span>
-                <span className="text-base font-bold text-slate-800">
+                <span className="text-base font-bold text-slate-800 dark:text-white">
                   {employee.email || 'Nespecificat'}
                 </span>
               </div>
               <div>
                 <span className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Adresă (din C.I.)</span>
-                <span className="text-base font-bold text-slate-800 break-words">
+                <span className="text-base font-bold text-slate-800 dark:text-white break-words">
                   {employee.address || 'Nespecificat'}
                 </span>
               </div>
@@ -339,8 +356,8 @@ const EmployeeProfile = ({ tenant, themeColor }) => {
 
 
           {/* Date Contractuale */}
-          <div className="bg-white rounded-lg p-6 border border-slate-100 shadow-sm">
-            <h3 className="text-sm font-bold text-slate-800 mb-6 flex items-center border-b border-slate-100 pb-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-100 dark:border-slate-700/50 shadow-sm">
+            <h3 className="text-sm font-bold text-slate-800 dark:text-white mb-6 flex items-center border-b border-slate-100 dark:border-slate-700/50 pb-4">
               <Briefcase size={18} className="mr-2 text-primary-500" /> 
               Date Contractuale
             </h3>
@@ -348,7 +365,7 @@ const EmployeeProfile = ({ tenant, themeColor }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <span className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Data Angajării</span>
-                <span className="text-base font-bold text-slate-800">
+                <span className="text-base font-bold text-slate-800 dark:text-white">
                   {employee.contract_start_date ? new Date(employee.contract_start_date).toLocaleDateString('ro-RO') : 'Nespecificat'}
                 </span>
               </div>
@@ -363,12 +380,12 @@ const EmployeeProfile = ({ tenant, themeColor }) => {
                 <span className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Punct de Lucru</span>
                 <div className="flex items-center">
                   <MapPin size={16} className="text-slate-400 mr-2" />
-                  <span className="text-base font-bold text-slate-800">{employee.location_name || 'Nespecificat'}</span>
+                  <span className="text-base font-bold text-slate-800 dark:text-white">{employee.location_name || 'Nespecificat'}</span>
                 </div>
               </div>
-              <div className="md:col-span-2 bg-slate-50 p-4 rounded-lg border border-slate-100">
-                <span className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Notițe Contractuale</span>
-                <p className="text-sm text-slate-700 font-medium leading-relaxed">
+              <div className="md:col-span-2 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg border border-slate-100 dark:border-slate-700/50">
+                <span className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Notițe Contractuale</span>
+                <p className="text-sm text-slate-700 dark:text-slate-300 font-medium leading-relaxed">
                   {employee.contract_notes || 'Nu există notițe adiționale.'}
                 </p>
               </div>
@@ -376,30 +393,34 @@ const EmployeeProfile = ({ tenant, themeColor }) => {
           </div>
 
 
+        </div>
+        </div>
+      ) : activeTab === 'history' ? (
+        <div className="space-y-6">
           {/* Timeline / Istoric */}
-          <div className="bg-white rounded-lg p-6 border border-slate-100 shadow-sm">
-            <h3 className="text-sm font-bold text-slate-800 mb-6 flex items-center">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-100 dark:border-slate-700/50 shadow-sm">
+            <h3 className="text-sm font-bold text-slate-800 dark:text-white mb-6 flex items-center">
               <History size={18} className="mr-2 text-primary-500" /> 
               Istoric Angajat
             </h3>
             
-            <div className="relative pl-6 border-l-2 border-slate-100 space-y-8">
+            <div className="relative pl-6 border-l-2 border-slate-100 dark:border-slate-700/50 space-y-8">
               {history.length > 0 ? history.map((item, idx) => (
                 <div key={item.id} className="relative">
                   {/* Timeline Dot */}
                   <div className="absolute -left-[31px] top-1 w-4 h-4 rounded-full border-2 border-white bg-primary-500 shadow-sm"></div>
                   
                   <div className="mb-1 flex items-center gap-2">
-                    <span className="inline-flex px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-600">
+                    <span className="inline-flex px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
                       {item.change_type}
                     </span>
                     <span className="text-xs font-bold text-slate-400">
                       {new Date(item.created_at).toLocaleString('ro-RO')}
                     </span>
                   </div>
-                  <div className="text-sm font-medium text-slate-700 bg-slate-50 p-3 rounded-lg border border-slate-100 inline-block">
+                  <div className="text-sm font-medium text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg border border-slate-100 dark:border-slate-700/50 inline-block">
                     {item.old_value && item.new_value ? (
-                      <span>Schimbat din <span className="font-bold line-through text-slate-400">{item.old_value}</span> în <span className="font-bold text-slate-800">{item.new_value}</span></span>
+                      <span>Schimbat din <span className="font-bold line-through text-slate-400">{item.old_value}</span> în <span className="font-bold text-slate-800 dark:text-white">{item.new_value}</span></span>
                     ) : (
                       <span className="font-bold">{item.new_value || item.old_value || 'Actualizare înregistrată.'}</span>
                     )}
@@ -410,13 +431,15 @@ const EmployeeProfile = ({ tenant, themeColor }) => {
               )}
             </div>
           </div>
-
         </div>
+      ) : activeTab === 'timesheets' ? (
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-100 dark:border-slate-700/50 shadow-sm">
+          <TimesheetReport tenant={tenant} themeColor={themeColor} employeeId={id} />
         </div>
       ) : activeTab === 'evaluation' ? (
-        <div className="bg-white rounded-lg p-6 border border-slate-100 shadow-sm">
-          <div className="flex items-center justify-between mb-6 border-b border-slate-100 pb-4">
-            <h3 className="text-sm font-bold text-slate-800 flex items-center">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-100 dark:border-slate-700/50 shadow-sm">
+          <div className="flex items-center justify-between mb-6 border-b border-slate-100 dark:border-slate-700/50 pb-4">
+            <h3 className="text-sm font-bold text-slate-800 dark:text-white flex items-center">
               <Activity size={18} className="mr-2 text-primary-500" /> 
               Evaluare Performanță
             </h3>
@@ -430,7 +453,7 @@ const EmployeeProfile = ({ tenant, themeColor }) => {
               <button 
                 onClick={handleSaveEvaluation}
                 disabled={savingEval}
-                className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-bold rounded-lg transition-colors flex items-center"
+                className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-bold rounded-full transition-colors flex items-center"
               >
                 {savingEval ? <Loader2 size={16} className="animate-spin mr-2" /> : null}
                 Salvează Notele
@@ -446,10 +469,10 @@ const EmployeeProfile = ({ tenant, themeColor }) => {
               { label: 'Performanță (Calitate muncă)', value: evalPerformance, setter: setEvalPerformance },
               { label: 'Seriozitate (De încredere?)', value: evalReliability, setter: setEvalReliability },
             ].map((crit, idx) => (
-              <div key={idx} className="flex flex-col gap-2 bg-slate-50 p-4 rounded-lg border border-slate-100">
+              <div key={idx} className="flex flex-col gap-2 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg border border-slate-100 dark:border-slate-700/50">
                 <div className="flex justify-between items-center mb-1">
-                  <label className="text-sm font-bold text-slate-700">{crit.label}</label>
-                  <span className="text-sm font-black text-slate-900 bg-white px-2 py-0.5 rounded shadow-sm border border-slate-200 min-w-[2.5rem] text-center">{crit.value}</span>
+                  <label className="text-sm font-bold text-slate-700 dark:text-slate-300">{crit.label}</label>
+                  <span className="text-sm font-black text-slate-900 dark:text-white bg-white dark:bg-slate-900 px-2 py-0.5 rounded shadow-sm border border-slate-200 dark:border-slate-700 min-w-[2.5rem] text-center">{crit.value}</span>
                 </div>
                 <input 
                   type="range" 
@@ -467,14 +490,14 @@ const EmployeeProfile = ({ tenant, themeColor }) => {
           </div>
         </div>
       ) : (
-        <div className="bg-white rounded-lg p-6 md:p-10 border border-slate-100 shadow-sm">
-          <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 pb-6 border-b border-slate-100 gap-4">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 md:p-10 border border-slate-100 dark:border-slate-700/50 shadow-sm">
+          <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 pb-6 border-b border-slate-100 dark:border-slate-700/50 gap-4">
             <div>
-              <h3 className="text-lg font-bold text-slate-800 flex items-center">
+              <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center">
                 <FileText size={22} className="mr-2 text-primary-500" /> 
                 Dosar Documente ({documents.length})
               </h3>
-              <p className="text-sm text-slate-500 mt-1">Gestionează contractele, actele adiționale și adeverințele.</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Gestionează contractele, actele adiționale și adeverințele.</p>
             </div>
             <div>
               <label className="cursor-pointer inline-flex items-center px-4 py-2 text-sm font-bold bg-primary-50 text-primary-600 rounded-lg hover:bg-primary-100 transition-colors">
@@ -486,49 +509,53 @@ const EmployeeProfile = ({ tenant, themeColor }) => {
           </div>
 
           {/* Vizualizare Buletin Atașat (CNP) */}
-          <div className="bg-white rounded-lg p-6 border border-slate-100 shadow-sm mb-6">
-            <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center"><ImageIcon size={18} className="mr-2 text-primary-500" /> Document Identitate (CNP)</h3>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-100 dark:border-slate-700/50 shadow-sm mb-6">
+            <h3 className="text-sm font-bold text-slate-800 dark:text-white mb-4 flex items-center"><ImageIcon size={18} className="mr-2 text-primary-500" /> Document Identitate (CNP)</h3>
             {idCardSrc ? (
-              <a href={idCardSrc} target="_blank" rel="noreferrer" className="block w-64 overflow-hidden rounded-lg border border-slate-200 hover:border-primary-400 transition-colors">
+              <a href={idCardSrc} target="_blank" rel="noreferrer" className="block w-64 overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700 hover:border-primary-400 transition-colors">
                 <img src={idCardSrc} alt="ID Card" className="w-full h-auto opacity-90 hover:opacity-100 transition-opacity" />
               </a>
             ) : (
-              <div className="text-center p-6 border-2 border-dashed border-slate-200 rounded-lg bg-slate-50 max-w-sm">
+              <div className="text-center p-6 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800/50 max-w-sm">
                 <ImageIcon size={24} className="mx-auto text-slate-400 mb-2" />
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Nu există atașament</span>
+                <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Nu există atașament</span>
                 <span className="text-xs text-slate-400 block mt-1">Încarcă cartea de identitate din meniul de editare angajat.</span>
               </div>
             )}
           </div>
 
-          <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center"><FileText size={18} className="mr-2 text-primary-500" /> Alte documente</h3>
+          <h3 className="text-sm font-bold text-slate-800 dark:text-white mb-4 flex items-center"><FileText size={18} className="mr-2 text-primary-500" /> Alte documente</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {documents.length > 0 ? documents.map((doc, index) => (
-              <div key={doc.id} className="flex items-center justify-between p-4 rounded-lg border border-slate-200 bg-white hover:border-primary-300 hover:shadow-md transition-all group cursor-pointer" onClick={() => setLightboxIndex(index)}>
+              <div key={doc.id} className="flex items-center justify-between p-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-primary-300 hover:shadow-md transition-all group cursor-pointer" onClick={() => setLightboxIndex(index)}>
                 <div className="flex items-center overflow-hidden">
-                  <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 mr-4">
+                  <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 mr-4">
                     <FileText size={20} />
                   </div>
                   <div className="truncate">
-                    <div className="text-sm font-bold text-slate-800 truncate">{doc.file_name}</div>
+                    <div className="text-sm font-bold text-slate-800 dark:text-white truncate">{doc.file_name}</div>
                     <div className="text-xs font-medium text-slate-400 mt-0.5">
                       {new Date(doc.uploaded_at).toLocaleDateString('ro-RO')}
                     </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-2" onClick={e => e.stopPropagation()}>
-                  <button onClick={() => setLightboxIndex(index)} className="p-2 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors">
+                  <button onClick={() => setLightboxIndex(index)} className="p-2 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-full transition-colors">
                     <Eye size={18} />
                   </button>
-                  <button onClick={() => handleDeleteDocument(doc.id)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                  <button 
+                    onClick={() => setDocToDelete(doc.id)}
+                    className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
+                    title="Șterge document"
+                  >
                     <Trash2 size={18} />
                   </button>
                 </div>
               </div>
             )) : (
-              <div className="col-span-full text-center p-12 border-2 border-dashed border-slate-200 rounded-lg bg-slate-50">
+              <div className="col-span-full text-center p-12 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800/50">
                 <FileText size={32} className="mx-auto text-slate-300 mb-3" />
-                <span className="text-sm font-bold text-slate-500 uppercase tracking-wider block">Nu există documente</span>
+                <span className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Nu există documente</span>
                 <span className="text-sm text-slate-400 mt-2 block">Încarcă un contract de muncă sau alte acte pentru acest angajat.</span>
               </div>
             )}
@@ -567,20 +594,20 @@ const EmployeeProfile = ({ tenant, themeColor }) => {
           )}
 
           {/* Conținut Document */}
-          <div className="w-full h-full max-w-5xl bg-white rounded-lg shadow-2xl overflow-hidden flex flex-col relative" onClick={(e) => e.stopPropagation()}>
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50 shrink-0">
+          <div className="w-full h-full max-w-5xl bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden flex flex-col relative" onClick={(e) => e.stopPropagation()}>
+            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700/50 flex items-center justify-between bg-slate-50 dark:bg-slate-800/50 shrink-0">
               <div className="flex items-center gap-3">
-                <span className="px-3 py-1 bg-slate-200 text-slate-700 text-xs font-bold rounded-lg">{lightboxIndex + 1} / {documents.length}</span>
-                <h3 className="font-bold text-slate-800 truncate max-w-xs md:max-w-md">{documents[lightboxIndex].file_name}</h3>
+                <span className="px-3 py-1 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-lg">{lightboxIndex + 1} / {documents.length}</span>
+                <h3 className="font-bold text-slate-800 dark:text-white truncate max-w-xs md:max-w-md">{documents[lightboxIndex].file_name}</h3>
               </div>
               <a href={`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${documents[lightboxIndex].file_path}`} target="_blank" rel="noreferrer" className="flex items-center px-4 py-2 rounded-lg text-sm font-bold bg-primary-50 text-primary-600 hover:bg-primary-100 transition-colors">
                 <Download size={16} className="mr-2" /> Descarcă originalul
               </a>
             </div>
-            <div className="flex-1 bg-slate-200 overflow-hidden flex justify-center items-center p-4">
+            <div className="flex-1 bg-slate-200 dark:bg-slate-700 overflow-hidden flex justify-center items-center p-4">
                {documents[lightboxIndex].file_path.toLowerCase().endsWith('.pdf') ? (
                  <object data={`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${documents[lightboxIndex].file_path}`} type="application/pdf" className="w-full h-full rounded-lg shadow-sm bg-white">
-                    <div className="p-12 text-center text-slate-500 flex flex-col items-center justify-center h-full bg-white rounded-lg">
+                    <div className="p-12 text-center text-slate-500 dark:text-slate-400 flex flex-col items-center justify-center h-full bg-white rounded-lg">
                       <FileText size={48} className="text-slate-300 mb-4" />
                       <p className="text-lg font-medium mb-4">Browserul (sau telefonul tău) nu suportă previzualizarea directă a PDF-urilor.</p>
                       <a href={`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${documents[lightboxIndex].file_path}`} className="px-6 py-3 bg-primary-600 text-white rounded-lg font-bold shadow-sm">
@@ -596,6 +623,13 @@ const EmployeeProfile = ({ tenant, themeColor }) => {
         </div>
       )}
 
+      <ConfirmModal 
+        isOpen={!!docToDelete}
+        onClose={() => setDocToDelete(null)}
+        onConfirm={confirmDeleteDocument}
+        title="Ștergere Document"
+        message="Ești sigur că vrei să ștergi acest document?"
+      />
     </div>
   );
 };

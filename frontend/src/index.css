@@ -13,3 +13,20 @@
   --color-primary-hover: #1D4ED8;
   --color-primary-light: #EFF6FF;
 }
+
+input[type="color"] {
+  -webkit-appearance: none;
+  border: none;
+  padding: 0;
+}
+input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+input[type="color"]::-webkit-color-swatch {
+  border: none;
+  border-radius: 9999px;
+}
+input[type="color"]::-moz-color-swatch {
+  border: none;
+  border-radius: 9999px;
+}

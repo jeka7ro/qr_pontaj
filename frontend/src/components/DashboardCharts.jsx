@@ -75,7 +75,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
   }, [tenant.id, themeColor]);
 
   if (loading) {
-    return <div className="py-20 text-center text-slate-500 font-medium">Se încarcă datele...</div>;
+    return <div className="py-20 text-center text-slate-500 dark:text-slate-400 font-medium">Se încarcă datele...</div>;
   }
 
   // ZoomCharts Style Interactive Center Text
@@ -118,7 +118,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-slate-900 text-white p-4 rounded-xl shadow-2xl border border-slate-700">
+        <div className="bg-slate-900 text-white p-4 rounded-lg shadow-2xl border border-slate-700">
           <p className="text-slate-400 text-xs font-bold uppercase mb-1">{label || payload[0].name}</p>
           <p className="text-xl font-bold">
             {payload[0].value} <span className="text-slate-400 text-sm font-normal">persoane</span>
@@ -134,31 +134,31 @@ export default function DashboardCharts({ tenant, themeColor }) {
       
       {/* Top KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 flex items-center gap-4 hover:shadow-md transition-shadow">
-          <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-slate-50 dark:bg-slate-700/50 text-slate-400 dark:text-slate-300">
+        <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700/50 dark:border-slate-700 flex items-center gap-4 hover:shadow-md transition-shadow">
+          <div className="w-14 h-14 rounded-full flex items-center justify-center bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-700/50 text-slate-400 dark:text-slate-300">
             <Users size={24} />
           </div>
           <div>
             <div className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-1">Total Angajați</div>
-            <div className="text-3xl font-black text-slate-800 dark:text-white">{stats.totalEmployees}</div>
+            <div className="text-3xl font-black text-slate-800 dark:text-white dark:text-white">{stats.totalEmployees}</div>
           </div>
         </div>
-        <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 flex items-center gap-4 hover:shadow-md transition-shadow">
-          <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-green-50 dark:bg-green-900/30 text-green-500">
+        <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700/50 dark:border-slate-700 flex items-center gap-4 hover:shadow-md transition-shadow">
+          <div className="w-14 h-14 rounded-full flex items-center justify-center bg-green-50 dark:bg-green-900/30 text-green-500">
             <Clock size={24} />
           </div>
           <div>
             <div className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-1">Prezenți Acum</div>
-            <div className="text-3xl font-black text-slate-800 dark:text-white">{stats.presentNow}</div>
+            <div className="text-3xl font-black text-slate-800 dark:text-white dark:text-white">{stats.presentNow}</div>
           </div>
         </div>
-        <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 flex items-center gap-4 hover:shadow-md transition-shadow">
-          <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-blue-50 dark:bg-blue-900/30 text-blue-500">
+        <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700/50 dark:border-slate-700 flex items-center gap-4 hover:shadow-md transition-shadow">
+          <div className="w-14 h-14 rounded-full flex items-center justify-center bg-blue-50 dark:bg-blue-900/30 text-blue-500">
             <LogIn size={24} />
           </div>
           <div>
             <div className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-1">Intrări Astăzi</div>
-            <div className="text-3xl font-black text-slate-800 dark:text-white">{stats.todayCheckins}</div>
+            <div className="text-3xl font-black text-slate-800 dark:text-white dark:text-white">{stats.todayCheckins}</div>
           </div>
         </div>
       </div>
@@ -166,8 +166,8 @@ export default function DashboardCharts({ tenant, themeColor }) {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         {/* ZoomCharts Style Donut */}
-        <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 lg:col-span-1 flex flex-col">
-          <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-6">Status Prezență</h3>
+        <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700/50 dark:border-slate-700 lg:col-span-1 flex flex-col">
+          <h3 className="text-lg font-bold text-slate-800 dark:text-white dark:text-white mb-6">Status Prezență</h3>
           <div className="flex-1 min-h-[350px] relative">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -224,7 +224,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
             {/* Centered HTML overlay for Donut text - ZoomCharts KPI Card Style */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div 
-                className="rounded-full flex flex-col items-center justify-center shadow-inner"
+                className="rounded-lg flex flex-col items-center justify-center shadow-inner"
                 style={{ width: '150px', height: '150px', backgroundColor: '#1e293b' }} // Navy dark center
               >
                 {drillLevel === 'root' ? (
@@ -250,8 +250,8 @@ export default function DashboardCharts({ tenant, themeColor }) {
         </div>
 
         {/* ZoomCharts Style Bar Chart */}
-        <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 lg:col-span-2 flex flex-col">
-          <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-6">Evoluție Intrări (Ultimele 7 zile)</h3>
+        <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700/50 dark:border-slate-700 lg:col-span-2 flex flex-col">
+          <h3 className="text-lg font-bold text-slate-800 dark:text-white dark:text-white mb-6">Evoluție Intrări (Ultimele 7 zile)</h3>
           <div className="flex-1 min-h-[350px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={stats.weeklyData} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>

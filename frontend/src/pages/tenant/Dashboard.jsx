@@ -9,6 +9,17 @@ import LocationsList from '../../components/LocationsList';
 import UpsellLock from '../../components/UpsellLock';
 import QrSelector from './QrSelector';
 import RolesList from './RolesList';
+import ShiftsModule from './shifts/ShiftsModule';
+import LeavesModule from './leaves/LeavesModule';
+import SagaModule from './saga/SagaModule';
+import GeofenceModule from './geofence/GeofenceModule';
+import OfflineModule from './offline/OfflineModule';
+import BillingModule from './billing/BillingModule';
+import RevisalModule from './revisal/RevisalModule';
+import ErpModule from './erp/ErpModule';
+import FaceRecognitionModule from './face_recognition/FaceRecognitionModule';
+import WhatsappModule from './whatsapp/WhatsappModule';
+import AssetsModule from './assets/AssetsModule';
 import { QRCodeSVG } from 'qrcode.react';
 
 export default function TenantDashboard() {
@@ -77,19 +88,19 @@ export default function TenantDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center">
-        <div className="w-8 h-8 border-4 border-slate-300 border-t-primary-600 rounded-full animate-spin"></div>
-        <p className="mt-4 text-slate-500 font-medium">Se încarcă panoul de control...</p>
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-800/50 flex flex-col items-center justify-center">
+        <div className="w-8 h-8 border-4 border-slate-300 dark:border-slate-600 border-t-primary-600 rounded-full animate-spin"></div>
+        <p className="mt-4 text-slate-500 dark:text-slate-400 font-medium">Se încarcă panoul de control...</p>
       </div>
     );
   }
 
   if (error || !tenantInfo?.tenant) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-        <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full text-center">
-          <h2 className="text-xl font-bold text-slate-800 mb-2">Eroare de acces</h2>
-          <p className="text-slate-600 mb-6">{error || 'Nu am putut încărca datele tenantului.'}</p>
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center p-4">
+        <div className="bg-white dark:bg-slate-900 p-8 rounded-lg shadow-xl max-w-md w-full text-center">
+          <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-2">Eroare de acces</h2>
+          <p className="text-slate-600 dark:text-slate-300 mb-6">{error || 'Nu am putut încărca datele tenantului.'}</p>
           <button 
             onClick={handleLogout}
             className="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold h-11 rounded-full transition-colors"
@@ -108,15 +119,15 @@ export default function TenantDashboard() {
   const qrUrl = site ? `https://scan.pontaj.app/s/${site.id}` : window.location.origin;
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-800/50 flex">
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 md:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
-      <div className={`fixed inset-y-0 left-0 w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col z-50 transform transition-transform duration-300 ease-in-out md:translate-x-0 md:static ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <div className={`fixed inset-y-0 left-0 w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 dark:border-slate-700 flex flex-col z-50 transform transition-transform duration-300 ease-in-out md:translate-x-0 md:static ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         
-        <div className="h-16 flex items-center px-6 border-b border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 justify-between">
+        <div className="h-16 flex items-center px-6 border-b border-slate-100 dark:border-slate-700/50 dark:border-slate-700 bg-white dark:bg-slate-800 justify-between">
           <div className="flex items-center gap-3 overflow-hidden">
             {tenant.logo_url ? (
               <div className="h-10 w-10 shrink-0 bg-slate-800 dark:bg-transparent rounded-lg flex items-center justify-center p-1 shadow-sm border border-slate-700/50">
@@ -124,22 +135,22 @@ export default function TenantDashboard() {
               </div>
             ) : (
               <div 
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold shrink-0"
+                className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold shrink-0"
                 style={{ backgroundColor: themeColor }}
               >
                 {tenant.name.substring(0, 2).toUpperCase()}
               </div>
             )}
-            <span className="font-bold text-slate-800 dark:text-white truncate" title={tenant.name}>{tenant.name}</span>
+            <span className="font-bold text-slate-800 dark:text-white dark:text-white truncate" title={tenant.name}>{tenant.name}</span>
           </div>
           <button 
             onClick={() => setIsDarkMode(!isDarkMode)}
-            className="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors focus:outline-none hidden md:block"
+            className="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 dark:text-slate-400 transition-colors focus:outline-none hidden md:block"
             title="Comută tema"
           >
             {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
           </button>
-          <button className="md:hidden text-slate-400 hover:text-slate-600" onClick={() => setSidebarOpen(false)}>
+          <button className="md:hidden text-slate-400 hover:text-slate-600 dark:text-slate-300" onClick={() => setSidebarOpen(false)}>
             <X size={20} />
           </button>
         </div>
@@ -149,8 +160,8 @@ export default function TenantDashboard() {
           <Link 
             to="/admin/dashboard"
             onClick={() => setSidebarOpen(false)}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm
-              ${location.pathname === '/admin/dashboard' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-full transition-colors font-medium text-sm
+              ${location.pathname === '/admin/dashboard' ? 'bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-slate-800 dark:text-white'}`}
             style={location.pathname === '/admin/dashboard' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
           >
             <div className="w-5 h-5 flex items-center justify-center">
@@ -162,8 +173,8 @@ export default function TenantDashboard() {
           <Link 
             to="/admin/timesheets"
             onClick={() => setSidebarOpen(false)}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm
-              ${location.pathname === '/admin/timesheets' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-full transition-colors font-medium text-sm
+              ${location.pathname === '/admin/timesheets' ? 'bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-slate-800 dark:text-white'}`}
             style={location.pathname === '/admin/timesheets' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
           >
             <div className="w-5 h-5 flex items-center justify-center">
@@ -175,8 +186,8 @@ export default function TenantDashboard() {
           <Link 
             to="/admin/employees"
             onClick={() => setSidebarOpen(false)}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm
-              ${location.pathname.startsWith('/admin/employees') ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-full transition-colors font-medium text-sm
+              ${location.pathname.startsWith('/admin/employees') ? 'bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-slate-800 dark:text-white'}`}
             style={location.pathname.startsWith('/admin/employees') ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
           >
             <Users size={18} /> Modul HR (Angajați)
@@ -185,8 +196,8 @@ export default function TenantDashboard() {
           <Link 
             to="/admin/locations"
             onClick={() => setSidebarOpen(false)}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm
-              ${location.pathname === '/admin/locations' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-full transition-colors font-medium text-sm
+              ${location.pathname === '/admin/locations' ? 'bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-slate-800 dark:text-white'}`}
             style={location.pathname === '/admin/locations' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
           >
             <MapPin size={18} /> Puncte de Lucru
@@ -195,8 +206,8 @@ export default function TenantDashboard() {
           <Link 
             to="/admin/qr"
             onClick={() => setSidebarOpen(false)}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm
-              ${location.pathname === '/admin/qr' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-full transition-colors font-medium text-sm
+              ${location.pathname === '/admin/qr' ? 'bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-slate-800 dark:text-white'}`}
             style={location.pathname === '/admin/qr' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
           >
             <QrCode size={18} /> Afișaj Cod QR
@@ -206,8 +217,8 @@ export default function TenantDashboard() {
             <Link 
               to="/admin/leaves"
               onClick={() => setSidebarOpen(false)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm
-                ${location.pathname === '/admin/leaves' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-full transition-colors font-medium text-sm
+                ${location.pathname === '/admin/leaves' ? 'bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-slate-800 dark:text-white'}`}
               style={location.pathname === '/admin/leaves' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
             >
               <CalendarDays size={18} /> Zile Libere (CO/CM)
@@ -218,8 +229,8 @@ export default function TenantDashboard() {
             <Link 
               to="/admin/export"
               onClick={() => setSidebarOpen(false)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm
-                ${location.pathname === '/admin/export' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-full transition-colors font-medium text-sm
+                ${location.pathname === '/admin/export' ? 'bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-slate-800 dark:text-white'}`}
               style={location.pathname === '/admin/export' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
             >
               <FileSpreadsheet size={18} /> Export Conta (SAGA)
@@ -230,8 +241,8 @@ export default function TenantDashboard() {
             <Link 
               to="/admin/geofence"
               onClick={() => setSidebarOpen(false)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm
-                ${location.pathname === '/admin/geofence' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-full transition-colors font-medium text-sm
+                ${location.pathname === '/admin/geofence' ? 'bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-slate-800 dark:text-white'}`}
               style={location.pathname === '/admin/geofence' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
             >
               <Map size={18} /> Hartă Geofence
@@ -242,8 +253,8 @@ export default function TenantDashboard() {
             <Link 
               to="/admin/offline"
               onClick={() => setSidebarOpen(false)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm
-                ${location.pathname === '/admin/offline' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-full transition-colors font-medium text-sm
+                ${location.pathname === '/admin/offline' ? 'bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-slate-800 dark:text-white'}`}
               style={location.pathname === '/admin/offline' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
             >
               <Globe size={18} /> Mod Offline
@@ -254,8 +265,8 @@ export default function TenantDashboard() {
             <Link 
               to="/admin/billing"
               onClick={() => setSidebarOpen(false)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm
-                ${location.pathname === '/admin/billing' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-full transition-colors font-medium text-sm
+                ${location.pathname === '/admin/billing' ? 'bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-slate-800 dark:text-white'}`}
               style={location.pathname === '/admin/billing' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
             >
               <CreditCard size={18} /> Abonament & Facturi
@@ -266,8 +277,8 @@ export default function TenantDashboard() {
             <Link 
               to="/admin/revisal"
               onClick={() => setSidebarOpen(false)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm
-                ${location.pathname === '/admin/revisal' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-full transition-colors font-medium text-sm
+                ${location.pathname === '/admin/revisal' ? 'bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-slate-800 dark:text-white'}`}
               style={location.pathname === '/admin/revisal' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
             >
               <BookOpenCheck size={18} /> Integrare REVISAL
@@ -278,8 +289,8 @@ export default function TenantDashboard() {
             <Link 
               to="/admin/erp"
               onClick={() => setSidebarOpen(false)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm
-                ${location.pathname === '/admin/erp' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-full transition-colors font-medium text-sm
+                ${location.pathname === '/admin/erp' ? 'bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-slate-800 dark:text-white'}`}
               style={location.pathname === '/admin/erp' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
             >
               <Calculator size={18} /> Gestiune & ERP
@@ -290,8 +301,8 @@ export default function TenantDashboard() {
             <Link 
               to="/admin/shifts"
               onClick={() => setSidebarOpen(false)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm
-                ${location.pathname === '/admin/shifts' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-full transition-colors font-medium text-sm
+                ${location.pathname === '/admin/shifts' ? 'bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-slate-800 dark:text-white'}`}
               style={location.pathname === '/admin/shifts' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
             >
               <CalendarClock size={18} /> Planificator Ture
@@ -302,8 +313,8 @@ export default function TenantDashboard() {
             <Link 
               to="/admin/face"
               onClick={() => setSidebarOpen(false)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm
-                ${location.pathname === '/admin/face' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-full transition-colors font-medium text-sm
+                ${location.pathname === '/admin/face' ? 'bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-slate-800 dark:text-white'}`}
               style={location.pathname === '/admin/face' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
             >
               <ScanFace size={18} /> Recunoaștere Facială
@@ -314,8 +325,8 @@ export default function TenantDashboard() {
             <Link 
               to="/admin/whatsapp"
               onClick={() => setSidebarOpen(false)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm
-                ${location.pathname === '/admin/whatsapp' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-full transition-colors font-medium text-sm
+                ${location.pathname === '/admin/whatsapp' ? 'bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-slate-800 dark:text-white'}`}
               style={location.pathname === '/admin/whatsapp' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
             >
               <MessageSquare size={18} /> Alerte WhatsApp
@@ -326,8 +337,8 @@ export default function TenantDashboard() {
             <Link 
               to="/admin/assets"
               onClick={() => setSidebarOpen(false)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium text-sm
-                ${location.pathname === '/admin/assets' ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-full transition-colors font-medium text-sm
+                ${location.pathname === '/admin/assets' ? 'bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-slate-800 dark:text-white'}`}
               style={location.pathname === '/admin/assets' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
             >
               <Wrench size={18} /> Gestiune Echipamente
@@ -336,10 +347,10 @@ export default function TenantDashboard() {
         </nav>
 
         {/* User / Footer */}
-        <div className="p-4 border-t border-slate-100">
+        <div className="p-4 border-t border-slate-100 dark:border-slate-700/50">
           <button 
             onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-full border border-slate-200 text-slate-600 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors text-sm font-bold"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-full border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors text-sm font-bold"
           >
             <LogOut size={16} /> Deconectare
           </button>
@@ -350,23 +361,23 @@ export default function TenantDashboard() {
       <div className="flex-1 flex flex-col min-w-0">
         
         {/* Mobile Header */}
-        <header className="h-16 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-4 shrink-0 md:hidden z-10 transition-colors">
+        <header className="h-16 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 dark:border-slate-700 flex items-center justify-between px-4 shrink-0 md:hidden z-10 transition-colors">
           <div className="flex items-center gap-3">
-            <button className="p-2 -ml-2 text-slate-500 dark:text-slate-400" onClick={() => setSidebarOpen(true)}>
+            <button className="p-2 -ml-2 text-slate-500 dark:text-slate-400 dark:text-slate-400" onClick={() => setSidebarOpen(true)}>
               <Menu size={24} />
             </button>
-            <span className="font-bold text-slate-800 dark:text-white">{tenant.name}</span>
+            <span className="font-bold text-slate-800 dark:text-white dark:text-white">{tenant.name}</span>
           </div>
           <button 
             onClick={() => setIsDarkMode(!isDarkMode)}
-            className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors focus:outline-none"
+            className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 dark:text-slate-400 transition-colors focus:outline-none"
           >
             {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
           </button>
         </header>
 
         {/* Content Area */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-8 bg-slate-50 dark:bg-slate-900 transition-colors">
+        <main className="flex-1 overflow-y-auto p-4 md:p-8 bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-900 transition-colors">
           <Routes>
             <Route path="/" element={<Navigate to="dashboard" replace />} />
             
@@ -375,23 +386,23 @@ export default function TenantDashboard() {
             } />
             
             <Route path="timesheets" element={
-              <div className="max-w-5xl mx-auto">
+              <div className="max-w-5xl">
                 <TimesheetReport tenant={tenant} themeColor={themeColor} />
               </div>
             } />
 
             <Route path="employees" element={
-              <div className="max-w-6xl mx-auto">
-                <div className="mb-6 flex gap-4 border-b border-slate-200 dark:border-slate-700">
+              <div className="max-w-6xl">
+                <div className="mb-6 flex gap-4 border-b border-slate-200 dark:border-slate-700 dark:border-slate-700">
                   <Link 
                     to="/admin/employees"
-                    className={`pb-3 px-2 font-bold text-sm border-b-2 transition-colors ${location.pathname === '/admin/employees' ? 'text-slate-800 dark:text-white border-slate-800 dark:border-white' : 'text-slate-500 border-transparent hover:text-slate-700 dark:hover:text-slate-300'}`}
+                    className={`pb-3 px-2 font-bold text-sm border-b-2 transition-colors ${location.pathname === '/admin/employees' ? 'text-slate-800 dark:text-white dark:text-white border-slate-800 dark:border-white' : 'text-slate-500 dark:text-slate-400 border-transparent hover:text-slate-700 dark:text-slate-300 dark:hover:text-slate-300'}`}
                   >
                     Angajați
                   </Link>
                   <Link 
                     to="/admin/employees/roles"
-                    className={`pb-3 px-2 font-bold text-sm border-b-2 transition-colors ${location.pathname === '/admin/employees/roles' ? 'text-slate-800 dark:text-white border-slate-800 dark:border-white' : 'text-slate-500 border-transparent hover:text-slate-700 dark:hover:text-slate-300'}`}
+                    className={`pb-3 px-2 font-bold text-sm border-b-2 transition-colors ${location.pathname === '/admin/employees/roles' ? 'text-slate-800 dark:text-white dark:text-white border-slate-800 dark:border-white' : 'text-slate-500 dark:text-slate-400 border-transparent hover:text-slate-700 dark:text-slate-300 dark:hover:text-slate-300'}`}
                   >
                     Roluri (Funcții)
                   </Link>
@@ -401,17 +412,17 @@ export default function TenantDashboard() {
             } />
 
             <Route path="employees/roles" element={
-              <div className="max-w-6xl mx-auto">
-                <div className="mb-6 flex gap-4 border-b border-slate-200 dark:border-slate-700">
+              <div className="max-w-6xl">
+                <div className="mb-6 flex gap-4 border-b border-slate-200 dark:border-slate-700 dark:border-slate-700">
                   <Link 
                     to="/admin/employees"
-                    className={`pb-3 px-2 font-bold text-sm border-b-2 transition-colors ${location.pathname === '/admin/employees' ? 'text-slate-800 dark:text-white border-slate-800 dark:border-white' : 'text-slate-500 border-transparent hover:text-slate-700 dark:hover:text-slate-300'}`}
+                    className={`pb-3 px-2 font-bold text-sm border-b-2 transition-colors ${location.pathname === '/admin/employees' ? 'text-slate-800 dark:text-white dark:text-white border-slate-800 dark:border-white' : 'text-slate-500 dark:text-slate-400 border-transparent hover:text-slate-700 dark:text-slate-300 dark:hover:text-slate-300'}`}
                   >
                     Angajați
                   </Link>
                   <Link 
                     to="/admin/employees/roles"
-                    className={`pb-3 px-2 font-bold text-sm border-b-2 transition-colors ${location.pathname === '/admin/employees/roles' ? 'text-slate-800 dark:text-white border-slate-800 dark:border-white' : 'text-slate-500 border-transparent hover:text-slate-700 dark:hover:text-slate-300'}`}
+                    className={`pb-3 px-2 font-bold text-sm border-b-2 transition-colors ${location.pathname === '/admin/employees/roles' ? 'text-slate-800 dark:text-white dark:text-white border-slate-800 dark:border-white' : 'text-slate-500 dark:text-slate-400 border-transparent hover:text-slate-700 dark:text-slate-300 dark:hover:text-slate-300'}`}
                   >
                     Roluri (Funcții)
                   </Link>
@@ -429,14 +440,16 @@ export default function TenantDashboard() {
             } />
 
             <Route path="qr" element={
-              <div className="max-w-4xl mx-auto">
+              <div className="max-w-4xl">
                 <QrSelector tenant={tenant} themeColor={themeColor} />
               </div>
             } />
             
             <Route path="leaves" element={
               tenant.modules?.leaves ? (
-                <div className="flex items-center justify-center h-64 text-slate-500 font-medium bg-white rounded-2xl shadow-sm border border-slate-100">Modulul Zile Libere este în dezvoltare.</div>
+                <div className="max-w-4xl">
+                  <LeavesModule tenant={tenant} themeColor={themeColor} />
+                </div>
               ) : (
                 <UpsellLock title="Zile Libere (CO/CM)" description="Gestionează concediile de odihnă și medicale ale angajaților direct din platformă." themeColor={themeColor} />
               )
@@ -444,7 +457,9 @@ export default function TenantDashboard() {
 
             <Route path="export" element={
               tenant.modules?.export_saga ? (
-                <div className="flex items-center justify-center h-64 text-slate-500 font-medium bg-white rounded-2xl shadow-sm border border-slate-100">Modulul Export SAGA este în dezvoltare.</div>
+                <div className="w-full">
+                  <SagaModule tenant={tenant} themeColor={themeColor} />
+                </div>
               ) : (
                 <UpsellLock title="Export Conta (SAGA)" description="Generează automat fișierele de import pentru programul de contabilitate SAGA C." themeColor={themeColor} />
               )
@@ -452,7 +467,9 @@ export default function TenantDashboard() {
 
             <Route path="geofence" element={
               tenant.modules?.geofence ? (
-                <div className="flex items-center justify-center h-64 text-slate-500 font-medium bg-white rounded-2xl shadow-sm border border-slate-100">Modulul Hartă Geofence este în dezvoltare.</div>
+                <div className="max-w-6xl">
+                  <GeofenceModule tenant={tenant} themeColor={themeColor} />
+                </div>
               ) : (
                 <UpsellLock title="Hartă Geofence" description="Trasează limitele perimetrului de pontaj direct pe hartă cu precizie maximă." themeColor={themeColor} />
               )
@@ -460,7 +477,9 @@ export default function TenantDashboard() {
 
             <Route path="offline" element={
               tenant.modules?.offline ? (
-                <div className="flex items-center justify-center h-64 text-slate-500 font-medium bg-white rounded-2xl shadow-sm border border-slate-100">Modulul Offline este în dezvoltare.</div>
+                <div className="w-full">
+                  <OfflineModule tenant={tenant} themeColor={themeColor} />
+                </div>
               ) : (
                 <UpsellLock title="Mod Offline (Reziliență)" description="Permite tabletei să rețină scanările chiar și atunci când pică conexiunea la internet." themeColor={themeColor} />
               )
@@ -468,31 +487,39 @@ export default function TenantDashboard() {
 
             <Route path="billing" element={
               tenant.modules?.billing ? (
-                <div className="flex items-center justify-center h-64 text-slate-500 font-medium bg-white rounded-2xl shadow-sm border border-slate-100">Modulul Facturare este în dezvoltare.</div>
+                <div className="w-full">
+                  <BillingModule tenant={tenant} themeColor={themeColor} />
+                </div>
               ) : (
-                <UpsellLock title="Abonament & Facturi" description="Gestionează abonamentul firmei și descarcă facturile direct de aici." themeColor={themeColor} />
+                <UpsellLock title="Abonament & Facturi" description="Descarcă facturile și gestionează abonamentul firmei." themeColor={themeColor} />
               )
             } />
 
             <Route path="revisal" element={
               tenant.modules?.revisal ? (
-                <div className="flex items-center justify-center h-64 text-slate-500 font-medium bg-white rounded-2xl shadow-sm border border-slate-100">Integrare REVISAL în dezvoltare.</div>
+                <div className="w-full">
+                  <RevisalModule tenant={tenant} themeColor={themeColor} />
+                </div>
               ) : (
-                <UpsellLock title="Integrare API REVISAL" description="Sincronizează automat contractele de muncă și absențele cu baza de date a Inspecției Muncii." themeColor={themeColor} />
+                <UpsellLock title="Integrare REVISAL" description="Generează automat fișierul XML compatibil cu portalul Inspecției Muncii (Revisal)." themeColor={themeColor} />
               )
             } />
 
             <Route path="erp" element={
               tenant.modules?.erp ? (
-                <div className="flex items-center justify-center h-64 text-slate-500 font-medium bg-white rounded-2xl shadow-sm border border-slate-100">Modul ERP în dezvoltare.</div>
+                <div className="w-full">
+                  <ErpModule tenant={tenant} themeColor={themeColor} />
+                </div>
               ) : (
-                <UpsellLock title="Modul ERP & Contracte" description="Asociază pontajul cu centre de cost, emite rapoarte de profitabilitate și atașează contracte comerciale pe fiecare punct de lucru." themeColor={themeColor} />
+                <UpsellLock title="Modul ERP & Contracte Comerciale" description="Alocă centre de cost per proiect și înregistrează contractele clienților." themeColor={themeColor} />
               )
             } />
 
             <Route path="shifts" element={
               tenant.modules?.shifts ? (
-                <div className="flex items-center justify-center h-64 text-slate-500 font-medium bg-white rounded-2xl shadow-sm border border-slate-100">Planificator Ture în dezvoltare.</div>
+                <div className="max-w-6xl">
+                  <ShiftsModule tenant={tenant} themeColor={themeColor} />
+                </div>
               ) : (
                 <UpsellLock title="Planificator de Ture" description="Asignează angajații pe schimburi (tura de zi/noapte). Primește alerte dacă o persoană programată nu s-a pontat la timp." themeColor={themeColor} />
               )
@@ -500,25 +527,31 @@ export default function TenantDashboard() {
 
             <Route path="face" element={
               tenant.modules?.face_recognition ? (
-                <div className="flex items-center justify-center h-64 text-slate-500 font-medium bg-white rounded-2xl shadow-sm border border-slate-100">Recunoaștere Facială în dezvoltare.</div>
+                <div className="w-full">
+                  <FaceRecognitionModule tenant={tenant} themeColor={themeColor} />
+                </div>
               ) : (
-                <UpsellLock title="Recunoaștere Facială (Biometrie AI)" description="Securitate supremă: la momentul scanării QR, tableta realizează o poză și validează fața angajatului folosind Inteligența Artificială." themeColor={themeColor} />
+                <UpsellLock title="Recunoaștere Facială" description="Folosește AI pentru a scana fața angajatului la pontaj și elimină complet frauda ('pontatul pentru colegi')." themeColor={themeColor} />
               )
             } />
 
             <Route path="whatsapp" element={
               tenant.modules?.whatsapp ? (
-                <div className="flex items-center justify-center h-64 text-slate-500 font-medium bg-white rounded-2xl shadow-sm border border-slate-100">Alerte WhatsApp în dezvoltare.</div>
+                <div className="w-full">
+                  <WhatsappModule tenant={tenant} themeColor={themeColor} />
+                </div>
               ) : (
-                <UpsellLock title="Notificări WhatsApp" description="Primește instant pe telefonul mobil (SMS sau WhatsApp) rapoartele de sfârșit de zi sau alertele privind orele suplimentare." themeColor={themeColor} />
+                <UpsellLock title="Alerte WhatsApp & SMS" description="Fii notificat instant pe telefon dacă un angajat întârzie sau părăsește locația mai repede." themeColor={themeColor} />
               )
             } />
 
             <Route path="assets" element={
               tenant.modules?.assets ? (
-                <div className="flex items-center justify-center h-64 text-slate-500 font-medium bg-white rounded-2xl shadow-sm border border-slate-100">Gestiune Echipamente în dezvoltare.</div>
+                <div className="w-full">
+                  <AssetsModule tenant={tenant} themeColor={themeColor} />
+                </div>
               ) : (
-                <UpsellLock title="Gestiune Echipamente" description="Nu doar angajații se pontează. Urmărește cine a preluat tableta, bormașina sau mașina de serviciu și calculează costul de uzură." themeColor={themeColor} />
+                <UpsellLock title="Gestiune Echipamente & Chei" description="Asociază uneltele și cheile de la mașini cu angajatul curent scanând simplu un cod QR." themeColor={themeColor} />
               )
             } />
 

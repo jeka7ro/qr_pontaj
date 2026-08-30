@@ -130,7 +130,7 @@ export function parseIdCardText(text) {
     const upperLine = lines[i].toUpperCase();
     
     // Cazul 1: Găsim clar titlul "DOMICILIU" sau o variantă stâlcită (D0MICILIU, ADRE55E)
-    const isDomiciliuTitle = upperLine.includes('DOMICILI') || upperLine.includes('D0MICILI') || upperLine.includes('ADRESS') || upperLine.includes('ADRE55');
+    const isDomiciliuTitle = upperLine.includes('DOMICILI') || upperLine.includes('D0MICILI') || upperLine.includes('ADRESS') || upperLine.includes('ADRE55') || upperLine.includes('DOM.') || upperLine.includes('D0M.');
     
     // Cazul 2: OCR-ul a sărit complet peste titlu și suntem direct pe rândul cu adresa
     const hasAddressMarkers = upperLine.includes('JUD.') || upperLine.includes('MUN.') || upperLine.includes('STR.') || upperLine.includes('COM.') || upperLine.includes('SAT ') || upperLine.includes('SECTOR');

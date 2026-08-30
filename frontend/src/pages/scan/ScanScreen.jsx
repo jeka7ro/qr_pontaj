@@ -176,7 +176,7 @@ export default function ScanScreen() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-900 flex items-center justify-center">
         <Loader2 className="w-10 h-10 animate-spin text-slate-400" />
       </div>
     );
@@ -184,11 +184,11 @@ export default function ScanScreen() {
 
   if (error && !tenant) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center p-6">
-        <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-sm border border-red-100 dark:border-red-900 max-w-md w-full text-center">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-900 flex items-center justify-center p-6">
+        <div className="bg-white dark:bg-slate-900 p-8 rounded-lg shadow-sm border border-red-100 dark:border-red-900 max-w-md w-full text-center">
           <ShieldAlert className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Eroare Scanare</h1>
-          <p className="text-slate-600 dark:text-slate-400">{error}</p>
+          <h1 className="text-xl font-bold text-slate-900 dark:text-white dark:text-white mb-2">Eroare Scanare</h1>
+          <p className="text-slate-600 dark:text-slate-300 dark:text-slate-400">{error}</p>
         </div>
       </div>
     );
@@ -199,25 +199,25 @@ export default function ScanScreen() {
   if (successMsg) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6" style={{ backgroundColor: `${themeColor}10` }}>
-        <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 max-w-sm w-full text-center animate-in fade-in zoom-in duration-300">
+        <div className="bg-white dark:bg-slate-900 p-8 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 dark:border-slate-800 max-w-sm w-full text-center animate-in fade-in zoom-in duration-300">
           <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
             <CheckCircle2 size={40} />
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Succes!</h1>
-          <p className="text-slate-600 dark:text-slate-400 font-medium mb-6">{successMsg}</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white dark:text-white mb-2">Succes!</h1>
+          <p className="text-slate-600 dark:text-slate-300 dark:text-slate-400 font-medium mb-6">{successMsg}</p>
 
           {employeeInfo && employeeInfo.showPhoto !== false && (
-            <div className="bg-slate-50 rounded-2xl p-4 flex items-center gap-4 text-left">
+            <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4 flex items-center gap-4 text-left">
               {employeeInfo.avatar_path ? (
-                <img src={`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${employeeInfo.avatar_path}`} alt="Avatar" className="w-12 h-12 rounded-full object-cover border border-slate-200" />
+                <img src={`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${employeeInfo.avatar_path}`} alt="Avatar" className="w-12 h-12 rounded-full object-cover border border-slate-200 dark:border-slate-700" />
               ) : (
-                <div className="w-12 h-12 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 font-bold border border-slate-300">
+                <div className="w-12 h-12 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 font-bold border border-slate-300 dark:border-slate-600">
                   {employeeInfo.first_name[0]}{employeeInfo.last_name[0]}
                 </div>
               )}
               <div>
-                <p className="font-bold text-slate-900">{employeeInfo.first_name} {employeeInfo.last_name}</p>
-                <p className="text-xs text-slate-500 font-medium">
+                <p className="font-bold text-slate-900 dark:text-white">{employeeInfo.first_name} {employeeInfo.last_name}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
                   {successMsg.includes('INTRARE') ? 'Bună dimineața / ziua!' : 'La revedere, o zi faină!'}
                 </p>
               </div>
@@ -229,17 +229,17 @@ export default function ScanScreen() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col p-6">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-900 flex flex-col p-6">
       <div className="max-w-md w-full mx-auto flex-1 flex flex-col justify-center">
 
-        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+        <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 dark:border-slate-800 overflow-hidden">
           {/* Header */}
           <div className="p-6 text-center border-b border-slate-800 bg-slate-950">
             {tenant.logo_url ? (
               <img src={tenant.logo_url.startsWith('http') ? tenant.logo_url : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${tenant.logo_url}`} alt="Logo" className="h-14 object-contain mx-auto mb-3 filter drop-shadow-md" />
             ) : (
               <div
-                className="w-14 h-14 rounded-2xl flex items-center justify-center text-xl font-black shadow-sm mx-auto mb-3"
+                className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-black shadow-sm mx-auto mb-3"
                 style={{ backgroundColor: themeColor, color: '#fff' }}
               >
                 {tenant.name.substring(0, 2).toUpperCase()}
@@ -251,14 +251,14 @@ export default function ScanScreen() {
 
           <div className="p-6">
             {error && (
-              <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-xl flex items-start gap-3 text-sm">
+              <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-lg flex items-start gap-3 text-sm">
                 <ShieldAlert size={18} className="shrink-0 mt-0.5" />
                 <p className="font-medium">{error}</p>
               </div>
             )}
 
             <div className="mb-5">
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
                 Cod Angajat
               </label>
               <div className="relative">
@@ -267,13 +267,13 @@ export default function ScanScreen() {
                   value={employeeCode}
                   onChange={e => setEmployeeCode(e.target.value.toUpperCase())}
                   placeholder="Ex: EMP001"
-                  className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all shadow-sm font-bold"
+                  className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all shadow-sm font-bold"
                 />
               </div>
             </div>
 
             <div className="mb-5">
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
                 PIN (4 cifre)
               </label>
               <div className="relative">
@@ -283,7 +283,7 @@ export default function ScanScreen() {
                   value={pinCode}
                   onChange={e => setPinCode(e.target.value.replace(/\D/g, ''))}
                   placeholder="••••"
-                  className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all shadow-sm font-bold tracking-[0.5em]"
+                  className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all shadow-sm font-bold tracking-[0.5em]"
                 />
               </div>
               <div className="mt-2 flex justify-end px-2">
@@ -304,14 +304,14 @@ export default function ScanScreen() {
                 onChange={e => setRememberMe(e.target.checked)}
                 className="rounded text-primary-500 focus:ring-primary-500"
               />
-              <label htmlFor="remember" className="text-sm font-medium text-slate-600 dark:text-slate-400 cursor-pointer">
+              <label htmlFor="remember" className="text-sm font-medium text-slate-600 dark:text-slate-300 dark:text-slate-400 cursor-pointer">
                 Ține minte codul meu
               </label>
             </div>
 
             <div className="grid grid-cols-2 gap-4 relative">
               {checkingStatus && (
-                <div className="absolute inset-0 bg-white/50 dark:bg-slate-900/50 backdrop-blur-[1px] flex items-center justify-center z-10 rounded-xl">
+                <div className="absolute inset-0 bg-white/50 dark:bg-slate-900/50 backdrop-blur-[1px] flex items-center justify-center z-10 rounded-full">
                   <Loader2 className="w-6 h-6 animate-spin text-primary-500" />
                 </div>
               )}
@@ -321,7 +321,7 @@ export default function ScanScreen() {
                 disabled={submitting || (employeeStatus?.lastAction === 'IN')}
                 className={`relative overflow-hidden group h-14 rounded-full font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-sm ${
                   employeeStatus?.lastAction === 'IN'
-                    ? 'bg-slate-100 text-slate-400 cursor-not-allowed dark:bg-slate-800'
+                    ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed dark:bg-slate-800'
                     : 'bg-white border-2 border-green-500 text-green-600 hover:bg-green-50 focus:ring-4 focus:ring-green-100 dark:bg-slate-800'
                 }`}
               >
@@ -334,7 +334,7 @@ export default function ScanScreen() {
                 disabled={submitting || (employeeStatus?.lastAction === 'OUT' || employeeStatus?.lastAction === null)}
                 className={`relative overflow-hidden group h-14 rounded-full font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-sm ${
                   (employeeStatus?.lastAction === 'OUT' || employeeStatus?.lastAction === null)
-                    ? 'bg-slate-100 text-slate-400 cursor-not-allowed dark:bg-slate-800'
+                    ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed dark:bg-slate-800'
                     : 'bg-slate-900 text-white hover:bg-slate-800 focus:ring-4 focus:ring-slate-200 dark:border-2 dark:border-slate-700'
                 }`}
               >
@@ -350,7 +350,7 @@ export default function ScanScreen() {
             )}
             
             {employeeStatus?.lastAction === 'OUT' && (
-              <p className="text-center text-xs font-bold text-slate-500 mt-4 bg-slate-50 py-2 rounded-full border border-slate-100">
+              <p className="text-center text-xs font-bold text-slate-500 dark:text-slate-400 mt-4 bg-slate-50 dark:bg-slate-800/50 py-2 rounded-lg border border-slate-100 dark:border-slate-700/50">
                 Ești pontat ca IEȘIRE.
               </p>
             )}
@@ -366,18 +366,18 @@ export default function ScanScreen() {
       {/* Forgot PIN Modal */}
       {showForgotModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-              <h3 className="font-bold text-slate-800">Recuperare PIN</h3>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-700/50 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
+              <h3 className="font-bold text-slate-800 dark:text-white">Recuperare PIN</h3>
               <button 
                 onClick={() => setShowForgotModal(false)}
-                className="text-slate-400 hover:text-slate-600 transition-colors rounded-full hover:bg-slate-200 p-1"
+                className="text-slate-400 hover:text-slate-600 dark:text-slate-300 transition-colors rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 dark:bg-slate-700 p-1"
               >
                 <X size={18} />
               </button>
             </div>
             <div className="p-5">
-              <p className="text-sm text-slate-600 mb-4">
+              <p className="text-sm text-slate-600 dark:text-slate-300 mb-4">
                 Introduceți codul de angajat pentru a notifica administratorul. Vă rugăm să solicitați personal noul PIN.
               </p>
               
@@ -387,7 +387,7 @@ export default function ScanScreen() {
                   value={forgotCode}
                   onChange={e => setForgotCode(e.target.value.toUpperCase())}
                   placeholder="Ex: EMP001"
-                  className="w-full px-4 h-10 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-500 font-bold"
+                  className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-primary-500 font-bold"
                 />
               </div>
 
@@ -400,7 +400,7 @@ export default function ScanScreen() {
               <button
                 onClick={handleForgotPin}
                 disabled={forgotStatus === 'loading' || forgotStatus === 'success'}
-                className="w-full h-10 rounded-lg bg-slate-900 text-white font-bold text-sm hover:bg-slate-800 disabled:opacity-50 flex items-center justify-center transition-colors"
+                className="w-full h-10 rounded-full bg-slate-900 text-white font-bold text-sm hover:bg-slate-800 disabled:opacity-50 flex items-center justify-center transition-colors"
               >
                 {forgotStatus === 'loading' ? <Loader2 size={16} className="animate-spin" /> : 'Trimite Solicitare'}
               </button>

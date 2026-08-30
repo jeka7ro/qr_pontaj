@@ -59,12 +59,12 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex transition-colors">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-900 flex transition-colors">
       {/* Sidebar */}
-      <div className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 transition-all duration-300 flex flex-col z-10`}>
-        <div className="h-16 flex items-center justify-between px-4 border-b border-slate-200 dark:border-slate-700">
-          {sidebarOpen && <span className="font-bold text-lg text-slate-800 dark:text-white">SaaS Admin</span>}
-          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors">
+      <div className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 dark:border-slate-700 transition-all duration-300 flex flex-col z-10`}>
+        <div className="h-16 flex items-center justify-between px-4 border-b border-slate-200 dark:border-slate-700 dark:border-slate-700">
+          {sidebarOpen && <span className="font-bold text-lg text-slate-800 dark:text-white dark:text-white">SaaS Admin</span>}
+          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 dark:text-slate-400 transition-colors">
             <Menu size={20} />
           </button>
         </div>
@@ -80,7 +80,7 @@ export default function AdminDashboard() {
                 className={`flex items-center space-x-3 px-3 py-2.5 rounded-full transition-colors ${
                   isActive 
                     ? 'bg-primary-50 text-primary-600' 
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-slate-900 dark:text-white'
                 }`}
               >
                 <Icon size={20} className={isActive ? 'text-primary-600' : 'text-slate-400'} />
@@ -90,7 +90,7 @@ export default function AdminDashboard() {
           })}
         </nav>
 
-        <div className="p-4 border-t border-slate-200 dark:border-slate-700">
+        <div className="p-4 border-t border-slate-200 dark:border-slate-700 dark:border-slate-700">
           <Link to="/admin/login" onClick={handleLogout} className="flex items-center space-x-3 px-3 py-2.5 rounded-full text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
             <LogOut size={20} />
             {sidebarOpen && <span className="font-medium">Deconectare</span>}
@@ -100,28 +100,28 @@ export default function AdminDashboard() {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-16 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-4 md:px-8 shrink-0 z-10 transition-colors">
+        <header className="h-16 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 dark:border-slate-700 flex items-center justify-between px-4 md:px-8 shrink-0 z-10 transition-colors">
           <div></div>
           
           <div className="flex items-center gap-4 md:gap-6 ml-auto">
             {/* Dark Mode Toggle */}
             <button 
               onClick={() => setIsDarkMode(!isDarkMode)}
-              className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors focus:outline-none"
+              className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 dark:text-slate-400 transition-colors focus:outline-none"
               title="Comută tema"
             >
               {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
             </button>
 
             <div 
-              className="flex items-center gap-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 p-1.5 rounded-full md:rounded-full md:pr-4 transition-colors"
+              className="flex items-center gap-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 dark:hover:bg-slate-700 p-1.5 rounded-lg md:rounded-lg md:pr-4 transition-colors"
               onClick={() => setIsProfileModalOpen(true)}
             >
               <div className="text-right hidden md:block">
-                <div className="text-sm font-bold text-slate-800 dark:text-slate-100">
+                <div className="text-sm font-bold text-slate-800 dark:text-white dark:text-slate-100">
                   {currentUser.nume} {currentUser.prenume}
                 </div>
-                <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                <div className="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-400 font-medium">
                   {currentUser.role || 'Super Admin'}
                 </div>
               </div>
@@ -129,7 +129,7 @@ export default function AdminDashboard() {
                 <img 
                   src={currentUser.avatar} 
                   alt="Profile" 
-                  className="w-10 h-10 rounded-full border-2 border-slate-200 object-cover bg-white" 
+                  className="w-10 h-10 rounded-full border-2 border-slate-200 dark:border-slate-700 object-cover bg-white" 
                 />
               ) : (
                 <div className="w-10 h-10 rounded-full bg-slate-800 dark:bg-slate-600 flex items-center justify-center text-white text-sm font-bold shadow-sm">
@@ -215,7 +215,7 @@ function TenantsList() {
         <div className="flex items-center">
           {row.logo_url ? (
             <div 
-              className="w-8 h-8 rounded-full border border-slate-200 mr-3 shadow-sm overflow-hidden flex items-center justify-center shrink-0"
+              className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 mr-3 shadow-sm overflow-hidden flex items-center justify-center shrink-0"
               style={{ backgroundColor: row.culoare || '#ffffff' }}
             >
               <img 
@@ -226,7 +226,7 @@ function TenantsList() {
             </div>
           ) : (
             <div 
-              className="w-8 h-8 rounded-full border border-slate-200 bg-slate-50 flex items-center justify-center text-xs font-bold mr-3 shadow-sm"
+              className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center text-xs font-bold mr-3 shadow-sm"
               style={{ backgroundColor: row.culoare || '#f8fafc', color: '#fff' }}
             >
               {row.nume.substring(0, 2).toUpperCase()}
@@ -239,7 +239,7 @@ function TenantsList() {
       key: 'mod_qr', 
       label: 'Mod QR',
       render: (row) => (
-        <span className="flex items-center text-slate-700 font-medium">
+        <span className="flex items-center text-slate-700 dark:text-slate-300 font-medium">
           {row.mod_qr}
         </span>
       )
@@ -256,14 +256,14 @@ function TenantsList() {
       render: (row) => (
         <div className="flex justify-end gap-2">
           <button 
-            className="w-8 h-8 flex items-center justify-center rounded-full border border-slate-200 hover:bg-slate-100 hover:text-slate-700 text-slate-500 transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-full border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 dark:bg-slate-800 hover:text-slate-700 dark:text-slate-300 text-slate-500 dark:text-slate-400 transition-colors"
             onClick={() => setSelectedTenantForAdmins(row)}
             title="Gestionează Admini"
           >
             <Users size={16} strokeWidth={2} />
           </button>
           <button 
-            className="w-8 h-8 flex items-center justify-center rounded-full border border-slate-200 hover:bg-primary-50 hover:text-primary-600 text-slate-500 transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-full border border-slate-200 dark:border-slate-700 hover:bg-primary-50 hover:text-primary-600 text-slate-500 dark:text-slate-400 transition-colors"
             onClick={() => {
               setSelectedTenantForEdit(row);
               setIsModalOpen(true);
@@ -273,7 +273,7 @@ function TenantsList() {
             <Pencil size={16} strokeWidth={2} />
           </button>
           <button 
-            className="w-8 h-8 flex items-center justify-center rounded-full border border-slate-200 hover:bg-red-50 hover:text-red-600 text-slate-500 transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-full border border-slate-200 dark:border-slate-700 hover:bg-red-50 hover:text-red-600 text-slate-500 dark:text-slate-400 transition-colors"
             onClick={() => console.log('Delete', row.id)}
             title="Șterge"
           >
@@ -300,7 +300,7 @@ function TenantsList() {
               setSelectedTenantForEdit(null);
               setIsModalOpen(true);
             }}
-            className="flex items-center px-5 h-10 rounded-full bg-primary-600 hover:bg-primary-700 text-white text-sm font-bold shadow-sm transition-all"
+            className="flex items-center px-4 py-2.5 text-sm rounded-full bg-primary-600 hover:bg-primary-700 text-white text-sm font-bold shadow-sm transition-all"
           >
             Adaugă Tenant
           </button>

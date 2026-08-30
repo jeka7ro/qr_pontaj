@@ -76,6 +76,27 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
     }));
   };
 
+  const handleSelectAllToggle = (e) => {
+    const isChecked = e.target.checked;
+    setFormData(prev => ({
+      ...prev,
+      modules: {
+        ...prev.modules,
+        billing: isChecked,
+        leaves: isChecked,
+        export_saga: isChecked,
+        geofence: isChecked,
+        offline: isChecked,
+        revisal: isChecked,
+        erp: isChecked,
+        shifts: isChecked,
+        face_recognition: isChecked,
+        whatsapp: isChecked,
+        assets: isChecked
+      }
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -112,46 +133,46 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
 
   return (
     <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
-        <div className="flex justify-between items-center px-6 py-4 border-b border-slate-200">
-          <h3 className="text-lg font-semibold text-slate-800">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="flex justify-between items-center px-6 py-4 border-b border-slate-200 dark:border-slate-700 dark:border-slate-700">
+          <h3 className="text-lg font-semibold text-slate-800 dark:text-white dark:text-white dark:text-white">
             {editTenant ? 'Editează Tenant' : 'Creează Tenant Nou'}
           </h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-300 transition-colors">
             <X size={20} />
           </button>
         </div>
         
         <div className="p-6 overflow-y-auto">
           {error && (
-            <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200">
+            <div className="mb-6 p-4 rounded-2xl bg-red-50 border border-red-200">
               <p className="text-sm font-bold text-red-600">{error}</p>
             </div>
           )}
 
           <form id="create-tenant-form" onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-4">
-              <h4 className="text-sm font-semibold text-slate-800 uppercase tracking-wider">1. Detalii Generale</h4>
+              <h4 className="text-sm font-semibold text-slate-800 dark:text-white dark:text-white uppercase tracking-wider">1. Detalii Generale</h4>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Nume Locație *</label>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 dark:text-slate-400 mb-1">Nume Locație *</label>
                   <input 
                     type="text" 
                     name="nume_locatie"
                     value={formData.nume_locatie}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 focus:ring-2 focus:ring-primary-500 bg-white outline-none transition-all shadow-sm" 
+                    className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm" 
                     placeholder="ex: La Trattoria" 
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Tip Modul</label>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 dark:text-slate-400 mb-1">Tip Modul</label>
                   <select 
                     name="tip_modul"
                     value={formData.tip_modul}
                     onChange={handleChange}
-                    className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 focus:ring-2 focus:ring-primary-500 bg-white outline-none transition-all shadow-sm"
+                    className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm"
                   >
                     <option value="Restaurant / HORECA">Restaurant / HORECA</option>
                     <option value="Șantier / Construcții">Șantier / Construcții</option>
@@ -162,13 +183,13 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
               </div>
             </div>
 
-            <div className="space-y-4 pt-4 border-t border-slate-200">
-              <h4 className="text-sm font-semibold text-slate-800 uppercase tracking-wider">2. Branding (White-Label)</h4>
+            <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-700 dark:border-slate-700">
+              <h4 className="text-sm font-semibold text-slate-800 dark:text-white dark:text-white uppercase tracking-wider">2. Branding (White-Label)</h4>
               
               <div className="grid grid-cols-2 gap-6">
                 {/* Logo Section */}
                 <div className="space-y-3">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500">Logo Companie</label>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 dark:text-slate-400">Logo Companie</label>
                   <div className="flex flex-col space-y-2">
                     <input 
                       type="text" 
@@ -176,21 +197,21 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
                       value={formData.logo_url}
                       onChange={handleChange}
                       placeholder="Adresa Web (URL)..." 
-                      className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 focus:ring-2 focus:ring-primary-500 bg-white outline-none transition-all shadow-sm" 
+                      className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm" 
                     />
-                    <div className="relative flex items-center justify-center text-sm text-slate-500">
+                    <div className="relative flex items-center justify-center text-sm text-slate-500 dark:text-slate-400 dark:text-slate-400">
                       <span className="bg-white px-2">SAU</span>
                       <div className="absolute inset-0 flex items-center" aria-hidden="true">
-                        <div className="w-full border-t border-slate-100"></div>
+                        <div className="w-full border-t border-slate-100 dark:border-slate-700/50 dark:border-slate-700/50"></div>
                       </div>
                     </div>
-                    <div className="border-2 border-dashed border-slate-200 rounded-2xl p-3 text-center hover:bg-slate-50 transition-colors cursor-pointer flex flex-col items-center justify-center h-24 overflow-hidden relative">
+                    <div className="border-2 border-dashed border-slate-200 dark:border-slate-700 dark:border-slate-700 rounded-lg p-3 text-center hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 dark:bg-slate-800/50 transition-colors cursor-pointer flex flex-col items-center justify-center h-24 overflow-hidden relative">
                       {formData.logo_url ? (
                         <img src={formData.logo_url} alt="Logo Preview" className="w-full h-full object-cover" />
                       ) : (
                         <>
                           <Upload size={16} className="text-slate-400 mb-1" />
-                          <span className="text-xs text-slate-500">Încarcă Fișier (Max 2MB)</span>
+                          <span className="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-400">Încarcă Fișier (Max 2MB)</span>
                         </>
                       )}
                     </div>
@@ -200,27 +221,32 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
                 {/* Favicon & Color Section */}
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Culoare Temă (Hex)</label>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 dark:text-slate-400 mb-1">Culoare Temă (Hex)</label>
                     <div className="flex space-x-2">
                       <input 
                         type="color" 
                         name="culoare_tema"
                         value={formData.culoare_tema}
                         onChange={handleChange}
-                        className="h-10 w-10 rounded-full border border-slate-200 cursor-pointer p-0.5 shadow-sm" 
+                        className="h-10 w-10 rounded-full cursor-pointer shadow-sm border-0" 
+                        style={{ 
+                          border: `2px solid ${formData.culoare_tema || '#000000'}`, 
+                          backgroundColor: 'white', 
+                          padding: '3px' 
+                        }}
                       />
                       <input 
                         type="text" 
                         name="culoare_tema"
                         value={formData.culoare_tema}
                         onChange={handleChange}
-                        className="flex-1 px-4 h-10 text-sm rounded-full border border-slate-200 focus:ring-2 focus:ring-primary-500 bg-white outline-none transition-all shadow-sm" 
+                        className="flex-1 px-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white dark:border-slate-700 outline-none transition-all shadow-sm" 
                       />
                     </div>
                   </div>
                   
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Favicon</label>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 dark:text-slate-400 mb-1">Favicon</label>
                     <div className="flex flex-col space-y-2">
                       <input 
                         type="text" 
@@ -228,9 +254,9 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
                         value={formData.favicon_url}
                         onChange={handleChange}
                         placeholder="Adresa Web (URL)..." 
-                        className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 focus:ring-2 focus:ring-primary-500 bg-white outline-none transition-all shadow-sm" 
+                        className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm" 
                       />
-                      <input type="file" className="block w-full text-xs text-slate-500 file:mr-4 file:py-1.5 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 transition-colors cursor-pointer" />
+                      <input type="file" className="block w-full text-xs text-slate-500 dark:text-slate-400 dark:text-slate-400 file:mr-4 file:py-1.5 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-slate-100 dark:bg-slate-800 file:text-slate-700 dark:text-slate-300 hover:file:bg-slate-200 dark:bg-slate-700 transition-colors cursor-pointer" />
                     </div>
                   </div>
                 </div>
@@ -238,30 +264,30 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
             </div>
 
             {!editTenant && (
-              <div className="space-y-4 pt-4 border-t border-slate-100">
-                <h4 className="text-sm font-semibold text-slate-800 uppercase tracking-wider">3. Cont Admin Local</h4>
+              <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-700/50 dark:border-slate-700/50">
+                <h4 className="text-sm font-semibold text-slate-800 dark:text-white dark:text-white uppercase tracking-wider">3. Cont Admin Local</h4>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Email Administrator *</label>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 dark:text-slate-400 mb-1">Email Administrator *</label>
                     <input 
                       type="email" 
                       name="email_admin"
                       value={formData.email_admin}
                       onChange={handleChange}
                       required
-                      className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 focus:ring-2 focus:ring-primary-500 bg-white outline-none transition-all shadow-sm" 
+                      className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white dark:border-slate-700 outline-none transition-all shadow-sm" 
                       placeholder="admin@locatie.ro" 
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Parolă Inițială *</label>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 dark:text-slate-400 mb-1">Parolă Inițială *</label>
                     <input 
                       type="password" 
                       name="parola_initiala"
                       value={formData.parola_initiala}
                       onChange={handleChange}
                       required
-                      className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 focus:ring-2 focus:ring-primary-500 bg-white outline-none transition-all shadow-sm" 
+                      className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white dark:border-slate-700 outline-none transition-all shadow-sm" 
                       placeholder="••••••••" 
                     />
                   </div>
@@ -269,45 +295,13 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
               </div>
             )}
 
-            <div className="space-y-4 pt-4 border-t border-slate-100">
-              <h4 className="text-sm font-semibold text-slate-800 uppercase tracking-wider">4. Setări GPS & QR</h4>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Distanță GPS (metri)</label>
-                  <select 
-                    name="distanta_gps"
-                    value={formData.distanta_gps}
-                    onChange={handleChange}
-                    className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 focus:ring-2 focus:ring-primary-500 bg-white outline-none transition-all shadow-sm"
-                  >
-                    <option value="50">50m (Strict)</option>
-                    <option value="100">100m (Standard)</option>
-                    <option value="200">200m (Relaxat)</option>
-                    <option value="500">500m (Extins)</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Mod Generare QR</label>
-                  <select 
-                    name="mod_qr"
-                    value={formData.mod_qr}
-                    onChange={handleChange}
-                    className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 focus:ring-2 focus:ring-primary-500 bg-white outline-none transition-all shadow-sm"
-                  >
-                    <option value="STATIC">Static (Tipărit)</option>
-                    <option value="DYNAMIC">Dinamic (Pe Tabletă)</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-4 pt-4 border-t border-slate-100">
+            <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-700/50 dark:border-slate-700/50">
               <div className="flex items-center justify-between mb-2">
-                <h4 className="text-sm font-semibold text-slate-800 uppercase tracking-wider">5. Funcționalități / Upsell (Feature Flags)</h4>
+                <h4 className="text-sm font-semibold text-slate-800 dark:text-white dark:text-white uppercase tracking-wider">4. Funcționalități / Upsell (Feature Flags)</h4>
                 
                 {/* Global Upsell Toggle */}
                 <label className="flex items-center gap-2 cursor-pointer group">
-                  <span className="text-xs font-bold text-slate-500 group-hover:text-slate-700 transition-colors">Afișează modulele inactive (cu lăcățel)</span>
+                  <span className="text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 group-hover:text-slate-700 dark:text-slate-300 dark:group-hover:text-slate-300 transition-colors">Afișează modulele inactive (cu lăcățel)</span>
                   <div className="relative inline-flex items-center">
                     <input 
                       type="checkbox" 
@@ -315,83 +309,145 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
                       checked={formData.modules?.show_upsells !== false} // Default true
                       onChange={() => handleModuleToggle('show_upsells')}
                     />
-                    <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-500"></div>
+                    <div 
+                      className="w-9 h-5 bg-slate-200 dark:bg-slate-700 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 dark:border-slate-600 after:border after:rounded-full after:h-4 after:w-4 after:transition-all"
+                      style={{ backgroundColor: formData.modules?.show_upsells !== false ? '#3B82F6' : undefined }}
+                    ></div>
                   </div>
                 </label>
               </div>
-              <p className="text-xs text-slate-500 mb-2">Activează modulele pe care acest client le-a achiziționat. Dacă nu sunt active (și toggle-ul de sus e pornit), vor vedea un ecran de "Lăcățel" prin care să te contacteze.</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-400 mb-4">Activează modulele pe care acest client le-a achiziționat. Dacă nu sunt active (și toggle-ul de sus e pornit), vor vedea un ecran de "Lăcățel" prin care să te contacteze.</p>
               
+              <div className="flex justify-end mb-3">
+                <label className="flex items-center gap-2 cursor-pointer group">
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-300 dark:text-slate-300 transition-colors">Selectează Toate</span>
+                  <div className="relative inline-flex items-center">
+                    <input 
+                      type="checkbox" 
+                      className="sr-only peer" 
+                      onChange={handleSelectAllToggle}
+                      checked={
+                        formData.modules?.billing &&
+                        formData.modules?.leaves &&
+                        formData.modules?.export_saga &&
+                        formData.modules?.geofence &&
+                        formData.modules?.offline &&
+                        formData.modules?.revisal &&
+                        formData.modules?.erp &&
+                        formData.modules?.shifts &&
+                        formData.modules?.face_recognition &&
+                        formData.modules?.whatsapp &&
+                        formData.modules?.assets
+                      }
+                    />
+                    <div 
+                      className="w-11 h-6 bg-slate-200 dark:bg-slate-700 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 dark:border-slate-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"
+                      style={{ backgroundColor: (
+                        formData.modules?.billing &&
+                        formData.modules?.leaves &&
+                        formData.modules?.export_saga &&
+                        formData.modules?.geofence &&
+                        formData.modules?.offline &&
+                        formData.modules?.revisal &&
+                        formData.modules?.erp &&
+                        formData.modules?.shifts &&
+                        formData.modules?.face_recognition &&
+                        formData.modules?.whatsapp &&
+                        formData.modules?.assets
+                      ) ? '#3B82F6' : undefined }}
+                    ></div>
+                  </div>
+                </label>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {[
-                  { id: 'billing', label: 'Facturare / Plăți Online', color: 'peer-checked:bg-emerald-500' },
-                  { id: 'leaves', label: 'Zile Libere (CO/CM)', color: 'peer-checked:bg-blue-500' },
-                  { id: 'export_saga', label: 'Export Conta (SAGA)', color: 'peer-checked:bg-purple-500' },
-                  { id: 'geofence', label: 'Geofence Avansat pe Hartă', color: 'peer-checked:bg-orange-500' },
-                  { id: 'offline', label: 'Mod Offline (Reziliență)', color: 'peer-checked:bg-slate-700' },
-                  { id: 'revisal', label: 'Integrare API REVISAL', color: 'peer-checked:bg-red-500' },
-                  { id: 'erp', label: 'Modul ERP & Contracte', color: 'peer-checked:bg-indigo-500' },
-                  { id: 'shifts', label: 'Planificator Ture (Shifts)', color: 'peer-checked:bg-cyan-500' },
-                  { id: 'face_recognition', label: 'Recunoaștere Facială (AI)', color: 'peer-checked:bg-rose-500' },
-                  { id: 'whatsapp', label: 'Alerte WhatsApp/SMS', color: 'peer-checked:bg-green-500' },
-                  { id: 'assets', label: 'Gestiune Echipamente', color: 'peer-checked:bg-yellow-500' }
-                ].map(mod => (
-                  <label key={mod.id} className="flex items-center justify-between p-3 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors">
-                    <span className="text-sm font-semibold text-slate-700">{mod.label}</span>
-                    <div className="relative inline-flex items-center cursor-pointer">
-                      <input 
-                        type="checkbox" 
-                        className="sr-only peer" 
-                        checked={formData.modules[mod.id] || false}
-                        onChange={() => handleModuleToggle(mod.id)}
-                      />
-                      <div className={`w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all ${mod.color}`}></div>
-                    </div>
-                  </label>
-                ))}
+                  { id: 'billing', label: 'Facturare / Plăți Online' },
+                  { id: 'leaves', label: 'Zile Libere (CO/CM)' },
+                  { id: 'export_saga', label: 'Export Conta (SAGA)' },
+                  { id: 'geofence', label: 'Geofence Avansat pe Hartă' },
+                  { id: 'offline', label: 'Mod Offline (Reziliență)' },
+                  { id: 'revisal', label: 'Integrare API REVISAL' },
+                  { id: 'erp', label: 'Modul ERP & Contracte' },
+                  { id: 'shifts', label: 'Planificator Ture (Shifts)' },
+                  { id: 'face_recognition', label: 'Recunoaștere Facială (AI)' },
+                  { id: 'whatsapp', label: 'Alerte WhatsApp/SMS' },
+                  { id: 'assets', label: 'Gestiune Echipamente' }
+                ].map(mod => {
+                  const isChecked = formData.modules[mod.id] || false;
+                  return (
+                    <label key={mod.id} className="flex items-center justify-between p-3 border border-slate-200 dark:border-slate-700 dark:border-slate-700 rounded-lg cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 dark:hover:bg-slate-800/50 transition-colors">
+                      <span className="text-sm font-semibold text-slate-700 dark:text-slate-300 dark:text-slate-300">{mod.label}</span>
+                      <div className="relative inline-flex items-center cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          className="sr-only peer" 
+                          checked={isChecked}
+                          onChange={() => handleModuleToggle(mod.id)}
+                        />
+                        <div 
+                          className="w-11 h-6 bg-slate-200 dark:bg-slate-700 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 dark:border-slate-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"
+                          style={{ backgroundColor: isChecked ? '#3B82F6' : undefined }}
+                        ></div>
+                      </div>
+                    </label>
+                  );
+                })}
               </div>
             </div>
 
             {editTenant && (
-              <div className="space-y-4 pt-4 border-t border-slate-100">
-                <h4 className="text-sm font-semibold text-slate-800 uppercase tracking-wider">6. Link-uri Rapide</h4>
-                <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl space-y-4">
+              <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-700/50 dark:border-slate-700/50">
+                <h4 className="text-sm font-semibold text-slate-800 dark:text-white dark:text-white uppercase tracking-wider">6. Link-uri Rapide</h4>
+                <div className="bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 dark:border-slate-700 p-4 rounded-lg space-y-4">
                   {(() => {
-                    let hostname = window.location.hostname;
-                    if (hostname.startsWith('admin.')) hostname = hostname.replace('admin.', '');
-                    if (hostname.startsWith('www.')) hostname = hostname.replace('www.', '');
+                    let host = window.location.host;
+                    if (host.startsWith('admin.')) host = host.replace('admin.', '');
+                    if (host.startsWith('www.')) host = host.replace('www.', '');
                     
-                    const managerLink = `${window.location.protocol}//${editTenant.subdomain}.${hostname}/admin/login`;
-                    const scanLink = `${window.location.protocol}//${editTenant.subdomain}.${hostname}/`;
+                    const generateSlug = (text) => {
+                      if (!text) return 'nou';
+                      return text.toString().toLowerCase()
+                        .replace(/\s+/g, '-')
+                        .replace(/[^\w\-]+/g, '')
+                        .replace(/\-\-+/g, '-')
+                        .replace(/^-+/, '')
+                        .replace(/-+$/, '');
+                    };
+                    
+                    const sub = editTenant.slug || generateSlug(editTenant.nume || formData.nume_locatie);
+                    const managerLink = `${window.location.protocol}//${sub}.${host}/admin/login`;
+                    const scanLink = `${window.location.protocol}//${sub}.${host}/`;
                     
                     return (
                       <>
                   <div>
-                    <p className="text-xs font-bold text-slate-700 mb-1">Link Panou Manager Locație</p>
+                    <p className="text-xs font-bold text-slate-700 dark:text-slate-300 dark:text-slate-300 mb-1">Link Panou Manager Locație</p>
                     <div className="flex items-center gap-2">
                       <input 
                         type="text" 
                         readOnly 
                         value={managerLink} 
-                        className="flex-1 px-3 h-9 text-xs rounded-full border border-slate-200 bg-white outline-none text-slate-600 font-mono" 
+                        className="flex-1 px-3 h-9 text-xs rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white dark:border-slate-700 outline-none text-slate-600 dark:text-slate-300 dark:text-slate-300 font-mono" 
                       />
                       <a 
                         href={managerLink} 
                         target="_blank" 
                         rel="noopener noreferrer" 
-                        className="px-4 h-9 bg-slate-800 hover:bg-slate-900 text-white rounded-md text-xs font-bold flex items-center transition-colors"
+                        className="px-4 h-9 bg-slate-800 dark:bg-slate-700 hover:bg-slate-900 dark:hover:bg-slate-600 text-white rounded-md text-xs font-bold flex items-center transition-colors"
                       >
                         Deschide
                       </a>
                     </div>
                   </div>
                   <div className="pt-2">
-                    <p className="text-xs font-bold text-slate-700 mb-1">Aplicație Scanare Angajați (URL Cod QR)</p>
+                    <p className="text-xs font-bold text-slate-700 dark:text-slate-300 dark:text-slate-300 mb-1">Aplicație Scanare Angajați (URL Cod QR)</p>
                     <div className="flex items-center gap-2">
-                      <input type="text" readOnly value={scanLink} className="flex-1 px-3 h-9 text-xs rounded-full border border-slate-200 bg-white outline-none text-slate-600 font-mono" />
+                      <input type="text" readOnly value={scanLink} className="flex-1 px-3 h-9 text-xs rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white dark:border-slate-700 outline-none text-slate-600 dark:text-slate-300 dark:text-slate-300 font-mono" />
                       <button 
                         type="button"
                         onClick={() => navigator.clipboard.writeText(scanLink)}
-                        className="px-4 h-9 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-md text-xs font-bold flex items-center transition-colors"
+                        className="px-4 h-9 bg-slate-200 dark:bg-slate-700 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 dark:text-slate-200 rounded-full text-xs font-bold flex items-center transition-colors"
                       >
                         Copiază
                       </button>
@@ -406,11 +462,11 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
           </form>
         </div>
         
-        <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end space-x-3">
+        <div className="p-6 border-t border-slate-200 dark:border-slate-700 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-800/50 flex justify-end gap-3">
           <button 
-            type="button"
-            onClick={onClose} 
-            className="px-5 h-10 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold transition-colors"
+            type="button" 
+            onClick={onClose}
+            className="px-6 py-2.5 rounded-full text-sm font-bold text-slate-600 dark:text-slate-300 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-700 transition-colors"
           >
             Anulează
           </button>
@@ -418,7 +474,7 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
             type="submit"
             form="create-tenant-form"
             disabled={loading}
-            className="px-5 h-10 rounded-full bg-primary-600 hover:bg-primary-700 text-white text-sm font-bold shadow-sm transition-all disabled:opacity-50"
+            className="px-4 py-2.5 text-sm rounded-full bg-primary-600 hover:bg-primary-700 text-white text-sm font-bold shadow-sm transition-all disabled:opacity-50"
           >
             {loading ? 'Se salvează...' : (editTenant ? 'Salvează Modificările' : 'Salvează și Creează')}
           </button>

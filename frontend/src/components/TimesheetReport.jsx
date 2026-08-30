@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Clock, LogIn, LogOut } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Clock, LogIn, LogOut, Eye } from 'lucide-react';
 import DataTable from './DataTable';
 
-export default function TimesheetReport({ tenant, themeColor }) {
+export default function TimesheetReport({ tenant, themeColor, employeeId = null }) {
   const [timesheets, setTimesheets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionFilter, setActionFilter] = useState('all'); // all, in, out
@@ -118,10 +119,15 @@ export default function TimesheetReport({ tenant, themeColor }) {
     }
   };
 
-  const filteredTimesheets = timesheets.filter(t => {
-    if (actionFilter === 'all') return true;
-    return t.action_type.toLowerCase() === actionFilter;
-  });
+  const filteredTimesheets = useMemo(() => {
+    return timesheets.filter(ts => {
+      if (employeeId && String(ts.employee_id) !== String(employeeId)) return false;
+      if (locationId !== 'all' && String(ts.location_id) !== String(locationId)) return false;
+      if (actionFilter === 'in' && ts.action_type !== 'IN') return false;
+      if (actionFilter === 'out' && ts.action_type !== 'OUT') return false;
+      return true;
+    });
+  }, [timesheets, locationId, actionFilter, employeeId]);
 
   const groupedTimesheets = useMemo(() => {
     const groups = {};
@@ -172,22 +178,22 @@ export default function TimesheetReport({ tenant, themeColor }) {
     });
   }, [filteredTimesheets]);
 
-  const columns = [
+  const baseColumns = [
     {
       key: 'first_name',
       label: 'Angajat',
       render: (row) => (
         <div className="flex items-center gap-3">
           {row.avatar_path ? (
-            <img src={`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${row.avatar_path}`} alt="Avatar" className="w-10 h-10 rounded-full object-cover border border-slate-200" />
+            <img src={`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${row.avatar_path}`} alt="Avatar" className="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-slate-700" />
           ) : (
-            <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold">
+            <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 font-bold">
               {row.first_name[0]}{row.last_name[0]}
             </div>
           )}
           <div>
-            <div className="text-sm font-bold text-slate-800 dark:text-white">{row.first_name} {row.last_name}</div>
-            <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">Cod: {row.employee_code || '-'}</div>
+            <div className="text-sm font-bold text-slate-800 dark:text-white dark:text-white">{row.first_name} {row.last_name}</div>
+            <div className="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-400 font-medium">Cod: {row.employee_code || '-'}</div>
           </div>
         </div>
       ),
@@ -197,7 +203,7 @@ export default function TimesheetReport({ tenant, themeColor }) {
       key: 'date',
       label: 'Data',
       render: (row) => (
-        <span className="text-sm font-bold text-slate-800 dark:text-white">
+        <span className="text-sm font-bold text-slate-800 dark:text-white dark:text-white">
           {new Date(row.date).toLocaleDateString('ro-RO')}
         </span>
       ),
@@ -207,7 +213,7 @@ export default function TimesheetReport({ tenant, themeColor }) {
       key: 'first_in',
       label: 'Prima Intrare',
       render: (row) => row.first_in ? (
-        <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 font-bold text-sm bg-emerald-50 dark:bg-emerald-900/30 px-2.5 py-1 rounded-full w-fit">
+        <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 font-bold text-sm bg-emerald-50 dark:bg-emerald-900/30 px-2.5 py-1 rounded-lg w-fit">
           <LogIn size={14} />
           {new Date(row.first_in.timestamp).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' })}
         </div>
@@ -217,7 +223,7 @@ export default function TimesheetReport({ tenant, themeColor }) {
       key: 'last_out',
       label: 'Ultima Ieșire',
       render: (row) => row.last_out ? (
-        <div className="flex items-center gap-1.5 text-blue-700 dark:text-blue-400 font-bold text-sm bg-blue-50 dark:bg-blue-900/30 px-2.5 py-1 rounded-full w-fit">
+        <div className="flex items-center gap-1.5 text-blue-700 dark:text-blue-400 font-bold text-sm bg-blue-50 dark:bg-blue-900/30 px-2.5 py-1 rounded-lg w-fit">
           <LogOut size={14} />
           {new Date(row.last_out.timestamp).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' })}
         </div>
@@ -227,40 +233,34 @@ export default function TimesheetReport({ tenant, themeColor }) {
       key: 'total_time_str',
       label: 'Total Ore',
       render: (row) => (
-        <span className="text-sm font-bold text-slate-700 dark:text-slate-300">
+        <span className="text-sm font-bold text-slate-700 dark:text-slate-300 dark:text-slate-300">
           {row.total_time_str}
         </span>
       )
+    },
+    {
+      key: 'actions',
+      label: 'Acțiuni',
+      render: (row) => (
+        <Link 
+          to={`/admin/employees/${row.employee_id}`}
+          className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-primary-50 dark:hover:bg-primary-900/30 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+          title="Vezi Profil Complet"
+        >
+          <Eye size={16} />
+        </Link>
+      )
     }
   ];
-
-  const expandedRowRender = (group) => (
-    <div className="p-4 pl-14 pr-6 bg-slate-50 dark:bg-slate-900/50">
-      <h4 className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3">Istoric Scanări ({new Date(group.date).toLocaleDateString('ro-RO')})</h4>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-        {group.raw_logs.map((log, idx) => (
-          <div key={idx} className="flex items-center gap-3 bg-white dark:bg-slate-800 p-3 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${log.action_type === 'IN' ? 'bg-emerald-100 text-emerald-600' : 'bg-blue-100 text-blue-600'}`}>
-              {log.action_type === 'IN' ? <LogIn size={14} /> : <LogOut size={14} />}
-            </div>
-            <div>
-              <div className="text-xs font-bold text-slate-800 dark:text-white">
-                {log.action_type === 'IN' ? 'Intrare' : 'Ieșire'} la {new Date(log.timestamp).toLocaleTimeString('ro-RO', {hour:'2-digit', minute:'2-digit'})}
-              </div>
-              <div className="text-[10px] text-slate-500 font-medium">Locație: {log.location_name || '-'}</div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+  
+  const columns = employeeId ? baseColumns.filter(c => c.key !== 'first_name' && c.key !== 'actions') : baseColumns;
 
   const tableFilters = (
     <div className="flex flex-nowrap items-center gap-3 w-full overflow-x-auto py-1" style={{ scrollbarWidth: 'none' }}>
       <select 
         value={actionFilter}
         onChange={(e) => setActionFilter(e.target.value)}
-        className="px-3 h-10 rounded-full border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer"
+        className="px-3 h-10 rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 text-sm font-medium text-slate-700 dark:text-slate-300 dark:text-slate-200 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer"
       >
         <option value="all">Toate acțiunile</option>
         <option value="in">Doar Intrări (IN)</option>
@@ -270,7 +270,7 @@ export default function TimesheetReport({ tenant, themeColor }) {
       <select 
         value={locationId}
         onChange={(e) => setLocationId(e.target.value)}
-        className="px-3 h-10 rounded-full border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer max-w-[200px] truncate"
+        className="px-3 h-10 rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 text-sm font-medium text-slate-700 dark:text-slate-300 dark:text-slate-200 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer max-w-[200px] truncate"
       >
         <option value="all">Toate locațiile</option>
         {locations.map(loc => (
@@ -281,7 +281,7 @@ export default function TimesheetReport({ tenant, themeColor }) {
       <select 
         value={periodFilter}
         onChange={handlePeriodChange}
-        className="px-3 h-10 rounded-full border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer"
+        className="px-3 h-10 rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 text-sm font-medium text-slate-700 dark:text-slate-300 dark:text-slate-200 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer"
       >
         <option value="today">Azi</option>
         <option value="yesterday">Ieri</option>
@@ -293,12 +293,12 @@ export default function TimesheetReport({ tenant, themeColor }) {
         <option value="custom">Personalizat...</option>
       </select>
       
-      <div className="flex items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full px-4 h-10 shadow-sm focus-within:ring-2 focus-within:ring-primary-500 transition-all">
+      <div className="flex items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 dark:border-slate-700 rounded-full px-4 h-10 shadow-sm focus-within:ring-2 focus-within:ring-primary-500 transition-all">
         <input 
           type="date" 
           value={startDate}
           onChange={handleDateManualChange(setStartDate)}
-          className="text-sm font-bold text-slate-700 dark:text-slate-200 bg-transparent outline-none cursor-pointer"
+          className="text-sm font-bold text-slate-700 dark:text-slate-300 dark:text-slate-200 bg-transparent outline-none cursor-pointer"
           title="Data Început"
         />
         <span className="text-slate-300 dark:text-slate-600 font-bold">-</span>
@@ -306,7 +306,7 @@ export default function TimesheetReport({ tenant, themeColor }) {
           type="date" 
           value={endDate}
           onChange={handleDateManualChange(setEndDate)}
-          className="text-sm font-bold text-slate-700 dark:text-slate-200 bg-transparent outline-none cursor-pointer"
+          className="text-sm font-bold text-slate-700 dark:text-slate-300 dark:text-slate-200 bg-transparent outline-none cursor-pointer"
           title="Data Sfârșit"
         />
       </div>
@@ -314,13 +314,15 @@ export default function TimesheetReport({ tenant, themeColor }) {
   );
 
   return (
-    <div className="max-w-6xl mx-auto flex flex-col h-full space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Rapoarte Pontaje</h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-1">Istoric intrări și ieșiri pentru toți angajații tăi.</p>
+    <div className={`max-w-6xl mx-auto flex flex-col h-full ${!employeeId ? 'space-y-6' : 'space-y-4'}`}>
+      {!employeeId && (
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white dark:text-white">Rapoarte Pontaje</h1>
+            <p className="text-slate-500 dark:text-slate-400 dark:text-slate-400 mt-1">Istoric intrări și ieșiri pentru toți angajații tăi.</p>
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="flex-1">
         <DataTable 
@@ -328,8 +330,6 @@ export default function TimesheetReport({ tenant, themeColor }) {
           columns={columns}
           searchPlaceholder="Caută după nume sau locație..."
           filters={tableFilters}
-          expandable={true}
-          expandedRowRender={expandedRowRender}
         />
       </div>
     </div>

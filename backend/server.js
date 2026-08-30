@@ -22,6 +22,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/tenants', tenantsRoutes);
 app.use('/api/tenant/dashboard', tenantDashboardRoutes);
 app.use('/api/scan', scanRoutes);
+app.use('/api/employee', require('./routes/employee'));
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'QR Pontaj API is running' });

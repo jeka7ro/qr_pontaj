@@ -6,6 +6,15 @@ const pool = db; // mapăm pool la db direct ca să meargă în restul codului
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const shiftsRouter = require('./shifts');
+const leavesRouter = require('./leaves');
+const sagaRouter = require('./saga');
+const billingRouter = require('./billing');
+const revisalRouter = require('./revisal');
+const erpRouter = require('./erp');
+const whatsappRouter = require('./whatsapp');
+const assetsRouter = require('./assets');
+const hardwareScanRouter = require('./hardwareScan');
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -21,13 +30,23 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
+// Mount sub-routers
+router.use('/:id/shifts', shiftsRouter);
+router.use('/:id/leaves', leavesRouter);
+router.use('/:id/saga', sagaRouter);
+router.use('/:id/billing', billingRouter);
+router.use('/:id/revisal', revisalRouter);
+router.use('/:id/erp', erpRouter);
+router.use('/:id/whatsapp', whatsappRouter);
+router.use('/:id/assets', assetsRouter);
+router.use('/:id/hardware-scan', hardwareScanRouter);
 
 // GET /api/tenants - Lista de tenanți și detaliile lor
 router.get('/', async (req, res) => {
   try {
     const query = `
       SELECT 
-        t.id, t.name as nume, t.subdomain, t.theme_color as culoare, t.logo_url,
+        t.id, t.name as nume, t.subdomain, t.theme_color as culoare, t.logo_url, t.modules,
         s.qr_mode as mod_qr, s.allowed_radius_meters as raza_gps, s.name as tip_modul
       FROM qrp_tenants t
       LEFT JOIN qrp_sites s ON s.tenant_id = t.id
@@ -54,7 +73,8 @@ router.post('/', async (req, res) => {
       email_admin,
       parola_initiala,
       distanta_gps,
-      mod_qr
+      mod_qr,
+      modules
     } = req.body;
 
     // 1. Validare simplă
@@ -65,16 +85,19 @@ router.post('/', async (req, res) => {
     await client.query('BEGIN'); // Start transaction
 
     // 2. Inserare în qrp_tenants
+    const subdomain = nume_locatie.toLowerCase().replace(/[^a-z0-9]/g, '');
     const tenantQuery = `
-      INSERT INTO qrp_tenants (name, logo_url, favicon_url, theme_color)
-      VALUES ($1, $2, $3, $4)
+      INSERT INTO qrp_tenants (name, subdomain, logo_url, favicon_url, theme_color, modules)
+      VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING id
     `;
     const tenantResult = await client.query(tenantQuery, [
       nume_locatie, 
+      subdomain,
       logo_url || null, 
       favicon_url || null, 
-      culoare_tema || '#3B82F6'
+      culoare_tema || '#2563EB',
+      modules || {}
     ]);
     const tenantId = tenantResult.rows[0].id;
 
@@ -131,9 +154,12 @@ router.post('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const query = `
-      SELECT id, name, subdomain, logo_url, favicon_url, theme_color 
-      FROM qrp_tenants 
-      WHERE id = $1
+      SELECT t.id, t.name, t.subdomain, t.logo_url, t.favicon_url, t.theme_color, t.modules, t.portal_bg_image_url, t.portal_bg_color,
+             s.qr_mode 
+      FROM qrp_tenants t
+      LEFT JOIN qrp_sites s ON s.tenant_id = t.id
+      WHERE t.id = $1
+      LIMIT 1
     `;
     const result = await pool.query(query, [req.params.id]);
     
@@ -145,6 +171,26 @@ router.get('/:id', async (req, res) => {
   } catch (error) {
     console.error('Error fetching tenant:', error);
     res.status(500).json({ error: 'Eroare la preluarea tenantului' });
+  }
+});
+
+// PUT /api/tenants/:id/portal-settings - Update fundal portal angajați (accesat de tenant)
+router.put('/:id/portal-settings', async (req, res) => {
+  try {
+    const { portal_bg_image_url, portal_bg_color } = req.body;
+    const result = await pool.query(
+      `UPDATE qrp_tenants 
+       SET portal_bg_image_url = $1, portal_bg_color = $2 
+       WHERE id = $3 RETURNING *`,
+      [portal_bg_image_url || null, portal_bg_color || null, req.params.id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Tenant nu a fost găsit' });
+    }
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error updating portal settings:', error);
+    res.status(500).json({ error: 'Eroare la salvarea setărilor portalului' });
   }
 });
 
@@ -204,7 +250,8 @@ router.put('/:id', async (req, res) => {
       logo_url, 
       favicon_url,
       distanta_gps,
-      mod_qr
+      mod_qr,
+      modules
     } = req.body;
 
     if (!nume_locatie) {
@@ -214,16 +261,21 @@ router.put('/:id', async (req, res) => {
     await client.query('BEGIN');
 
     // 1. Update qrp_tenants
+    const subdomain = nume_locatie.toLowerCase().replace(/[^a-z0-9]/g, '');
     const tenantQuery = `
       UPDATE qrp_tenants 
-      SET name = $1, logo_url = $2, favicon_url = $3, theme_color = $4
-      WHERE id = $5
+      SET name = $1, subdomain = $2, logo_url = $3, favicon_url = $4, theme_color = $5, modules = $6, portal_bg_image_url = $7, portal_bg_color = $8
+      WHERE id = $9
     `;
     await client.query(tenantQuery, [
-      nume_locatie, 
+      nume_locatie,
+      subdomain,
       logo_url || null, 
       favicon_url || null, 
       culoare_tema || '#3B82F6',
+      modules || {},
+      portal_bg_image_url || null,
+      portal_bg_color || null,
       req.params.id
     ]);
 
@@ -369,8 +421,6 @@ router.post('/:id/employees', upload.fields([{ name: 'avatar', maxCount: 1 }, { 
       client.release();
     }
     
-    const result = await pool.query(query, values);
-    res.status(201).json(result.rows[0]);
   } catch (error) {
     console.error('Error creating employee:', error);
     if (error.code === '23505') {
@@ -410,7 +460,7 @@ router.get('/:id/timesheets', async (req, res) => {
     const query = `
       SELECT 
         t.id, t.action_type, t.created_at as timestamp, 
-        e.first_name, e.last_name, e.avatar_path, e.job_title, e.employee_code,
+        e.id as employee_id, e.first_name, e.last_name, e.avatar_path, e.job_title, e.employee_code,
         l.name as location_name
       FROM qrp_timesheets t
       JOIN qrp_employees e ON t.employee_id = e.id
@@ -720,10 +770,10 @@ router.get('/:id/locations', async (req, res) => {
 
 router.post('/:id/locations', async (req, res) => {
   try {
-    const { name, address } = req.body;
+    const { name, address, latitude, longitude, radius, qr_mode } = req.body;
     const result = await pool.query(
-      'INSERT INTO qrp_locations (tenant_id, name, address) VALUES ($1, $2, $3) RETURNING *',
-      [req.params.id, name, address]
+      'INSERT INTO qrp_locations (tenant_id, name, address, latitude, longitude, radius, qr_mode) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+      [req.params.id, name, address, latitude || null, longitude || null, radius || 100, qr_mode || 'DYNAMIC']
     );
     res.status(201).json(result.rows[0]);
   } catch (error) {
@@ -734,12 +784,12 @@ router.post('/:id/locations', async (req, res) => {
 
 router.put('/:id/locations/:locId', async (req, res) => {
   try {
-    const { name, address } = req.body;
+    const { name, address, latitude, longitude, radius, qr_mode } = req.body;
     const result = await pool.query(
-      'UPDATE qrp_locations SET name=$1, address=$2 WHERE id=$3 AND tenant_id=$4 RETURNING *',
-      [name, address, req.params.locId, req.params.id]
+      'UPDATE qrp_locations SET name=$1, address=$2, latitude=$3, longitude=$4, radius=$5, qr_mode=$8 WHERE id=$6 AND tenant_id=$7 RETURNING *',
+      [name, address, latitude || null, longitude || null, radius || 100, req.params.locId, req.params.id, qr_mode || 'DYNAMIC']
     );
-    if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
+    if (result.rowCount === 0) return res.status(404).json({ error: 'Locație negăsită' });
     res.json(result.rows[0]);
   } catch (error) {
     console.error('Error updating location:', error);
@@ -761,7 +811,7 @@ router.delete('/:id/locations/:locId', async (req, res) => {
 router.get('/:id/kiosks', async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT k.*, l.name as location_name 
+      SELECT k.*, l.name as location_name, l.qr_mode 
       FROM qrp_kiosks k 
       LEFT JOIN qrp_locations l ON k.location_id = l.id
       WHERE k.tenant_id = $1 

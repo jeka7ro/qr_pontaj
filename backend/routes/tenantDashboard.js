@@ -18,7 +18,7 @@ router.get('/info', async (req, res) => {
 
     // Luăm datele tenant-ului
     const tenantQuery = `
-      SELECT id, name, logo_url, favicon_url, theme_color, created_at 
+      SELECT id, name, logo_url, favicon_url, theme_color, created_at, modules 
       FROM qrp_tenants 
       WHERE id = $1
     `;

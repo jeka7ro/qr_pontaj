@@ -6,6 +6,8 @@ import TenantDashboard from './pages/tenant/Dashboard';
 import KioskDisplay from './pages/kiosk/KioskDisplay';
 import ScanScreen from './pages/scan/ScanScreen';
 import LandingPage from './pages/LandingPage';
+import EmployeeLogin from './pages/employee/EmployeeLogin';
+import EmployeeDashboard from './pages/employee/EmployeeDashboard';
 
 const getIsSubdomain = () => {
   const hostname = window.location.hostname;
@@ -50,11 +52,12 @@ function App() {
         {/* Rută universală pentru scanare (funcționează și pe IP local) */}
         <Route path="/scan" element={<ScanScreen />} />
 
-        {/* Ecran de pontaj angajați - disponibil doar pe subdomeniu pe /login sau / */}
+        {/* Portal angajați - disponibil doar pe subdomeniu */}
         {isSubdomain && (
           <>
-            <Route path="/login" element={<ScanScreen />} />
-            <Route path="/" element={<ScanScreen />} />
+            <Route path="/login" element={<EmployeeLogin />} />
+            <Route path="/" element={<EmployeeLogin />} />
+            <Route path="/employee-dashboard" element={<EmployeeDashboard />} />
           </>
         )}
 

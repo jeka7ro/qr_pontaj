@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
-import { Loader2, AlertCircle, Maximize, Smartphone, WifiOff } from 'lucide-react';
+import { Loader2, AlertCircle, Maximize, Smartphone, WifiOff, ScanLine, CheckCircle2, User, XCircle } from 'lucide-react';
 
 export default function KioskDisplay() {
   const { tenantId, kioskId } = useParams();
+  const [searchParams] = useSearchParams();
+  const overrideMode = searchParams.get('mode');
   const [tenant, setTenant] = useState(() => {
     try { return JSON.parse(localStorage.getItem(`kiosk_tenant_${tenantId}`)) || null; } catch { return null; }
   });
@@ -22,11 +24,21 @@ export default function KioskDisplay() {
   const [kioskContent, setKioskContent] = useState(() => {
     try { return JSON.parse(localStorage.getItem(`kiosk_content_${kioskId}`)) || {}; } catch { return {}; }
   });
+  const [qrMode, setQrMode] = useState(() => localStorage.getItem(`kiosk_qr_mode_${kioskId}`) || 'DYNAMIC');
+
+  const effectiveQrMode = (qrMode === 'HYBRID' && overrideMode === 'scanner') ? 'HARDWARE' : 
+                          (qrMode === 'HYBRID' && overrideMode === 'kiosk') ? 'DYNAMIC' : 
+                          (qrMode === 'HYBRID' ? 'DYNAMIC' : qrMode);
+                          
+
   const [pinEntry, setPinEntry] = useState('');
   const [pinError, setPinError] = useState('');
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [networkIp, setNetworkIp] = useState(null);
   const [isOffline, setIsOffline] = useState(false);
+  const [scanBuffer, setScanBuffer] = useState('');
+  const [scanSuccess, setScanSuccess] = useState(null);
+  const [scanError, setScanError] = useState(null);
 
   // Anti-standby state
   const wakeLockRef = useRef(null);
@@ -99,7 +111,7 @@ export default function KioskDisplay() {
       // Fetch kiosk settings silently
       try {
         const apiUrl = `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}`;
-        const kiosksRes = await fetch(`${apiUrl}/api/tenants/${tenantId}/kiosks`);
+        const kiosksRes = await fetch(`${apiUrl}/api/tenants/${tenantId}/kiosks`, { cache: 'no-store' });
         if (kiosksRes.ok) {
           const kiosksData = await kiosksRes.json();
           const myKiosk = kiosksData.find(k => k.id === parseInt(kioskId));
@@ -107,6 +119,11 @@ export default function KioskDisplay() {
             setOrientation(myKiosk.kiosk_orientation || 'horizontal');
             localStorage.setItem(`kiosk_orientation_${kioskId}`, myKiosk.kiosk_orientation || 'horizontal');
             
+            if (myKiosk.qr_mode) {
+              setQrMode(myKiosk.qr_mode);
+              localStorage.setItem(`kiosk_qr_mode_${kioskId}`, myKiosk.qr_mode);
+            }
+
             const newColors = {
               timer: myKiosk.kiosk_timer_color || '',
               timer_bg: myKiosk.kiosk_timer_bg_color || '',
@@ -251,6 +268,62 @@ export default function KioskDisplay() {
     };
   }, []);
 
+  // Hardware Scanner Hook
+  useEffect(() => {
+    if (effectiveQrMode !== 'HARDWARE') return;
+
+    let timeout;
+    const handleKeyDown = (e) => {
+      // Ignorăm tastele modificatoare
+      if (['Shift', 'Control', 'Alt', 'Meta'].includes(e.key)) return;
+      
+      if (e.key === 'Enter') {
+        if (scanBuffer.length > 5) {
+          processHardwareScan(scanBuffer);
+        }
+        setScanBuffer('');
+        return;
+      }
+
+      setScanBuffer(prev => prev + e.key);
+      
+      clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        setScanBuffer('');
+      }, 300);
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      clearTimeout(timeout);
+    };
+  }, [effectiveQrMode, scanBuffer]);
+
+  const processHardwareScan = async (payload) => {
+    try {
+      const apiUrl = `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}`;
+      const res = await fetch(`${apiUrl}/api/tenants/${tenantId}/hardware-scan`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ payload, kiosk_id: kioskId })
+      });
+      
+      const data = await res.json();
+      if (res.ok) {
+        setScanSuccess(data);
+        setTimeout(() => setScanSuccess(null), 3000);
+      } else {
+        setScanError(data.error || 'Eroare scanare');
+        setTimeout(() => setScanError(null), 3000);
+      }
+    } catch (err) {
+      console.error('Scan error:', err);
+      setScanError('Eroare conexiune.');
+      setTimeout(() => setScanError(null), 3000);
+    }
+  };
+
   // 5. Fullscreen helper (optional, pentru experienta reala kiosk)
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -295,10 +368,10 @@ export default function KioskDisplay() {
               {[...Array(4)].map((_, i) => (
                 <div 
                   key={i} 
-                  className={`w-14 h-16 rounded-2xl flex items-center justify-center text-2xl font-black border-2 transition-colors ${
+                  className={`w-14 h-16 rounded-full flex items-center justify-center text-2xl font-black border-2 transition-colors ${
                     pinEntry.length > i 
                       ? 'bg-blue-500/20 border-blue-500 text-blue-400' 
-                      : 'bg-slate-950 border-slate-800 text-slate-600'
+                      : 'bg-slate-950 border-slate-800 text-slate-600 dark:text-slate-300'
                   }`}
                 >
                   {pinEntry.length > i ? '•' : ''}
@@ -373,7 +446,7 @@ export default function KioskDisplay() {
       <div className="absolute inset-0 pointer-events-none z-50 overflow-hidden">
         {tenant?.logo_url ? (
           <div 
-            className={`p-3 rounded-2xl pointer-events-auto absolute ${kioskColors.show_logo_bg !== false ? 'border border-slate-800 shadow-sm backdrop-blur-sm' : ''}`} 
+            className={`p-3 rounded-lg pointer-events-auto absolute ${kioskColors.show_logo_bg !== false ? 'border border-slate-800 shadow-sm backdrop-blur-sm' : ''}`} 
             style={{
               left: `${kioskColors.logo_x ?? 5}%`,
               top: `${kioskColors.logo_y ?? 5}%`,
@@ -391,7 +464,7 @@ export default function KioskDisplay() {
           </div>
         ) : (
           <div 
-            className={`text-xl md:text-2xl font-black text-white px-6 py-3 rounded-full pointer-events-auto absolute ${kioskColors.show_logo_bg !== false ? 'bg-slate-900/50 border border-slate-800' : ''}`} 
+            className={`text-xl md:text-2xl font-black text-white px-5 h-10 text-sm flex items-center justify-center rounded-lg pointer-events-auto absolute ${kioskColors.show_logo_bg !== false ? 'bg-slate-900/50 border border-slate-800' : ''}`} 
             style={{
               left: `${kioskColors.logo_x ?? 5}%`,
               top: `${kioskColors.logo_y ?? 5}%`,
@@ -412,7 +485,7 @@ export default function KioskDisplay() {
         </button>
 
         {isOffline && (
-          <div className="absolute top-6 right-6 z-50 bg-red-500 text-white px-4 py-2 rounded-full font-bold shadow-lg flex items-center gap-2 pointer-events-auto">
+          <div className="absolute top-6 right-6 z-50 bg-red-500 text-white px-4 py-2 rounded-lg font-bold shadow-lg flex items-center gap-2 pointer-events-auto">
             <WifiOff size={18} /> Offline
           </div>
         )}
@@ -435,10 +508,12 @@ export default function KioskDisplay() {
               {kioskContent.title || 'Pontaj Digital'}
             </h1>
             <p className={`text-lg md:text-xl text-slate-400 font-medium mb-12 max-w-md ${isVertical ? 'text-center' : ''}`}>
-              {kioskContent.subtitle || 'Deschide camera telefonului și scanează codul QR pentru a înregistra ora de venire sau plecare.'}
+              {(!kioskContent.subtitle || kioskContent.subtitle === 'Deschide camera telefonului și scanează codul QR pentru a înregistra ora de venire sau plecare.') && effectiveQrMode === 'HARDWARE' 
+                ? 'Apropie legitimația cu codul QR de cititorul optic pentru a înregistra ora de venire sau plecare.' 
+                : (kioskContent.subtitle || 'Deschide camera telefonului și scanează codul QR pentru a înregistra ora de venire sau plecare.')}
             </p>
             
-            <div className={`p-8 rounded-[2rem] ${isVertical ? 'w-full max-w-md flex flex-col items-center' : 'inline-flex flex-col'} ${kioskColors.show_timer_bg !== false ? 'border border-slate-800 backdrop-blur-sm shadow-2xl' : ''}`} style={kioskColors.show_timer_bg !== false ? { backgroundColor: kioskColors.timer_bg || customLogoBg } : {}}>
+            <div className={`p-8 md:px-12 md:py-10 rounded-[2rem] flex flex-col justify-center w-fit max-w-full ${isVertical ? 'items-center mx-auto' : 'items-start'} ${kioskColors.show_timer_bg !== false ? 'border border-slate-800 backdrop-blur-sm shadow-2xl' : ''}`} style={kioskColors.show_timer_bg !== false ? { backgroundColor: kioskColors.timer_bg || customLogoBg } : {}}>
               <div className="text-7xl md:text-8xl lg:text-9xl font-black tracking-tighter" style={{ color: customTimerColor, textShadow: `0 0 40px ${customTimerColor}40`, fontVariantNumeric: 'tabular-nums' }}>
                 {timeString}
               </div>
@@ -448,35 +523,87 @@ export default function KioskDisplay() {
             </div>
           </div>
 
-          {/* Zona Dreapta: Codul QR */}
+          {/* Zona Dreapta: Codul QR / Hardware Scanner */}
           <div className={`flex flex-col items-center ${isVertical ? 'w-full max-w-sm' : 'shrink-0'}`}>
-            <div className={`bg-white p-6 md:p-8 rounded-[3rem] shadow-2xl relative ${isVertical ? 'w-full aspect-square flex items-center justify-center' : ''}`}>
-              {/* Pulsing glow behind QR */}
+            <div className={`bg-white p-6 md:p-8 rounded-[3rem] shadow-2xl relative ${isVertical ? 'w-full aspect-square flex items-center justify-center' : ''} transition-all duration-500 overflow-hidden`}>
+              {/* Pulsing glow behind */}
               <div className="absolute inset-0 rounded-[3rem] animate-pulse-slow opacity-20" style={{ backgroundColor: themeColor, filter: 'blur(30px)', zIndex: -1 }}></div>
               
-              {qrPayload ? (
-                <QRCodeSVG 
-                  value={qrPayload} 
-                  size={isVertical ? 280 : 320} 
-                  level="H"
-                  includeMargin={false}
-                  className="rounded-xl drop-shadow-sm relative z-10"
-                  fgColor="#0f172a" 
-                />
-              ) : (
-                <div className={`w-[320px] h-[320px] ${isVertical ? 'w-[280px] h-[280px]' : ''} bg-slate-100 rounded-xl flex items-center justify-center relative z-10`}>
-                  <Loader2 className="w-10 h-10 animate-spin text-slate-300" />
+              {scanSuccess ? (
+                // SUCCESS SCREEN (HARDWARE)
+                <div className={`w-[320px] h-[320px] ${isVertical ? 'w-[280px] h-[280px]' : ''} flex flex-col items-center justify-center text-center animate-in fade-in zoom-in duration-300 relative z-10`}>
+                  <div className={`w-24 h-24 rounded-full mb-4 flex items-center justify-center border-4 ${scanSuccess.action === 'INTRARE' ? 'border-green-500 bg-green-50' : 'border-orange-500 bg-orange-50'} shadow-lg overflow-hidden`}>
+                    {scanSuccess.employee?.avatar_path ? (
+                      <img src={`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${scanSuccess.employee.avatar_path}`} alt="Avatar" className="w-full h-full object-cover" />
+                    ) : (
+                      <User size={40} className={scanSuccess.action === 'INTRARE' ? 'text-green-500' : 'text-orange-500'} />
+                    )}
+                  </div>
+                  <h3 className="text-2xl font-black text-slate-900 leading-tight">
+                    {scanSuccess.employee?.first_name} {scanSuccess.employee?.last_name}
+                  </h3>
+                  <div className={`mt-3 inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-bold uppercase tracking-wider ${scanSuccess.action === 'INTRARE' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
+                    <CheckCircle2 size={18} />
+                    {scanSuccess.action} ÎNREGISTRATĂ
+                  </div>
                 </div>
+              ) : scanError ? (
+                // ERROR SCREEN (HARDWARE)
+                <div className={`w-[320px] h-[320px] ${isVertical ? 'w-[280px] h-[280px]' : ''} flex flex-col items-center justify-center text-center animate-in fade-in zoom-in duration-300 relative z-10`}>
+                  <div className="w-24 h-24 rounded-full mb-4 flex items-center justify-center border-4 border-red-500 bg-red-50 shadow-lg">
+                    <XCircle size={40} className="text-red-500" />
+                  </div>
+                  <h3 className="text-xl font-black text-slate-900 leading-tight px-4">
+                    {scanError}
+                  </h3>
+                </div>
+              ) : effectiveQrMode === 'HARDWARE' ? (
+                // SCANNER IDLE (HARDWARE)
+                <div className={`w-[320px] h-[320px] ${isVertical ? 'w-[280px] h-[280px]' : ''} flex flex-col items-center justify-center relative z-10`}>
+                  <div className="w-32 h-32 rounded-full bg-slate-50 border-8 border-slate-100 flex items-center justify-center mb-6 shadow-inner relative overflow-hidden">
+                    <div className="absolute inset-0 bg-blue-500/10 animate-pulse"></div>
+                    <ScanLine size={48} className="text-slate-400" />
+                    <div className="absolute top-0 left-0 w-full h-1 bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.8)] animate-[scan-beam_2s_ease-in-out_infinite]" style={{ animation: 'scanBeam 2s ease-in-out infinite' }}></div>
+                  </div>
+                  <h3 className="text-xl font-black text-slate-800 text-center uppercase tracking-wider">Apropie Legitimația</h3>
+                  <p className="text-slate-500 font-medium text-sm text-center mt-2 px-6">de cititorul optic conectat</p>
+                  
+                  <style dangerouslySetInnerHTML={{__html: `
+                    @keyframes scanBeam {
+                      0%, 100% { top: 0; opacity: 0; }
+                      10%, 90% { opacity: 1; }
+                      50% { top: 100%; opacity: 1; }
+                    }
+                  `}} />
+                </div>
+              ) : (
+                // CLASSIC QR (STATIC / DYNAMIC)
+                qrPayload ? (
+                  <QRCodeSVG 
+                    value={qrPayload} 
+                    size={isVertical ? 280 : 320} 
+                    level="H"
+                    includeMargin={false}
+                    className="rounded-lg drop-shadow-sm relative z-10"
+                    fgColor="#0f172a" 
+                  />
+                ) : (
+                  <div className={`w-[320px] h-[320px] ${isVertical ? 'w-[280px] h-[280px]' : ''} bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center justify-center relative z-10`}>
+                    <Loader2 className="w-10 h-10 animate-spin text-slate-300" />
+                  </div>
+                )
               )}
             </div>
             
-            <div className="mt-8 flex items-center gap-3 bg-slate-900/50 px-6 py-3 rounded-full border border-slate-800 text-slate-300 font-medium text-sm md:text-base backdrop-blur-sm">
-              <span className="relative flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ backgroundColor: themeColor }}></span>
-                <span className="relative inline-flex rounded-full h-3 w-3" style={{ backgroundColor: themeColor }}></span>
-              </span>
-              Codul se actualizează automat
-            </div>
+            {effectiveQrMode !== 'HARDWARE' && (
+              <div className="mt-8 flex items-center gap-3 bg-slate-900/50 px-5 h-10 text-sm flex items-center justify-center rounded-lg border border-slate-800 text-slate-300 font-medium text-sm md:text-base backdrop-blur-sm">
+                <span className="relative flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-lg opacity-75" style={{ backgroundColor: themeColor }}></span>
+                  <span className="relative inline-flex rounded-lg h-3 w-3" style={{ backgroundColor: themeColor }}></span>
+                </span>
+                Codul se actualizează automat
+              </div>
+            )}
           </div>
           
         </div>

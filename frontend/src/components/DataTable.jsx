@@ -150,7 +150,7 @@ export default function DataTable({
       {(title || headerActions) && (
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           {title ? (
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{title}</h2>
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white dark:text-white">{title}</h2>
           ) : (
             <div></div>
           )}
@@ -207,13 +207,13 @@ export default function DataTable({
                 setSearch(e.target.value);
                 setCurrentPage(1);
               }}
-              className="block w-full pl-10 pr-20 h-10 text-[16px] md:text-sm rounded-full border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm"
+              className="block w-full pl-10 pr-20 h-10 text-[16px] md:text-sm rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm"
             />
             {/* Contor Rezultate */}
             <div 
               className={`absolute inset-y-0 right-2 flex items-center transition-opacity duration-200 pointer-events-none ${search.length > 0 ? 'opacity-100' : 'opacity-0'}`}
             >
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-primary-600 text-white shadow-sm">
+              <span className="px-2.5 py-0.5 rounded-lg text-xs font-bold bg-primary-600 text-white shadow-sm">
                 {filteredData.length} din {data.length}
               </span>
             </div>
@@ -222,10 +222,10 @@ export default function DataTable({
       </div>
       
       {/* Container Tabel (cu fundal alb și card) */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col flex-1 overflow-hidden min-h-[300px]">
+      <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 dark:border-slate-700 shadow-sm flex flex-col flex-1 overflow-hidden min-h-[300px]">
         <div className="flex-1 overflow-x-auto">
           <table className="w-full text-left text-sm whitespace-nowrap">
-            <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-10">
+            <thead className="bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700 dark:border-slate-700 sticky top-0 z-10">
               <tr>
                 {selectable && (
                   <th className="pl-4 pr-2 py-3 w-10 text-center">
@@ -233,7 +233,7 @@ export default function DataTable({
                       type="checkbox" 
                       checked={isAllPageSelected}
                       onChange={handleSelectAll}
-                      className="w-4 h-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
+                      className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-primary-600 focus:ring-primary-500 cursor-pointer"
                     />
                   </th>
                 )}
@@ -241,7 +241,7 @@ export default function DataTable({
                   <th className="px-3 py-3 w-10"></th>
                 )}
               {/* Coloana Nr. Crt. */}
-              <th className="px-3 py-3 text-slate-800 dark:text-slate-300 text-[11px] font-bold uppercase tracking-wider w-14">
+              <th className="px-3 py-3 text-slate-800 dark:text-white dark:text-slate-300 text-[11px] font-bold uppercase tracking-wider w-14">
                 #
               </th>
               
@@ -249,7 +249,7 @@ export default function DataTable({
                 <th 
                   key={idx}
                   onClick={() => col.sortable !== false ? handleSort(col.key) : null}
-                  className={`px-4 py-3 text-slate-800 dark:text-slate-300 text-[11px] font-bold uppercase tracking-wider ${col.sortable !== false ? 'cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50' : ''}`}
+                  className={`px-4 py-3 text-slate-800 dark:text-white dark:text-slate-300 text-[11px] font-bold uppercase tracking-wider ${col.sortable !== false ? 'cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 dark:hover:bg-slate-700/50' : ''}`}
                 >
                   <div className="flex items-center space-x-1">
                     <span>{col.label}</span>
@@ -273,7 +273,7 @@ export default function DataTable({
                 return (
                   <React.Fragment key={row[rowKey] || rowIndex}>
                     <tr 
-                      className={`transition-colors group ${isSelected ? 'bg-primary-50/50 dark:bg-primary-900/20' : 'hover:bg-slate-50 dark:hover:bg-slate-700/50'} ${expandable ? 'cursor-pointer' : ''}`}
+                      className={`transition-colors group ${isSelected ? 'bg-primary-50/50 dark:bg-primary-900/20' : 'hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 dark:hover:bg-slate-700/50'} ${expandable ? 'cursor-pointer' : ''}`}
                       onClick={() => expandable && toggleRowExpanded(row[rowKey])}
                     >
                       {selectable && (
@@ -282,7 +282,7 @@ export default function DataTable({
                             type="checkbox" 
                             checked={isSelected}
                             onChange={() => handleSelectRow(row[rowKey])}
-                            className="w-4 h-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
+                            className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-primary-600 focus:ring-primary-500 cursor-pointer"
                           />
                         </td>
                       )}
@@ -291,18 +291,18 @@ export default function DataTable({
                           {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                         </td>
                       )}
-                      <td className="px-3 py-3 text-slate-800 dark:text-slate-200 font-medium text-xs">
+                      <td className="px-3 py-3 text-slate-800 dark:text-white dark:text-slate-200 font-medium text-xs">
                         {startIndex + rowIndex + 1}
                       </td>
                       {columns.map((col, colIdx) => (
-                        <td key={colIdx} className="px-4 py-3 text-slate-800 dark:text-slate-200 font-medium">
+                        <td key={colIdx} className="px-4 py-3 text-slate-800 dark:text-white dark:text-slate-200 font-medium">
                           {col.render ? col.render(row) : row[col.key] || '-'}
                         </td>
                       ))}
                     </tr>
                     {isExpanded && expandedRowRender && (
                       <tr>
-                        <td colSpan={columns.length + (selectable ? 1 : 0) + (expandable ? 2 : 1)} className="p-0 border-b border-slate-100 bg-slate-50/50 dark:bg-slate-900/50">
+                        <td colSpan={columns.length + (selectable ? 1 : 0) + (expandable ? 2 : 1)} className="p-0 border-b border-slate-100 dark:border-slate-700/50 bg-slate-50 dark:bg-slate-800/50/50 dark:bg-slate-900/50">
                           {expandedRowRender(row)}
                         </td>
                       </tr>
@@ -312,7 +312,7 @@ export default function DataTable({
               })
             ) : (
               <tr>
-                <td colSpan={columns.length + 1} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
+                <td colSpan={columns.length + 1} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400 dark:text-slate-400">
                   Nu au fost găsite înregistrări.
                 </td>
               </tr>
@@ -320,17 +320,17 @@ export default function DataTable({
           </tbody>
           
           {hasAggregates && (
-            <tfoot className="bg-slate-50 border-t border-slate-200">
+            <tfoot className="bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700">
               <tr>
                 {selectable && <td></td>}
-                <td className="px-6 py-3 font-bold text-slate-700 text-xs">Total Pagină</td>
+                <td className="px-6 py-3 font-bold text-slate-700 dark:text-slate-300 text-xs">Total Pagină</td>
                 {columns.map((col, idx) => (
-                  <td key={idx} className="px-6 py-3 font-bold text-slate-700 text-xs">
+                  <td key={idx} className="px-6 py-3 font-bold text-slate-700 dark:text-slate-300 text-xs">
                     {col.aggregate ? pageTotals[col.key] : ''}
                   </td>
                 ))}
               </tr>
-              <tr className="border-t border-slate-100">
+              <tr className="border-t border-slate-100 dark:border-slate-700/50">
                 {selectable && <td></td>}
                 <td className="px-6 py-3 font-bold text-primary-700 text-xs">Total General</td>
                 {columns.map((col, idx) => (
@@ -345,18 +345,18 @@ export default function DataTable({
       </div>
 
       {/* Footer / Paginare */}
-      <div className="px-6 py-4 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 flex flex-col md:flex-row items-center justify-between gap-4 rounded-b-2xl">
+      <div className="px-6 py-4 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 dark:border-slate-700 flex flex-col md:flex-row items-center justify-between gap-4 rounded-b-2xl">
         <div className="flex flex-wrap items-center gap-4">
           {/* Rânduri pe pagină MUTAT EXTREMA STÂNGĂ */}
           <div className="flex items-center space-x-2">
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Rânduri/Pagină:</label>
+            <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 dark:text-slate-400">Rânduri/Pagină:</label>
             <select
               value={itemsPerPage}
               onChange={(e) => {
                 setItemsPerPage(Number(e.target.value));
                 setCurrentPage(1);
               }}
-              className="px-2 h-8 text-sm rounded-2xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all cursor-pointer font-medium"
+              className="px-2 h-8 text-sm rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all cursor-pointer font-medium"
             >
               <option value={10}>10</option>
               <option value={25}>25</option>
@@ -366,8 +366,8 @@ export default function DataTable({
           </div>
 
           {/* Textul Se afișează după selector */}
-          <div className="text-sm text-slate-600 dark:text-slate-400 font-medium border-l border-slate-200 dark:border-slate-700 pl-4">
-            Se afișează <span className="font-bold text-slate-900 dark:text-white">{totalItems === 0 ? 0 : startIndex + 1}</span>–<span className="font-bold text-slate-900 dark:text-white">{Math.min(startIndex + itemsPerPage, totalItems)}</span> din <span className="font-bold text-slate-900 dark:text-white">{totalItems}</span>
+          <div className="text-sm text-slate-600 dark:text-slate-300 dark:text-slate-400 font-medium border-l border-slate-200 dark:border-slate-700 dark:border-slate-700 pl-4">
+            Se afișează <span className="font-bold text-slate-900 dark:text-white dark:text-white">{totalItems === 0 ? 0 : startIndex + 1}</span>–<span className="font-bold text-slate-900 dark:text-white dark:text-white">{Math.min(startIndex + itemsPerPage, totalItems)}</span> din <span className="font-bold text-slate-900 dark:text-white dark:text-white">{totalItems}</span>
           </div>
         </div>
         
@@ -375,7 +375,7 @@ export default function DataTable({
           <button
             onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
             disabled={currentPage === 1}
-            className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-primary-50 dark:hover:bg-slate-700 hover:text-primary-600 dark:hover:text-primary-400 transition-colors disabled:opacity-50 disabled:hover:bg-transparent disabled:cursor-not-allowed"
+            className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 dark:text-slate-400 hover:bg-primary-50 dark:hover:bg-slate-700 hover:text-primary-600 dark:hover:text-primary-400 transition-colors disabled:opacity-50 disabled:hover:bg-transparent disabled:cursor-not-allowed"
           >
             <ChevronLeft size={16} />
           </button>
@@ -397,7 +397,7 @@ export default function DataTable({
                   className={`w-8 h-8 rounded-full text-sm font-bold transition-colors flex items-center justify-center ${
                     currentPage === pageNum
                       ? 'bg-primary-600 text-white shadow-sm'
-                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
+                      : 'text-slate-600 dark:text-slate-300 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700'
                   }`}
                 >
                   {pageNum}
@@ -409,7 +409,7 @@ export default function DataTable({
           <button
             onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
             disabled={currentPage === totalPages || totalPages === 0}
-            className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-primary-50 dark:hover:bg-slate-700 hover:text-primary-600 dark:hover:text-primary-400 transition-colors disabled:opacity-50 disabled:hover:bg-transparent disabled:cursor-not-allowed"
+            className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 dark:text-slate-400 hover:bg-primary-50 dark:hover:bg-slate-700 hover:text-primary-600 dark:hover:text-primary-400 transition-colors disabled:opacity-50 disabled:hover:bg-transparent disabled:cursor-not-allowed"
           >
             <ChevronRight size={16} />
           </button>
