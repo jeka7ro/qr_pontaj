@@ -202,9 +202,18 @@ const EmployeeProfile = ({ tenant, themeColor }) => {
     <div className="p-8 max-w-7xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4 mb-6">
-        <Link to="/admin/employees" className="p-2 rounded-full bg-white border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 transition-colors">
+        <button 
+          onClick={() => {
+            if (window.history.length > 2) {
+              window.history.back();
+            } else {
+              window.location.href = '/admin/employees';
+            }
+          }}
+          className="p-2 rounded-full bg-white border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 transition-colors"
+        >
           <ArrowLeft size={20} />
-        </Link>
+        </button>
         <div>
           <h1 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight flex items-center gap-2">
             Profil Angajat

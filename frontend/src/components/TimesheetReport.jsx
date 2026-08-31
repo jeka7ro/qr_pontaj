@@ -170,9 +170,31 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
         }
       }
       
-      const totalHours = Math.floor(totalMs / (1000 * 60 * 60));
-      const totalMinutes = Math.floor((totalMs % (1000 * 60 * 60)) / (1000 * 60));
-      group.total_time_str = totalMs > 0 ? `${totalHours}h ${totalMinutes}m` : '-';
+      group.missing_out = false;
+      group.ongoing_ms = 0;
+
+      if (lastIn) {
+        // Person checked in but didn't check out.
+        const isToday = new Date().toLocaleDateString('en-CA') === group.date;
+        if (isToday) {
+          group.ongoing_ms = new Date() - lastIn;
+        } else {
+          group.missing_out = true;
+        }
+      }
+      
+      const formatDuration = (ms) => {
+        const h = Math.floor(ms / (1000 * 60 * 60));
+        const m = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+        return `${h}h ${m}m`;
+      };
+
+      if (group.ongoing_ms > 0) {
+        group.total_time_str = `${formatDuration(totalMs + group.ongoing_ms)}`;
+        group.is_ongoing = true;
+      } else {
+        group.total_time_str = totalMs > 0 ? formatDuration(totalMs) : '-';
+      }
       
       return group;
     });
@@ -182,26 +204,28 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
     {
       key: 'first_name',
       label: 'Angajat',
+      exportRender: (row) => `${row.first_name} ${row.last_name} (${row.employee_code || '-'})`,
       render: (row) => (
-        <div className="flex items-center gap-3">
+        <Link to={`/admin/employees/${row.employee_id}?tab=details`} className="flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 p-1 -m-1 rounded-lg transition-colors cursor-pointer group">
           {row.avatar_path ? (
-            <img src={( row.avatar_path?.startsWith('http') ? row.avatar_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${row.avatar_path}` )} alt="Avatar" className="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-slate-700" />
+            <img src={( row.avatar_path?.startsWith('http') ? row.avatar_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${row.avatar_path}` )} alt="Avatar" className="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-slate-700 group-hover:border-primary-300 transition-colors" />
           ) : (
-            <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 font-bold">
+            <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 font-bold group-hover:bg-primary-50 group-hover:text-primary-600 transition-colors">
               {row.first_name[0]}{row.last_name[0]}
             </div>
           )}
           <div>
-            <div className="text-sm font-bold text-slate-800 dark:text-white dark:text-white">{row.first_name} {row.last_name}</div>
-            <div className="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-400 font-medium">Cod: {row.employee_code || '-'}</div>
+            <div className="text-sm font-bold text-slate-800 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">{row.first_name} {row.last_name}</div>
+            <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">Cod: {row.employee_code || '-'}</div>
           </div>
-        </div>
+        </Link>
       ),
       sortable: true
     },
     {
       key: 'date',
       label: 'Data',
+      exportRender: (row) => new Date(row.date).toLocaleDateString('ro-RO'),
       render: (row) => (
         <span className="text-sm font-bold text-slate-800 dark:text-white dark:text-white">
           {new Date(row.date).toLocaleDateString('ro-RO')}
@@ -212,6 +236,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
     {
       key: 'first_in',
       label: 'Prima Intrare',
+      exportRender: (row) => row.first_in ? new Date(row.first_in.timestamp).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' }) : '-',
       render: (row) => row.first_in ? (
         <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 font-bold text-sm bg-emerald-50 dark:bg-emerald-900/30 px-2.5 py-1 rounded-lg w-fit">
           <LogIn size={14} />
@@ -222,6 +247,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
     {
       key: 'last_out',
       label: 'Ultima Ieșire',
+      exportRender: (row) => row.last_out ? new Date(row.last_out.timestamp).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' }) : '-',
       render: (row) => row.last_out ? (
         <div className="flex items-center gap-1.5 text-blue-700 dark:text-blue-400 font-bold text-sm bg-blue-50 dark:bg-blue-900/30 px-2.5 py-1 rounded-lg w-fit">
           <LogOut size={14} />
@@ -233,9 +259,22 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
       key: 'total_time_str',
       label: 'Total Ore',
       render: (row) => (
-        <span className="text-sm font-bold text-slate-700 dark:text-slate-300 dark:text-slate-300">
-          {row.total_time_str}
-        </span>
+        <div className="flex flex-col items-start gap-1">
+          <span className="text-sm font-bold text-slate-700 dark:text-slate-300 dark:text-slate-300">
+            {row.total_time_str}
+          </span>
+          {row.is_ongoing && (
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-[10px] font-bold">
+              <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+              ÎN TURĂ
+            </span>
+          )}
+          {row.missing_out && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-red-100 text-red-700 text-[10px] font-bold">
+              ! LIPSEȘTE IEȘIREA
+            </span>
+          )}
+        </div>
       )
     },
     {
@@ -326,6 +365,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
 
       <div className="flex-1">
         <DataTable 
+          title="Raport Pontaje"
           data={groupedTimesheets}
           columns={columns}
           searchPlaceholder="Caută după nume sau locație..."

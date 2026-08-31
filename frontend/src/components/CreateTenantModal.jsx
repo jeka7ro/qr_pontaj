@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Upload } from 'lucide-react';
+import { X, Upload, Copy } from 'lucide-react';
 
 export default function CreateTenantModal({ onClose, onTenantCreated, editTenant = null }) {
   const [formData, setFormData] = useState({
@@ -434,18 +434,35 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
                       >
                         Deschide
                       </a>
+                      <button 
+                        type="button"
+                        onClick={() => navigator.clipboard.writeText(managerLink)}
+                        className="w-9 h-9 flex items-center justify-center bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-md transition-colors"
+                        title="Copiază link"
+                      >
+                        <Copy size={16} />
+                      </button>
                     </div>
                   </div>
                   <div className="pt-2">
                     <p className="text-xs font-bold text-slate-700 dark:text-slate-300 dark:text-slate-300 mb-1">Aplicație Scanare Angajați (URL Cod QR)</p>
                     <div className="flex items-center gap-2">
                       <input type="text" readOnly value={scanLink} className="flex-1 px-3 h-9 text-xs rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white dark:border-slate-700 outline-none text-slate-600 dark:text-slate-300 dark:text-slate-300 font-mono" />
+                      <a 
+                        href={scanLink} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="px-4 h-9 bg-slate-800 dark:bg-slate-700 hover:bg-slate-900 dark:hover:bg-slate-600 text-white rounded-md text-xs font-bold flex items-center transition-colors"
+                      >
+                        Deschide
+                      </a>
                       <button 
                         type="button"
                         onClick={() => navigator.clipboard.writeText(scanLink)}
-                        className="px-4 h-9 bg-slate-200 dark:bg-slate-700 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 dark:text-slate-200 rounded-full text-xs font-bold flex items-center transition-colors"
+                        className="w-9 h-9 flex items-center justify-center bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-md transition-colors"
+                        title="Copiază link"
                       >
-                        Copiază
+                        <Copy size={16} />
                       </button>
                     </div>
                   </div>

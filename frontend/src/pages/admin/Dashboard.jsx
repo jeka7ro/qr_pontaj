@@ -191,15 +191,15 @@ function TenantsList() {
         let hostname = window.location.hostname;
         if (hostname.startsWith('admin.')) hostname = hostname.replace('admin.', '');
         if (hostname.startsWith('www.')) hostname = hostname.replace('www.', '');
-        const scanUrl = `${window.location.protocol}//${row.subdomain}.${hostname}/`;
+        const adminUrl = `${window.location.protocol}//${row.subdomain}.${hostname}/admin/login`;
         
         return (
           <a 
-            href={scanUrl} 
+            href={adminUrl} 
             target="_blank" 
             rel="noopener noreferrer"
             className="font-semibold text-primary-600 hover:text-primary-700 hover:underline flex items-center gap-1"
-            title="Deschide aplicația de scanare QR pentru acest tenant"
+            title="Deschide panoul de administrare pentru acest tenant"
           >
             {row.nume}
           </a>

@@ -1,0 +1,30 @@
+--- backend/routes/tenantDashboard.js
++++ backend/routes/tenantDashboard.js
+@@ -107,4 +107,17 @@
+ 
++    // Get Pending Notifications
++    const pendingNotifsRes = await pool.query(`
++      SELECT n.id, n.message, n.type, n.created_at, n.employee_id, e.first_name, e.last_name, e.avatar_path
++      FROM qrp_notifications n
++      LEFT JOIN qrp_employees e ON n.employee_id = e.id
++      WHERE n.tenant_id = $1 AND n.status = 'unread'
++      ORDER BY n.created_at DESC
++      LIMIT 10
++    `, [tenantId]);
++    
+     res.json({
+       totalEmployees,
+       presentNow,
+       todayCheckins,
+       donutDataRoot,
+       donutDataDetails,
+       siteColors,
+-      weeklyData
++      weeklyData,
++      pendingNotifs: pendingNotifsRes.rows
+     });
+   } catch (err) {
+     console.error('Stats fetch error:', err);
+     res.status(500).json({ error: 'Internal Server Error' });
+   }
+ });

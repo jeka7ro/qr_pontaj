@@ -132,7 +132,13 @@ export default function DataTable({
       const row = { 'Nr. Crt.': index + 1 };
       columns.forEach(col => {
         if (col.key !== 'actions' && col.exportable !== false) {
-          row[col.label] = item[col.key];
+          if (col.exportRender) {
+            row[col.label] = col.exportRender(item);
+          } else {
+            row[col.label] = item[col.key] !== null && typeof item[col.key] === 'object' 
+              ? JSON.stringify(item[col.key]) 
+              : item[col.key];
+          }
         }
       });
       return row;
@@ -141,7 +147,13 @@ export default function DataTable({
     const worksheet = XLSX.utils.json_to_sheet(exportData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Date");
-    XLSX.writeFile(workbook, `${title.replace(/\s+/g, '_')}_Export.xlsx`);
+    
+    const today = new Date();
+    const dateString = `${today.getDate().toString().padStart(2, '0')}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getFullYear()}`;
+    const baseName = title ? title.replace(/\s+/g, '_') : 'Raport';
+    const fileName = `${baseName}_${dateString}.xlsx`;
+    
+    XLSX.writeFile(workbook, fileName);
   };
 
   return (

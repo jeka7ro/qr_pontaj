@@ -284,7 +284,9 @@ router.put('/:id', async (req, res) => {
       favicon_url,
       distanta_gps,
       mod_qr,
-      modules
+      modules,
+      portal_bg_image_url,
+      portal_bg_color
     } = req.body;
 
     if (!nume_locatie) {

@@ -592,7 +592,7 @@ export default function TenantDashboard() {
 
       {/* Notificari Popup */}
       <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none">
-        {pendingNotifs.filter(n => !dismissedNotifs.has(n.id)).map(notif => (
+        {pendingNotifs && pendingNotifs.filter(n => !dismissedNotifs.has(n.id)).map(notif => (
           <div key={notif.id} className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-100 dark:border-slate-700 p-4 max-w-sm w-[350px] pointer-events-auto flex gap-3 animate-in slide-in-from-right-8 fade-in">
             <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center text-blue-600 flex-shrink-0">
               <Bell size={18} />

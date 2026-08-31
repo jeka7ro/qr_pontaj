@@ -99,6 +99,7 @@ export default function AdminLogin() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="current-password"
                   className="block w-full pl-10 pr-10 px-4 h-10 border border-slate-200 dark:border-slate-700 rounded-full focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white dark:border-slate-700 outline-none sm:text-sm transition-all shadow-sm"
                   placeholder="••••••••"
                 />
