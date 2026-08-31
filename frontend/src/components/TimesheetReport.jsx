@@ -295,11 +295,11 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
   const columns = employeeId ? baseColumns.filter(c => c.key !== 'first_name' && c.key !== 'actions') : baseColumns;
 
   const tableFilters = (
-    <div className="flex flex-nowrap items-center gap-3 w-full overflow-x-auto py-1" style={{ scrollbarWidth: 'none' }}>
+    <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full w-full">
       <select 
         value={actionFilter}
         onChange={(e) => setActionFilter(e.target.value)}
-        className="px-3 h-10 rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 text-sm font-medium text-slate-700 dark:text-slate-300 dark:text-slate-200 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer"
+        className="px-3 h-10 rounded-full border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer flex-1 sm:flex-none min-w-[140px]"
       >
         <option value="all">Toate acțiunile</option>
         <option value="in">Doar Intrări (IN)</option>
@@ -309,7 +309,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
       <select 
         value={locationId}
         onChange={(e) => setLocationId(e.target.value)}
-        className="px-3 h-10 rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 text-sm font-medium text-slate-700 dark:text-slate-300 dark:text-slate-200 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer max-w-[200px] truncate"
+        className="px-3 h-10 rounded-full border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer flex-1 sm:flex-none min-w-[140px] truncate"
       >
         <option value="all">Toate locațiile</option>
         {locations.map(loc => (
@@ -320,7 +320,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
       <select 
         value={periodFilter}
         onChange={handlePeriodChange}
-        className="px-3 h-10 rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 text-sm font-medium text-slate-700 dark:text-slate-300 dark:text-slate-200 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer"
+        className="px-3 h-10 rounded-full border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer flex-1 sm:flex-none min-w-[140px]"
       >
         <option value="today">Azi</option>
         <option value="yesterday">Ieri</option>
@@ -332,12 +332,12 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
         <option value="custom">Personalizat...</option>
       </select>
       
-      <div className="flex items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 dark:border-slate-700 rounded-full px-4 h-10 shadow-sm focus-within:ring-2 focus-within:ring-primary-500 transition-all">
+      <div className="flex items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full px-4 h-10 shadow-sm focus-within:ring-2 focus-within:ring-primary-500 transition-all w-full sm:w-auto">
         <input 
           type="date" 
           value={startDate}
           onChange={handleDateManualChange(setStartDate)}
-          className="text-sm font-bold text-slate-700 dark:text-slate-300 dark:text-slate-200 bg-transparent outline-none cursor-pointer"
+          className="text-sm font-bold text-slate-700 dark:text-slate-300 bg-transparent outline-none cursor-pointer w-full sm:w-auto"
           title="Data Început"
         />
         <span className="text-slate-300 dark:text-slate-600 font-bold">-</span>
@@ -345,7 +345,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
           type="date" 
           value={endDate}
           onChange={handleDateManualChange(setEndDate)}
-          className="text-sm font-bold text-slate-700 dark:text-slate-300 dark:text-slate-200 bg-transparent outline-none cursor-pointer"
+          className="text-sm font-bold text-slate-700 dark:text-slate-300 bg-transparent outline-none cursor-pointer w-full sm:w-auto"
           title="Data Sfârșit"
         />
       </div>
@@ -366,6 +366,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
       <div className="flex-1">
         <DataTable 
           title="Raport Pontaje"
+          hideTitle={true}
           data={groupedTimesheets}
           columns={columns}
           searchPlaceholder="Caută după nume sau locație..."

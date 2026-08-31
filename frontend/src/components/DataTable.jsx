@@ -19,6 +19,7 @@ export default function DataTable({
   filters = null,
   selectable = false,
   bulkActions = null,
+  hideTitle = false,
   rowKey = 'id',
   expandable = false,
   expandedRowRender = null
@@ -159,9 +160,9 @@ export default function DataTable({
   return (
     <div className="flex flex-col h-full space-y-4">
       {/* Header (Titlu + Acțiuni Principale) */}
-      {(title || headerActions) && (
+      {(title && !hideTitle || headerActions) && (
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          {title ? (
+          {title && !hideTitle ? (
             <h2 className="text-2xl font-bold text-slate-900 dark:text-white dark:text-white">{title}</h2>
           ) : (
             <div></div>
@@ -176,12 +177,13 @@ export default function DataTable({
       <div className="flex flex-col gap-4 mb-4">
         {/* Rândul 1: Filtre și Acțiuni (Export) */}
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 w-full">
-          {/* Slot de filtre extra */}
-          <div className="flex-1 w-full">
+          <div className="flex-1 w-full max-w-full">
             {filters ? (
-              <div className="flex items-center gap-2">
-                <Filter size={16} className="text-slate-400 hidden sm:block" />
-                {filters}
+              <div className="flex items-start md:items-center gap-2 w-full">
+                <Filter size={16} className="text-slate-400 hidden lg:block shrink-0" />
+                <div className="flex-1 w-full min-w-0 overflow-x-auto pb-1 md:pb-0" style={{ scrollbarWidth: 'none' }}>
+                  {filters}
+                </div>
               </div>
             ) : null}
           </div>
