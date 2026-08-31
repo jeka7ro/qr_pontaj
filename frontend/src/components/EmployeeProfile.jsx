@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation } from 'react-router-dom';
 import { ArrowLeft, User, MapPin, Briefcase, Calendar, Clock, Banknote, Shield, History, Activity, Image as ImageIcon, Camera, FileText, Upload, Trash2, Download, Loader2, X, ArrowRight, Eye, CalendarDays } from 'lucide-react';
 import TimesheetReport from './TimesheetReport';
 import ConfirmModal from './ConfirmModal';
 
 const EmployeeProfile = ({ tenant, themeColor }) => {
+  const location = useLocation();
+  const initialTab = new URLSearchParams(location.search).get('tab') || 'details';
   const { id } = useParams();
   const [employee, setEmployee] = useState(null);
   const [history, setHistory] = useState([]);
@@ -13,7 +15,7 @@ const EmployeeProfile = ({ tenant, themeColor }) => {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingDoc, setUploadingDoc] = useState(false);
 
-  const [activeTab, setActiveTab] = useState('details');
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [lightboxIndex, setLightboxIndex] = useState(null);
 
   const [evalPunctuality, setEvalPunctuality] = useState(10);

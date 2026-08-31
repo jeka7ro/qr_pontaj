@@ -243,9 +243,9 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
       label: 'Acțiuni',
       render: (row) => (
         <Link 
-          to={`/admin/employees/${row.employee_id}`}
+          to={`/admin/employees/${row.employee_id}?tab=timesheets`}
           className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-primary-50 dark:hover:bg-primary-900/30 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
-          title="Vezi Profil Complet"
+          title="Vezi Istoric Pontaj"
         >
           <Eye size={16} />
         </Link>
