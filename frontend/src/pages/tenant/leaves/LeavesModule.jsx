@@ -212,8 +212,7 @@ export default function LeavesModule({ tenant, themeColor }) {
           
           <button 
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2 px-5 h-10 px-5 text-sm flex items-center justify-center text-white rounded-lg font-bold text-sm hover:opacity-90 transition-opacity shadow-sm"
-            style={{ backgroundColor: themeColor }}
+            className="flex items-center gap-2 px-5 h-10 text-sm justify-center bg-primary-600 hover:bg-primary-700 text-white rounded-full font-bold transition-colors shadow-sm"
           >
             <Plus size={18} /> Adaugă Concediu
           </button>
@@ -233,19 +232,19 @@ export default function LeavesModule({ tenant, themeColor }) {
         {/* Search Bar Top */}
         <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto">
-            <div style={{ position: 'relative' }} className="w-full md:w-64">
-              <Search className="w-4 h-4 text-slate-400 dark:text-slate-500" style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', zIndex: 1 }} />
+            <div className="relative w-full md:w-64">
+              <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-4 top-1/2 -translate-y-1/2 z-10" />
               <input
                 type="text"
-                className="w-full h-10 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all rounded-lg"
-                style={{ paddingLeft: 40, paddingRight: search ? 80 : 16 }}
+                className="w-full h-10 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all rounded-full pl-10 shadow-sm"
+                style={{ paddingRight: search ? 70 : 16 }}
                 placeholder="Caută cereri..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
               />
               {search && (
-                <div style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', backgroundColor: themeColor, color: 'white', borderRadius: 9999, padding: '2px 10px', fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap' }}>
-                  {filteredLeaves.length} / {total}
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-medium text-slate-400 whitespace-nowrap pointer-events-none">
+                  {filteredLeaves.length} din {total}
                 </div>
               )}
             </div>
@@ -255,21 +254,21 @@ export default function LeavesModule({ tenant, themeColor }) {
                 type="date" 
                 value={filterStart}
                 onChange={e => setFilterStart(e.target.value)}
-                className="w-full md:w-auto h-10 px-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-primary-500 outline-none"
+                className="w-full md:w-auto h-10 px-4 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-primary-500 outline-none transition-all shadow-sm"
               />
               <span className="text-slate-400 font-medium text-sm">-</span>
               <input 
                 type="date" 
                 value={filterEnd}
                 onChange={e => setFilterEnd(e.target.value)}
-                className="w-full md:w-auto h-10 px-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-primary-500 outline-none"
+                className="w-full md:w-auto h-10 px-4 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-primary-500 outline-none transition-all shadow-sm"
               />
             </div>
           </div>
           
           <button 
             onClick={handleExport}
-            className="flex items-center gap-2 px-5 h-10 text-sm bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold transition-colors shadow-sm w-full md:w-auto justify-center whitespace-nowrap"
+            className="flex items-center gap-2 px-5 h-10 text-sm bg-green-600 hover:bg-green-700 text-white rounded-full font-bold transition-colors shadow-sm w-full md:w-auto justify-center whitespace-nowrap"
           >
             <Download size={16} /> Exportă
           </button>

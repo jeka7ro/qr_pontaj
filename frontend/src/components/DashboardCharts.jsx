@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Clock, LogIn, LogOut, MapPin } from 'lucide-react';
+import { Users, Clock, LogIn, LogOut, MapPin, UserMinus } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 
 export default function DashboardCharts({ tenant, themeColor }) {
@@ -328,6 +328,8 @@ export default function DashboardCharts({ tenant, themeColor }) {
                   <tr className="bg-slate-50 border-b border-slate-100">
                     <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Angajat</th>
                     <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Prezență</th>
+                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Program</th>
                     <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Timp Lucrat (azi)</th>
                   </tr>
                 </thead>
@@ -363,7 +365,18 @@ function LiveShiftRow({ emp, isPresent, isOut, hasHistory }) {
     }
   }, [isPresent]);
 
-  let durationStr = '-';
+  let durationNode = <span className="text-slate-400">-</span>;
+  let punctualityNode = null;
+  let scheduleNode = <span className="text-slate-400">-</span>;
+
+  if (emp.scheduled_start_time && emp.scheduled_end_time) {
+    scheduleNode = (
+      <div className="text-sm font-medium text-slate-800 leading-tight">
+        {emp.scheduled_start_time.substring(0,5)} - {emp.scheduled_end_time.substring(0,5)}
+      </div>
+    );
+  }
+
   if (hasHistory && emp.first_in_today) {
     const inTime = new Date(emp.first_in_today);
     const endTime = isOut && emp.last_scan_time ? new Date(emp.last_scan_time) : now;
@@ -375,10 +388,57 @@ function LiveShiftRow({ emp, isPresent, isOut, hasHistory }) {
       const diffSecs = Math.floor((diffMs % 60000) / 1000);
       
       if (isPresent) {
-        durationStr = `${diffHrs.toString().padStart(2, '0')}:${diffMins.toString().padStart(2, '0')}:${diffSecs.toString().padStart(2, '0')}`;
+        const showColon = now.getSeconds() % 2 === 0;
+        const blinkClass = `transition-opacity duration-200 ${showColon ? 'opacity-100' : 'opacity-0'}`;
+        const colonClass = `mx-[1px] ${blinkClass}`;
+        
+        durationNode = (
+          <div className="flex items-center gap-1.5">
+            <div className={`w-2 h-2 rounded-full bg-emerald-500 ${blinkClass}`} />
+            <div className="flex items-center">
+              <span className="w-[18px] text-center">{diffHrs.toString().padStart(2, '0')}</span>
+              <span className={colonClass}>:</span>
+              <span className="w-[18px] text-center">{diffMins.toString().padStart(2, '0')}</span>
+              <span className={colonClass}>:</span>
+              <span className="w-[18px] text-center">{diffSecs.toString().padStart(2, '0')}</span>
+            </div>
+          </div>
+        );
       } else {
-        durationStr = `${diffHrs}h ${diffMins}m`;
+        durationNode = <span>{diffHrs}h {diffMins}m</span>;
       }
+    }
+
+    if (emp.scheduled_start_time) {
+      const [hours, minutes] = emp.scheduled_start_time.split(':').map(Number);
+      const scheduledDate = new Date(inTime);
+      scheduledDate.setHours(hours, minutes, 0, 0);
+
+      const lateMs = inTime.getTime() - scheduledDate.getTime();
+      if (lateMs <= 60000) { // 1 min grace
+        punctualityNode = <div className="text-emerald-600 font-medium text-sm flex items-center gap-1 mt-1"><Clock className="text-emerald-500" size={16} /> LA TIMP</div>;
+      } else {
+        const lateHrs = Math.floor(lateMs / 3600000);
+        const lateMins = Math.floor((lateMs % 3600000) / 60000);
+        let lateStr = '';
+        if (lateHrs > 0) lateStr += `${lateHrs}h `;
+        lateStr += `${lateMins}m`;
+        
+        punctualityNode = <div className="text-red-600 font-medium text-sm flex items-center gap-1 mt-1"><Clock className="text-red-500" size={16} /> ÎNTÂRZIAT {lateStr}</div>;
+      }
+    }
+  }
+
+  let lastSeenNode = <span className="text-slate-400">-</span>;
+  const presenceDateStr = emp.first_in_today || emp.absolute_last_scan;
+  if (presenceDateStr) {
+    const presenceDate = new Date(presenceDateStr);
+    const isToday = presenceDate.getDate() === now.getDate() && presenceDate.getMonth() === now.getMonth() && presenceDate.getFullYear() === now.getFullYear();
+    
+    if (isToday) {
+      lastSeenNode = <span className="text-slate-700 font-medium text-sm">Azi, {presenceDate.toLocaleTimeString('ro-RO', {hour: '2-digit', minute:'2-digit'})}</span>;
+    } else {
+      lastSeenNode = <span className="text-slate-500 text-sm">{presenceDate.toLocaleDateString('ro-RO')} {presenceDate.toLocaleTimeString('ro-RO', {hour: '2-digit', minute:'2-digit'})}</span>;
     }
   }
 
@@ -394,31 +454,34 @@ function LiveShiftRow({ emp, isPresent, isOut, hasHistory }) {
                               </div>
                             )}
                             <div>
-                              <div className="font-bold text-slate-900">{emp.first_name} {emp.last_name}</div>
-                              {hasHistory && emp.first_in_today && (
-                                <div className="text-xs text-slate-500">De la: {new Date(emp.first_in_today).toLocaleTimeString('ro-RO', {hour: '2-digit', minute:'2-digit'})}</div>
-                              )}
+                              <div className="font-medium text-slate-900 text-sm leading-tight">{emp.first_name} {emp.last_name}</div>
                             </div>
                           </div>
                         </td>
                         <td className="px-6 py-4">
                           {isPresent ? (
-                            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-100 text-green-700 text-xs font-bold">
-                              <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+                            <div className="text-emerald-600 font-medium text-sm flex items-center gap-1.5">
+                              <LogIn className="text-emerald-500" size={16} />
                               ÎN TURĂ
                             </div>
                           ) : isOut ? (
-                            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-bold">
-                              <LogOut size={12} />
+                            <div className="text-slate-700 font-medium text-sm flex items-center gap-1.5">
+                              <LogOut className="text-slate-400" size={16} />
                               PLECAT
                             </div>
                           ) : (
-                            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-400 text-xs font-bold">
+                            <div className="text-slate-400 font-medium text-sm flex items-center gap-1.5">
+                              <UserMinus className="text-slate-300" size={16} />
                               ABSENT
                             </div>
                           )}
                         </td>
-                        <td className="px-6 py-4 font-medium text-slate-700">{durationStr}</td>
+                        <td className="px-6 py-4">{lastSeenNode}</td>
+                        <td className="px-6 py-4">
+                          {scheduleNode}
+                          {punctualityNode}
+                        </td>
+                        <td className="px-6 py-4 text-sm font-medium text-slate-700">{durationNode}</td>
                       </tr>
   );
 }
