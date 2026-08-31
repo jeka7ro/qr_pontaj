@@ -337,22 +337,57 @@ export default function DashboardCharts({ tenant, themeColor }) {
                     const isOut = emp.current_status === 'OUT';
                     const hasHistory = isPresent || isOut;
                     
-                    let durationStr = '-';
-                    if (hasHistory && emp.first_in_today) {
-                      const inTime = new Date(emp.first_in_today);
-                      const endTime = isOut && emp.last_scan_time ? new Date(emp.last_scan_time) : new Date();
-                      const diffMs = endTime - inTime;
-                      const diffHrs = Math.floor(diffMs / 3600000);
-                      const diffMins = Math.floor((diffMs % 3600000) / 60000);
-                      durationStr = `${diffHrs}h ${diffMins}m`;
-                    }
-                    
-                    return (
-                      <tr key={emp.id} className="hover:bg-slate-50 transition-colors">
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            {emp.avatar_path ? (
-                              <img src={emp.avatar_path.startsWith('http') ? emp.avatar_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${emp.avatar_path}`} alt="avatar" className="w-10 h-10 rounded-full object-cover border-2 border-slate-200" />
+                    return <LiveShiftRow key={emp.id} emp={emp} isPresent={isPresent} isOut={isOut} hasHistory={hasHistory} />;
+                  }) : (
+                    <tr>
+                      <td colSpan="3" className="px-6 py-8 text-center text-slate-500">Nu există date pentru ziua de azi.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LiveShiftRow({ emp, isPresent, isOut, hasHistory }) {
+  const [now, setNow] = useState(new Date());
+
+  useEffect(() => {
+    if (isPresent) {
+      const interval = setInterval(() => setNow(new Date()), 1000);
+      return () => clearInterval(interval);
+    }
+  }, [isPresent]);
+
+  let durationStr = '-';
+  if (hasHistory && emp.first_in_today) {
+    const inTime = new Date(emp.first_in_today);
+    const endTime = isOut && emp.last_scan_time ? new Date(emp.last_scan_time) : now;
+    const diffMs = endTime - inTime;
+    
+    if (diffMs > 0) {
+      const diffHrs = Math.floor(diffMs / 3600000);
+      const diffMins = Math.floor((diffMs % 3600000) / 60000);
+      const diffSecs = Math.floor((diffMs % 60000) / 1000);
+      
+      if (isPresent) {
+        durationStr = `${diffHrs.toString().padStart(2, '0')}:${diffMins.toString().padStart(2, '0')}:${diffSecs.toString().padStart(2, '0')}`;
+      } else {
+        durationStr = `${diffHrs}h ${diffMins}m`;
+      }
+    }
+  }
+
+  return (
+    <tr className="hover:bg-slate-50 transition-colors">
+      <td className="px-6 py-4">
+        <div className="flex items-center gap-3">
+          {emp.avatar_path ? (
+            <img src={emp.avatar_path.startsWith('http') ? emp.avatar_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${emp.avatar_path}`} alt="avatar" className="w-10 h-10 rounded-full object-cover border-2 border-slate-200" />
                             ) : (
                               <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 font-bold">
                                 {emp.first_name?.[0]}{emp.last_name?.[0]}
@@ -368,17 +403,9 @@ export default function DashboardCharts({ tenant, themeColor }) {
                         </td>
                         <td className="px-6 py-4">
                           {isPresent ? (
-                            <div className="flex flex-col items-start gap-1.5">
-                              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-100 text-green-700 text-xs font-bold">
-                                <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
-                                ÎN TURĂ
-                              </div>
-                              {emp.site_name && (
-                                <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 text-slate-500 text-[10px] font-bold uppercase border border-slate-200">
-                                  <MapPin size={10} />
-                                  <span className="truncate max-w-[120px]">{emp.site_name}</span>
-                                </div>
-                              )}
+                            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-100 text-green-700 text-xs font-bold">
+                              <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+                              ÎN TURĂ
                             </div>
                           ) : isOut ? (
                             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-bold">
@@ -393,18 +420,5 @@ export default function DashboardCharts({ tenant, themeColor }) {
                         </td>
                         <td className="px-6 py-4 font-medium text-slate-700">{durationStr}</td>
                       </tr>
-                    );
-                  }) : (
-                    <tr>
-                      <td colSpan="3" className="px-6 py-8 text-center text-slate-500">Nu există date pentru ziua de azi.</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
   );
 }
