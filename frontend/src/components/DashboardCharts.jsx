@@ -302,7 +302,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
                 />
                 <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f8fafc' }} />
                 <Bar 
-                  dataKey="Intrări" 
+                  dataKey="value" 
                   fill="url(#barGradient)" 
                   radius={[4, 4, 0, 0]}
                   barSize={40}
