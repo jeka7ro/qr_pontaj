@@ -56,15 +56,16 @@ router.get('/live', async (req, res) => {
   try {
     const tenantId = req.user.tenant_id;
     const query = `
-      SELECT e.id, e.first_name, e.last_name, e.avatar_path, e.current_status, e.first_in_today,
+      SELECT e.id, e.first_name, e.last_name, e.avatar_path,
+             COALESCE((SELECT action_type FROM qrp_timesheets WHERE employee_id = e.id ORDER BY created_at DESC LIMIT 1), 'OUT') as current_status,
+             (SELECT MIN(created_at) FROM qrp_timesheets WHERE employee_id = e.id AND action_type = 'IN' AND DATE(created_at) = CURRENT_DATE) as first_in_today,
              (SELECT MAX(created_at) FROM qrp_timesheets WHERE employee_id = e.id AND action_type = 'OUT' AND DATE(created_at) = CURRENT_DATE) as last_scan_time,
              (SELECT s.name FROM qrp_sites s JOIN qrp_timesheets t ON t.site_id = s.id WHERE t.employee_id = e.id AND t.action_type = 'IN' ORDER BY t.created_at DESC LIMIT 1) as site_name
       FROM qrp_employees e
-      WHERE e.tenant_id = $1 AND e.is_active = true
+      WHERE e.tenant_id = $1
       ORDER BY 
-        CASE WHEN e.current_status = 'IN' THEN 1 
-             WHEN e.current_status = 'OUT' THEN 2 
-             ELSE 3 END, 
+        CASE WHEN COALESCE((SELECT action_type FROM qrp_timesheets WHERE employee_id = e.id ORDER BY created_at DESC LIMIT 1), 'OUT') = 'IN' THEN 1 
+             ELSE 2 END, 
         e.first_name ASC
     `;
     const result = await pool.query(query, [tenantId]);
@@ -81,11 +82,15 @@ router.get('/stats', async (req, res) => {
     const tenantId = req.user.tenant_id;
     
     // Total Employees
-    const empRes = await pool.query('SELECT COUNT(*) as count FROM qrp_employees WHERE tenant_id = $1 AND is_active = true', [tenantId]);
+    const empRes = await pool.query('SELECT COUNT(*) as count FROM qrp_employees WHERE tenant_id = $1', [tenantId]);
     const totalEmployees = parseInt(empRes.rows[0].count);
     
     // Present Now & Today Checkins
-    const presentRes = await pool.query('SELECT COUNT(*) as count FROM qrp_employees WHERE tenant_id = $1 AND current_status = $2', [tenantId, 'IN']);
+    const presentRes = await pool.query(`
+      SELECT COUNT(*) as count FROM qrp_employees e
+      WHERE e.tenant_id = $1 
+      AND COALESCE((SELECT action_type FROM qrp_timesheets WHERE employee_id = e.id ORDER BY created_at DESC LIMIT 1), 'OUT') = 'IN'
+    `, [tenantId]);
     const presentNow = parseInt(presentRes.rows[0].count);
     
     const checkinsRes = await pool.query('SELECT COUNT(DISTINCT employee_id) as count FROM qrp_timesheets WHERE tenant_id = $1 AND action_type = $2 AND DATE(created_at) = CURRENT_DATE', [tenantId, 'IN']);
@@ -102,7 +107,8 @@ router.get('/stats', async (req, res) => {
         ORDER BY employee_id, created_at DESC
       ) t ON t.employee_id = e.id
       LEFT JOIN qrp_sites s ON s.id = t.site_id
-      WHERE e.tenant_id = $1 AND e.current_status = 'IN'
+      WHERE e.tenant_id = $1 
+      AND COALESCE((SELECT action_type FROM qrp_timesheets WHERE employee_id = e.id ORDER BY created_at DESC LIMIT 1), 'OUT') = 'IN'
       GROUP BY s.id, s.name
     `, [tenantId]);
     
