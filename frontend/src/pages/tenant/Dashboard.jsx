@@ -81,6 +81,32 @@ export default function TenantDashboard() {
     fetchInfo();
   }, [navigate]);
 
+
+  useEffect(() => {
+    if (!tenantInfo?.tenant?.id) return;
+    const fetchNotifs = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenant/dashboard/pending-notifications`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setPendingNotifs(data);
+        }
+      } catch (err) {
+        console.error('Error fetching notifications', err);
+      }
+    };
+    fetchNotifs();
+    const interval = setInterval(fetchNotifs, 30000);
+    return () => clearInterval(interval);
+  }, [tenantInfo?.tenant?.id]);
+
+  const dismissNotif = (id) => {
+    setDismissedNotifs(prev => new Set(prev).add(id));
+  };
+
   const handleLogout = () => {
     localStorage.clear();
     navigate('/admin/login');
@@ -558,6 +584,37 @@ export default function TenantDashboard() {
           </Routes>
         </main>
       </div>
+
+      {/* Notificari Popup */}
+      <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none">
+        {pendingNotifs.filter(n => !dismissedNotifs.has(n.id)).map(notif => (
+          <div key={notif.id} className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-100 dark:border-slate-700 p-4 max-w-sm w-[350px] pointer-events-auto flex gap-3 animate-in slide-in-from-right-8 fade-in">
+            <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center text-blue-600 flex-shrink-0">
+              <Bell size={18} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex justify-between items-start gap-2">
+                <h4 className="font-bold text-slate-800 dark:text-white text-sm">
+                  {notif.leave_type === 'SHIFT_CHANGE' ? 'Cerere schimbare tură' : 'Cerere concediu/învoire'}
+                </h4>
+                <button onClick={() => dismissNotif(notif.id)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                  <X size={14} />
+                </button>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">
+                <span className="font-bold">{notif.first_name} {notif.last_name}</span>: {notif.reason || 'Fără motiv specificat'}
+              </p>
+              <button 
+                onClick={() => { dismissNotif(notif.id); navigate('/admin/leaves'); }}
+                className="mt-3 text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 px-3 py-1.5 rounded-lg w-full transition-colors"
+              >
+                Vezi cererea
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
     </div>
   );
 }

@@ -40,6 +40,13 @@ export default function KioskDisplay() {
   const [scanSuccess, setScanSuccess] = useState(null);
   const [scanError, setScanError] = useState(null);
 
+  // Kiosk history state
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [historyPin, setHistoryPin] = useState('');
+  const [historyData, setHistoryData] = useState(null);
+  const [historyError, setHistoryError] = useState(null);
+  const [historyLoading, setHistoryLoading] = useState(false);
+
   // Anti-standby state
   const wakeLockRef = useRef(null);
 
@@ -318,10 +325,28 @@ export default function KioskDisplay() {
         setTimeout(() => setScanError(null), 3000);
       }
     } catch (err) {
-      console.error('Scan error:', err);
-      setScanError('Eroare conexiune.');
+      setScanError(err.message || 'Eroare conexiune.');
       setTimeout(() => setScanError(null), 3000);
     }
+  };
+
+  const fetchHistory = async () => {
+    setHistoryLoading(true);
+    setHistoryError(null);
+    try {
+      const apiUrl = `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}`;
+      const res = await fetch(`${apiUrl}/api/tenants/${tenantId}/hardware-scan/history`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kiosk_id: kioskId, pin_code: historyPin })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Eroare incarcare istoric');
+      setHistoryData(data);
+    } catch (err) {
+      setHistoryError(err.message);
+    }
+    setHistoryLoading(false);
   };
 
   // 5. Fullscreen helper (optional, pentru experienta reala kiosk)
@@ -456,7 +481,7 @@ export default function KioskDisplay() {
             }}
           >
             <img 
-              src={tenant.logo_url.startsWith('http') ? tenant.logo_url : ( tenant.logo_url?.startsWith('http') ? tenant.logo_url : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${tenant.logo_url}` )} 
+              src={tenant.logo_url?.startsWith('http') ? tenant.logo_url : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${tenant.logo_url}`} 
               alt={tenant.name} 
               className="object-contain transition-all"
               style={{ height: `${(kioskColors.logo_size || 1) * 1.5 + 2}rem` }}
@@ -478,11 +503,96 @@ export default function KioskDisplay() {
         
         <button 
           onClick={toggleFullscreen}
-          className="w-12 h-12 rounded-full bg-slate-900/50 border border-slate-800 text-slate-400 flex items-center justify-center hover:bg-slate-800 hover:text-white transition-colors absolute bottom-6 right-6 md:bottom-8 md:right-8 z-50 pointer-events-auto"
+          className={`absolute top-4 ${kioskColors.show_logo_bg === false ? 'left-4' : 'left-auto right-4'} text-white/20 hover:text-white/60 p-2 z-50 pointer-events-auto`}
           title="Fullscreen"
         >
           <Maximize size={24} />
         </button>
+
+        {/* History Button (Top Right) */}
+        <button 
+          onClick={() => setShowHistoryModal(true)}
+          className={`absolute top-4 ${kioskColors.show_logo_bg === false ? 'right-4' : 'right-16'} text-white/50 hover:text-white p-2 z-50 pointer-events-auto bg-slate-900/40 rounded-full border border-slate-700/50 backdrop-blur-sm transition-all`}
+          title="Istoric Acces"
+        >
+          <User size={24} />
+        </button>
+
+        {/* Istoric Modal */}
+        {showHistoryModal && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] flex items-center justify-center pointer-events-auto p-4" onClick={() => { setShowHistoryModal(false); setHistoryData(null); setHistoryPin(''); }}>
+            <div className="bg-white w-full max-w-lg rounded-2xl p-6 shadow-2xl relative" onClick={e => e.stopPropagation()}>
+              <button 
+                onClick={() => { setShowHistoryModal(false); setHistoryData(null); setHistoryPin(''); }} 
+                className="absolute top-4 right-4 p-2 text-slate-400 hover:bg-slate-100 rounded-full transition-colors"
+              >
+                <XCircle size={24} />
+              </button>
+              
+              <h2 className="text-2xl font-black text-slate-800 mb-6 flex items-center gap-2">
+                <User size={24} className="text-blue-600" />
+                Istoric Acces Astăzi
+              </h2>
+
+              {!historyData ? (
+                <div className="space-y-4">
+                  <p className="text-slate-600 text-sm">Introduceți PIN-ul Kiosk-ului pentru a vizualiza istoricul (dacă este setat).</p>
+                  <input
+                    type="password"
+                    inputMode="numeric"
+                    maxLength="4"
+                    value={historyPin}
+                    onChange={(e) => setHistoryPin(e.target.value.replace(/\D/g, ''))}
+                    placeholder="PIN Kiosk (sau gol)"
+                    className="w-full px-4 py-3 bg-slate-100 border-0 rounded-xl text-lg font-bold text-slate-700 tracking-[0.5em] text-center"
+                    onKeyDown={(e) => e.key === 'Enter' && fetchHistory()}
+                  />
+                  {historyError && <p className="text-red-500 font-bold text-sm text-center">{historyError}</p>}
+                  <button 
+                    onClick={fetchHistory}
+                    disabled={historyLoading}
+                    className="w-full py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {historyLoading ? 'Se verifică...' : 'Vezi Istoricul'}
+                  </button>
+                </div>
+              ) : (
+                <div className="max-h-[60vh] overflow-y-auto space-y-3 pr-2 custom-scrollbar">
+                  {historyData.length === 0 ? (
+                    <div className="text-center py-8 text-slate-500">
+                      <ScanLine size={40} className="mx-auto mb-3 opacity-20" />
+                      <p>Nu există nicio înregistrare astăzi.</p>
+                    </div>
+                  ) : (
+                    historyData.map(scan => {
+                      const isEntry = scan.action_type === 'INTRARE' || scan.action_type === 'IN';
+                      return (
+                        <div key={scan.id} className="flex items-center gap-4 p-3 rounded-xl border border-slate-100 bg-slate-50 shadow-sm">
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${isEntry ? 'bg-green-100 text-green-600' : 'bg-orange-100 text-orange-600'}`}>
+                            {scan.avatar_path ? (
+                              <img src={scan.avatar_path.startsWith('http') ? scan.avatar_path : `${import.meta.env.VITE_API_URL || ''}${scan.avatar_path}`} alt="" className="w-full h-full rounded-full object-cover" />
+                            ) : (
+                              <User size={20} />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-bold text-slate-800 truncate">{scan.first_name} {scan.last_name}</p>
+                            <p className="text-xs text-slate-500">
+                              {new Date(scan.created_at).toLocaleTimeString('ro-RO', {hour:'2-digit', minute:'2-digit', second:'2-digit'})}
+                            </p>
+                          </div>
+                          <div className={`px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${isEntry ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
+                            {isEntry ? 'Intrare' : 'Ieșire'}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {isOffline && (
           <div className="absolute top-6 right-6 z-50 bg-red-500 text-white px-4 py-2 rounded-lg font-bold shadow-lg flex items-center gap-2 pointer-events-auto">

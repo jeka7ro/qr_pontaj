@@ -28,7 +28,7 @@ export default function EmployeeDashboard() {
   const [shiftChangeReason, setShiftChangeReason] = useState('');
   const [shiftChangeSubmitting, setShiftChangeSubmitting] = useState(false);
   const [shiftChangeSuccess, setShiftChangeSuccess] = useState(null);
-
+  const [shiftChangeDate, setShiftChangeDate] = useState('');
   useEffect(() => {
     const interval = setInterval(() => {
       setDynamicTs(Math.floor(Date.now() / 10000) * 10);
@@ -159,7 +159,7 @@ export default function EmployeeDashboard() {
 
   return (
     <div 
-      className="min-h-screen bg-slate-50 text-slate-800"
+      className="flex flex-col h-[100dvh] bg-slate-50 text-slate-800 overflow-hidden"
       style={{
         '--tc': tc,
         '--tc-50': `${tc}1A`,
@@ -167,9 +167,10 @@ export default function EmployeeDashboard() {
         '--tc-shadow': `${tc}4D`
       }}
     >
-      {/* Header Mobil */}
-      <div className="text-white px-4 pt-5 pb-6 rounded-b-3xl shadow-lg relative overflow-hidden bg-[var(--tc)]">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -mr-10 -mt-10"></div>
+      <div className="flex-1 overflow-y-auto relative w-full pb-6">
+        {/* Header Mobil */}
+        <div className="text-white px-4 pt-5 pb-6 rounded-b-3xl shadow-lg relative overflow-hidden bg-[var(--tc)] flex-none">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -mr-10 -mt-10"></div>
         
         {/* Logout sus-dreapta */}
         <button onClick={handleLogout} className="absolute top-4 right-4 z-10 text-xs text-white/80 hover:text-white flex items-center gap-1 transition-colors bg-white/10 px-2.5 py-1.5 rounded-xl">
@@ -177,20 +178,24 @@ export default function EmployeeDashboard() {
           <span>Ieșire</span>
         </button>
 
-        {/* Layout centrat: Logo → Poză → Nume */}
-        <div className="relative flex flex-col items-center gap-3">
-          {/* Logo companie */}
+        {/* Logo sus-stânga */}
+        <div className="absolute top-4 left-4 z-10 flex flex-col items-start gap-0.5">
           {employee.tenant_logo ? (
             <img 
               src={( employee.tenant_logo?.startsWith('http') ? employee.tenant_logo : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${employee.tenant_logo}` )} 
               alt="Logo" 
-              className="h-9 max-w-[140px] object-contain drop-shadow-md"
+              className="h-8 max-w-[100px] object-contain drop-shadow-md"
             />
           ) : (
-            <div className="h-9 text-xl font-black flex items-center">Companie</div>
+            <div className="h-8 text-base font-black flex items-center text-white">{employee.tenant_nume || 'Companie'}</div>
           )}
+          {employee.tenant_logo && employee.tenant_nume && (
+            <span className="text-[10px] font-bold text-white/90 uppercase tracking-widest">{employee.tenant_nume}</span>
+          )}
+        </div>
 
-          {/* Poză angajat - MARE */}
+        {/* Layout centrat: Poză → Nume */}
+        <div className="relative flex flex-col items-center gap-3 mt-4">
           {employee.avatar_path && !avatarError ? (
             <img 
               src={( employee.avatar_path?.startsWith('http') ? employee.avatar_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${employee.avatar_path}` )} 
@@ -211,18 +216,20 @@ export default function EmployeeDashboard() {
           </div>
         </div>
         
-        <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 flex items-center justify-between border border-white/20">
-          <button onClick={prevWeek} className="p-2 hover:bg-white/20 rounded-full transition-colors">
-            <ChevronLeft size={20} />
-          </button>
-          <div className="text-center">
-            <span className="block text-xs text-white/80 font-medium mb-0.5 uppercase tracking-wider">Săptămâna curentă</span>
-            <span className="font-bold text-sm">{formatWeekRange()}</span>
+        {activeTab === 'schedule' && (
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 flex items-center justify-between border border-white/20 mt-4">
+            <button onClick={prevWeek} className="p-2 hover:bg-white/20 rounded-full transition-colors">
+              <ChevronLeft size={20} />
+            </button>
+            <div className="text-center">
+              <span className="block text-xs text-white/80 font-medium mb-0.5 uppercase tracking-wider">Săptămâna curentă</span>
+              <span className="font-bold text-sm">{formatWeekRange()}</span>
+            </div>
+            <button onClick={nextWeek} className="p-2 hover:bg-white/20 rounded-full transition-colors">
+              <ChevronRight size={20} />
+            </button>
           </div>
-          <button onClick={nextWeek} className="p-2 hover:bg-white/20 rounded-full transition-colors">
-            <ChevronRight size={20} />
-          </button>
-        </div>
+        )}
       </div>
 
       {/* Main Content */}
@@ -540,32 +547,38 @@ export default function EmployeeDashboard() {
           </div>
         ) : null}
       </div>
+      </div>
 
       {/* Bottom Navigation Bar */}
       <div 
-        className="fixed bottom-0 left-0 right-0 border-t border-transparent px-4 py-2.5 flex justify-around items-end z-50 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.15)] text-white"
+        className="flex-none border-t border-transparent px-6 py-3 flex justify-around items-center z-50 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.15)] text-white"
         style={{ backgroundColor: 'var(--tc)' }}
       >
         <button 
           onClick={() => setActiveTab('schedule')}
-          className={`flex flex-col items-center gap-1 transition-colors min-w-[60px] ${activeTab === 'schedule' ? 'text-white' : 'text-white/50 hover:text-white/80'}`}
+          className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'schedule' ? 'text-white' : 'text-white/60 hover:text-white/80'}`}
         >
-          <CalendarDays size={22} />
-          <span className="text-[9px] font-bold uppercase tracking-wider">Program</span>
+          <CalendarDays size={24} className={activeTab === 'schedule' ? 'drop-shadow-md' : ''} />
+          <span className="text-[10px] font-bold uppercase tracking-wider">Program</span>
         </button>
         <button 
           onClick={() => setActiveTab('qr')}
-          className={`flex flex-col items-center gap-1 transition-colors min-w-[60px] ${activeTab === 'qr' ? 'text-white' : 'text-white/50 hover:text-white/80'}`}
+          className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'qr' ? 'text-white' : 'text-white/60 hover:text-white/80'}`}
         >
-          <QrCode size={22} />
-          <span className="text-[9px] font-bold uppercase tracking-wider">Ecuson</span>
+          <div 
+            className={`p-2 rounded-full -mt-3 mb-1 border-2 border-white/20 ${activeTab === 'qr' ? 'bg-white shadow-[0_4px_15px_rgba(255,255,255,0.3)]' : 'bg-white/10 text-white/80'}`}
+            style={activeTab === 'qr' ? { color: 'var(--tc)' } : {}}
+          >
+            <QrCode size={28} />
+          </div>
+          <span className="text-[10px] font-bold uppercase tracking-wider -mt-1">Ecuson</span>
         </button>
         <button 
           onClick={() => setActiveTab('profile')}
-          className={`flex flex-col items-center gap-1 transition-colors min-w-[60px] ${activeTab === 'profile' ? 'text-white' : 'text-white/50 hover:text-white/80'}`}
+          className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'profile' ? 'text-white' : 'text-white/60 hover:text-white/80'}`}
         >
-          <User size={22} />
-          <span className="text-[9px] font-bold uppercase tracking-wider">Profil</span>
+          <User size={24} className={activeTab === 'profile' ? 'drop-shadow-md' : ''} />
+          <span className="text-[10px] font-bold uppercase tracking-wider">Profil</span>
         </button>
         <button 
           onClick={async () => {
@@ -576,17 +589,17 @@ export default function EmployeeDashboard() {
               if (res.ok) setLeaves(await res.json());
             } catch(e) { /* silent */ }
           }}
-          className={`flex flex-col items-center gap-1 transition-colors min-w-[60px] ${activeTab === 'leaves' ? 'text-white' : 'text-white/50 hover:text-white/80'}`}
+          className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'leaves' ? 'text-white' : 'text-white/60 hover:text-white/80'}`}
         >
-          <FileText size={22} />
-          <span className="text-[9px] font-bold uppercase tracking-wider">Concedii</span>
+          <FileText size={24} className={activeTab === 'leaves' ? 'drop-shadow-md' : ''} />
+          <span className="text-[10px] font-bold uppercase tracking-wider">Concedii</span>
         </button>
       </div>
 
       {/* Modal Detaliu Tură */}
       {selectedShift && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-end justify-center" onClick={() => { setSelectedShift(null); setShiftChangeReason(''); setShiftChangeSuccess(null); }}>
-          <div className="bg-white w-full max-w-md rounded-t-3xl p-6 pb-10 space-y-5 animate-slide-up" onClick={e => e.stopPropagation()}>
+          <div className="bg-white w-full max-w-md rounded-t-3xl p-6 pb-10 space-y-5 animate-slide-up max-h-[90dvh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             {/* Header */}
             <div className="flex items-center justify-between">
               <h3 className="font-black text-lg text-slate-800">Detalii Tură</h3>
@@ -639,6 +652,17 @@ export default function EmployeeDashboard() {
             {/* Solicită Modificare */}
             <div className="border-t border-slate-100 pt-4 space-y-3">
               <h4 className="font-bold text-sm text-slate-600 flex items-center gap-2"><Edit3 size={14} /> Solicită Modificare</h4>
+              
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-bold text-slate-500 ml-1">Dată dorită (opțional)</label>
+                <input 
+                  type="date"
+                  value={shiftChangeDate}
+                  onChange={e => setShiftChangeDate(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 border-0 rounded-xl text-sm font-medium text-slate-700 outline-none"
+                />
+              </div>
+
               <textarea 
                 rows="2" 
                 value={shiftChangeReason} 
@@ -646,22 +670,27 @@ export default function EmployeeDashboard() {
                 placeholder="Descrie ce modificare dorești (ex: schimb tură cu colegul, interval diferit...)"
                 className="w-full px-3 py-2 bg-slate-50 border-0 rounded-xl text-sm font-medium text-slate-700 outline-none resize-none"
               />
-              {shiftChangeSuccess && <p className="text-xs text-green-600 font-bold">{shiftChangeSuccess}</p>}
+              {shiftChangeSuccess && <p className="text-xs text-green-600 font-bold bg-green-50 px-3 py-2 rounded-xl">✅ {shiftChangeSuccess}</p>}
+              {shiftChangeError && <p className="text-xs text-red-600 font-bold bg-red-50 px-3 py-2 rounded-xl">❌ {shiftChangeError}</p>}
               <button
-                disabled={shiftChangeSubmitting || !shiftChangeReason.trim()}
+                disabled={shiftChangeSubmitting || (!shiftChangeReason.trim() && !shiftChangeDate)}
                 onClick={async () => {
                   setShiftChangeSubmitting(true);
+                  setShiftChangeError(null);
+                  setShiftChangeSuccess(null);
                   try {
                     const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
                     const res = await fetch(`${baseUrl}/api/employee/shift-change-request`, {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('employee_token')}` },
-                      body: JSON.stringify({ shift_id: selectedShift.id, reason: shiftChangeReason })
+                      body: JSON.stringify({ shift_id: selectedShift.id, reason: shiftChangeReason || 'Modificare solicitată', new_date: shiftChangeDate })
                     });
-                    if (!res.ok) { const d = await res.json(); throw new Error(d.error); }
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error || 'Eroare necunoscută');
                     setShiftChangeSuccess('Cerere trimisă cu succes! Administratorul va fi notificat.');
                     setShiftChangeReason('');
-                  } catch(e) { setError(e.message); }
+                    setShiftChangeDate('');
+                  } catch(e) { setShiftChangeError(e.message); }
                   setShiftChangeSubmitting(false);
                 }}
                 className="w-full py-3 rounded-full text-white font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50 shadow-lg"

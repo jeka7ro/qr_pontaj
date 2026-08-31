@@ -3,7 +3,7 @@ import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip, 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend 
 } from 'recharts';
-import { Users, Clock, LogIn } from 'lucide-react';
+import { Users, Clock, LogIn, Eye, LogOut, MapPin } from 'lucide-react';
 
 export default function DashboardCharts({ tenant, themeColor }) {
   const [stats, setStats] = useState({
@@ -15,6 +15,10 @@ export default function DashboardCharts({ tenant, themeColor }) {
     weeklyData: []
   });
   const [loading, setLoading] = useState(true);
+
+  const [liveShifts, setLiveShifts] = useState([]);
+  const [liveLoading, setLiveLoading] = useState(true);
+
   
   // Drill-down states
   const [activeDonutData, setActiveDonutData] = useState([]);
@@ -33,46 +37,64 @@ export default function DashboardCharts({ tenant, themeColor }) {
     medical: { start: '#f87171', end: '#dc2626' }  // Red
   };
 
+  
   useEffect(() => {
-    // In a production app, we would fetch these stats from the backend.
-    // For now, we simulate fetching aggregated data to demonstrate the ZoomCharts styling.
-    setTimeout(() => {
-      const rootData = [
-        { name: 'Prezenți', value: 18, fillId: 'url(#colorPresent)', id: 'present' },
-        { name: 'Absenți/Plecați', value: 24, fillId: 'url(#colorAbsent)', id: 'absent' }
-      ];
-      
-      setStats({
-        totalEmployees: 42,
-        presentNow: 18,
-        todayCheckins: 24,
-        donutDataRoot: rootData,
-        donutDataDetails: {
-          'present': [
-            { name: 'Bucătărie', value: 10, fillId: 'url(#colorKitchen)' },
-            { name: 'Servire', value: 5, fillId: 'url(#colorService)' },
-            { name: 'Curățenie', value: 3, fillId: 'url(#colorClean)' }
-          ],
-          'absent': [
-            { name: 'Tura 2', value: 15, fillId: 'url(#colorShift2)' },
-            { name: 'Concediu', value: 6, fillId: 'url(#colorVacation)' },
-            { name: 'Medical', value: 3, fillId: 'url(#colorMedical)' }
-          ]
-        },
-        weeklyData: [
-          { name: 'Lu', Intrări: 32 },
-          { name: 'Ma', Intrări: 35 },
-          { name: 'Mi', Intrări: 40 },
-          { name: 'Jo', Intrări: 38 },
-          { name: 'Vi', Intrări: 42 },
-          { name: 'Sâ', Intrări: 15 },
-          { name: 'Du', Intrări: 12 }
-        ]
-      });
-      setActiveDonutData(rootData);
-      setLoading(false);
-    }, 600);
-  }, [tenant.id, themeColor]);
+    const fetchLive = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenant/dashboard/live`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setLiveShifts(data);
+        }
+      } catch (err) {
+        console.error('Error fetching live shifts', err);
+      } finally {
+        setLiveLoading(false);
+      }
+    };
+    fetchLive();
+    
+    const interval = setInterval(fetchLive, 30000); // refresh la 30 secunde
+    return () => clearInterval(interval);
+  }, []);
+
+  
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenant/dashboard/stats`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setStats(prev => ({
+            ...prev,
+            totalEmployees: data.totalEmployees,
+            presentNow: data.presentNow,
+            todayCheckins: data.todayCheckins,
+            donutDataRoot: data.donutDataRoot,
+            donutDataDetails: data.donutDataDetails || {},
+            siteColors: data.siteColors || [],
+            weeklyData: data.weeklyData || []
+          }));
+          setActiveDonutData(data.donutDataRoot);
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error('Error fetching stats', err);
+        setLoading(false);
+      }
+    };
+    fetchStats();
+    
+    const interval = setInterval(fetchStats, 30000); // refresh la 30 secunde
+    return () => clearInterval(interval);
+  }, [tenant.id]);
+
 
   if (loading) {
     return <div className="py-20 text-center text-slate-500 dark:text-slate-400 font-medium">Se încarcă datele...</div>;
@@ -174,12 +196,15 @@ export default function DashboardCharts({ tenant, themeColor }) {
                 <defs>
                   <linearGradient id="colorPresent" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor={colors.present.start}/><stop offset="100%" stopColor={colors.present.end}/></linearGradient>
                   <linearGradient id="colorAbsent" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor={colors.absent.start}/><stop offset="100%" stopColor={colors.absent.end}/></linearGradient>
-                  <linearGradient id="colorKitchen" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor={colors.kitchen.start}/><stop offset="100%" stopColor={colors.kitchen.end}/></linearGradient>
-                  <linearGradient id="colorService" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor={colors.service.start}/><stop offset="100%" stopColor={colors.service.end}/></linearGradient>
-                  <linearGradient id="colorClean" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor={colors.clean.start}/><stop offset="100%" stopColor={colors.clean.end}/></linearGradient>
-                  <linearGradient id="colorShift2" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor={colors.shift2.start}/><stop offset="100%" stopColor={colors.shift2.end}/></linearGradient>
-                  <linearGradient id="colorVacation" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor={colors.vacation.start}/><stop offset="100%" stopColor={colors.vacation.end}/></linearGradient>
-                  <linearGradient id="colorMedical" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor={colors.medical.start}/><stop offset="100%" stopColor={colors.medical.end}/></linearGradient>
+                  {stats.siteColors?.map((sc) => {
+                    const cleanId = sc.id.replace('url(#', '').replace(')', '');
+                    return (
+                      <linearGradient key={cleanId} id={cleanId} x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%" stopColor={sc.color} />
+                        <stop offset="100%" stopColor={sc.color} stopOpacity={0.7} />
+                      </linearGradient>
+                    );
+                  })}
                 </defs>
                 
                 <Pie
@@ -224,8 +249,8 @@ export default function DashboardCharts({ tenant, themeColor }) {
             {/* Centered HTML overlay for Donut text - ZoomCharts KPI Card Style */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div 
-                className="rounded-lg flex flex-col items-center justify-center shadow-inner"
-                style={{ width: '150px', height: '150px', backgroundColor: '#1e293b' }} // Navy dark center
+                className="rounded-full flex flex-col items-center justify-center shadow-inner"
+                style={{ width: '150px', height: '150px', backgroundColor: '#1e293b' }} // Navy dark center circle
               >
                 {drillLevel === 'root' ? (
                   <div className="text-center">
@@ -288,6 +313,191 @@ export default function DashboardCharts({ tenant, themeColor }) {
             </ResponsiveContainer>
           </div>
         </div>
+
+
+      {/* Live Shifts Table */}
+      <div className="mt-8 bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700/50 dark:border-slate-700 overflow-hidden flex flex-col">
+        <div className="p-6 border-b border-slate-100 dark:border-slate-700">
+          <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+            <span className="relative flex h-3 w-3">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+            </span>
+            Situație Live Angajați (Tura Curentă)
+          </h3>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Cine este prezent acum, cine a plecat și orele aferente.</p>
+        </div>
+        
+        <div>
+          {liveLoading ? (
+            <div className="p-8 text-center text-slate-500">Se încarcă datele live...</div>
+          ) : (
+            <>
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-100 dark:border-slate-700">
+                      <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Angajat</th>
+                      <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status</th>
+                      <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Timp Lucrat (azi)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                    {liveShifts.length > 0 ? liveShifts.map((emp) => {
+                      const isPresent = emp.current_status === 'IN';
+                      const isOut = emp.current_status === 'OUT';
+                      const hasHistory = isPresent || isOut;
+                      
+                      let durationStr = '-';
+                      if (hasHistory && emp.first_in_today) {
+                        const inTime = new Date(emp.first_in_today);
+                        const endTime = isOut && emp.last_scan_time ? new Date(emp.last_scan_time) : new Date();
+                        
+                        const diffMs = endTime - inTime;
+                        const diffHrs = Math.floor(diffMs / 3600000);
+                        const diffMins = Math.floor((diffMs % 3600000) / 60000);
+                        
+                        durationStr = `${diffHrs}h ${diffMins}m`;
+                      }
+                      
+                      return (
+                        <tr key={emp.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              {emp.avatar_path ? (
+                                <img src={emp.avatar_path.startsWith('http') ? emp.avatar_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${emp.avatar_path}`} alt="avatar" className="w-10 h-10 rounded-full object-cover border-2 border-slate-200 dark:border-slate-600" />
+                              ) : (
+                                <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 font-bold">
+                                  {emp.first_name?.[0]}{emp.last_name?.[0]}
+                                </div>
+                              )}
+                              <div>
+                                <div className="font-bold text-slate-900 dark:text-white">{emp.first_name} {emp.last_name}</div>
+                                {hasHistory && emp.first_in_today && (
+                                  <div className="text-xs text-slate-500">De la: {new Date(emp.first_in_today).toLocaleTimeString('ro-RO', {hour: '2-digit', minute:'2-digit'})}</div>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            {isPresent ? (
+                              <div className="flex flex-col items-start gap-1.5">
+                                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-100 text-green-700 text-xs font-bold">
+                                  <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+                                  ÎN TURĂ
+                                </div>
+                                {emp.site_name && (
+                                  <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 text-slate-500 text-[10px] font-bold uppercase border border-slate-200">
+                                    <MapPin size={10} />
+                                    <span className="truncate max-w-[120px]">{emp.site_name}</span>
+                                  </div>
+                                )}
+                              </div>
+                            ) : isOut ? (
+                              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-bold">
+                                <LogOut size={12} />
+                                PLECAT
+                              </div>
+                            ) : (
+                              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-400 text-xs font-bold">
+                                ABSENT
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="font-medium text-slate-700 dark:text-slate-300">
+                              {durationStr}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    }) : (
+                      <tr>
+                        <td colSpan="3" className="px-6 py-8 text-center text-slate-500">Nu există date pentru ziua de azi.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Card View */}
+              <div className="md:hidden flex flex-col divide-y divide-slate-100 dark:divide-slate-700">
+                {liveShifts.length > 0 ? liveShifts.map((emp) => {
+                  const isPresent = emp.current_status === 'IN';
+                  const isOut = emp.current_status === 'OUT';
+                  const hasHistory = isPresent || isOut;
+                  
+                  let durationStr = '-';
+                  if (hasHistory && emp.first_in_today) {
+                    const inTime = new Date(emp.first_in_today);
+                    const endTime = isOut && emp.last_scan_time ? new Date(emp.last_scan_time) : new Date();
+                    
+                    const diffMs = endTime - inTime;
+                    const diffHrs = Math.floor(diffMs / 3600000);
+                    const diffMins = Math.floor((diffMs % 3600000) / 60000);
+                    
+                    durationStr = `${diffHrs}h ${diffMins}m`;
+                  }
+                  
+                  return (
+                    <div key={emp.id} className="p-4 flex flex-col gap-3">
+                      <div className="flex justify-between items-start">
+                        <div className="flex items-center gap-3">
+                          {emp.avatar_path ? (
+                            <img src={emp.avatar_path.startsWith('http') ? emp.avatar_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${emp.avatar_path}`} alt="avatar" className="w-10 h-10 rounded-full object-cover border-2 border-slate-200 dark:border-slate-600" />
+                          ) : (
+                            <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 font-bold">
+                              {emp.first_name?.[0]}{emp.last_name?.[0]}
+                            </div>
+                          )}
+                          <div>
+                            <div className="font-bold text-slate-900 dark:text-white">{emp.first_name} {emp.last_name}</div>
+                            {hasHistory && emp.first_in_today && (
+                              <div className="text-xs text-slate-500">De la: {new Date(emp.first_in_today).toLocaleTimeString('ro-RO', {hour: '2-digit', minute:'2-digit'})}</div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-[10px] text-slate-400 uppercase font-bold block mb-0.5">Timp lucrat</span>
+                          <span className="font-bold text-slate-700 dark:text-slate-300">{durationStr}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {isPresent ? (
+                          <div className="flex items-center gap-2">
+                            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-100 text-green-700 text-xs font-bold">
+                              <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+                              ÎN TURĂ
+                            </div>
+                            {emp.site_name && (
+                              <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 text-slate-500 text-[10px] font-bold uppercase border border-slate-200">
+                                <MapPin size={10} />
+                                <span className="truncate max-w-[120px]">{emp.site_name}</span>
+                              </div>
+                            )}
+                          </div>
+                        ) : isOut ? (
+                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-bold">
+                            <LogOut size={12} />
+                            PLECAT
+                          </div>
+                        ) : (
+                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-400 text-xs font-bold">
+                            ABSENT
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                }) : (
+                  <div className="p-8 text-center text-slate-500">Nu există date pentru ziua de azi.</div>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
 
       </div>
     </div>
