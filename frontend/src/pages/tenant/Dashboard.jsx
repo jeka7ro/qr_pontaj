@@ -29,6 +29,8 @@ export default function TenantDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [pendingNotifs, setPendingNotifs] = useState([]);
+  const [dismissedNotifs, setDismissedNotifs] = useState(new Set());
 
   const [isDarkMode, setIsDarkMode] = useState(() => {
     return localStorage.getItem('theme') === 'dark';
@@ -48,7 +50,10 @@ export default function TenantDashboard() {
     const fetchInfo = async () => {
       try {
         const token = localStorage.getItem('token');
-        if (!token) throw new Error('Nu ești autentificat');
+        if (!token) {
+          navigate('/admin/login');
+          return;
+        }
 
         const res = await fetch(`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenant/dashboard/info`, {
           headers: {

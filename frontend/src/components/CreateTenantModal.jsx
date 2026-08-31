@@ -408,14 +408,10 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
                     const generateSlug = (text) => {
                       if (!text) return 'nou';
                       return text.toString().toLowerCase()
-                        .replace(/\s+/g, '-')
-                        .replace(/[^\w\-]+/g, '')
-                        .replace(/\-\-+/g, '-')
-                        .replace(/^-+/, '')
-                        .replace(/-+$/, '');
+                        .replace(/[^a-z0-9]/g, ''); // removes spaces, hyphens, and any special chars
                     };
                     
-                    const sub = editTenant.slug || generateSlug(editTenant.nume || formData.nume_locatie);
+                    const sub = editTenant.subdomain || generateSlug(editTenant.nume || formData.nume_locatie);
                     const managerLink = `${window.location.protocol}//${sub}.${host}/admin/login`;
                     const scanLink = `${window.location.protocol}//${sub}.${host}/`;
                     
