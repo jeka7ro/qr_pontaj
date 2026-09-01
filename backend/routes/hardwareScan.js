@@ -120,4 +120,57 @@ router.post('/', async (req, res) => {
   }
 });
 
+
+
+// POST /api/tenants/:id/hardware-scan/history
+router.post('/history', async (req, res) => {
+  const { id: tenantId } = req.params;
+  const { kiosk_id, pin_code } = req.body;
+
+  try {
+    if (!kiosk_id) {
+      return res.status(400).json({ error: 'Kiosk ID lipsă.' });
+    }
+
+    // Găsim kioskul
+    const kioskRes = await pool.query('SELECT kiosk_pin, location_id FROM qrp_kiosks WHERE id = $1 AND tenant_id = $2', [kiosk_id, tenantId]);
+    if (kioskRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Kiosk invalid.' });
+    }
+
+    const kiosk = kioskRes.rows[0];
+
+    if (kiosk.kiosk_pin && kiosk.kiosk_pin !== pin_code) {
+      return res.status(403).json({ error: 'PIN incorect.' });
+    }
+
+    // Aducem pontajele de azi de la locația kioskului
+    // Wait, do we want all scans from this tenant? Or from this location?
+    // Let's bring all scans for today from this tenant, but maybe only those at this location?
+    // Let's just fetch all scans from today for this location, or all scans if kiosk has no location.
+    
+    let query = `
+      SELECT t.id, t.action_type, t.created_at, e.first_name, e.last_name, e.avatar_path
+      FROM qrp_timesheets t
+      JOIN qrp_employees e ON t.employee_id = e.id
+      WHERE t.tenant_id = $1 AND DATE(t.created_at) = CURRENT_DATE
+    `;
+    let params = [tenantId];
+
+    if (kiosk.location_id) {
+      query += ` AND t.site_id = $2`;
+      params.push(kiosk.location_id);
+    }
+
+    query += ` ORDER BY t.created_at DESC`;
+
+    const historyRes = await pool.query(query, params);
+
+    res.json(historyRes.rows);
+
+  } catch (err) {
+    console.error('Eroare history scan:', err);
+    res.status(500).json({ error: 'Eroare internă a serverului.' });
+  }
+});
 module.exports = router;

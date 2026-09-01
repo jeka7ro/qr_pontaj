@@ -76,10 +76,13 @@ export default function AdminLogin() {
                   <Mail className="h-5 w-5 text-slate-400" />
                 </div>
                 <input
+                  id="email"
+                  name="email"
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="username email"
                   className="block w-full pl-10 px-4 h-10 border border-slate-200 dark:border-slate-700 rounded-full focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white dark:border-slate-700 outline-none sm:text-sm transition-all shadow-sm"
                   placeholder="admin@restaurant.ro"
                 />
@@ -95,6 +98,8 @@ export default function AdminLogin() {
                   <KeyRound className="h-5 w-5 text-slate-400" />
                 </div>
                 <input
+                  id="password"
+                  name="password"
                   type={showPassword ? "text" : "password"}
                   required
                   value={password}

@@ -241,8 +241,20 @@ export default function TenantDashboard() {
               ${location.pathname === '/admin/qr' ? 'bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-slate-800 dark:text-white'}`}
             style={location.pathname === '/admin/qr' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
           >
-            <QrCode size={18} /> Afișaj Cod QR
+            <QrCode size={18} /> Kiosk-uri QR
           </Link>
+
+          {(tenant.modules?.show_upsells !== false || tenant.modules?.shifts) && (
+            <Link 
+              to="/admin/shifts"
+              onClick={() => setSidebarOpen(false)}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-full transition-colors font-medium text-sm
+                ${location.pathname === '/admin/shifts' ? 'bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-slate-800 dark:text-white'}`}
+              style={location.pathname === '/admin/shifts' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
+            >
+              <CalendarClock size={18} /> <span className="flex-1 text-left">Planificator Ture</span> <span className="text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide" style={{ backgroundColor: themeColor }}>PRO</span>
+            </Link>
+          )}
 
           {(tenant.modules?.show_upsells !== false || tenant.modules?.leaves) && (
             <Link 
@@ -252,7 +264,7 @@ export default function TenantDashboard() {
                 ${location.pathname === '/admin/leaves' ? 'bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-slate-800 dark:text-white'}`}
               style={location.pathname === '/admin/leaves' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
             >
-              <CalendarDays size={18} /> Zile Libere (CO/CM)
+              <CalendarDays size={18} /> <span className="flex-1 text-left">Zile Libere (CO/CM)</span> <span className="text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide" style={{ backgroundColor: themeColor }}>PRO</span>
             </Link>
           )}
 
@@ -264,7 +276,7 @@ export default function TenantDashboard() {
                 ${location.pathname === '/admin/export' ? 'bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-slate-800 dark:text-white'}`}
               style={location.pathname === '/admin/export' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
             >
-              <FileSpreadsheet size={18} /> Export Conta (SAGA)
+              <FileSpreadsheet size={18} /> <span className="flex-1 text-left">Export Conta (SAGA)</span> <span className="text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide" style={{ backgroundColor: themeColor }}>PRO</span>
             </Link>
           )}
 
@@ -276,7 +288,7 @@ export default function TenantDashboard() {
                 ${location.pathname === '/admin/geofence' ? 'bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-slate-800 dark:text-white'}`}
               style={location.pathname === '/admin/geofence' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
             >
-              <Map size={18} /> Hartă Geofence
+              <Map size={18} /> <span className="flex-1 text-left">Hartă Geofence</span> <span className="text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide" style={{ backgroundColor: themeColor }}>PRO</span>
             </Link>
           )}
           
@@ -288,7 +300,7 @@ export default function TenantDashboard() {
                 ${location.pathname === '/admin/offline' ? 'bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-slate-800 dark:text-white'}`}
               style={location.pathname === '/admin/offline' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
             >
-              <Globe size={18} /> Mod Offline
+              <Globe size={18} /> <span className="flex-1 text-left">Mod Offline</span> <span className="text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide" style={{ backgroundColor: themeColor }}>PRO</span>
             </Link>
           )}
 
@@ -300,7 +312,7 @@ export default function TenantDashboard() {
                 ${location.pathname === '/admin/billing' ? 'bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-slate-800 dark:text-white'}`}
               style={location.pathname === '/admin/billing' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
             >
-              <CreditCard size={18} /> Abonament & Facturi
+              <CreditCard size={18} /> <span className="flex-1 text-left">Abonament & Facturi</span> <span className="text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide" style={{ backgroundColor: themeColor }}>PRO</span>
             </Link>
           )}
 
@@ -312,7 +324,7 @@ export default function TenantDashboard() {
                 ${location.pathname === '/admin/revisal' ? 'bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-slate-800 dark:text-white'}`}
               style={location.pathname === '/admin/revisal' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
             >
-              <BookOpenCheck size={18} /> Integrare REVISAL
+              <BookOpenCheck size={18} /> <span className="flex-1 text-left">Integrare REVISAL</span> <span className="text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide" style={{ backgroundColor: themeColor }}>PRO</span>
             </Link>
           )}
 
@@ -324,21 +336,11 @@ export default function TenantDashboard() {
                 ${location.pathname === '/admin/erp' ? 'bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-slate-800 dark:text-white'}`}
               style={location.pathname === '/admin/erp' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
             >
-              <Calculator size={18} /> Gestiune & ERP
+              <Calculator size={18} /> <span className="flex-1 text-left">Gestiune & ERP</span> <span className="text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide" style={{ backgroundColor: themeColor }}>PRO</span>
             </Link>
           )}
 
-          {(tenant.modules?.show_upsells !== false || tenant.modules?.shifts) && (
-            <Link 
-              to="/admin/shifts"
-              onClick={() => setSidebarOpen(false)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-full transition-colors font-medium text-sm
-                ${location.pathname === '/admin/shifts' ? 'bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-slate-800 dark:text-white'}`}
-              style={location.pathname === '/admin/shifts' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
-            >
-              <CalendarClock size={18} /> Planificator Ture
-            </Link>
-          )}
+
 
           {(tenant.modules?.show_upsells !== false || tenant.modules?.face_recognition) && (
             <Link 
@@ -348,7 +350,7 @@ export default function TenantDashboard() {
                 ${location.pathname === '/admin/face' ? 'bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-slate-800 dark:text-white'}`}
               style={location.pathname === '/admin/face' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
             >
-              <ScanFace size={18} /> Recunoaștere Facială
+              <ScanFace size={18} /> <span className="flex-1 text-left">Recunoaștere Facială</span> <span className="text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide" style={{ backgroundColor: themeColor }}>PRO</span>
             </Link>
           )}
 
@@ -360,7 +362,7 @@ export default function TenantDashboard() {
                 ${location.pathname === '/admin/whatsapp' ? 'bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-slate-800 dark:text-white'}`}
               style={location.pathname === '/admin/whatsapp' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
             >
-              <MessageSquare size={18} /> Alerte WhatsApp
+              <MessageSquare size={18} /> <span className="flex-1 text-left">Alerte WhatsApp</span> <span className="text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide" style={{ backgroundColor: themeColor }}>PRO</span>
             </Link>
           )}
 
@@ -372,7 +374,7 @@ export default function TenantDashboard() {
                 ${location.pathname === '/admin/assets' ? 'bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-slate-800 dark:text-white'}`}
               style={location.pathname === '/admin/assets' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
             >
-              <Wrench size={18} /> Gestiune Echipamente
+              <Wrench size={18} /> <span className="flex-1 text-left">Gestiune Echipamente</span> <span className="text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide" style={{ backgroundColor: themeColor }}>PRO</span>
             </Link>
           )}
         </nav>

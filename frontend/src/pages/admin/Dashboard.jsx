@@ -191,7 +191,8 @@ function TenantsList() {
         let hostname = window.location.hostname;
         if (hostname.startsWith('admin.')) hostname = hostname.replace('admin.', '');
         if (hostname.startsWith('www.')) hostname = hostname.replace('www.', '');
-        const adminUrl = `${window.location.protocol}//${row.subdomain}.${hostname}/admin/login`;
+        const port = window.location.port ? `:${window.location.port}` : '';
+        const adminUrl = `${window.location.protocol}//${row.subdomain}.${hostname}${port}/admin/login`;
         
         return (
           <a 

@@ -168,9 +168,9 @@ export default function ShiftsModule({ tenant, themeColor }) {
         )}
 
         <div className="overflow-x-auto">
-          <div className="min-w-[1000px]">
+          <div className="min-w-[1200px]">
             {/* Header Row */}
-            <div className="grid grid-cols-[200px_repeat(7,1fr)] border-b border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/80 backdrop-blur-md sticky top-0 z-0">
+            <div className="grid grid-cols-[200px_repeat(7,minmax(140px,1fr))] border-b border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/80 backdrop-blur-md sticky top-0 z-0">
               <div className="p-4 font-black text-slate-700 dark:text-slate-300 text-sm uppercase tracking-wider flex items-center border-r border-slate-200 dark:border-slate-700">
                 Angajat
               </div>
@@ -198,7 +198,7 @@ export default function ShiftsModule({ tenant, themeColor }) {
                 </div>
               )}
               {displayEmployees.map(emp => (
-                <div key={emp.id} className="grid grid-cols-[200px_repeat(7,1fr)] hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors group/row">
+                <div key={emp.id} className="grid grid-cols-[200px_repeat(7,minmax(140px,1fr))] hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors group/row">
                   {/* Employee Cell */}
                   <div className="p-4 flex items-center gap-3 border-r border-slate-100 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 group-hover/row:bg-transparent transition-colors">
                     <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-sm font-black text-slate-600 dark:text-slate-300 shrink-0 shadow-sm overflow-hidden">
@@ -208,9 +208,9 @@ export default function ShiftsModule({ tenant, themeColor }) {
                         (emp.first_name + ' ' + emp.last_name).substring(0, 2).toUpperCase()
                       )}
                     </div>
-                    <div className="truncate">
-                      <div className="text-sm font-black text-slate-800 dark:text-white truncate">{emp.first_name} {emp.last_name}</div>
-                      <div className="text-[11px] font-bold text-slate-400 dark:text-slate-500 truncate uppercase tracking-wide mt-0.5">{emp.job_title || 'Fără funcție'}</div>
+                    <div className="min-w-0 flex-1 pr-2">
+                      <div className="text-xs font-black text-slate-800 dark:text-white leading-tight break-words">{emp.first_name} {emp.last_name}</div>
+                      <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 truncate uppercase tracking-wide mt-0.5">{emp.job_title || 'Fără funcție'}</div>
                     </div>
                   </div>
                   
@@ -242,44 +242,57 @@ export default function ShiftsModule({ tenant, themeColor }) {
                               if(isEmpty) return;
                               e.stopPropagation();
                             }}
-                            className={`p-2.5 rounded-lg mb-2 text-xs relative group/shift border shadow-sm transition-all hover:shadow-md
+                            className={`px-1.5 py-2 rounded-lg mb-2 relative group/shift border shadow-sm transition-all hover:shadow-md
                               bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700
                             `}
                           >
-                            <div className="flex justify-between items-center">
-                              <span className="font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
-                                {shift.start_time.substring(0,5)} - {shift.end_time.substring(0,5)}
-                              </span>
-                              {!isEmpty && (
-                                <div className="flex gap-1 opacity-0 group-hover/shift:opacity-100 transition-all ml-1">
-                                  <button 
-                                    onClick={(e) => { e.stopPropagation(); openNewShift(null, shift); }}
-                                    className="text-slate-400 hover:text-primary-500 rounded p-0.5 transition-all"
-                                    title="Duplică tura"
-                                  >
-                                    <Copy size={12} />
-                                  </button>
-                                  <button 
-                                    onClick={(e) => { e.stopPropagation(); setShiftToDelete(shift.id); }}
-                                    className="text-slate-400 hover:text-red-500 rounded p-0.5 transition-all"
-                                    title="Șterge tura"
-                                  >
-                                    <Trash2 size={12} />
-                                  </button>
-                                </div>
-                              )}
+                            <div className="flex flex-col items-center justify-center gap-1 min-w-0 relative">
+                              <div className="font-black text-slate-800 dark:text-slate-200 text-[11px] tracking-tight">
+                                {shift.start_time.substring(0,5)}
+                              </div>
+                              <div className="font-bold text-slate-400 dark:text-slate-500 text-[10px] tracking-tight">
+                                {shift.end_time.substring(0,5)}
+                              </div>
                               
-                              <div className="ml-auto group-hover/shift:opacity-0 transition-opacity flex items-center">
+                              {/* Status Icons - visible normally, hidden on hover */}
+                              <div className="flex items-center justify-center gap-1 shrink-0 transition-opacity group-hover/shift:opacity-0 mt-0.5">
+                                <div title={shift.seen_at ? "Vizualizat de angajat" : "Nevizualizat"}>
+                                  {shift.seen_at ? (
+                                    <svg className="text-green-500" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                                  ) : (
+                                    <svg className="text-red-500" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>
+                                  )}
+                                </div>
                                 {shift.shift_type === 'DAY' ? (
                                   <div className="text-yellow-500 dark:text-yellow-400">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
                                   </div>
                                 ) : (
                                   <div className="text-slate-900 dark:text-slate-100">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
                                   </div>
                                 )}
                               </div>
+
+                              {/* Action Buttons - absolutely positioned on hover */}
+                              {!isEmpty && (
+                                <div className="absolute inset-0 flex items-center justify-center gap-2 opacity-0 group-hover/shift:opacity-100 transition-all bg-white/90 dark:bg-slate-800/90 backdrop-blur-[1px] rounded-lg">
+                                  <button 
+                                    onClick={(e) => { e.stopPropagation(); openNewShift(null, shift); }}
+                                    className="text-slate-400 hover:text-primary-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full p-1.5 transition-all shadow-sm bg-white dark:bg-slate-800"
+                                    title="Duplică tura"
+                                  >
+                                    <Copy size={14} />
+                                  </button>
+                                  <button 
+                                    onClick={(e) => { e.stopPropagation(); setShiftToDelete(shift.id); }}
+                                    className="text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-full p-1.5 transition-all shadow-sm bg-white dark:bg-slate-800"
+                                    title="Șterge tura"
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                </div>
+                              )}
                             </div>
                             
                             {shift.notes && (
@@ -288,13 +301,6 @@ export default function ShiftsModule({ tenant, themeColor }) {
                                 <span className="line-clamp-2">{shift.notes}</span>
                               </div>
                             )}
-                            <div className={`flex items-center gap-1 mt-1.5 text-[9px] font-bold uppercase tracking-wider ${shift.seen_at ? 'text-green-500' : 'text-slate-400'}`}>
-                              {shift.seen_at ? (
-                                <><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg> Văzut</>
-                              ) : (
-                                <><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg> Nevăzut</>
-                              )}
-                            </div>
                           </div>
                         ))}
                         

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Upload, Copy } from 'lucide-react';
+import { X, Upload, Copy, ExternalLink } from 'lucide-react';
 
 export default function CreateTenantModal({ onClose, onTenantCreated, editTenant = null }) {
   const [formData, setFormData] = useState({
@@ -71,9 +71,27 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
       ...prev,
       modules: {
         ...prev.modules,
-        [moduleName]: !prev.modules[moduleName]
+        [moduleName]: prev.modules[moduleName] ? false : true
       }
     }));
+  };
+
+  const handleTrialChange = (moduleName, e) => {
+    const val = e.target.value;
+    if (val === 'true') {
+      setFormData(prev => ({
+        ...prev,
+        modules: { ...prev.modules, [moduleName]: true }
+      }));
+    } else if (val && val !== 'custom') {
+      const days = parseInt(val, 10);
+      const date = new Date();
+      date.setDate(date.getDate() + days);
+      setFormData(prev => ({
+        ...prev,
+        modules: { ...prev.modules, [moduleName]: date.toISOString() }
+      }));
+    }
   };
 
   const handleSelectAllToggle = (e) => {
@@ -374,23 +392,53 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
                   { id: 'whatsapp', label: 'Alerte WhatsApp/SMS' },
                   { id: 'assets', label: 'Gestiune Echipamente' }
                 ].map(mod => {
-                  const isChecked = formData.modules[mod.id] || false;
+                  const val = formData.modules[mod.id];
+                  const isChecked = !!val;
+                  const isTrial = typeof val === 'string' && val.length > 10;
+                  
+                  const formatTrialDate = (isoString) => {
+                    if (!isoString) return '';
+                    const d = new Date(isoString);
+                    return d.toLocaleDateString('ro-RO');
+                  };
+
                   return (
-                    <label key={mod.id} className="flex items-center justify-between p-3 border border-slate-200 dark:border-slate-700 dark:border-slate-700 rounded-lg cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 dark:hover:bg-slate-800/50 transition-colors">
-                      <span className="text-sm font-semibold text-slate-700 dark:text-slate-300 dark:text-slate-300">{mod.label}</span>
-                      <div className="relative inline-flex items-center cursor-pointer">
-                        <input 
-                          type="checkbox" 
-                          className="sr-only peer" 
-                          checked={isChecked}
-                          onChange={() => handleModuleToggle(mod.id)}
-                        />
-                        <div 
-                          className="w-11 h-6 bg-slate-200 dark:bg-slate-700 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 dark:border-slate-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"
-                          style={{ backgroundColor: isChecked ? '#3B82F6' : undefined }}
-                        ></div>
+                    <div key={mod.id} className="flex flex-col p-3 border border-slate-200 dark:border-slate-700 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-semibold text-slate-700 dark:text-slate-300 dark:text-slate-300">{mod.label}</span>
+                        <div className="relative inline-flex items-center cursor-pointer">
+                          <input 
+                            type="checkbox" 
+                            className="sr-only peer" 
+                            checked={isChecked}
+                            onChange={() => handleModuleToggle(mod.id)}
+                          />
+                          <div 
+                            onClick={() => handleModuleToggle(mod.id)}
+                            className="w-11 h-6 bg-slate-200 dark:bg-slate-700 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 dark:border-slate-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"
+                            style={{ backgroundColor: isChecked ? '#3B82F6' : undefined }}
+                          ></div>
+                        </div>
                       </div>
-                    </label>
+                      
+                      {isChecked && (
+                        <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700/50 flex items-center justify-between">
+                          <span className="text-[10px] uppercase font-bold text-slate-500">Licență:</span>
+                          <select
+                            className="text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded py-1 px-2 text-slate-700 dark:text-slate-300 outline-none font-medium"
+                            value={isTrial ? "custom" : "true"}
+                            onChange={(e) => handleTrialChange(mod.id, e)}
+                          >
+                            <option value="true">Permanentă</option>
+                            <option value="7">Probă (7 zile)</option>
+                            <option value="14">Probă (14 zile)</option>
+                            <option value="30">Probă (30 zile)</option>
+                            <option value="90">Probă (3 luni)</option>
+                            {isTrial && <option value="custom">Expiră la {formatTrialDate(val)}</option>}
+                          </select>
+                        </div>
+                      )}
+                    </div>
                   );
                 })}
               </div>
@@ -430,9 +478,10 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
                         href={managerLink} 
                         target="_blank" 
                         rel="noopener noreferrer" 
-                        className="px-4 h-9 bg-slate-800 dark:bg-slate-700 hover:bg-slate-900 dark:hover:bg-slate-600 text-white rounded-md text-xs font-bold flex items-center transition-colors"
+                        className="w-9 h-9 flex items-center justify-center bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-md transition-colors"
+                        title="Deschide în tab nou"
                       >
-                        Deschide
+                        <ExternalLink size={16} />
                       </a>
                       <button 
                         type="button"
@@ -452,9 +501,10 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
                         href={scanLink} 
                         target="_blank" 
                         rel="noopener noreferrer" 
-                        className="px-4 h-9 bg-slate-800 dark:bg-slate-700 hover:bg-slate-900 dark:hover:bg-slate-600 text-white rounded-md text-xs font-bold flex items-center transition-colors"
+                        className="w-9 h-9 flex items-center justify-center bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-md transition-colors"
+                        title="Deschide în tab nou"
                       >
-                        Deschide
+                        <ExternalLink size={16} />
                       </a>
                       <button 
                         type="button"

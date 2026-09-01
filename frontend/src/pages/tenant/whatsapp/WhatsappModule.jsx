@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { MessageCircle, Save, QrCode, ShieldAlert, CheckCircle2 } from 'lucide-react';
+import { MessageCircle, Save, QrCode, ShieldAlert, CheckCircle2, Loader2, LogOut } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 
 export default function WhatsappModule({ tenant, themeColor }) {
   const [settings, setSettings] = useState({
@@ -10,7 +11,12 @@ export default function WhatsappModule({ tenant, themeColor }) {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  
+  // WhatsApp connection state
+  const [wsStatus, setWsStatus] = useState('INITIALIZING');
+  const [qrCode, setQrCode] = useState(null);
 
+  // Fetch settings
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -23,6 +29,26 @@ export default function WhatsappModule({ tenant, themeColor }) {
       }
     };
     fetchData();
+  }, [tenant.id]);
+
+  // Poll WhatsApp status
+  useEffect(() => {
+    const pollStatus = async () => {
+      try {
+        const res = await fetch(`/api/tenants/${tenant.id}/whatsapp/status`);
+        if (res.ok) {
+          const data = await res.json();
+          setWsStatus(data.status);
+          setQrCode(data.qr);
+        }
+      } catch (err) {
+        console.error('Error polling whatsapp status:', err);
+      }
+    };
+    
+    pollStatus();
+    const interval = setInterval(pollStatus, 5000);
+    return () => clearInterval(interval);
   }, [tenant.id]);
 
   const handleSave = async () => {
@@ -38,6 +64,16 @@ export default function WhatsappModule({ tenant, themeColor }) {
       console.error(err);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    if (!confirm('Ești sigur că vrei să deconectezi acest dispozitiv WhatsApp?')) return;
+    setWsStatus('INITIALIZING');
+    try {
+      await fetch(`/api/tenants/${tenant.id}/whatsapp/logout`, { method: 'POST' });
+    } catch (err) {
+      console.error('Logout error', err);
     }
   };
 
@@ -104,7 +140,7 @@ export default function WhatsappModule({ tenant, themeColor }) {
               <button 
                 onClick={handleSave}
                 disabled={saving}
-                className="w-full flex items-center justify-center gap-2 h-10 px-5 text-sm flex items-center justify-center text-white rounded-full font-bold transition-opacity hover:opacity-90 disabled:opacity-50"
+                className="w-full flex items-center justify-center gap-2 h-10 px-5 text-sm text-white rounded-full font-bold transition-opacity hover:opacity-90 disabled:opacity-50"
                 style={{ backgroundColor: themeColor }}
               >
                 <Save size={18} /> {saving ? 'Se salvează...' : 'Salvează Configurarea'}
@@ -117,14 +153,46 @@ export default function WhatsappModule({ tenant, themeColor }) {
           <div className="w-16 h-16 bg-[#25D366]/10 rounded-full flex items-center justify-center mb-6">
             <MessageCircle size={32} color="#25D366" />
           </div>
-          <h3 className="font-bold text-lg text-slate-800 dark:text-white mb-2">Conectează Dispozitivul</h3>
+          <h3 className="font-bold text-lg text-slate-800 dark:text-white mb-2">Conexiune Dispozitiv</h3>
           <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
-            Pentru a putea trimite mesaje gratuit, vom asocia numărul de companie cu sistemul prin WhatsApp Web.
+            Sistemul necesită o sesiune activă de WhatsApp Web pentru a trimite mesaje gratuite.
           </p>
-          <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg">
-            <QrCode size={120} className="text-slate-300 dark:text-slate-700" />
-          </div>
-          <p className="text-xs text-slate-400 mt-4 font-semibold uppercase tracking-wider">Scanați codul din aplicația WhatsApp</p>
+
+          {wsStatus === 'CONNECTED' ? (
+            <div className="flex flex-col items-center p-6 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg w-full">
+              <CheckCircle2 size={48} className="text-green-500 mb-3" />
+              <p className="font-bold text-green-700 dark:text-green-400">Conectat cu Succes</p>
+              <p className="text-xs text-green-600/70 dark:text-green-400/70 mt-1 mb-4">Alertele sunt gata să fie trimise.</p>
+              
+              <button 
+                onClick={handleLogout}
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full text-xs font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+              >
+                <LogOut size={14} /> Deconectează
+              </button>
+            </div>
+          ) : wsStatus === 'QR_READY' && qrCode ? (
+            <>
+              <div className="p-4 bg-white dark:bg-white border border-slate-200 dark:border-slate-700 rounded-lg">
+                <QRCodeSVG value={qrCode} size={180} />
+              </div>
+              <p className="text-xs text-slate-400 mt-4 font-semibold uppercase tracking-wider">
+                Scanați codul din aplicația WhatsApp (Dispozitive Asociate)
+              </p>
+            </>
+          ) : wsStatus === 'ERROR' ? (
+            <div className="flex flex-col items-center p-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg w-full">
+              <ShieldAlert size={40} className="text-red-500 mb-2" />
+              <p className="font-bold text-red-700 dark:text-red-400">Eroare de Conexiune</p>
+              <p className="text-xs text-red-600/70 dark:text-red-400/70 mt-1">Nu am putut inițializa clientul WhatsApp.</p>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center p-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg w-full">
+              <Loader2 size={32} className="text-slate-300 dark:text-slate-600 animate-spin mb-4" />
+              <p className="font-bold text-slate-600 dark:text-slate-300">Se inițializează...</p>
+              <p className="text-xs text-slate-400 mt-1">Acest proces poate dura până la 15 secunde.</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -164,6 +164,58 @@ export default function KioskDisplay() {
     return () => clearInterval(interval);
   }, [tenantId, kioskId]);
 
+  // 4. SSE (Server-Sent Events) listener for remote scans (Dynamic QR)
+  useEffect(() => {
+    if (!kioskId) return;
+    
+    let eventSource = null;
+    let timeoutId = null;
+
+    const connectSSE = () => {
+      const apiUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
+      eventSource = new EventSource(`${apiUrl}/api/scan/stream/${kioskId}`);
+
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.status === 'connected') return;
+
+          if (data.employee && data.type) {
+            setScanSuccess({
+              employee: data.employee,
+              action: data.type,
+              type: data.type,
+              duplicate: data.duplicate || false,
+              message: data.message || ''
+            });
+            
+            // Clear after 3 seconds
+            if (timeoutId) clearTimeout(timeoutId);
+            timeoutId = setTimeout(() => {
+              setScanSuccess(null);
+            }, 3000);
+          }
+        } catch (e) {
+          console.error('Error parsing SSE event:', e);
+        }
+      };
+
+      eventSource.onerror = (err) => {
+        console.error('SSE Error:', err);
+        eventSource.close();
+        // Reconnect after 5 seconds
+        setTimeout(connectSSE, 5000);
+      };
+    };
+
+    connectSSE();
+
+    return () => {
+      if (eventSource) eventSource.close();
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [kioskId]);
+
   // Auth check
   useEffect(() => {
     const checkAuth = async () => {
@@ -537,16 +589,23 @@ export default function KioskDisplay() {
               {!historyData ? (
                 <div className="space-y-4">
                   <p className="text-slate-600 text-sm">Introduceți PIN-ul Kiosk-ului pentru a vizualiza istoricul (dacă este setat).</p>
-                  <input
-                    type="password"
-                    inputMode="numeric"
-                    maxLength="4"
-                    value={historyPin}
-                    onChange={(e) => setHistoryPin(e.target.value.replace(/\D/g, ''))}
-                    placeholder="PIN Kiosk (sau gol)"
-                    className="w-full px-4 py-3 bg-slate-100 border-0 rounded-xl text-lg font-bold text-slate-700 tracking-[0.5em] text-center"
-                    onKeyDown={(e) => e.key === 'Enter' && fetchHistory()}
-                  />
+                  <div className="relative w-full">
+                    <input 
+                      id="history_pin_input"
+                      type="tel"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      maxLength="4"
+                      value={historyPin}
+                      onChange={(e) => setHistoryPin(e.target.value.replace(/\D/g, ''))}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-text z-10"
+                      onKeyDown={(e) => e.key === 'Enter' && fetchHistory()}
+                    />
+                    <div className="w-full px-4 py-3 bg-slate-100 border-0 rounded-xl text-lg font-bold text-slate-700 tracking-[0.5em] text-center pointer-events-none">
+                      {historyPin.split('').map(() => '•').join('')}
+                      {historyPin.length === 0 && <span className="text-slate-400 font-normal tracking-normal text-base">PIN Kiosk (sau gol)</span>}
+                    </div>
+                  </div>
                   {historyError && <p className="text-red-500 font-bold text-sm text-center">{historyError}</p>}
                   <button 
                     onClick={fetchHistory}
@@ -648,7 +707,14 @@ export default function KioskDisplay() {
                 <div className={`w-[320px] h-[320px] ${isVertical ? 'w-[280px] h-[280px]' : ''} flex flex-col items-center justify-center text-center animate-in fade-in zoom-in duration-300 relative z-10`}>
                   <div className={`w-36 h-36 rounded-full mb-5 flex items-center justify-center border-[5px] ${isEntry ? 'border-green-500 bg-green-50' : 'border-orange-500 bg-orange-50'} shadow-xl overflow-hidden`}>
                     {scanSuccess.employee?.avatar_path ? (
-                      <img src={( scanSuccess.employee.avatar_path?.startsWith('http') ? scanSuccess.employee.avatar_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${scanSuccess.employee.avatar_path}` )} alt="Avatar" className="w-full h-full object-cover" />
+                      <img 
+                        src={scanSuccess.employee.avatar_path.startsWith('http') 
+                          ? scanSuccess.employee.avatar_path 
+                          : `${(import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')).endsWith('/') ? (import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')).slice(0, -1) : (import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001'))}/${scanSuccess.employee.avatar_path.startsWith('/') ? scanSuccess.employee.avatar_path.slice(1) : scanSuccess.employee.avatar_path}`
+                        } 
+                        alt="Avatar" 
+                        className="w-full h-full object-cover" 
+                      />
                     ) : (
                       <User size={60} className={isEntry ? 'text-green-500' : 'text-orange-500'} />
                     )}

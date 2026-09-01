@@ -15,6 +15,7 @@ const erpRouter = require('./erp');
 const whatsappRouter = require('./whatsapp');
 const assetsRouter = require('./assets');
 const hardwareScanRouter = require('./hardwareScan');
+const { evaluateModules } = require('../utils/modulesHelper');
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
@@ -65,7 +66,14 @@ router.get('/', async (req, res) => {
       ORDER BY t.created_at DESC
     `;
     const result = await pool.query(query);
-    res.json(result.rows);
+    
+    // Evaluate modules expiration for each tenant
+    const processedRows = result.rows.map(row => ({
+      ...row,
+      modules: evaluateModules(row.modules)
+    }));
+    
+    res.json(processedRows);
   } catch (error) {
     console.error('Error fetching tenants:', error);
     res.status(500).json({ error: 'Eroare la preluarea tenanților' });
@@ -176,7 +184,9 @@ router.get('/subdomain/:subdomain', async (req, res) => {
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Tenant nu a fost găsit' });
     }
-    res.json(result.rows[0]);
+    const tenant = result.rows[0];
+    if (tenant.modules) tenant.modules = evaluateModules(tenant.modules);
+    res.json(tenant);
   } catch (error) {
     console.error('Error fetching tenant by subdomain:', error);
     res.status(500).json({ error: 'Eroare server' });
@@ -200,7 +210,9 @@ router.get('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Tenant nu a fost găsit' });
     }
     
-    res.json(result.rows[0]);
+    const tenant = result.rows[0];
+    if (tenant.modules) tenant.modules = evaluateModules(tenant.modules);
+    res.json(tenant);
   } catch (error) {
     console.error('Error fetching tenant:', error);
     res.status(500).json({ error: 'Eroare la preluarea tenantului' });

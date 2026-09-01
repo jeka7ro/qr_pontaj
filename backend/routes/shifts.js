@@ -41,6 +41,15 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Toate câmpurile (angajat, data, ora start/stop) sunt obligatorii.' });
     }
     
+    // Verificam sa nu existe deja o tura pentru acest angajat in aceeasi zi
+    const checkQuery = await db.query(
+      `SELECT id FROM qrp_shifts WHERE employee_id = $1 AND date = $2`,
+      [employee_id, date]
+    );
+    if (checkQuery.rowCount > 0) {
+      return res.status(400).json({ error: 'Acest angajat are deja o tură planificată pentru ziua selectată.' });
+    }
+    
     const result = await db.query(
       `INSERT INTO qrp_shifts (tenant_id, employee_id, date, start_time, end_time, shift_type, notes)
        VALUES ($1, $2, $3, $4, $5, $6, $7)

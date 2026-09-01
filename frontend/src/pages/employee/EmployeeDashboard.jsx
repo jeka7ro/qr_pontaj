@@ -28,6 +28,7 @@ export default function EmployeeDashboard() {
   const [shiftChangeReason, setShiftChangeReason] = useState('');
   const [shiftChangeSubmitting, setShiftChangeSubmitting] = useState(false);
   const [shiftChangeSuccess, setShiftChangeSuccess] = useState(null);
+  const [shiftChangeError, setShiftChangeError] = useState(null);
   const [shiftChangeDate, setShiftChangeDate] = useState('');
   useEffect(() => {
     const interval = setInterval(() => {

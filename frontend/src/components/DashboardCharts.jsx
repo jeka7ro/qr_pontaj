@@ -38,7 +38,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
       }
     };
     fetchLive();
-    const interval = setInterval(fetchLive, 30000);
+    const interval = setInterval(fetchLive, 3000);
     return () => clearInterval(interval);
   }, []);
 
@@ -310,7 +310,6 @@ export default function DashboardCharts({ tenant, themeColor }) {
         <div className="p-6 border-b border-slate-100">
           <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
             <span className="relative flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
             </span>
             Situație Live Angajați (Tura Curentă)
@@ -394,7 +393,7 @@ function LiveShiftRow({ emp, isPresent, isOut, hasHistory }) {
         
         durationNode = (
           <div className="flex items-center gap-1.5">
-            <div className={`w-2 h-2 rounded-full bg-emerald-500 ${blinkClass}`} />
+            <div className="w-2 h-2 rounded-full bg-emerald-500" />
             <div className="flex items-center">
               <span className="w-[18px] text-center">{diffHrs.toString().padStart(2, '0')}</span>
               <span className={colonClass}>:</span>
@@ -405,7 +404,12 @@ function LiveShiftRow({ emp, isPresent, isOut, hasHistory }) {
           </div>
         );
       } else {
-        durationNode = <span>{diffHrs}h {diffMins}m</span>;
+        durationNode = (
+          <div className="flex items-center gap-1.5">
+            <div className="w-2 h-2 rounded-full bg-red-500" />
+            <span>{diffHrs}h {diffMins}m</span>
+          </div>
+        );
       }
     }
 

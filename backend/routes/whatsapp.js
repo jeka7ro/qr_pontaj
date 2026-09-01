@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router({ mergeParams: true });
 const db = require('../db');
+const whatsappService = require('../services/whatsappService');
 
 // GET /api/tenants/:id/whatsapp
 router.get('/', async (req, res) => {
@@ -36,6 +37,30 @@ router.post('/', async (req, res) => {
     res.json(result.rows[0]);
   } catch (error) {
     res.status(500).json({ error: 'Eroare la salvarea setarilor whatsapp' });
+  }
+});
+
+// GET /api/tenants/:id/whatsapp/status
+router.get('/status', (req, res) => {
+  try {
+    const { id } = req.params;
+    const status = whatsappService.getStatus(id);
+    res.json(status);
+  } catch (error) {
+    console.error('Error getting WhatsApp status:', error);
+    res.status(500).json({ error: 'Eroare la preluarea statusului WhatsApp' });
+  }
+});
+
+// POST /api/tenants/:id/whatsapp/logout
+router.post('/logout', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await whatsappService.logout(id);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error logging out WhatsApp:', error);
+    res.status(500).json({ error: 'Eroare la deconectarea WhatsApp' });
   }
 });
 

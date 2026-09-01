@@ -15,7 +15,7 @@ router.post('/login', async (req, res) => {
     }
 
     const result = await db.query(
-      `SELECT e.id, e.tenant_id, e.first_name, e.last_name, e.avatar_path, e.job_title, t.theme_color as tenant_culoare, t.logo_url as tenant_logo
+      `SELECT e.id, e.tenant_id, e.first_name, e.last_name, e.avatar_path, e.job_title, t.theme_color as tenant_culoare, t.logo_url as tenant_logo, t.name as tenant_nume
        FROM qrp_employees e
        JOIN qrp_tenants t ON e.tenant_id = t.id
        WHERE e.employee_code = $1 AND e.pin_code = $2`,
@@ -50,7 +50,8 @@ router.post('/login', async (req, res) => {
         avatar_path: emp.avatar_path,
         job_title: emp.job_title,
         tenant_culoare: emp.tenant_culoare,
-        tenant_logo: emp.tenant_logo
+        tenant_logo: emp.tenant_logo,
+        tenant_nume: emp.tenant_nume
       }
     });
 
@@ -86,7 +87,7 @@ router.get('/dashboard', employeeAuthMiddleware, async (req, res) => {
       `SELECT e.id, e.tenant_id, e.first_name, e.last_name, e.avatar_path, e.job_title, 
               e.employee_code, e.phone, e.email, e.cnp, e.address,
               e.contract_start_date, e.birth_date,
-              t.theme_color as tenant_culoare, t.logo_url as tenant_logo
+              t.theme_color as tenant_culoare, t.logo_url as tenant_logo, t.name as tenant_nume
        FROM qrp_employees e 
        JOIN qrp_tenants t ON e.tenant_id = t.id 
        WHERE e.id = $1`,

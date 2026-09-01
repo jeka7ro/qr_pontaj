@@ -1,6 +1,7 @@
 const express = require('express');
 const pool = require('../db');
 const { authenticateToken, requireRole } = require('../middleware/auth');
+const { evaluateModules } = require('../utils/modulesHelper');
 
 const router = express.Router();
 
@@ -29,6 +30,9 @@ router.get('/info', async (req, res) => {
     }
 
     const tenant = tenantResult.rows[0];
+    if (tenant.modules) {
+      tenant.modules = evaluateModules(tenant.modules);
+    }
 
     // Luăm datele locației (site) asociate acestui tenant (pentru generarea QR)
     const siteQuery = `
@@ -58,9 +62,12 @@ router.get('/live', async (req, res) => {
     const query = `
       SELECT e.id, e.first_name, e.last_name, e.avatar_path,
              COALESCE((SELECT action_type FROM qrp_timesheets WHERE employee_id = e.id ORDER BY created_at DESC LIMIT 1), 'OUT') as current_status,
-             (SELECT MIN(created_at) FROM qrp_timesheets WHERE employee_id = e.id AND action_type = 'IN' AND DATE(created_at) = CURRENT_DATE) as first_in_today,
-             (SELECT MAX(created_at) FROM qrp_timesheets WHERE employee_id = e.id AND action_type = 'OUT' AND DATE(created_at) = CURRENT_DATE) as last_scan_time,
-             (SELECT s.name FROM qrp_sites s JOIN qrp_timesheets t ON t.site_id = s.id WHERE t.employee_id = e.id AND t.action_type = 'IN' ORDER BY t.created_at DESC LIMIT 1) as site_name
+             (SELECT MIN(created_at) FROM qrp_timesheets WHERE employee_id = e.id AND action_type = 'IN' AND (created_at AT TIME ZONE 'Europe/Bucharest')::date = (CURRENT_TIMESTAMP AT TIME ZONE 'Europe/Bucharest')::date) as first_in_today,
+             (SELECT MAX(created_at) FROM qrp_timesheets WHERE employee_id = e.id AND action_type = 'OUT' AND (created_at AT TIME ZONE 'Europe/Bucharest')::date = (CURRENT_TIMESTAMP AT TIME ZONE 'Europe/Bucharest')::date) as last_scan_time,
+             (SELECT MAX(created_at) FROM qrp_timesheets WHERE employee_id = e.id) as absolute_last_scan,
+             (SELECT s.name FROM qrp_sites s JOIN qrp_timesheets t ON t.site_id = s.id WHERE t.employee_id = e.id AND t.action_type = 'IN' ORDER BY t.created_at DESC LIMIT 1) as site_name,
+             (SELECT start_time FROM qrp_shifts WHERE employee_id = e.id AND date = (CURRENT_TIMESTAMP AT TIME ZONE 'Europe/Bucharest')::date LIMIT 1) as scheduled_start_time,
+             (SELECT end_time FROM qrp_shifts WHERE employee_id = e.id AND date = (CURRENT_TIMESTAMP AT TIME ZONE 'Europe/Bucharest')::date LIMIT 1) as scheduled_end_time
       FROM qrp_employees e
       WHERE e.tenant_id = $1
       ORDER BY 
@@ -93,7 +100,13 @@ router.get('/stats', async (req, res) => {
     `, [tenantId]);
     const presentNow = parseInt(presentRes.rows[0].count);
     
-    const checkinsRes = await pool.query('SELECT COUNT(DISTINCT employee_id) as count FROM qrp_timesheets WHERE tenant_id = $1 AND action_type = $2 AND DATE(created_at) = CURRENT_DATE', [tenantId, 'IN']);
+    const checkinsRes = await pool.query(`
+      SELECT COUNT(DISTINCT employee_id) as count 
+      FROM qrp_timesheets 
+      WHERE tenant_id = $1 
+      AND action_type = $2 
+      AND (created_at AT TIME ZONE 'Europe/Bucharest')::date = (CURRENT_TIMESTAMP AT TIME ZONE 'Europe/Bucharest')::date
+    `, [tenantId, 'IN']);
     const todayCheckins = parseInt(checkinsRes.rows[0].count);
     
     // Site Breakdowns for "IN"
@@ -135,7 +148,7 @@ router.get('/stats', async (req, res) => {
     // Weekly Data
     const weeklyQueryStr = `
       WITH date_series AS (
-        SELECT generate_series(CURRENT_DATE - INTERVAL '6 days', CURRENT_DATE, '1 day')::date AS d
+        SELECT generate_series((CURRENT_TIMESTAMP AT TIME ZONE 'Europe/Bucharest')::date - INTERVAL '6 days', (CURRENT_TIMESTAMP AT TIME ZONE 'Europe/Bucharest')::date, '1 day')::date AS d
       )
       SELECT 
         TO_CHAR(ds.d, 'Dy') as name,

@@ -161,12 +161,21 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
       
       let totalMs = 0;
       let lastIn = null;
+      let intervals = [];
       for (const log of group.raw_logs) {
         if (log.action_type === 'IN') {
+          if (lastIn) {
+            intervals.push({ in: lastIn, out: null });
+          }
           lastIn = new Date(log.timestamp);
-        } else if (log.action_type === 'OUT' && lastIn) {
-          totalMs += (new Date(log.timestamp) - lastIn);
-          lastIn = null;
+        } else if (log.action_type === 'OUT') {
+          if (lastIn) {
+            totalMs += (new Date(log.timestamp) - lastIn);
+            intervals.push({ in: lastIn, out: new Date(log.timestamp) });
+            lastIn = null;
+          } else {
+            intervals.push({ in: null, out: new Date(log.timestamp) });
+          }
         }
       }
       
@@ -175,6 +184,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
 
       if (lastIn) {
         // Person checked in but didn't check out.
+        intervals.push({ in: lastIn, out: null });
         const isToday = new Date().toLocaleDateString('en-CA') === group.date;
         if (isToday) {
           group.ongoing_ms = new Date() - lastIn;
@@ -182,6 +192,8 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
           group.missing_out = true;
         }
       }
+      
+      group.intervals = intervals;
       
       const formatDuration = (ms) => {
         const h = Math.floor(ms / (1000 * 60 * 60));
@@ -199,6 +211,51 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
       return group;
     });
   }, [filteredTimesheets]);
+
+  const tableData = useMemo(() => {
+    if (!employeeId) {
+      return groupedTimesheets;
+    }
+
+    const rows = [];
+    groupedTimesheets.forEach(group => {
+      group.intervals.forEach((interval, index) => {
+        let ms = 0;
+        let ongoing_ms = 0;
+        if (interval.in && interval.out) {
+          ms = interval.out - interval.in;
+        } else if (interval.in && !interval.out) {
+          const isToday = new Date().toLocaleDateString('en-CA') === group.date;
+          if (isToday) {
+            ongoing_ms = new Date() - interval.in;
+          }
+        }
+        
+        const totalMs = ms + ongoing_ms;
+        const formatDuration = (m) => {
+          const h = Math.floor(m / (1000 * 60 * 60));
+          const mm = Math.floor((m % (1000 * 60 * 60)) / (1000 * 60));
+          return `${h}h ${mm}m`;
+        };
+
+        rows.push({
+          id: `${group.id}_${index}`,
+          date: group.date,
+          in: interval.in,
+          out: interval.out,
+          total_time_ms: totalMs,
+          total_time_str: totalMs > 0 ? formatDuration(totalMs) : '-',
+          is_ongoing: ongoing_ms > 0,
+          missing_out: !interval.out && !ongoing_ms
+        });
+      });
+    });
+    return rows.sort((a, b) => {
+       const dateDiff = new Date(b.date) - new Date(a.date);
+       if (dateDiff !== 0) return dateDiff;
+       return (b.in || 0) - (a.in || 0);
+    });
+  }, [groupedTimesheets, employeeId]);
 
   const baseColumns = [
     {
@@ -256,6 +313,17 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
       ) : <span className="text-slate-400">-</span>
     },
     {
+      key: 'sessions_count',
+      label: 'Sesiuni',
+      exportRender: (row) => row.intervals ? row.intervals.length.toString() : '0',
+      render: (row) => (
+        <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-1 rounded-md w-fit text-xs font-bold">
+          <span>{row.intervals ? row.intervals.length : 0}</span>
+          <span className="text-[10px] uppercase">{row.intervals?.length === 1 ? 'sesiune' : 'sesiuni'}</span>
+        </div>
+      )
+    },
+    {
       key: 'total_time_str',
       label: 'Total Ore',
       render: (row) => (
@@ -292,14 +360,82 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
     }
   ];
   
-  const columns = employeeId ? baseColumns.filter(c => c.key !== 'first_name' && c.key !== 'actions') : baseColumns;
+  const columns = useMemo(() => {
+    if (employeeId) {
+      return [
+        {
+          key: 'date',
+          label: 'Data',
+          exportRender: (row) => new Date(row.date).toLocaleDateString('ro-RO'),
+          render: (row) => (
+            <span className="text-sm font-medium text-slate-800 dark:text-white">
+              {new Date(row.date).toLocaleDateString('ro-RO')}
+            </span>
+          )
+        },
+        {
+          key: 'in',
+          label: 'Intrare',
+          exportRender: (row) => row.in ? new Date(row.in).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' }) : '-',
+          render: (row) => row.in ? (
+            <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 font-medium text-sm bg-emerald-50 dark:bg-emerald-900/30 px-2.5 py-1 rounded-lg w-fit">
+              <LogIn size={14} />
+              {new Date(row.in).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' })}
+            </div>
+          ) : <span className="text-slate-400">-</span>
+        },
+        {
+          key: 'out',
+          label: 'Ieșire',
+          exportRender: (row) => row.out ? new Date(row.out).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' }) : '-',
+          render: (row) => row.out ? (
+            <div className="flex items-center gap-1.5 text-blue-700 dark:text-blue-400 font-medium text-sm bg-blue-50 dark:bg-blue-900/30 px-2.5 py-1 rounded-lg w-fit">
+              <LogOut size={14} />
+              {new Date(row.out).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' })}
+            </div>
+          ) : <span className="text-slate-400">-</span>
+        },
+        {
+          key: 'total_time_str',
+          label: 'Durată',
+          aggregate: (rows) => {
+            const sumMs = rows.reduce((sum, row) => sum + (row.total_time_ms || 0), 0);
+            if (sumMs === 0) return '-';
+            const h = Math.floor(sumMs / (1000 * 60 * 60));
+            const mm = Math.floor((sumMs % (1000 * 60 * 60)) / (1000 * 60));
+            return `${h}h ${mm}m`;
+          },
+          render: (row) => (
+            <div className="flex flex-col items-start gap-1">
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                {row.total_time_str}
+              </span>
+              {row.is_ongoing && (
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-[10px] font-bold">
+                  <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+                  ÎN TURĂ
+                </span>
+              )}
+              {row.missing_out && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-red-100 text-red-700 text-[10px] font-bold">
+                  ! LIPSEȘTE IEȘIREA
+                </span>
+              )}
+            </div>
+          )
+        }
+      ];
+    } else {
+      return baseColumns;
+    }
+  }, [employeeId]);
 
   const tableFilters = (
-    <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full w-full">
+    <div className="flex flex-col xl:flex-row xl:flex-nowrap items-stretch xl:items-center gap-3 w-full xl:overflow-x-auto py-1" style={{ scrollbarWidth: 'none' }}>
       <select 
         value={actionFilter}
         onChange={(e) => setActionFilter(e.target.value)}
-        className="px-3 h-10 rounded-full border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer flex-1 sm:flex-none min-w-[140px]"
+        className="px-3 h-10 rounded-full border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer w-full xl:w-auto xl:min-w-[140px] shrink-0"
       >
         <option value="all">Toate acțiunile</option>
         <option value="in">Doar Intrări (IN)</option>
@@ -309,7 +445,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
       <select 
         value={locationId}
         onChange={(e) => setLocationId(e.target.value)}
-        className="px-3 h-10 rounded-full border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer flex-1 sm:flex-none min-w-[140px] truncate"
+        className="px-3 h-10 rounded-full border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer w-full xl:w-auto xl:min-w-[140px] truncate shrink-0"
       >
         <option value="all">Toate locațiile</option>
         {locations.map(loc => (
@@ -320,7 +456,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
       <select 
         value={periodFilter}
         onChange={handlePeriodChange}
-        className="px-3 h-10 rounded-full border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer flex-1 sm:flex-none min-w-[140px]"
+        className="px-3 h-10 rounded-full border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer w-full xl:w-auto xl:min-w-[140px] shrink-0"
       >
         <option value="today">Azi</option>
         <option value="yesterday">Ieri</option>
@@ -332,12 +468,12 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
         <option value="custom">Personalizat...</option>
       </select>
       
-      <div className="flex items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full px-4 h-10 shadow-sm focus-within:ring-2 focus-within:ring-primary-500 transition-all w-full sm:w-auto">
+      <div className="flex items-center justify-between xl:justify-start gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full px-4 h-10 shadow-sm focus-within:ring-2 focus-within:ring-primary-500 transition-all w-full xl:w-auto shrink-0">
         <input 
           type="date" 
           value={startDate}
           onChange={handleDateManualChange(setStartDate)}
-          className="text-sm font-bold text-slate-700 dark:text-slate-300 bg-transparent outline-none cursor-pointer w-full sm:w-auto"
+          className="text-sm font-bold text-slate-700 dark:text-slate-300 bg-transparent outline-none cursor-pointer w-full xl:w-auto text-center xl:text-left"
           title="Data Început"
         />
         <span className="text-slate-300 dark:text-slate-600 font-bold">-</span>
@@ -345,7 +481,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
           type="date" 
           value={endDate}
           onChange={handleDateManualChange(setEndDate)}
-          className="text-sm font-bold text-slate-700 dark:text-slate-300 bg-transparent outline-none cursor-pointer w-full sm:w-auto"
+          className="text-sm font-bold text-slate-700 dark:text-slate-300 bg-transparent outline-none cursor-pointer w-full xl:w-auto text-center xl:text-left"
           title="Data Sfârșit"
         />
       </div>
@@ -358,18 +494,15 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white dark:text-white">Rapoarte Pontaje</h1>
-            <p className="text-slate-500 dark:text-slate-400 dark:text-slate-400 mt-1">Istoric intrări și ieșiri pentru toți angajații tăi.</p>
           </div>
         </div>
       )}
 
       <div className="flex-1">
         <DataTable 
-          title="Raport Pontaje"
-          hideTitle={true}
-          data={groupedTimesheets}
-          columns={columns}
-          searchPlaceholder="Caută după nume sau locație..."
+          columns={columns} 
+          data={tableData} 
+          searchPlaceholder={employeeId ? "Caută după dată..." : "Caută după nume sau cod..."}
           filters={tableFilters}
         />
       </div>

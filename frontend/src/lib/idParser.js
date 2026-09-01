@@ -133,10 +133,17 @@ export function parseIdCardText(text) {
     const isDomiciliuTitle = upperLine.includes('DOMICILI') || upperLine.includes('D0MICILI') || upperLine.includes('ADRESS') || upperLine.includes('ADRE55') || upperLine.includes('DOM.') || upperLine.includes('D0M.');
     
     // Cazul 2: OCR-ul a sărit complet peste titlu și suntem direct pe rândul cu adresa
-    const hasAddressMarkers = upperLine.includes('JUD.') || upperLine.includes('MUN.') || upperLine.includes('STR.') || upperLine.includes('COM.') || upperLine.includes('SAT ') || upperLine.includes('SECTOR');
+    const hasAddressMarkers = upperLine.includes('JUD.') || upperLine.includes('MUN.') || upperLine.includes('STR.') || upperLine.includes('COM.') || upperLine.includes('SAT ') || upperLine.includes('SECTOR') || upperLine.includes(' B-DUL') || upperLine.includes(' BD.') || upperLine.includes(' ORAȘ') || upperLine.includes(' ORAS') || upperLine.includes(' ORS.') || upperLine.includes(' SOS.') || upperLine.includes(' ȘOS.');
 
     if (isDomiciliuTitle) {
       let addrLines = [];
+      
+      // Dacă pe aceeași linie cu "DOMICILIU" există și adresa efectivă
+      let currentLineAddr = upperLine.replace(/DOMICILI[U]?/g, '').replace(/ADRESS[E]?/g, '').replace(/ADDRESS/g, '').replace(/D0MICILI[U]?/g, '').replace(/DOM\./g, '').replace(/[\/\\\-:]/g, ' ').trim();
+      if (currentLineAddr.length > 5) {
+        addrLines.push(lines[i].replace(/domicili[u]?/ig, '').replace(/adress[e]?/ig, '').replace(/address/ig, '').replace(/[\/\\\-:]/g, ' ').trim());
+      }
+      
       if (i + 1 < lines.length && !lines[i + 1].toUpperCase().includes('EMIS DE')) addrLines.push(lines[i + 1].trim());
       if (i + 2 < lines.length && !lines[i + 2].toUpperCase().includes('EMIS DE') && !lines[i + 2].toUpperCase().includes('VALABILITATE')) addrLines.push(lines[i + 2].trim());
       

@@ -278,11 +278,14 @@ export default function ScanScreen() {
               </label>
               <div className="relative">
                 <input
-                  type={showPin ? "text" : "password"}
+                  type="tel"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   maxLength={4}
                   value={pinCode}
                   onChange={e => setPinCode(e.target.value.replace(/\D/g, ''))}
                   placeholder="••••"
+                  style={{ WebkitTextSecurity: showPin ? 'none' : 'disc' }}
                   className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all shadow-sm font-bold tracking-[0.5em]"
                 />
               </div>

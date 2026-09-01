@@ -120,9 +120,12 @@ export default function EmployeeLogin() {
                   <User size={18} />
                 </div>
                 <input
+                  id="employee_code"
+                  name="employee_code"
                   type="text"
                   value={employeeCode}
                   onChange={(e) => setEmployeeCode(e.target.value)}
+                  autoComplete="username"
                   className="w-full pl-11 pr-4 py-3 bg-slate-50 border-0 rounded-2xl focus:ring-2 focus:ring-primary-500 font-medium text-slate-700 outline-none transition-shadow"
                   placeholder="ex: EMP001"
                   required
@@ -137,11 +140,16 @@ export default function EmployeeLogin() {
                   <KeyRound size={18} />
                 </div>
                 <input
-                  type={showPin ? 'text' : 'password'}
+                  id="pin_code"
+                  name="pin_code"
+                  type="tel"
                   inputMode="numeric"
+                  pattern="[0-9]*"
                   maxLength="4"
                   value={pinCode}
                   onChange={(e) => setPinCode(e.target.value.replace(/\D/g, ''))}
+                  autoComplete="current-password"
+                  style={{ WebkitTextSecurity: showPin ? 'none' : 'disc' }}
                   className="w-full pl-11 pr-12 py-3 bg-slate-50 border-0 rounded-2xl focus:ring-2 focus:ring-primary-500 font-bold text-slate-700 tracking-widest outline-none transition-shadow"
                   placeholder="••••"
                   required

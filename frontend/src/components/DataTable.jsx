@@ -113,8 +113,13 @@ export default function DataTable({
   if (hasAggregates) {
     columns.forEach(col => {
       if (col.aggregate) {
-        pageTotals[col.key] = paginatedData.reduce((sum, item) => sum + (Number(item[col.key]) || 0), 0);
-        globalTotals[col.key] = sortedData.reduce((sum, item) => sum + (Number(item[col.key]) || 0), 0);
+        if (typeof col.aggregate === 'function') {
+          pageTotals[col.key] = col.aggregate(paginatedData);
+          globalTotals[col.key] = col.aggregate(sortedData);
+        } else {
+          pageTotals[col.key] = paginatedData.reduce((sum, item) => sum + (Number(item[col.key]) || 0), 0);
+          globalTotals[col.key] = sortedData.reduce((sum, item) => sum + (Number(item[col.key]) || 0), 0);
+        }
       }
     });
   }
@@ -177,11 +182,11 @@ export default function DataTable({
       <div className="flex flex-col gap-4 mb-4">
         {/* Rândul 1: Filtre și Acțiuni (Export) */}
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 w-full">
-          <div className="flex-1 w-full max-w-full">
+          <div className="flex-1 w-full max-w-full overflow-hidden">
             {filters ? (
-              <div className="flex items-start md:items-center gap-2 w-full">
-                <Filter size={16} className="text-slate-400 hidden lg:block shrink-0" />
-                <div className="flex-1 w-full min-w-0 overflow-x-auto pb-1 md:pb-0" style={{ scrollbarWidth: 'none' }}>
+              <div className="flex items-start xl:items-center gap-2 w-full flex-col xl:flex-row xl:flex-nowrap">
+                <Filter size={16} className="text-slate-400 hidden xl:block shrink-0 mt-2 xl:mt-0" />
+                <div className="flex-1 w-full min-w-0 pb-1 xl:pb-0 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
                   {filters}
                 </div>
               </div>
@@ -255,7 +260,7 @@ export default function DataTable({
                   <th className="px-3 py-3 w-10"></th>
                 )}
               {/* Coloana Nr. Crt. */}
-              <th className="px-3 py-3 text-slate-800 dark:text-white dark:text-slate-300 text-[11px] font-bold uppercase tracking-wider w-14">
+              <th className="px-3 py-3 text-slate-800 dark:text-white dark:text-slate-300 text-sm font-bold uppercase tracking-wider w-14">
                 #
               </th>
               
@@ -263,7 +268,7 @@ export default function DataTable({
                 <th 
                   key={idx}
                   onClick={() => col.sortable !== false ? handleSort(col.key) : null}
-                  className={`px-4 py-3 text-slate-800 dark:text-white dark:text-slate-300 text-[11px] font-bold uppercase tracking-wider ${col.sortable !== false ? 'cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 dark:hover:bg-slate-700/50' : ''}`}
+                  className={`px-4 py-3 text-slate-800 dark:text-white dark:text-slate-300 text-sm font-bold uppercase tracking-wider ${col.sortable !== false ? 'cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 dark:hover:bg-slate-700/50' : ''}`}
                 >
                   <div className="flex items-center space-x-1">
                     <span>{col.label}</span>
@@ -305,7 +310,7 @@ export default function DataTable({
                           {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                         </td>
                       )}
-                      <td className="px-3 py-3 text-slate-800 dark:text-white dark:text-slate-200 font-medium text-xs">
+                      <td className="px-3 py-3 text-slate-800 dark:text-white dark:text-slate-200 font-medium text-sm">
                         {startIndex + rowIndex + 1}
                       </td>
                       {columns.map((col, colIdx) => (
@@ -337,18 +342,9 @@ export default function DataTable({
             <tfoot className="bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700">
               <tr>
                 {selectable && <td></td>}
-                <td className="px-6 py-3 font-bold text-slate-700 dark:text-slate-300 text-xs">Total Pagină</td>
+                <td className="px-6 py-3 font-bold text-primary-700 text-sm uppercase tracking-wider">Total</td>
                 {columns.map((col, idx) => (
-                  <td key={idx} className="px-6 py-3 font-bold text-slate-700 dark:text-slate-300 text-xs">
-                    {col.aggregate ? pageTotals[col.key] : ''}
-                  </td>
-                ))}
-              </tr>
-              <tr className="border-t border-slate-100 dark:border-slate-700/50">
-                {selectable && <td></td>}
-                <td className="px-6 py-3 font-bold text-primary-700 text-xs">Total General</td>
-                {columns.map((col, idx) => (
-                  <td key={idx} className="px-6 py-3 font-bold text-primary-700 text-xs">
+                  <td key={idx} className="px-6 py-3 font-bold text-primary-700 text-sm">
                     {col.aggregate ? globalTotals[col.key] : ''}
                   </td>
                 ))}
