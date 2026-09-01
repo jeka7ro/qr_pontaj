@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Users, UserPlus, Info, Mail, Lock, Plus } from 'lucide-react';
+import { X, Users, UserPlus, Info, Mail, Lock, Plus, Trash2 } from 'lucide-react';
 
 export default function TenantAdminsModal({ isOpen, onClose, tenant }) {
   const [admins, setAdmins] = useState([]);
@@ -230,6 +230,28 @@ export default function TenantAdminsModal({ isOpen, onClose, tenant }) {
                         title="Resetează parola"
                       >
                         <Lock size={14} />
+                      </button>
+                      <button 
+                        onClick={async () => {
+                          if (window.confirm('Sunteți sigur că doriți să ștergeți acest admin? Această acțiune este ireversibilă.')) {
+                            try {
+                              const res = await fetch(`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenants/${tenant.id}/admins/${admin.id}`, {
+                                method: 'DELETE'
+                              });
+                              if (!res.ok) {
+                                const errData = await res.json();
+                                throw new Error(errData.error || 'Eroare la ștergerea adminului.');
+                              }
+                              setAdmins(admins.filter(a => a.id !== admin.id));
+                            } catch (err) {
+                              setError(err.message);
+                            }
+                          }
+                        }}
+                        className="w-8 h-8 flex items-center justify-center rounded-full border border-slate-200 dark:border-slate-700 hover:bg-red-50 hover:text-red-600 text-slate-500 dark:text-slate-400 transition-colors"
+                        title="Șterge Admin"
+                      >
+                        <Trash2 size={14} />
                       </button>
                     </div>
                   </div>

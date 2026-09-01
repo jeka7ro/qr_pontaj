@@ -187,7 +187,7 @@ export default function TenantDashboard() {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-4 py-6 space-y-2">
+        <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
           <Link 
             to="/admin/dashboard"
             onClick={() => setSidebarOpen(false)}
@@ -244,7 +244,7 @@ export default function TenantDashboard() {
             <QrCode size={18} /> Kiosk-uri QR
           </Link>
 
-          {(tenant.modules?.show_upsells !== false || tenant.modules?.shifts) && (
+          {tenant.modules?.shifts && (
             <Link 
               to="/admin/shifts"
               onClick={() => setSidebarOpen(false)}
@@ -256,7 +256,7 @@ export default function TenantDashboard() {
             </Link>
           )}
 
-          {(tenant.modules?.show_upsells !== false || tenant.modules?.leaves) && (
+          {tenant.modules?.leaves && (
             <Link 
               to="/admin/leaves"
               onClick={() => setSidebarOpen(false)}
@@ -268,7 +268,7 @@ export default function TenantDashboard() {
             </Link>
           )}
 
-          {(tenant.modules?.show_upsells !== false || tenant.modules?.export_saga) && (
+          {tenant.modules?.export_saga && (
             <Link 
               to="/admin/export"
               onClick={() => setSidebarOpen(false)}
@@ -280,7 +280,7 @@ export default function TenantDashboard() {
             </Link>
           )}
 
-          {(tenant.modules?.show_upsells !== false || tenant.modules?.geofence) && (
+          {tenant.modules?.geofence && (
             <Link 
               to="/admin/geofence"
               onClick={() => setSidebarOpen(false)}
@@ -292,7 +292,7 @@ export default function TenantDashboard() {
             </Link>
           )}
           
-          {(tenant.modules?.show_upsells !== false || tenant.modules?.offline) && (
+          {tenant.modules?.offline && (
             <Link 
               to="/admin/offline"
               onClick={() => setSidebarOpen(false)}
@@ -304,7 +304,7 @@ export default function TenantDashboard() {
             </Link>
           )}
 
-          {(tenant.modules?.show_upsells !== false || tenant.modules?.billing) && (
+          {tenant.modules?.billing && (
             <Link 
               to="/admin/billing"
               onClick={() => setSidebarOpen(false)}
@@ -316,7 +316,7 @@ export default function TenantDashboard() {
             </Link>
           )}
 
-          {(tenant.modules?.show_upsells !== false || tenant.modules?.revisal) && (
+          {tenant.modules?.revisal && (
             <Link 
               to="/admin/revisal"
               onClick={() => setSidebarOpen(false)}
@@ -328,7 +328,7 @@ export default function TenantDashboard() {
             </Link>
           )}
 
-          {(tenant.modules?.show_upsells !== false || tenant.modules?.erp) && (
+          {tenant.modules?.erp && (
             <Link 
               to="/admin/erp"
               onClick={() => setSidebarOpen(false)}
@@ -342,7 +342,7 @@ export default function TenantDashboard() {
 
 
 
-          {(tenant.modules?.show_upsells !== false || tenant.modules?.face_recognition) && (
+          {tenant.modules?.face_recognition && (
             <Link 
               to="/admin/face"
               onClick={() => setSidebarOpen(false)}
@@ -354,7 +354,7 @@ export default function TenantDashboard() {
             </Link>
           )}
 
-          {(tenant.modules?.show_upsells !== false || tenant.modules?.whatsapp) && (
+          {tenant.modules?.whatsapp && (
             <Link 
               to="/admin/whatsapp"
               onClick={() => setSidebarOpen(false)}
@@ -366,7 +366,7 @@ export default function TenantDashboard() {
             </Link>
           )}
 
-          {(tenant.modules?.show_upsells !== false || tenant.modules?.assets) && (
+          {tenant.modules?.assets && (
             <Link 
               to="/admin/assets"
               onClick={() => setSidebarOpen(false)}

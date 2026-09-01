@@ -267,12 +267,19 @@ router.post('/:id/admins', async (req, res) => {
     const saltRounds = 10;
     const passwordHash = await bcrypt.hash(password, saltRounds);
 
+    // Setăm și active_domain pe baza tenantului curent
+    const tenantRes = await pool.query('SELECT subdomain FROM qrp_tenants WHERE id = $1', [req.params.id]);
+    let activeDomain = null;
+    if (tenantRes.rows.length > 0) {
+       activeDomain = `${tenantRes.rows[0].subdomain}.qr.pontaj.app`;
+    }
+
     const query = `
-      INSERT INTO qrp_users (tenant_id, email, password_hash, role)
-      VALUES ($1, $2, $3, $4)
+      INSERT INTO qrp_users (tenant_id, email, password_hash, role, active_domain)
+      VALUES ($1, $2, $3, $4, $5)
       RETURNING id, email, created_at
     `;
-    const result = await pool.query(query, [req.params.id, email, passwordHash, 'TENANT_ADMIN']);
+    const result = await pool.query(query, [req.params.id, email, passwordHash, 'TENANT_ADMIN', activeDomain]);
     
     res.status(201).json(result.rows[0]);
   } catch (error) {
@@ -281,6 +288,21 @@ router.post('/:id/admins', async (req, res) => {
     }
     console.error('Error creating admin:', error);
     res.status(500).json({ error: 'Eroare la crearea adminului' });
+  }
+});
+
+// DELETE /api/tenants/:id/admins/:adminId - Șterge un admin local
+router.delete('/:id/admins/:adminId', async (req, res) => {
+  try {
+    // Verificăm să nu șteargă SUPERADMIN-ul sau ultimul admin? Aici permitem ștergerea oricărui TENANT_ADMIN local.
+    const result = await pool.query('DELETE FROM qrp_users WHERE id = $1 AND tenant_id = $2 AND role = $3 RETURNING id', [req.params.adminId, req.params.id, 'TENANT_ADMIN']);
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'Adminul nu a fost găsit sau nu aparține acestui tenant.' });
+    }
+    res.json({ success: true, message: 'Admin șters cu succes.' });
+  } catch (error) {
+    console.error('Error deleting admin:', error);
+    res.status(500).json({ error: 'Eroare internă la ștergerea adminului.' });
   }
 });
 
