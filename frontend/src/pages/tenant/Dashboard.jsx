@@ -252,7 +252,7 @@ export default function TenantDashboard() {
                 ${location.pathname === '/admin/shifts' ? 'bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-slate-800 dark:text-white'}`}
               style={location.pathname === '/admin/shifts' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
             >
-              <CalendarClock size={18} /> <span className="flex-1 text-left">Planificator Ture</span> <span className="text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide" style={{ backgroundColor: themeColor }}>PRO</span>
+              <CalendarClock size={18} /> Planificator Ture
             </Link>
           )}
 
