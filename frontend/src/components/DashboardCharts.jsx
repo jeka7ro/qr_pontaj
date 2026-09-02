@@ -377,9 +377,10 @@ export default function DashboardCharts({ tenant, themeColor }) {
                 isOut={emp.current_status === 'OUT'} 
                 hasHistory={true} 
                 onOpenCloseShift={(e) => {
-                  const presenceDateStr = e.first_in_today || e.absolute_last_scan;
+                  const presenceDateStr = e.last_in_time || e.absolute_last_scan;
                   const initialDate = presenceDateStr ? new Date(presenceDateStr).toLocaleDateString('en-CA') : new Date().toLocaleDateString('en-CA');
-                  setCloseShiftModal({ isOpen: true, rowData: e, date: initialDate, time: '17:00' });
+                  const initialTime = e.scheduled_end_time ? e.scheduled_end_time.substring(0, 5) : '17:00';
+                  setCloseShiftModal({ isOpen: true, rowData: e, date: initialDate, time: initialTime });
                 }}
               />
             )) : (
