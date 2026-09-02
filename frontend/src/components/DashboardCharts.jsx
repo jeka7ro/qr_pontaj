@@ -254,7 +254,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
       
       {/* Top KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 flex items-center gap-4">
+        <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 flex items-center gap-4">
           <div className="w-14 h-14 rounded-full flex items-center justify-center bg-slate-50 text-slate-400">
             <Users size={24} />
           </div>
@@ -263,7 +263,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
             <div className="text-3xl font-black text-slate-800">{stats.totalEmployees}</div>
           </div>
         </div>
-        <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 flex items-center gap-4">
+        <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 flex items-center gap-4">
           <div className="w-14 h-14 rounded-full flex items-center justify-center bg-green-50 text-green-500">
             <Clock size={24} />
           </div>
@@ -272,7 +272,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
             <div className="text-3xl font-black text-slate-800">{stats.presentNow}</div>
           </div>
         </div>
-        <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 flex items-center gap-4">
+        <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 flex items-center gap-4">
           <div className="w-14 h-14 rounded-full flex items-center justify-center bg-blue-50 text-blue-500">
             <LogIn size={24} />
           </div>
@@ -286,7 +286,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         {/* ZoomCharts Style Donut (ECharts) */}
-        <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-sm border border-slate-100 lg:col-span-1 flex flex-col relative">
+        <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 lg:col-span-1 flex flex-col relative">
           <h3 className="text-lg font-bold text-slate-800 mb-6">Status Prezență</h3>
           
           {drillLevel === 'details' && (
@@ -329,7 +329,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
         </div>
 
         {/* ECharts Bar Chart */}
-        <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-sm border border-slate-100 lg:col-span-2 flex flex-col">
+        <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 lg:col-span-2 flex flex-col">
           <h3 className="text-lg font-bold text-slate-800 mb-6">Evoluție Intrări (Ultimele 7 zile)</h3>
           <div className="flex-1 min-h-[350px]">
             <ReactECharts 
@@ -342,9 +342,9 @@ export default function DashboardCharts({ tenant, themeColor }) {
       </div>
 
       {/* Live Shifts Table (Simplified for brevity) */}
-      <div className="mt-8 bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-100 overflow-hidden flex flex-col">
-        <div className="p-6 border-b border-slate-100">
-          <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+      <div className="mt-8 bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden flex flex-col">
+        <div className="p-6 border-b border-slate-100 dark:border-slate-700">
+          <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
             <span className="relative flex h-3 w-3">
               <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
             </span>
@@ -360,15 +360,15 @@ export default function DashboardCharts({ tenant, themeColor }) {
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-slate-50 border-b border-slate-100">
-                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Angajat</th>
-                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Prezență</th>
-                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Program</th>
-                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Timp Lucrat (azi)</th>
+                  <tr className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-100 dark:border-slate-700">
+                    <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Angajat</th>
+                    <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Prezență</th>
+                    <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Program</th>
+                    <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Timp Lucrat (azi)</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                   {liveShifts.length > 0 ? liveShifts.map((emp) => (
               <LiveShiftRow 
                 key={emp.id} 
