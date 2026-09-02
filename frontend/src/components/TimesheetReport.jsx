@@ -291,6 +291,12 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
         group.total_time_str = totalMs > 0 ? formatDuration(totalMs) : '-';
       }
       
+      // Calculate first_in and last_out for Rapoarte Pontaje main page
+      const validIns = group.intervals.map(i => i.raw_in).filter(Boolean).sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+      const validOuts = group.intervals.map(i => i.raw_out).filter(Boolean).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+      group.first_in = validIns.length > 0 ? validIns[0] : null;
+      group.last_out = validOuts.length > 0 ? validOuts[0] : null;
+
       return group;
     }).sort((a, b) => b.date.localeCompare(a.date));
   }, [filteredTimesheets]);
@@ -394,9 +400,17 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
       label: 'Ultima Ieșire',
       exportRender: (row) => row.last_out ? new Date(row.last_out.timestamp).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' }) : '-',
       render: (row) => row.last_out ? (
-        <div className="flex items-center gap-1.5 text-blue-700 dark:text-blue-400 font-bold text-sm bg-blue-50 dark:bg-blue-900/30 px-2.5 py-1 rounded-lg w-fit">
-          <LogOut size={14} />
-          {new Date(row.last_out.timestamp).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' })}
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-1.5 text-blue-700 dark:text-blue-400 font-bold text-sm bg-blue-50 dark:bg-blue-900/30 px-2.5 py-1 rounded-lg w-fit">
+            <LogOut size={14} />
+            {new Date(row.last_out.timestamp).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' })}
+          </div>
+          {row.last_out.is_manual && (
+            <span className="text-[10px] text-orange-600 dark:text-orange-400 font-bold bg-orange-50 dark:bg-orange-900/30 px-1.5 py-0.5 rounded w-fit flex items-center gap-1">
+              <AlertTriangle size={10} />
+              Închis manual
+            </span>
+          )}
         </div>
       ) : <span className="text-slate-400">-</span>
     },
