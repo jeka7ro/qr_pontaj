@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Clock, LogIn, LogOut, MapPin, UserMinus, X } from 'lucide-react';
+import { Users, Clock, LogIn, LogOut, MapPin, UserMinus, X, AlertTriangle } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 
 export default function DashboardCharts({ tenant, themeColor }) {
@@ -559,10 +559,11 @@ function LiveShiftRow({ emp, isPresent, isOut, hasHistory, onOpenCloseShift }) {
                           {isMissingOut ? (
                             <button
                               onClick={() => onOpenCloseShift(emp)}
-                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-red-100 hover:bg-red-200 transition-colors text-red-700 text-[10px] font-bold cursor-pointer"
+                              className="flex items-center gap-1 text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300 text-xs font-medium hover:underline transition-colors"
                               title="Apasă pentru a închide tura manual"
                             >
-                              ! LIPSEȘTE IEȘIREA
+                              <AlertTriangle size={12} />
+                              Închide manual
                             </button>
                           ) : isPresent ? (
                             <div className="text-emerald-600 font-medium text-sm flex items-center gap-1.5">

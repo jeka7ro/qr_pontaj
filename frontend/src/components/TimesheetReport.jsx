@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Clock, LogIn, LogOut, Eye, X } from 'lucide-react';
+import { Clock, LogIn, LogOut, Eye, X, AlertTriangle } from 'lucide-react';
 import DataTable from './DataTable';
 
 export default function TimesheetReport({ tenant, themeColor, employeeId = null }) {
@@ -452,10 +452,11 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
               {row.missing_out && (
                 <button
                   onClick={() => setCloseShiftModal({ isOpen: true, rowData: row, date: row.date, time: '17:00' })}
-                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-red-100 hover:bg-red-200 transition-colors text-red-700 text-[10px] font-bold cursor-pointer"
+                  className="flex items-center gap-1 mt-1 text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300 text-xs font-medium hover:underline transition-colors"
                   title="Apasă pentru a închide tura manual"
                 >
-                  ! LIPSEȘTE IEȘIREA
+                  <AlertTriangle size={12} />
+                  Închide manual
                 </button>
               )}
             </div>
