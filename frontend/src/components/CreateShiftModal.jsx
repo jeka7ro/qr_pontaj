@@ -82,9 +82,47 @@ export default function CreateShiftModal({ onClose, onShiftCreated, tenantId, em
 
         <div className="p-6">
           {pendingChangeRequest && (
-            <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg text-amber-800 dark:text-amber-300 text-sm flex items-start gap-2">
-              <span className="font-bold shrink-0">Cerere modificare:</span>
-              <span className="italic">{pendingChangeRequest.reason}</span>
+            <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg flex flex-col gap-3">
+              <div className="text-amber-800 dark:text-amber-300 text-sm flex items-start gap-2">
+                <span className="font-bold shrink-0">Cerere modificare:</span>
+                <span className="italic">{pendingChangeRequest.reason}</span>
+              </div>
+              <div className="flex gap-2">
+                <button 
+                  type="button"
+                  onClick={async (e) => {
+                    e.preventDefault();
+                    await handleSubmit(e); // Save new hours and approve
+                  }}
+                  className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-md transition-colors"
+                >
+                  Aprobă
+                </button>
+                <button 
+                  type="button"
+                  onClick={async (e) => {
+                    e.preventDefault();
+                    if (!window.confirm("Ești sigur că vrei să respingi această cerere?")) return;
+                    try {
+                      const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
+                      const token = localStorage.getItem('token');
+                      const tenantId = localStorage.getItem('tenant_id');
+                      await fetch(`${baseUrl}/api/tenants/${tenantId}/leaves/${pendingChangeRequest.id}/status`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                        body: JSON.stringify({ status: 'REJECTED' })
+                      });
+                      onSuccess();
+                      onClose();
+                    } catch(err) {
+                      setError(err.message);
+                    }
+                  }}
+                  className="px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold rounded-md transition-colors"
+                >
+                  Respinge
+                </button>
+              </div>
             </div>
           )}
           {error && (

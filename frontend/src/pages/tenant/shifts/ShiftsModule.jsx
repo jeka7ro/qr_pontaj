@@ -254,13 +254,18 @@ export default function ShiftsModule({ tenant, themeColor }) {
                             onClick={(e) => {
                               if(isEmpty) return;
                               e.stopPropagation();
+                              openNewShift(null, shift, true, pendingChange);
                             }}
-                            className={`px-1.5 py-2 rounded-lg mb-2 relative group/shift border shadow-sm transition-all hover:shadow-md
+                            className={`px-1.5 py-2 rounded-lg mb-2 relative group/shift border shadow-sm transition-all hover:shadow-md cursor-pointer
                               bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700
                             `}
                           >
                             {pendingChange && (
-                              <div className="absolute -top-1.5 -right-1.5 bg-amber-500 text-white p-1 rounded-full shadow-md z-10" title={`Cerere modificare: ${pendingChange.reason}`}>
+                              <div 
+                                onClick={(e) => { e.stopPropagation(); openNewShift(null, shift, true, pendingChange); }}
+                                className="absolute -top-1.5 -right-1.5 bg-amber-500 text-white p-1 rounded-full shadow-md z-20 cursor-pointer hover:scale-110 hover:bg-amber-600 transition-all" 
+                                title={`Cerere modificare: ${pendingChange.reason}\nClick pentru a edita tura și a aproba cererea`}
+                              >
                                 <Info size={12} />
                               </div>
                             )}

@@ -423,15 +423,12 @@ export default function EmployeeDashboard() {
                         className={`
                           aspect-square flex flex-col items-center justify-center rounded-xl relative transition-all
                           ${!isCurrentMonth ? 'opacity-30' : ''}
-                          ${isWeekend ? 'bg-orange-50/50 dark:bg-orange-900/10' : 'bg-slate-50 dark:bg-slate-800'}
+                          ${shift ? (shift.shift_type === 'NIGHT' ? 'bg-slate-200 dark:bg-slate-700' : 'bg-[var(--tc-50)]') : (isWeekend ? 'bg-orange-50/50 dark:bg-orange-900/10' : 'bg-slate-50 dark:bg-slate-800')}
                           ${isToday ? 'ring-2 ring-[var(--tc)] ring-offset-1' : ''}
-                          ${shift ? 'cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 active:scale-95' : ''}
+                          ${shift ? 'cursor-pointer hover:bg-opacity-80 active:scale-95' : ''}
                         `}
                       >
                         <span className={`text-sm font-bold ${isToday ? 'text-[var(--tc)]' : 'text-slate-700 dark:text-slate-300'}`}>{day.getDate()}</span>
-                        {shift && (
-                          <div className={`w-1.5 h-1.5 rounded-full mt-1 ${shift.shift_type === 'NIGHT' ? 'bg-slate-800 dark:bg-slate-200' : 'bg-yellow-400'}`}></div>
-                        )}
                         {shift && !shift.seen_at && (
                           <div className="absolute top-1 right-1 w-1.5 h-1.5 bg-[var(--tc)] rounded-full animate-pulse"></div>
                         )}

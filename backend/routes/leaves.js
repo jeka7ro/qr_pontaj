@@ -59,8 +59,30 @@ router.put('/:leaveId/status', async (req, res) => {
       `UPDATE qrp_leaves SET status = $1 WHERE id = $2 AND tenant_id = $3 RETURNING *`,
       [status, leaveId, id]
     );
+
+    const leave = result.rows[0];
     
-    res.json(result.rows[0]);
+    // Notificare WhatsApp
+    try {
+      const empRes = await db.query('SELECT phone, first_name FROM qrp_employees WHERE id = $1', [leave.employee_id]);
+      if (empRes.rows.length > 0 && empRes.rows[0].phone) {
+        const emp = empRes.rows[0];
+        const whatsappService = require('../services/whatsappService');
+        const statusText = status === 'APPROVED' ? 'aprobată' : 'respinsă';
+        
+        let message = `Bună ${emp.first_name},\nCererea ta (${leave.leave_type === 'SHIFT_CHANGE' ? 'Modificare Tură' : 'Concediu'}) a fost *${statusText}*.`;
+        
+        if (status === 'APPROVED' && leave.leave_type === 'SHIFT_CHANGE') {
+          message += '\n\nVerifică aplicația pentru a vedea noul tău program.';
+        }
+        
+        await whatsappService.sendMessage(id, emp.phone, message);
+      }
+    } catch (waError) {
+      console.error('Nu am putut trimite notificarea WhatsApp:', waError);
+    }
+    
+    res.json(leave);
   } catch (error) {
     console.error('Error updating leave status:', error);
     res.status(500).json({ error: 'Eroare la actualizarea statusului' });
