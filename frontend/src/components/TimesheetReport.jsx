@@ -637,6 +637,54 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
           searchPlaceholder={employeeId ? "Caută după dată..." : "Caută după nume sau cod..."}
           filters={tableFilters}
           emptyMessage="Nu există pontaje înregistrate."
+          expandable={!employeeId}
+          expandedRowRender={(row) => (
+            <div className="p-4 bg-slate-50 dark:bg-slate-900/50">
+              <h4 className="text-sm font-bold text-slate-800 dark:text-white mb-3">Istoric detaliat pentru {row.first_name} {row.last_name} ({row.date})</h4>
+              <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700">
+                      <th className="px-4 py-2 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Intrare</th>
+                      <th className="px-4 py-2 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Ieșire</th>
+                      <th className="px-4 py-2 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase text-right">Durată</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                    {row.intervals && row.intervals.map((inv, idx) => {
+                      let ms = 0;
+                      if (inv.in && inv.out) ms = inv.out - inv.in;
+                      else if (inv.in) ms = new Date() - inv.in;
+                      
+                      const h = Math.floor(ms / (1000 * 60 * 60));
+                      const m = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+                      
+                      return (
+                        <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
+                          <td className="px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-300">
+                            {inv.in ? new Date(inv.in).toLocaleTimeString('ro-RO', {hour:'2-digit', minute:'2-digit'}) : '-'}
+                          </td>
+                          <td className="px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-300">
+                            <div className="flex items-center gap-2">
+                              <span>{inv.out ? new Date(inv.out).toLocaleTimeString('ro-RO', {hour:'2-digit', minute:'2-digit'}) : '-'}</span>
+                              {inv.raw_out?.is_manual && (
+                                <span className="text-[10px] text-orange-600 dark:text-orange-400 font-bold bg-orange-50 dark:bg-orange-900/30 px-1.5 py-0.5 rounded w-fit flex items-center gap-1">
+                                  <AlertTriangle size={10} /> Închis manual
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-300 text-right">
+                            {ms > 0 ? `${h}h ${m}m` : '-'}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         />
       </div>
 
