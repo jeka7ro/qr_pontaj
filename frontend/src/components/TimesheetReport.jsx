@@ -401,16 +401,14 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
       exportRender: (row) => row.last_out ? new Date(row.last_out.timestamp).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' }) : '-',
       render: (row) => row.last_out ? (
         <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-1.5 text-blue-700 dark:text-blue-400 font-bold text-sm bg-blue-50 dark:bg-blue-900/30 px-2.5 py-1 rounded-lg w-fit">
-            <LogOut size={14} />
+          <div className={`flex items-center gap-1.5 font-bold text-sm px-2.5 py-1 rounded-lg w-fit ${row.last_out.is_manual ? 'text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/30' : 'text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30'}`}>
+            {row.last_out.is_manual ? (
+              <span className="w-3.5 h-3.5 rounded-full border-[1.5px] border-current flex items-center justify-center text-[9px] font-black">M</span>
+            ) : (
+              <LogOut size={14} />
+            )}
             {new Date(row.last_out.timestamp).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' })}
           </div>
-          {row.last_out.is_manual && (
-            <span className="text-[10px] text-orange-600 dark:text-orange-400 font-bold bg-orange-50 dark:bg-orange-900/30 px-1.5 py-0.5 rounded w-fit flex items-center gap-1">
-              <AlertTriangle size={10} />
-              Închis manual
-            </span>
-          )}
         </div>
       ) : <span className="text-slate-400">-</span>
     },
@@ -508,17 +506,13 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
           label: 'Ieșire',
           exportRender: (row) => row.out ? new Date(row.out).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' }) : '-',
           render: (row) => row.out ? (
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-1.5 text-blue-700 dark:text-blue-400 font-medium text-sm bg-blue-50 dark:bg-blue-900/30 px-2.5 py-1 rounded-lg w-fit">
+            <div className={`flex items-center gap-1.5 font-medium text-sm px-2.5 py-1 rounded-lg w-fit ${row.is_manual ? 'text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/30' : 'text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30'}`}>
+              {row.is_manual ? (
+                <span className="w-3.5 h-3.5 rounded-full border-[1.5px] border-current flex items-center justify-center text-[9px] font-black">M</span>
+              ) : (
                 <LogOut size={14} />
-                {new Date(row.out).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' })}
-              </div>
-              {row.is_manual && (
-                <span className="text-[10px] text-orange-600 dark:text-orange-400 font-bold bg-orange-50 dark:bg-orange-900/30 px-1.5 py-0.5 rounded w-fit flex items-center gap-1">
-                  <AlertTriangle size={10} />
-                  Închis manual
-                </span>
               )}
+              {new Date(row.out).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' })}
             </div>
           ) : <span className="text-slate-400">-</span>
         },
@@ -665,14 +659,14 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
                             {inv.in ? new Date(inv.in).toLocaleTimeString('ro-RO', {hour:'2-digit', minute:'2-digit'}) : '-'}
                           </td>
                           <td className="px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-300">
-                            <div className="flex items-center gap-2">
-                              <span>{inv.out ? new Date(inv.out).toLocaleTimeString('ro-RO', {hour:'2-digit', minute:'2-digit'}) : '-'}</span>
-                              {inv.raw_out?.is_manual && (
-                                <span className="text-[10px] text-orange-600 dark:text-orange-400 font-bold bg-orange-50 dark:bg-orange-900/30 px-1.5 py-0.5 rounded w-fit flex items-center gap-1">
-                                  <AlertTriangle size={10} /> Închis manual
-                                </span>
-                              )}
-                            </div>
+                            {inv.out ? (
+                              <div className={`flex items-center gap-1.5 font-bold text-sm px-2 py-0.5 rounded-md w-fit ${inv.raw_out?.is_manual ? 'text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/30' : 'text-slate-700 dark:text-slate-300'}`}>
+                                {inv.raw_out?.is_manual && (
+                                  <span className="w-3.5 h-3.5 rounded-full border-[1.5px] border-current flex items-center justify-center text-[9px] font-black">M</span>
+                                )}
+                                {new Date(inv.out).toLocaleTimeString('ro-RO', {hour:'2-digit', minute:'2-digit'})}
+                              </div>
+                            ) : '-'}
                           </td>
                           <td className="px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-300 text-right">
                             {ms > 0 ? `${h}h ${m}m` : '-'}
