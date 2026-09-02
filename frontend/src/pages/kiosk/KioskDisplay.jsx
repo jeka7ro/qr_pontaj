@@ -328,6 +328,7 @@ export default function KioskDisplay() {
   }, []);
 
   // Hardware Scanner Hook
+  const scanBufferRef = useRef('');
   useEffect(() => {
     if (effectiveQrMode !== 'HARDWARE') return;
 
@@ -337,18 +338,18 @@ export default function KioskDisplay() {
       if (['Shift', 'Control', 'Alt', 'Meta'].includes(e.key)) return;
       
       if (e.key === 'Enter') {
-        if (scanBuffer.length > 5) {
-          processHardwareScan(scanBuffer);
+        if (scanBufferRef.current.length > 5) {
+          processHardwareScan(scanBufferRef.current);
         }
-        setScanBuffer('');
+        scanBufferRef.current = '';
         return;
       }
 
-      setScanBuffer(prev => prev + e.key);
+      scanBufferRef.current += e.key;
       
       clearTimeout(timeout);
       timeout = setTimeout(() => {
-        setScanBuffer('');
+        scanBufferRef.current = '';
       }, 300);
     };
 
@@ -357,7 +358,7 @@ export default function KioskDisplay() {
       window.removeEventListener('keydown', handleKeyDown);
       clearTimeout(timeout);
     };
-  }, [effectiveQrMode, scanBuffer]);
+  }, [effectiveQrMode]);
 
   const processHardwareScan = async (payload) => {
     try {
