@@ -528,7 +528,7 @@ router.get('/:id/timesheets', async (req, res) => {
 
     const query = `
       SELECT 
-        t.id, t.action_type, t.created_at as timestamp, 
+        t.id, t.action_type, t.created_at as timestamp, t.is_manual, 
         e.id as employee_id, e.first_name, e.last_name, e.avatar_path, e.job_title, e.employee_code,
         l.name as location_name
       FROM qrp_timesheets t
@@ -601,8 +601,12 @@ router.post('/:id/clock', async (req, res) => {
 // POST /api/tenants/:id/employees/:employeeId/close-shift
 router.post('/:id/employees/:employeeId/close-shift', async (req, res) => {
   try {
-    const { date, time } = req.body;
-    if (!date || !time) return res.status(400).json({ error: 'Date and time are required' });
+    const { date, time, timestamp } = req.body;
+    let finalTimestamp = timestamp;
+    if (!finalTimestamp) {
+      if (!date || !time) return res.status(400).json({ error: 'Date/time or timestamp are required' });
+      finalTimestamp = `${date} ${time}:00`;
+    }
 
     // Validate employee belongs to tenant
     const empResult = await pool.query('SELECT id FROM qrp_employees WHERE id = $1 AND tenant_id = $2', [req.params.employeeId, req.params.id]);
@@ -610,11 +614,9 @@ router.post('/:id/employees/:employeeId/close-shift', async (req, res) => {
       return res.status(404).json({ error: 'Angajat inexistent' });
     }
 
-    const timestamp = `${date} ${time}:00`;
-
     const insertQuery = `
-      INSERT INTO qrp_timesheets (tenant_id, employee_id, action_type, created_at)
-      VALUES ($1, $2, 'OUT', $3)
+      INSERT INTO qrp_timesheets (tenant_id, employee_id, action_type, created_at, is_manual)
+      VALUES ($1, $2, 'OUT', $3, true)
       RETURNING *
     `;
     const result = await pool.query(insertQuery, [req.params.id, req.params.employeeId, timestamp]);

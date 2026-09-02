@@ -52,6 +52,9 @@ export default function DashboardCharts({ tenant, themeColor }) {
       const token = localStorage.getItem('token');
       const apiUrl = `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}`;
       const dateToClose = closeShiftModal.date;      
+      
+      const localDateTime = new Date(`${dateToClose}T${closeShiftModal.time}:00`);
+
       const res = await fetch(`${apiUrl}/api/tenants/${tenant.id}/employees/${closeShiftModal.rowData.id}/close-shift`, {
         method: 'POST',
         headers: {
@@ -59,8 +62,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
           ...(token && { 'Authorization': `Bearer ${token}` })
         },
         body: JSON.stringify({
-          date: dateToClose,
-          time: closeShiftModal.time
+          timestamp: localDateTime.toISOString()
         })
       });
 

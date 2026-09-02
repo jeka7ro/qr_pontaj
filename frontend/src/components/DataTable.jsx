@@ -215,9 +215,7 @@ export default function DataTable({
         <div className="w-full">
           {/* Căutare */}
           <div className="relative w-full max-w-sm">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-5 w-5 text-slate-400" />
-            </div>
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-10" />
             <input
               type="text"
               placeholder={searchPlaceholder}
@@ -226,16 +224,15 @@ export default function DataTable({
                 setSearch(e.target.value);
                 setCurrentPage(1);
               }}
-              className="block w-full pl-10 pr-20 h-10 text-[16px] md:text-sm rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm"
+              className="block w-full h-10 text-[16px] md:text-sm rounded-full border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm"
+              style={{ paddingLeft: 36, paddingRight: search ? 80 : 16 }}
             />
             {/* Contor Rezultate */}
-            <div 
-              className={`absolute inset-y-0 right-2 flex items-center transition-opacity duration-200 pointer-events-none ${search.length > 0 ? 'opacity-100' : 'opacity-0'}`}
-            >
-              <span className="px-2.5 py-0.5 rounded-lg text-xs font-bold bg-primary-600 text-white shadow-sm">
-                {filteredData.length} din {data.length}
-              </span>
-            </div>
+            {search && (
+              <div className="absolute right-2.5 top-1/2 -translate-y-1/2 bg-primary-600 text-white rounded-full px-2.5 py-0.5 text-[11px] font-bold whitespace-nowrap">
+                {filteredData.length} / {data.length}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -260,8 +257,8 @@ export default function DataTable({
                   <th className="px-3 py-3 w-10"></th>
                 )}
               {/* Coloana Nr. Crt. */}
-              <th className="px-3 py-3 text-slate-800 dark:text-white dark:text-slate-300 text-sm font-bold uppercase tracking-wider w-14">
-                #
+              <th className="w-[50px] text-center px-3 py-3 text-slate-800 dark:text-white dark:text-slate-300 text-sm font-bold uppercase tracking-wider">
+                Nr.
               </th>
               
               {columns.map((col, idx) => (
@@ -310,7 +307,7 @@ export default function DataTable({
                           {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                         </td>
                       )}
-                      <td className="px-3 py-3 text-slate-800 dark:text-white dark:text-slate-200 font-medium text-sm">
+                      <td className="px-3 py-3 text-center text-slate-500 dark:text-slate-400 font-medium text-[13px]">
                         {startIndex + rowIndex + 1}
                       </td>
                       {columns.map((col, colIdx) => (
@@ -355,75 +352,46 @@ export default function DataTable({
       </div>
 
       {/* Footer / Paginare */}
-      <div className="px-6 py-4 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 dark:border-slate-700 flex flex-col md:flex-row items-center justify-between gap-4 rounded-b-2xl">
-        <div className="flex flex-wrap items-center gap-4">
-          {/* Rânduri pe pagină MUTAT EXTREMA STÂNGĂ */}
-          <div className="flex items-center space-x-2">
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 dark:text-slate-400">Rânduri/Pagină:</label>
+      <div className="px-5 py-3 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex flex-col md:flex-row items-center justify-between rounded-b-lg">
+        <div className="flex items-center gap-4 text-sm text-slate-600 dark:text-slate-300">
+          <span className="whitespace-nowrap flex items-center gap-1.5">
+            Afișează
             <select
               value={itemsPerPage}
               onChange={(e) => {
                 setItemsPerPage(Number(e.target.value));
                 setCurrentPage(1);
               }}
-              className="px-2 h-8 text-sm rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all cursor-pointer font-medium"
+              className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full px-2 py-0.5 outline-none focus:ring-1 focus:ring-primary-500"
             >
               <option value={10}>10</option>
+              <option value={15}>15</option>
               <option value={25}>25</option>
               <option value={50}>50</option>
-              <option value={100}>100</option>
+              <option value={9999}>Toți</option>
             </select>
-          </div>
-
-          {/* Textul Se afișează după selector */}
-          <div className="text-sm text-slate-600 dark:text-slate-300 dark:text-slate-400 font-medium border-l border-slate-200 dark:border-slate-700 dark:border-slate-700 pl-4">
-            Se afișează <span className="font-bold text-slate-900 dark:text-white dark:text-white">{totalItems === 0 ? 0 : startIndex + 1}</span>–<span className="font-bold text-slate-900 dark:text-white dark:text-white">{Math.min(startIndex + itemsPerPage, totalItems)}</span> din <span className="font-bold text-slate-900 dark:text-white dark:text-white">{totalItems}</span>
-          </div>
+          </span>
+          <span className="whitespace-nowrap">
+            Total înregistrări: <strong className="text-slate-900 dark:text-white">{totalItems}</strong>
+          </span>
         </div>
         
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+          <span className="whitespace-nowrap mr-2">Pagina {currentPage} din {Math.max(1, totalPages)}</span>
           <button
             onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
             disabled={currentPage === 1}
-            className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 dark:text-slate-400 hover:bg-primary-50 dark:hover:bg-slate-700 hover:text-primary-600 dark:hover:text-primary-400 transition-colors disabled:opacity-50 disabled:hover:bg-transparent disabled:cursor-not-allowed"
+            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-slate-600 dark:text-slate-300"
           >
-            <ChevronLeft size={16} />
+            <ChevronLeft className="w-4 h-4" />
           </button>
-          
-          <div className="flex items-center space-x-1">
-            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-              // Simulare paginare de bază (doar arată câteva pagini)
-              let pageNum = currentPage;
-              if (currentPage <= 3) pageNum = i + 1;
-              else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
-              else pageNum = currentPage - 2 + i;
-              
-              if (pageNum < 1 || pageNum > totalPages) return null;
-
-              return (
-                <button
-                  key={pageNum}
-                  onClick={() => setCurrentPage(pageNum)}
-                  className={`w-8 h-8 rounded-full text-sm font-bold transition-colors flex items-center justify-center ${
-                    currentPage === pageNum
-                      ? 'bg-primary-600 text-white shadow-sm'
-                      : 'text-slate-600 dark:text-slate-300 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700'
-                  }`}
-                >
-                  {pageNum}
-                </button>
-              );
-            })}
-          </div>
-
           <button
             onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
             disabled={currentPage === totalPages || totalPages === 0}
-            className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 dark:text-slate-400 hover:bg-primary-50 dark:hover:bg-slate-700 hover:text-primary-600 dark:hover:text-primary-400 transition-colors disabled:opacity-50 disabled:hover:bg-transparent disabled:cursor-not-allowed"
+            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-slate-600 dark:text-slate-300"
           >
-            <ChevronRight size={16} />
+            <ChevronRight className="w-4 h-4" />
           </button>
-        </div>
         </div>
       </div>
     </div>

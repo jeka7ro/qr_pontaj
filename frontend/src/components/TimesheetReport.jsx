@@ -95,6 +95,10 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
     try {
       const token = localStorage.getItem('token');
       const apiUrl = `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}`;
+      
+      // Fix timezone shifting issue
+      const localDateTime = new Date(`${closeShiftModal.date}T${closeShiftModal.time}:00`);
+      
       const res = await fetch(`${apiUrl}/api/tenants/${tenant.id}/employees/${closeShiftModal.rowData.employee_id}/close-shift`, {
         method: 'POST',
         headers: {
@@ -102,8 +106,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
           ...(token && { 'Authorization': `Bearer ${token}` })
         },
         body: JSON.stringify({
-          date: closeShiftModal.date,
-          time: closeShiftModal.time
+          timestamp: localDateTime.toISOString()
         })
       });
 
@@ -162,70 +165,116 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
   }, [timesheets, locationId, actionFilter, employeeId]);
 
   const groupedTimesheets = useMemo(() => {
-    const groups = {};
-    
+    // 1. Group strictly by employee_id first to pair IN and OUT chronologically
+    const empGroups = {};
     filteredTimesheets.forEach(t => {
-      // 1. Determine local date (YYYY-MM-DD)
-      const date = new Date(t.timestamp).toLocaleDateString('en-CA'); 
-      
-      const key = `${t.employee_id}_${date}`;
-      if (!groups[key]) {
-        groups[key] = {
-          id: key,
+      if (!empGroups[t.employee_id]) {
+        empGroups[t.employee_id] = {
           employee_id: t.employee_id,
           first_name: t.first_name,
           last_name: t.last_name,
           employee_code: t.employee_code,
           avatar_path: t.avatar_path,
-          date: date,
           raw_logs: []
         };
       }
-      groups[key].raw_logs.push(t);
+      empGroups[t.employee_id].raw_logs.push(t);
     });
 
-    // Post-process groups to calculate hours and first/last
-    return Object.values(groups).map(group => {
-      group.raw_logs.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+    // 2. Pair scans into intervals for each employee
+    const allIntervals = [];
+    Object.values(empGroups).forEach(emp => {
+      emp.raw_logs.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
       
-      group.first_in = group.raw_logs.find(l => l.action_type === 'IN');
-      group.last_out = [...group.raw_logs].reverse().find(l => l.action_type === 'OUT');
-      
-      let totalMs = 0;
       let lastIn = null;
-      let intervals = [];
-      for (const log of group.raw_logs) {
+      for (const log of emp.raw_logs) {
         if (log.action_type === 'IN') {
           if (lastIn) {
-            intervals.push({ in: lastIn, out: null });
+            // Missing out for previous IN
+            allIntervals.push({
+              employee: emp,
+              in_log: lastIn,
+              out_log: null
+            });
           }
-          lastIn = new Date(log.timestamp);
+          lastIn = log;
         } else if (log.action_type === 'OUT') {
           if (lastIn) {
-            totalMs += (new Date(log.timestamp) - lastIn);
-            intervals.push({ in: lastIn, out: new Date(log.timestamp) });
+            // Paired
+            allIntervals.push({
+              employee: emp,
+              in_log: lastIn,
+              out_log: log
+            });
             lastIn = null;
           } else {
-            intervals.push({ in: null, out: new Date(log.timestamp) });
+            // Missing in
+            allIntervals.push({
+              employee: emp,
+              in_log: null,
+              out_log: log
+            });
           }
         }
       }
-      
-      group.missing_out = false;
-      group.ongoing_ms = 0;
-
       if (lastIn) {
-        // Person checked in but didn't check out.
-        intervals.push({ in: lastIn, out: null });
-        const isToday = new Date().toLocaleDateString('en-CA') === group.date;
-        if (isToday) {
-          group.ongoing_ms = new Date() - lastIn;
-        } else {
-          group.missing_out = true;
-        }
+        allIntervals.push({
+          employee: emp,
+          in_log: lastIn,
+          out_log: null
+        });
+      }
+    });
+
+    // 3. Group intervals by Date (using the IN date, or OUT date if IN is missing)
+    const dateGroups = {};
+    allIntervals.forEach(interval => {
+      const refLog = interval.in_log || interval.out_log;
+      const date = new Date(refLog.timestamp).toLocaleDateString('en-CA');
+      const key = `${interval.employee.employee_id}_${date}`;
+      
+      if (!dateGroups[key]) {
+        dateGroups[key] = {
+          id: key,
+          employee_id: interval.employee.employee_id,
+          first_name: interval.employee.first_name,
+          last_name: interval.employee.last_name,
+          employee_code: interval.employee.employee_code,
+          avatar_path: interval.employee.avatar_path,
+          date: date,
+          intervals: [],
+          ongoing_ms: 0,
+          missing_out: false
+        };
       }
       
-      group.intervals = intervals;
+      const inTime = interval.in_log ? new Date(interval.in_log.timestamp) : null;
+      const outTime = interval.out_log ? new Date(interval.out_log.timestamp) : null;
+      
+      dateGroups[key].intervals.push({ 
+        in: inTime, 
+        out: outTime, 
+        raw_in: interval.in_log, 
+        raw_out: interval.out_log 
+      });
+    });
+
+    // 4. Calculate totals for each date group
+    return Object.values(dateGroups).map(group => {
+      let totalMs = 0;
+      
+      group.intervals.forEach(inv => {
+        if (inv.in && inv.out) {
+          totalMs += (inv.out - inv.in);
+        } else if (inv.in && !inv.out) {
+          const isToday = new Date().toLocaleDateString('en-CA') === group.date;
+          if (isToday) {
+            group.ongoing_ms += (new Date() - inv.in);
+          } else {
+            group.missing_out = true;
+          }
+        }
+      });
       
       const formatDuration = (ms) => {
         const h = Math.floor(ms / (1000 * 60 * 60));
@@ -241,7 +290,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
       }
       
       return group;
-    });
+    }).sort((a, b) => b.date.localeCompare(a.date));
   }, [filteredTimesheets]);
 
   const tableData = useMemo(() => {
@@ -279,7 +328,8 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
           total_time_ms: totalMs,
           total_time_str: totalMs > 0 ? formatDuration(totalMs) : '-',
           is_ongoing: ongoing_ms > 0,
-          missing_out: !interval.out && !ongoing_ms
+          missing_out: !interval.out && !isToday,
+          is_manual: interval.raw_out?.is_manual
         });
       });
     });
@@ -371,9 +421,14 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
             </span>
           )}
           {row.missing_out && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-red-100 text-red-700 text-[10px] font-bold">
-              ! LIPSEȘTE IEȘIREA
-            </span>
+            <button
+              onClick={() => setCloseShiftModal({ isOpen: true, rowData: row, date: row.date, time: '17:00' })}
+              className="flex items-center gap-1 mt-1 text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300 text-xs font-medium hover:underline transition-colors"
+              title="Apasă pentru a închide tura manual"
+            >
+              <AlertTriangle size={12} />
+              Închide manual
+            </button>
           )}
         </div>
       )
@@ -422,9 +477,17 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
           label: 'Ieșire',
           exportRender: (row) => row.out ? new Date(row.out).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' }) : '-',
           render: (row) => row.out ? (
-            <div className="flex items-center gap-1.5 text-blue-700 dark:text-blue-400 font-medium text-sm bg-blue-50 dark:bg-blue-900/30 px-2.5 py-1 rounded-lg w-fit">
-              <LogOut size={14} />
-              {new Date(row.out).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' })}
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-1.5 text-blue-700 dark:text-blue-400 font-medium text-sm bg-blue-50 dark:bg-blue-900/30 px-2.5 py-1 rounded-lg w-fit">
+                <LogOut size={14} />
+                {new Date(row.out).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' })}
+              </div>
+              {row.is_manual && (
+                <span className="text-[10px] text-orange-600 dark:text-orange-400 font-bold bg-orange-50 dark:bg-orange-900/30 px-1.5 py-0.5 rounded w-fit flex items-center gap-1">
+                  <AlertTriangle size={10} />
+                  Închis manual
+                </span>
+              )}
             </div>
           ) : <span className="text-slate-400">-</span>
         },
