@@ -50,7 +50,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
     
     try {
       const token = localStorage.getItem('token');
-      const apiUrl = `${import.meta.env.VITE_API_URL || ''}`;
+      const apiUrl = `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}`;
       const dateToClose = closeShiftModal.date;      
       const res = await fetch(`${apiUrl}/api/tenants/${tenant.id}/employees/${closeShiftModal.rowData.id}/close-shift`, {
         method: 'POST',
