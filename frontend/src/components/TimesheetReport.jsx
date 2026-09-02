@@ -10,7 +10,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
   const [locations, setLocations] = useState([]);
   const [locationId, setLocationId] = useState('all');
   
-  const [closeShiftModal, setCloseShiftModal] = useState({ isOpen: false, rowData: null, time: '17:00' });
+  const [closeShiftModal, setCloseShiftModal] = useState({ isOpen: false, rowData: null, date: '', time: '17:00' });
 
   // Utility function for formatting dates in local timezone to avoid UTC offset issues
   const formatDate = (date) => {
@@ -102,7 +102,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
           ...(token && { 'Authorization': `Bearer ${token}` })
         },
         body: JSON.stringify({
-          date: closeShiftModal.rowData.date,
+          date: closeShiftModal.date,
           time: closeShiftModal.time
         })
       });
@@ -112,7 +112,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
         throw new Error(errorData.error || 'Eroare la închiderea turei');
       }
 
-      setCloseShiftModal({ isOpen: false, rowData: null, time: '17:00' });
+      setCloseShiftModal({ isOpen: false, rowData: null, date: '', time: '17:00' });
       fetchTimesheets();
     } catch (err) {
       alert(err.message);
@@ -451,7 +451,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
               )}
               {row.missing_out && (
                 <button
-                  onClick={() => setCloseShiftModal({ isOpen: true, rowData: row, time: '17:00' })}
+                  onClick={() => setCloseShiftModal({ isOpen: true, rowData: row, date: row.date, time: '17:00' })}
                   className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-red-100 hover:bg-red-200 transition-colors text-red-700 text-[10px] font-bold cursor-pointer"
                   title="Apasă pentru a închide tura manual"
                 >
@@ -550,24 +550,34 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
           <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-sm shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
             <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
               <h3 className="font-bold text-lg text-slate-800 dark:text-white">Închide Tura Manual</h3>
-              <button onClick={() => setCloseShiftModal({ isOpen: false, rowData: null, time: '17:00' })} className="text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors">
+              <button onClick={() => setCloseShiftModal({ isOpen: false, rowData: null, date: '', time: '17:00' })} className="text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors">
                 <X size={20} />
               </button>
             </div>
             <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Ora ieșirii</label>
-                <input
-                  type="time"
-                  value={closeShiftModal.time}
-                  onChange={(e) => setCloseShiftModal({ ...closeShiftModal, time: e.target.value })}
-                  className="w-full px-4 h-12 rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium"
-                />
-                <p className="text-xs text-slate-500 mt-2">Data pontajului: {closeShiftModal.rowData?.date}</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Data ieșirii</label>
+                  <input
+                    type="date"
+                    value={closeShiftModal.date}
+                    onChange={(e) => setCloseShiftModal({ ...closeShiftModal, date: e.target.value })}
+                    className="w-full px-4 h-12 rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Ora ieșirii</label>
+                  <input
+                    type="time"
+                    value={closeShiftModal.time}
+                    onChange={(e) => setCloseShiftModal({ ...closeShiftModal, time: e.target.value })}
+                    className="w-full px-4 h-12 rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium"
+                  />
+                </div>
               </div>
               <div className="pt-4 flex gap-3">
                 <button
-                  onClick={() => setCloseShiftModal({ isOpen: false, rowData: null, time: '17:00' })}
+                  onClick={() => setCloseShiftModal({ isOpen: false, rowData: null, date: '', time: '17:00' })}
                   className="flex-1 px-5 h-12 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold transition-colors"
                 >
                   Anulează

@@ -16,7 +16,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
   const [liveShifts, setLiveShifts] = useState([]);
   const [liveLoading, setLiveLoading] = useState(true);
 
-  const [closeShiftModal, setCloseShiftModal] = useState({ isOpen: false, rowData: null, time: '17:00' });
+  const [closeShiftModal, setCloseShiftModal] = useState({ isOpen: false, rowData: null, date: '', time: '17:00' });
 
   const [drillLevel, setDrillLevel] = useState('root');
   const [drillParentName, setDrillParentName] = useState('');
@@ -51,10 +51,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
     try {
       const token = localStorage.getItem('token');
       const apiUrl = `${import.meta.env.VITE_API_URL || ''}`;
-      // In Dashboard, emp id is rowData.id. The date we want to close is the presence date.
-      const presenceDateStr = closeShiftModal.rowData.first_in_today || closeShiftModal.rowData.absolute_last_scan;
-      const dateToClose = presenceDateStr ? new Date(presenceDateStr).toLocaleDateString('en-CA') : new Date().toLocaleDateString('en-CA');
-      
+      const dateToClose = closeShiftModal.date;      
       const res = await fetch(`${apiUrl}/api/tenants/${tenant.id}/employees/${closeShiftModal.rowData.id}/close-shift`, {
         method: 'POST',
         headers: {
@@ -72,7 +69,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
         throw new Error(errorData.error || 'Eroare la închiderea turei');
       }
 
-      setCloseShiftModal({ isOpen: false, rowData: null, time: '17:00' });
+      setCloseShiftModal({ isOpen: false, rowData: null, date: '', time: '17:00' });
       fetchLive(); // reload live data
     } catch (err) {
       alert(err.message);
@@ -377,7 +374,11 @@ export default function DashboardCharts({ tenant, themeColor }) {
                 isPresent={emp.current_status === 'IN'} 
                 isOut={emp.current_status === 'OUT'} 
                 hasHistory={true} 
-                onOpenCloseShift={(e) => setCloseShiftModal({ isOpen: true, rowData: e, time: '17:00' })}
+                onOpenCloseShift={(e) => {
+                  const presenceDateStr = e.first_in_today || e.absolute_last_scan;
+                  const initialDate = presenceDateStr ? new Date(presenceDateStr).toLocaleDateString('en-CA') : new Date().toLocaleDateString('en-CA');
+                  setCloseShiftModal({ isOpen: true, rowData: e, date: initialDate, time: '17:00' });
+                }}
               />
             )) : (
                     <tr>
@@ -396,24 +397,34 @@ export default function DashboardCharts({ tenant, themeColor }) {
           <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-sm shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
             <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
               <h3 className="font-bold text-lg text-slate-800 dark:text-white">Închide Tura Manual</h3>
-              <button onClick={() => setCloseShiftModal({ isOpen: false, rowData: null, time: '17:00' })} className="text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors">
+              <button onClick={() => setCloseShiftModal({ isOpen: false, rowData: null, date: '', time: '17:00' })} className="text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors">
                 <X size={20} />
               </button>
             </div>
             <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Ora ieșirii</label>
-                <input
-                  type="time"
-                  value={closeShiftModal.time}
-                  onChange={(e) => setCloseShiftModal({ ...closeShiftModal, time: e.target.value })}
-                  className="w-full px-4 h-12 rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium"
-                />
-                <p className="text-xs text-slate-500 mt-2">Data pontajului: {(closeShiftModal.rowData?.first_in_today || closeShiftModal.rowData?.absolute_last_scan) ? new Date(closeShiftModal.rowData.first_in_today || closeShiftModal.rowData.absolute_last_scan).toLocaleDateString('ro-RO') : '-'}</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Data ieșirii</label>
+                  <input
+                    type="date"
+                    value={closeShiftModal.date}
+                    onChange={(e) => setCloseShiftModal({ ...closeShiftModal, date: e.target.value })}
+                    className="w-full px-4 h-12 rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Ora ieșirii</label>
+                  <input
+                    type="time"
+                    value={closeShiftModal.time}
+                    onChange={(e) => setCloseShiftModal({ ...closeShiftModal, time: e.target.value })}
+                    className="w-full px-4 h-12 rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium"
+                  />
+                </div>
               </div>
               <div className="pt-4 flex gap-3">
                 <button
-                  onClick={() => setCloseShiftModal({ isOpen: false, rowData: null, time: '17:00' })}
+                  onClick={() => setCloseShiftModal({ isOpen: false, rowData: null, date: '', time: '17:00' })}
                   className="flex-1 px-5 h-12 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold transition-colors"
                 >
                   Anulează
