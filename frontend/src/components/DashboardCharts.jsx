@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Clock, LogIn, LogOut, MapPin, UserMinus } from 'lucide-react';
+import { Users, Clock, LogIn, LogOut, MapPin, UserMinus, X } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 
 export default function DashboardCharts({ tenant, themeColor }) {
@@ -16,31 +16,68 @@ export default function DashboardCharts({ tenant, themeColor }) {
   const [liveShifts, setLiveShifts] = useState([]);
   const [liveLoading, setLiveLoading] = useState(true);
 
+  const [closeShiftModal, setCloseShiftModal] = useState({ isOpen: false, rowData: null, time: '17:00' });
+
   const [drillLevel, setDrillLevel] = useState('root');
   const [drillParentName, setDrillParentName] = useState('');
   const [activeDonutData, setActiveDonutData] = useState([]);
 
-  useEffect(() => {
-    const fetchLive = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const res = await fetch(`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenant/dashboard/live`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setLiveShifts(data);
-        }
-      } catch (err) {
-        console.error('Error fetching live shifts', err);
-      } finally {
-        setLiveLoading(false);
+  const fetchLive = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenant/dashboard/live`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setLiveShifts(data);
       }
-    };
+    } catch (err) {
+      console.error('Error fetching live shifts', err);
+    } finally {
+      setLiveLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchLive();
     const interval = setInterval(fetchLive, 3000);
     return () => clearInterval(interval);
   }, []);
+
+  const handleCloseShift = async () => {
+    if (!closeShiftModal.rowData || !closeShiftModal.time) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      const apiUrl = `${import.meta.env.VITE_API_URL || ''}`;
+      // In Dashboard, emp id is rowData.id. The date we want to close is the presence date.
+      const presenceDateStr = closeShiftModal.rowData.first_in_today || closeShiftModal.rowData.absolute_last_scan;
+      const dateToClose = presenceDateStr ? new Date(presenceDateStr).toLocaleDateString('en-CA') : new Date().toLocaleDateString('en-CA');
+      
+      const res = await fetch(`${apiUrl}/api/tenants/${tenant.id}/employees/${closeShiftModal.rowData.id}/close-shift`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` })
+        },
+        body: JSON.stringify({
+          date: dateToClose,
+          time: closeShiftModal.time
+        })
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Eroare la închiderea turei');
+      }
+
+      setCloseShiftModal({ isOpen: false, rowData: null, time: '17:00' });
+      fetchLive(); // reload live data
+    } catch (err) {
+      alert(err.message);
+    }
+  };
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -333,13 +370,16 @@ export default function DashboardCharts({ tenant, themeColor }) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {liveShifts.length > 0 ? liveShifts.map((emp) => {
-                    const isPresent = emp.current_status === 'IN';
-                    const isOut = emp.current_status === 'OUT';
-                    const hasHistory = isPresent || isOut;
-                    
-                    return <LiveShiftRow key={emp.id} emp={emp} isPresent={isPresent} isOut={isOut} hasHistory={hasHistory} />;
-                  }) : (
+                  {liveShifts.length > 0 ? liveShifts.map((emp) => (
+              <LiveShiftRow 
+                key={emp.id} 
+                emp={emp} 
+                isPresent={emp.current_status === 'IN'} 
+                isOut={emp.current_status === 'OUT'} 
+                hasHistory={true} 
+                onOpenCloseShift={(e) => setCloseShiftModal({ isOpen: true, rowData: e, time: '17:00' })}
+              />
+            )) : (
                     <tr>
                       <td colSpan="3" className="px-6 py-8 text-center text-slate-500">Nu există date pentru ziua de azi.</td>
                     </tr>
@@ -350,11 +390,51 @@ export default function DashboardCharts({ tenant, themeColor }) {
           )}
         </div>
       </div>
+
+      {closeShiftModal.isOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-sm shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+            <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+              <h3 className="font-bold text-lg text-slate-800 dark:text-white">Închide Tura Manual</h3>
+              <button onClick={() => setCloseShiftModal({ isOpen: false, rowData: null, time: '17:00' })} className="text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Ora ieșirii</label>
+                <input
+                  type="time"
+                  value={closeShiftModal.time}
+                  onChange={(e) => setCloseShiftModal({ ...closeShiftModal, time: e.target.value })}
+                  className="w-full px-4 h-12 rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium"
+                />
+                <p className="text-xs text-slate-500 mt-2">Data pontajului: {(closeShiftModal.rowData?.first_in_today || closeShiftModal.rowData?.absolute_last_scan) ? new Date(closeShiftModal.rowData.first_in_today || closeShiftModal.rowData.absolute_last_scan).toLocaleDateString('ro-RO') : '-'}</p>
+              </div>
+              <div className="pt-4 flex gap-3">
+                <button
+                  onClick={() => setCloseShiftModal({ isOpen: false, rowData: null, time: '17:00' })}
+                  className="flex-1 px-5 h-12 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold transition-colors"
+                >
+                  Anulează
+                </button>
+                <button
+                  onClick={handleCloseShift}
+                  className="flex-1 px-5 h-12 rounded-xl text-white font-bold shadow-sm transition-all"
+                  style={{ backgroundColor: themeColor }}
+                >
+                  Salvează
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-function LiveShiftRow({ emp, isPresent, isOut, hasHistory }) {
+function LiveShiftRow({ emp, isPresent, isOut, hasHistory, onOpenCloseShift }) {
   const [now, setNow] = useState(new Date());
 
   useEffect(() => {
@@ -376,7 +456,13 @@ function LiveShiftRow({ emp, isPresent, isOut, hasHistory }) {
     );
   }
 
-  if (hasHistory && emp.first_in_today) {
+  const presenceDateStr = emp.first_in_today || emp.absolute_last_scan;
+  const presenceDate = presenceDateStr ? new Date(presenceDateStr) : null;
+  const isToday = presenceDate ? (presenceDate.getDate() === now.getDate() && presenceDate.getMonth() === now.getMonth() && presenceDate.getFullYear() === now.getFullYear()) : false;
+  
+  const isMissingOut = isPresent && !isToday;
+
+  if (hasHistory && emp.first_in_today && !isMissingOut) {
     const inTime = new Date(emp.first_in_today);
     const endTime = isOut && emp.last_scan_time ? new Date(emp.last_scan_time) : now;
     const diffMs = endTime - inTime;
@@ -434,11 +520,7 @@ function LiveShiftRow({ emp, isPresent, isOut, hasHistory }) {
   }
 
   let lastSeenNode = <span className="text-slate-400">-</span>;
-  const presenceDateStr = emp.first_in_today || emp.absolute_last_scan;
-  if (presenceDateStr) {
-    const presenceDate = new Date(presenceDateStr);
-    const isToday = presenceDate.getDate() === now.getDate() && presenceDate.getMonth() === now.getMonth() && presenceDate.getFullYear() === now.getFullYear();
-    
+  if (presenceDate) {
     if (isToday) {
       lastSeenNode = <span className="text-slate-700 font-medium text-sm">Azi, {presenceDate.toLocaleTimeString('ro-RO', {hour: '2-digit', minute:'2-digit'})}</span>;
     } else {
@@ -463,7 +545,15 @@ function LiveShiftRow({ emp, isPresent, isOut, hasHistory }) {
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          {isPresent ? (
+                          {isMissingOut ? (
+                            <button
+                              onClick={() => onOpenCloseShift(emp)}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-red-100 hover:bg-red-200 transition-colors text-red-700 text-[10px] font-bold cursor-pointer"
+                              title="Apasă pentru a închide tura manual"
+                            >
+                              ! LIPSEȘTE IEȘIREA
+                            </button>
+                          ) : isPresent ? (
                             <div className="text-emerald-600 font-medium text-sm flex items-center gap-1.5">
                               <LogIn className="text-emerald-500" size={16} />
                               ÎN TURĂ
