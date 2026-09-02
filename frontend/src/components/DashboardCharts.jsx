@@ -469,14 +469,14 @@ function LiveShiftRow({ emp, isPresent, isOut, hasHistory, onOpenCloseShift }) {
     );
   }
 
-  const presenceDateStr = emp.first_in_today || emp.absolute_last_scan;
+  const presenceDateStr = emp.last_in_time || emp.absolute_last_scan;
   const presenceDate = presenceDateStr ? new Date(presenceDateStr) : null;
   const isToday = presenceDate ? (presenceDate.getDate() === now.getDate() && presenceDate.getMonth() === now.getMonth() && presenceDate.getFullYear() === now.getFullYear()) : false;
   
   const isMissingOut = isPresent && !isToday;
 
-  if (hasHistory && emp.first_in_today && !isMissingOut) {
-    const inTime = new Date(emp.first_in_today);
+  if (hasHistory && emp.last_in_time && !isMissingOut) {
+    const inTime = new Date(emp.last_in_time);
     const endTime = isOut && emp.last_scan_time ? new Date(emp.last_scan_time) : now;
     const diffMs = endTime - inTime;
     
@@ -573,9 +573,17 @@ function LiveShiftRow({ emp, isPresent, isOut, hasHistory, onOpenCloseShift }) {
                               ÎN TURĂ
                             </div>
                           ) : isOut ? (
-                            <div className="text-slate-700 font-medium text-sm flex items-center gap-1.5">
-                              <LogOut className="text-slate-400" size={16} />
-                              PLECAT
+                            <div className="flex flex-col gap-1 items-start">
+                              <div className="text-slate-700 font-medium text-sm flex items-center gap-1.5">
+                                <LogOut className="text-slate-400" size={16} />
+                                PLECAT
+                              </div>
+                              {emp.current_is_manual && (
+                                <span className="text-[10px] text-orange-600 dark:text-orange-400 font-bold bg-orange-50 dark:bg-orange-900/30 px-1.5 py-0.5 rounded flex items-center gap-1">
+                                  <AlertTriangle size={10} />
+                                  Închis manual
+                                </span>
+                              )}
                             </div>
                           ) : (
                             <div className="text-slate-400 font-medium text-sm flex items-center gap-1.5">

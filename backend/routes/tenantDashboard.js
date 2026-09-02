@@ -62,7 +62,8 @@ router.get('/live', async (req, res) => {
     const query = `
       SELECT e.id, e.first_name, e.last_name, e.avatar_path,
              COALESCE((SELECT action_type FROM qrp_timesheets WHERE employee_id = e.id ORDER BY created_at DESC LIMIT 1), 'OUT') as current_status,
-             (SELECT MIN(created_at) FROM qrp_timesheets WHERE employee_id = e.id AND action_type = 'IN' AND (created_at AT TIME ZONE 'Europe/Bucharest')::date = (CURRENT_TIMESTAMP AT TIME ZONE 'Europe/Bucharest')::date) as first_in_today,
+             (SELECT is_manual FROM qrp_timesheets WHERE employee_id = e.id ORDER BY created_at DESC LIMIT 1) as current_is_manual,
+             (SELECT created_at FROM qrp_timesheets WHERE employee_id = e.id AND action_type = 'IN' ORDER BY created_at DESC LIMIT 1) as last_in_time,
              (SELECT MAX(created_at) FROM qrp_timesheets WHERE employee_id = e.id AND action_type = 'OUT' AND (created_at AT TIME ZONE 'Europe/Bucharest')::date = (CURRENT_TIMESTAMP AT TIME ZONE 'Europe/Bucharest')::date) as last_scan_time,
              (SELECT MAX(created_at) FROM qrp_timesheets WHERE employee_id = e.id) as absolute_last_scan,
              (SELECT s.name FROM qrp_sites s JOIN qrp_timesheets t ON t.site_id = s.id WHERE t.employee_id = e.id AND t.action_type = 'IN' ORDER BY t.created_at DESC LIMIT 1) as site_name,
