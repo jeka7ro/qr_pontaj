@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Clock, Calendar as CalendarIcon, User } from 'lucide-react';
 
-export default function CreateShiftModal({ onClose, onShiftCreated, tenantId, employees, selectedDate, themeColor, initialData }) {
+export default function CreateShiftModal({ onClose, onShiftCreated, tenantId, employees, selectedDate, themeColor, initialData, isEdit, pendingChangeRequest }) {
   const [formData, setFormData] = useState({
     employee_id: initialData?.employee_id || '',
     date: selectedDate ? new Date(selectedDate.getTime() - selectedDate.getTimezoneOffset() * 60000).toISOString().split('T')[0] : new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0],
@@ -10,6 +10,18 @@ export default function CreateShiftModal({ onClose, onShiftCreated, tenantId, em
     shift_type: initialData?.shift_type || 'DAY',
     notes: initialData?.notes || ''
   });
+  
+  // Dacă este edit, suprascriem data dacă a venit din initialData (ca să nu mai ținem cont de timezone offset care schimbă ziua la editare)
+  useEffect(() => {
+    if (isEdit && initialData?.date) {
+      const dateObj = new Date(initialData.date);
+      const yyyy = dateObj.getFullYear();
+      const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const dd = String(dateObj.getDate()).padStart(2, '0');
+      setFormData(prev => ({ ...prev, date: `${yyyy}-${mm}-${dd}` }));
+    }
+  }, [isEdit, initialData]);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   
@@ -23,8 +35,12 @@ export default function CreateShiftModal({ onClose, onShiftCreated, tenantId, em
     setError(null);
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenants/${tenantId}/shifts`, {
-        method: 'POST',
+      const url = isEdit 
+        ? `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenants/${tenantId}/shifts/${initialData.id}`
+        : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenants/${tenantId}/shifts`;
+        
+      const response = await fetch(url, {
+        method: isEdit ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       });
@@ -32,6 +48,15 @@ export default function CreateShiftModal({ onClose, onShiftCreated, tenantId, em
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.error || 'Eroare la salvarea turei');
+      }
+
+      // Approve pending change request if present
+      if (pendingChangeRequest) {
+        await fetch(`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenants/${tenantId}/leaves/${pendingChangeRequest.id}/status`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'APPROVED' })
+        }).catch(err => console.error("Eroare la aprobarea cererii de modificare:", err));
       }
 
       onShiftCreated();
@@ -48,7 +73,7 @@ export default function CreateShiftModal({ onClose, onShiftCreated, tenantId, em
         <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
           <h2 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
             <Clock size={20} style={{ color: themeColor }} />
-            {initialData ? 'Duplică Tura' : 'Adaugă Tură Nouă'}
+            {isEdit ? 'Editează Tura' : initialData ? 'Duplică Tura' : 'Adaugă Tură Nouă'}
           </h2>
           <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
             <X size={20} />
@@ -56,6 +81,12 @@ export default function CreateShiftModal({ onClose, onShiftCreated, tenantId, em
         </div>
 
         <div className="p-6">
+          {pendingChangeRequest && (
+            <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg text-amber-800 dark:text-amber-300 text-sm flex items-start gap-2">
+              <span className="font-bold shrink-0">Cerere modificare:</span>
+              <span className="italic">{pendingChangeRequest.reason}</span>
+            </div>
+          )}
           {error && (
             <div className="mb-6 p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm rounded-lg border border-red-100 dark:border-red-900/30">
               {error}

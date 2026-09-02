@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, Users, Plus, ChevronLeft, ChevronRight, Trash2, Info, MapPin, Copy } from 'lucide-react';
+import { Calendar, Clock, Users, Plus, ChevronLeft, ChevronRight, Trash2, Info, MapPin, Copy, Edit2 } from 'lucide-react';
 import CreateShiftModal from '../../../components/CreateShiftModal';
 import ConfirmModal from '../../../components/ConfirmModal';
 
@@ -12,6 +12,9 @@ export default function ShiftsModule({ tenant, themeColor }) {
   const [selectedDateForModal, setSelectedDateForModal] = useState(null);
   const [duplicateShiftData, setDuplicateShiftData] = useState(null);
   const [shiftToDelete, setShiftToDelete] = useState(null);
+  const [shiftChanges, setShiftChanges] = useState([]);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [pendingChangeRequestForModal, setPendingChangeRequestForModal] = useState(null);
 
   const getStartOfWeek = (date) => {
     const d = new Date(date);
@@ -41,13 +44,18 @@ export default function ShiftsModule({ tenant, themeColor }) {
       const endD = String(weekDays[6].getDate()).padStart(2, '0');
       const endStr = `${endY}-${endM}-${endD}`;
 
-      const [empRes, shiftsRes] = await Promise.all([
+      const [empRes, shiftsRes, leavesRes] = await Promise.all([
         fetch(`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenants/${tenant.id}/employees`),
-        fetch(`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenants/${tenant.id}/shifts?start_date=${startStr}&end_date=${endStr}`)
+        fetch(`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenants/${tenant.id}/shifts?start_date=${startStr}&end_date=${endStr}`),
+        fetch(`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenants/${tenant.id}/leaves`)
       ]);
 
       if (empRes.ok) setEmployees(await empRes.json());
       if (shiftsRes.ok) setShifts(await shiftsRes.json());
+      if (leavesRes.ok) {
+        const leaves = await leavesRes.json();
+        setShiftChanges(leaves.filter(l => l.leave_type === 'SHIFT_CHANGE' && l.status === 'PENDING'));
+      }
     } catch (err) {
       console.error('Eroare încărcare ture:', err);
     } finally {
@@ -91,9 +99,11 @@ export default function ShiftsModule({ tenant, themeColor }) {
     }
   };
 
-  const openNewShift = (date = null, initialData = null) => {
+  const openNewShift = (date = null, initialData = null, isEdit = false, pendingChange = null) => {
     setSelectedDateForModal(date);
     setDuplicateShiftData(initialData);
+    setIsEditMode(isEdit);
+    setPendingChangeRequestForModal(pendingChange);
     setIsModalOpen(true);
   };
 
@@ -235,7 +245,10 @@ export default function ShiftsModule({ tenant, themeColor }) {
                         className={`p-2 border-r border-slate-100 dark:border-slate-800 last:border-r-0 min-h-[100px] relative group cursor-pointer transition-colors ${isToday ? 'bg-primary-50/10 dark:bg-primary-900/10' : ''} hover:bg-slate-50 dark:hover:bg-slate-800/50`}
                         onClick={() => !isEmpty && openNewShift(day)}
                       >
-                        {dayShifts.map(shift => (
+                        {dayShifts.map(shift => {
+                          const pendingChange = shiftChanges.find(l => l.employee_id === shift.employee_id && new Date(l.start_date).toDateString() === new Date(shift.date).toDateString());
+                          
+                          return (
                           <div 
                             key={shift.id} 
                             onClick={(e) => {
@@ -246,6 +259,11 @@ export default function ShiftsModule({ tenant, themeColor }) {
                               bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700
                             `}
                           >
+                            {pendingChange && (
+                              <div className="absolute -top-1.5 -right-1.5 bg-amber-500 text-white p-1 rounded-full shadow-md z-10" title={`Cerere modificare: ${pendingChange.reason}`}>
+                                <Info size={12} />
+                              </div>
+                            )}
                             <div className="flex flex-col items-center justify-center gap-1 min-w-0 relative">
                               <div className="font-black text-slate-800 dark:text-slate-200 text-[11px] tracking-tight">
                                 {shift.start_time.substring(0,5)}
@@ -278,7 +296,14 @@ export default function ShiftsModule({ tenant, themeColor }) {
                               {!isEmpty && (
                                 <div className="absolute inset-0 flex items-center justify-center gap-2 opacity-0 group-hover/shift:opacity-100 transition-all bg-white/90 dark:bg-slate-800/90 backdrop-blur-[1px] rounded-lg">
                                   <button 
-                                    onClick={(e) => { e.stopPropagation(); openNewShift(null, shift); }}
+                                    onClick={(e) => { e.stopPropagation(); openNewShift(null, shift, true, pendingChange); }}
+                                    className="text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-full p-1.5 transition-all shadow-sm bg-white dark:bg-slate-800"
+                                    title="Editează tura"
+                                  >
+                                    <Edit2 size={14} />
+                                  </button>
+                                  <button 
+                                    onClick={(e) => { e.stopPropagation(); openNewShift(null, shift, false); }}
                                     className="text-slate-400 hover:text-primary-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full p-1.5 transition-all shadow-sm bg-white dark:bg-slate-800"
                                     title="Duplică tura"
                                   >
@@ -302,7 +327,7 @@ export default function ShiftsModule({ tenant, themeColor }) {
                               </div>
                             )}
                           </div>
-                        ))}
+                        )})}
                         
                         {/* Hover Add Button */}
                         {!isEmpty && dayShifts.length === 0 && (
@@ -322,17 +347,16 @@ export default function ShiftsModule({ tenant, themeColor }) {
         </div>
       </div>
 
-      {isModalOpen && !isEmpty && (
+      {isModalOpen && (
         <CreateShiftModal
           tenantId={tenant.id}
           employees={employees}
           selectedDate={selectedDateForModal}
-          themeColor={themeColor}
           initialData={duplicateShiftData}
-          onClose={() => {
-            setIsModalOpen(false);
-            setDuplicateShiftData(null);
-          }}
+          isEdit={isEditMode}
+          pendingChangeRequest={pendingChangeRequestForModal}
+          themeColor={themeColor}
+          onClose={() => setIsModalOpen(false)}
           onShiftCreated={() => {
             setIsModalOpen(false);
             setDuplicateShiftData(null);

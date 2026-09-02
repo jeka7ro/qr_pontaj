@@ -152,6 +152,8 @@ export default function LeavesModule({ tenant, themeColor }) {
 
   // Pagination & Filtering Logic
   const filteredLeaves = leaves.filter(leave => {
+    if (leave.leave_type === 'SHIFT_CHANGE') return false;
+
     let matches = true;
     if (search) {
       const s = search.toLowerCase();
@@ -173,9 +175,9 @@ export default function LeavesModule({ tenant, themeColor }) {
   const handleExport = () => {
     let csv = "ID,Nume Angajat,Tip Concediu,De La,Pana La,Status\n";
     filteredLeaves.forEach(l => {
-      const type = l.leave_type === 'CO' ? 'Odihna (CO)' : l.leave_type === 'CM' ? 'Medical (CM)' : 'Invoire';
+      const type = l.leave_type === 'CO' ? 'Odihna (CO)' : l.leave_type === 'CM' ? 'Medical (CM)' : l.leave_type === 'SHIFT_CHANGE' ? 'Modificare Tura' : 'Invoire';
       const status = l.status === 'PENDING' ? 'In Asteptare' : l.status === 'APPROVED' ? 'Aprobat' : 'Respins';
-      csv += `${l.id},"${l.employee_name || ''}",${type},${new Date(l.start_date).toLocaleDateString('ro-RO')},${new Date(l.end_date).toLocaleDateString('ro-RO')},${status}\n`;
+      csv += `${l.id},"${l.employee_name || ''}",${type},${new Date(l.start_date).toLocaleDateString('ro-RO')},${new Date(l.end_date).toLocaleDateString('ro-RO')},${status},"${l.reason || ''}"\n`;
     });
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -311,9 +313,14 @@ export default function LeavesModule({ tenant, themeColor }) {
                       </div>
                     </td>
                     <td className="py-3 px-4">
-                      <span className="text-sm font-bold text-slate-700 dark:text-slate-300">
-                        {leave.leave_type === 'CO' ? 'Odihnă (CO)' : leave.leave_type === 'CM' ? 'Medical (CM)' : 'Învoire'}
+                      <span className={`text-sm font-bold ${leave.leave_type === 'SHIFT_CHANGE' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-300'}`}>
+                        {leave.leave_type === 'CO' ? 'Odihnă (CO)' : leave.leave_type === 'CM' ? 'Medical (CM)' : leave.leave_type === 'SHIFT_CHANGE' ? 'Modificare Tură' : 'Învoire'}
                       </span>
+                      {leave.reason && (
+                        <p className="text-xs text-slate-500 mt-1 max-w-[200px] truncate" title={leave.reason}>
+                          {leave.reason}
+                        </p>
+                      )}
                     </td>
                     <td className="py-3 px-4">
                       <div className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-1.5">

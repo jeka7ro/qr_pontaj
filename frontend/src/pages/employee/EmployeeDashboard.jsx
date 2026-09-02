@@ -10,8 +10,9 @@ export default function EmployeeDashboard() {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  // Pentru navigare prin saptamani
+  // Pentru navigare prin saptamani/luni
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [viewMode, setViewMode] = useState('list'); // 'list' | 'calendar'
   
   const [activeTab, setActiveTab] = useState('schedule');
   const [dynamicTs, setDynamicTs] = useState(Math.floor(Date.now() / 10000) * 10);
@@ -57,17 +58,32 @@ export default function EmployeeDashboard() {
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [currentDate, navigate]);
 
-  const fetchShifts = async (token, date, isBackground = false) => {
+  const fetchShifts = async (token, date, isBackground = false, mode = viewMode) => {
     if (!isBackground) setLoading(true);
     try {
-      // Calculăm start și end pentru săptămâna curentă selectată
-      const curr = new Date(date);
-      const first = curr.getDate() - curr.getDay() + (curr.getDay() === 0 ? -6 : 1); 
-      const start = new Date(curr.setDate(first));
-      const end = new Date(curr.setDate(start.getDate() + 6));
+      let startStr, endStr;
+      
+      if (mode === 'calendar') {
+        const curr = new Date(date);
+        const start = new Date(curr.getFullYear(), curr.getMonth(), 1);
+        const firstDayOfWeek = start.getDay() === 0 ? 6 : start.getDay() - 1;
+        start.setDate(start.getDate() - firstDayOfWeek);
+        
+        const end = new Date(curr.getFullYear(), curr.getMonth() + 1, 0);
+        const lastDayOfWeek = end.getDay() === 0 ? 6 : end.getDay() - 1;
+        end.setDate(end.getDate() + (6 - lastDayOfWeek));
+        
+        startStr = `${start.getFullYear()}-${String(start.getMonth()+1).padStart(2,'0')}-${String(start.getDate()).padStart(2,'0')}`;
+        endStr = `${end.getFullYear()}-${String(end.getMonth()+1).padStart(2,'0')}-${String(end.getDate()).padStart(2,'0')}`;
+      } else {
+        const curr = new Date(date);
+        const first = curr.getDate() - curr.getDay() + (curr.getDay() === 0 ? -6 : 1); 
+        const start = new Date(curr.setDate(first));
+        const end = new Date(curr.setDate(start.getDate() + 6));
 
-      const startStr = `${start.getFullYear()}-${String(start.getMonth()+1).padStart(2,'0')}-${String(start.getDate()).padStart(2,'0')}`;
-      const endStr = `${end.getFullYear()}-${String(end.getMonth()+1).padStart(2,'0')}-${String(end.getDate()).padStart(2,'0')}`;
+        startStr = `${start.getFullYear()}-${String(start.getMonth()+1).padStart(2,'0')}-${String(start.getDate()).padStart(2,'0')}`;
+        endStr = `${end.getFullYear()}-${String(end.getMonth()+1).padStart(2,'0')}-${String(end.getDate()).padStart(2,'0')}`;
+      }
 
       const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
       const res = await fetch(`${baseUrl}/api/employee/shifts?start_date=${startStr}&end_date=${endStr}&_t=${Date.now()}`, {
@@ -102,15 +118,23 @@ export default function EmployeeDashboard() {
     navigate('/');
   };
 
-  const prevWeek = () => {
+  const prevPeriod = () => {
     const newDate = new Date(currentDate);
-    newDate.setDate(currentDate.getDate() - 7);
+    if (viewMode === 'calendar') {
+      newDate.setMonth(currentDate.getMonth() - 1);
+    } else {
+      newDate.setDate(currentDate.getDate() - 7);
+    }
     setCurrentDate(newDate);
   };
 
-  const nextWeek = () => {
+  const nextPeriod = () => {
     const newDate = new Date(currentDate);
-    newDate.setDate(currentDate.getDate() + 7);
+    if (viewMode === 'calendar') {
+      newDate.setMonth(currentDate.getMonth() + 1);
+    } else {
+      newDate.setDate(currentDate.getDate() + 7);
+    }
     setCurrentDate(newDate);
   };
 
@@ -131,7 +155,27 @@ export default function EmployeeDashboard() {
     return days;
   };
 
+  const getCalendarDays = () => {
+    const curr = new Date(currentDate);
+    const start = new Date(curr.getFullYear(), curr.getMonth(), 1);
+    const firstDayOfWeek = start.getDay() === 0 ? 6 : start.getDay() - 1;
+    start.setDate(start.getDate() - firstDayOfWeek);
+    
+    const end = new Date(curr.getFullYear(), curr.getMonth() + 1, 0);
+    const lastDayOfWeek = end.getDay() === 0 ? 6 : end.getDay() - 1;
+    end.setDate(end.getDate() + (6 - lastDayOfWeek));
+    
+    const days = [];
+    let current = new Date(start);
+    while (current <= end) {
+      days.push(new Date(current));
+      current.setDate(current.getDate() + 1);
+    }
+    return days;
+  };
+
   const weekDays = getWeekDays();
+  const calendarDays = getCalendarDays();
 
   const getShiftForDate = (date) => {
     const dateStr = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
@@ -146,7 +190,11 @@ export default function EmployeeDashboard() {
     });
   };
 
-  const formatWeekRange = () => {
+  const formatPeriodRange = () => {
+    if (viewMode === 'calendar') {
+      const curr = new Date(currentDate);
+      return curr.toLocaleDateString('ro-RO', { month: 'long', year: 'numeric' }).toUpperCase();
+    }
     const start = weekDays[0];
     const end = weekDays[6];
     
@@ -219,14 +267,14 @@ export default function EmployeeDashboard() {
         
         {activeTab === 'schedule' && (
           <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 flex items-center justify-between border border-white/20 mt-4">
-            <button onClick={prevWeek} className="p-2 hover:bg-white/20 rounded-full transition-colors">
+            <button onClick={prevPeriod} className="p-2 hover:bg-white/20 rounded-full transition-colors">
               <ChevronLeft size={20} />
             </button>
             <div className="text-center">
-              <span className="block text-xs text-white/80 font-medium mb-0.5 uppercase tracking-wider">Săptămâna curentă</span>
-              <span className="font-bold text-sm">{formatWeekRange()}</span>
+              <span className="block text-xs text-white/80 font-medium mb-0.5 uppercase tracking-wider">{viewMode === 'calendar' ? 'LUNA CURENTĂ' : 'Săptămâna curentă'}</span>
+              <span className="font-bold text-sm">{formatPeriodRange()}</span>
             </div>
-            <button onClick={nextWeek} className="p-2 hover:bg-white/20 rounded-full transition-colors">
+            <button onClick={nextPeriod} className="p-2 hover:bg-white/20 rounded-full transition-colors">
               <ChevronRight size={20} />
             </button>
           </div>
@@ -237,9 +285,22 @@ export default function EmployeeDashboard() {
       <div className="p-4 max-w-md mx-auto space-y-4 pb-32">
         {activeTab === 'schedule' ? (
           <>
-            <div className="flex items-center gap-2 mb-2 px-1">
-              <CalendarDays size={18} className="text-[var(--tc)]" />
-              <h2 className="font-bold text-slate-700">Programul meu</h2>
+            <div className="flex items-center justify-between mb-2 px-1">
+              <div className="flex items-center gap-2">
+                <CalendarDays size={18} className="text-[var(--tc)]" />
+                <h2 className="font-bold text-slate-700">Programul meu</h2>
+              </div>
+              
+              <div className="flex bg-slate-200/50 p-1 rounded-lg">
+                <button 
+                  onClick={() => setViewMode('list')}
+                  className={`px-3 py-1 text-[11px] font-bold rounded-md transition-all ${viewMode === 'list' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}
+                >LISTĂ</button>
+                <button 
+                  onClick={() => setViewMode('calendar')}
+                  className={`px-3 py-1 text-[11px] font-bold rounded-md transition-all ${viewMode === 'calendar' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}
+                >CALENDAR</button>
+              </div>
             </div>
 
             {loading ? (
@@ -251,7 +312,7 @@ export default function EmployeeDashboard() {
               <div className="bg-red-50 text-red-600 p-4 rounded-2xl text-center text-sm">
                 {error}
               </div>
-            ) : (
+            ) : viewMode === 'list' ? (
               <div className="space-y-3">
                 {weekDays.map((day, idx) => {
                   const shift = getShiftForDate(day);
@@ -324,6 +385,60 @@ export default function EmployeeDashboard() {
                     </div>
                   );
                 })}
+              </div>
+            ) : (
+              <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+                <div className="grid grid-cols-7 mb-2 text-center">
+                  {['L', 'M', 'M', 'J', 'V', 'S', 'D'].map(d => (
+                    <div key={d} className="text-[10px] font-bold text-slate-400">{d}</div>
+                  ))}
+                </div>
+                <div className="grid grid-cols-7 gap-1">
+                  {calendarDays.map((day, idx) => {
+                    const isCurrentMonth = day.getMonth() === currentDate.getMonth();
+                    const isWeekend = day.getDay() === 0 || day.getDay() === 6;
+                    const shift = getShiftForDate(day);
+                    const isToday = new Date().toDateString() === day.toDateString();
+                    
+                    return (
+                      <div 
+                        key={idx}
+                        onClick={async () => {
+                          if (!shift) return;
+                          const dayName = day.toLocaleDateString('ro-RO', { weekday: 'long' });
+                          const dayNum = day.getDate();
+                          const monthName = day.toLocaleDateString('ro-RO', { month: 'short' });
+                          setSelectedShift({ ...shift, dayName, dayNum, monthName });
+                          if (!shift.seen_at) {
+                            try {
+                              const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
+                              await fetch(`${baseUrl}/api/employee/shifts/${shift.id}/seen`, {
+                                method: 'PUT',
+                                headers: { 'Authorization': `Bearer ${localStorage.getItem('employee_token')}` }
+                              });
+                              setShifts(prev => prev.map(s => s.id === shift.id ? { ...s, seen_at: new Date().toISOString() } : s));
+                            } catch(e) {}
+                          }
+                        }}
+                        className={`
+                          aspect-square flex flex-col items-center justify-center rounded-xl relative transition-all
+                          ${!isCurrentMonth ? 'opacity-30' : ''}
+                          ${isWeekend ? 'bg-orange-50/50 dark:bg-orange-900/10' : 'bg-slate-50 dark:bg-slate-800'}
+                          ${isToday ? 'ring-2 ring-[var(--tc)] ring-offset-1' : ''}
+                          ${shift ? 'cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 active:scale-95' : ''}
+                        `}
+                      >
+                        <span className={`text-sm font-bold ${isToday ? 'text-[var(--tc)]' : 'text-slate-700 dark:text-slate-300'}`}>{day.getDate()}</span>
+                        {shift && (
+                          <div className={`w-1.5 h-1.5 rounded-full mt-1 ${shift.shift_type === 'NIGHT' ? 'bg-slate-800 dark:bg-slate-200' : 'bg-yellow-400'}`}></div>
+                        )}
+                        {shift && !shift.seen_at && (
+                          <div className="absolute top-1 right-1 w-1.5 h-1.5 bg-[var(--tc)] rounded-full animate-pulse"></div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
             )}
           </>
@@ -525,7 +640,7 @@ export default function EmployeeDashboard() {
                   <div key={l.id} className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
                     <div className="flex items-center justify-between mb-2">
                       <span className="font-bold text-sm text-slate-700">
-                        {l.leave_type === 'CO' ? '🏖️ Concediu (CO)' : l.leave_type === 'CM' ? '🏥 Medical (CM)' : '📋 Absență'}
+                        {l.leave_type === 'CO' ? 'Concediu (CO)' : l.leave_type === 'CM' ? 'Medical (CM)' : l.leave_type === 'SHIFT_CHANGE' ? 'Modificare Tură' : 'Absență'}
                       </span>
                       <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase tracking-wider ${
                         l.status === 'APPROVED' ? 'bg-green-100 text-green-700' :

@@ -64,6 +64,44 @@ router.post('/', async (req, res) => {
   }
 });
 
+// PUT /api/tenants/:id/shifts/:shiftId
+router.put('/:shiftId', async (req, res) => {
+  try {
+    const { id, shiftId } = req.params;
+    const { employee_id, date, start_time, end_time, shift_type, notes } = req.body;
+    
+    if (!employee_id || !date || !start_time || !end_time) {
+      return res.status(400).json({ error: 'Toate câmpurile (angajat, data, ora start/stop) sunt obligatorii.' });
+    }
+    
+    // Verificam sa nu existe deja o tura pentru acest angajat in aceeasi zi (excluzand tura curenta)
+    const checkQuery = await db.query(
+      `SELECT id FROM qrp_shifts WHERE employee_id = $1 AND date = $2 AND id != $3`,
+      [employee_id, date, shiftId]
+    );
+    if (checkQuery.rowCount > 0) {
+      return res.status(400).json({ error: 'Acest angajat are deja o tură planificată pentru ziua selectată.' });
+    }
+    
+    const result = await db.query(
+      `UPDATE qrp_shifts 
+       SET employee_id = $1, date = $2, start_time = $3, end_time = $4, shift_type = $5, notes = $6
+       WHERE id = $7 AND tenant_id = $8
+       RETURNING *`,
+      [employee_id, date, start_time, end_time, shift_type || 'DAY', notes || null, shiftId, id]
+    );
+    
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'Tura nu a fost găsită' });
+    }
+    
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error updating shift:', error);
+    res.status(500).json({ error: 'Eroare la actualizarea turei' });
+  }
+});
+
 // DELETE /api/tenants/:id/shifts/:shiftId
 router.delete('/:shiftId', async (req, res) => {
   try {
