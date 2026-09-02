@@ -1,31 +1,31 @@
-import React, { useState, useMemo } from 'react';
-import { 
-  Search, 
-  Download, 
-  ChevronDown, 
-  ChevronUp, 
-  ChevronLeft, 
+import React, { useState, useMemo } from "react";
+import {
+  Search,
+  Download,
+  ChevronDown,
+  ChevronUp,
+  ChevronLeft,
   ChevronRight,
-  Filter
-} from 'lucide-react';
-import * as XLSX from 'xlsx';
+  Filter,
+} from "lucide-react";
+import * as XLSX from "xlsx";
 
-export default function DataTable({ 
-  title, 
-  data = [], 
-  columns = [], 
-  searchPlaceholder = 'Caută...',
+export default function DataTable({
+  title,
+  data = [],
+  columns = [],
+  searchPlaceholder = "Caută...",
   headerActions = null,
   filters = null,
   selectable = false,
   bulkActions = null,
   hideTitle = false,
-  rowKey = 'id',
+  rowKey = "id",
   expandable = false,
-  expandedRowRender = null
+  expandedRowRender = null,
 }) {
-  const [search, setSearch] = useState('');
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+  const [search, setSearch] = useState("");
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [selectedRowIds, setSelectedRowIds] = useState(new Set());
@@ -34,9 +34,9 @@ export default function DataTable({
   // 1. Căutare Globală
   const filteredData = useMemo(() => {
     if (!search) return data;
-    return data.filter(item => {
-      return Object.values(item).some(val => 
-        String(val).toLowerCase().includes(search.toLowerCase())
+    return data.filter((item) => {
+      return Object.values(item).some((val) =>
+        String(val).toLowerCase().includes(search.toLowerCase()),
       );
     });
   }, [data, search]);
@@ -48,13 +48,13 @@ export default function DataTable({
       sortableItems.sort((a, b) => {
         let aVal = a[sortConfig.key];
         let bVal = b[sortConfig.key];
-        
-        // Handling for string comparison
-        if (typeof aVal === 'string') aVal = aVal.toLowerCase();
-        if (typeof bVal === 'string') bVal = bVal.toLowerCase();
 
-        if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
-        if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
+        // Handling for string comparison
+        if (typeof aVal === "string") aVal = aVal.toLowerCase();
+        if (typeof bVal === "string") bVal = bVal.toLowerCase();
+
+        if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
+        if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
         return 0;
       });
     }
@@ -64,7 +64,7 @@ export default function DataTable({
   // 3. Paginare
   const totalItems = sortedData.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
-  
+
   // Safe page check
   if (currentPage > totalPages && totalPages > 0) {
     setCurrentPage(totalPages);
@@ -76,11 +76,11 @@ export default function DataTable({
   const handleSelectAll = (e) => {
     if (e.target.checked) {
       const newSelected = new Set(selectedRowIds);
-      paginatedData.forEach(item => newSelected.add(item[rowKey]));
+      paginatedData.forEach((item) => newSelected.add(item[rowKey]));
       setSelectedRowIds(newSelected);
     } else {
       const newSelected = new Set(selectedRowIds);
-      paginatedData.forEach(item => newSelected.delete(item[rowKey]));
+      paginatedData.forEach((item) => newSelected.delete(item[rowKey]));
       setSelectedRowIds(newSelected);
     }
   };
@@ -105,29 +105,37 @@ export default function DataTable({
     setExpandedRowIds(newExpanded);
   };
 
-  const isAllPageSelected = paginatedData.length > 0 && paginatedData.every(item => selectedRowIds.has(item[rowKey]));
+  const isAllPageSelected =
+    paginatedData.length > 0 &&
+    paginatedData.every((item) => selectedRowIds.has(item[rowKey]));
 
-  const hasAggregates = columns.some(col => col.aggregate);
+  const hasAggregates = columns.some((col) => col.aggregate);
   const pageTotals = {};
   const globalTotals = {};
   if (hasAggregates) {
-    columns.forEach(col => {
+    columns.forEach((col) => {
       if (col.aggregate) {
-        if (typeof col.aggregate === 'function') {
+        if (typeof col.aggregate === "function") {
           pageTotals[col.key] = col.aggregate(paginatedData);
           globalTotals[col.key] = col.aggregate(sortedData);
         } else {
-          pageTotals[col.key] = paginatedData.reduce((sum, item) => sum + (Number(item[col.key]) || 0), 0);
-          globalTotals[col.key] = sortedData.reduce((sum, item) => sum + (Number(item[col.key]) || 0), 0);
+          pageTotals[col.key] = paginatedData.reduce(
+            (sum, item) => sum + (Number(item[col.key]) || 0),
+            0,
+          );
+          globalTotals[col.key] = sortedData.reduce(
+            (sum, item) => sum + (Number(item[col.key]) || 0),
+            0,
+          );
         }
       }
     });
   }
 
   const handleSort = (key) => {
-    let direction = 'asc';
-    if (sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
+    let direction = "asc";
+    if (sortConfig.key === key && sortConfig.direction === "asc") {
+      direction = "desc";
     }
     setSortConfig({ key, direction });
   };
@@ -135,15 +143,16 @@ export default function DataTable({
   const handleExport = () => {
     // Eliminăm coloanele de acțiuni sau alte randere UI din export
     const exportData = sortedData.map((item, index) => {
-      const row = { 'Nr. Crt.': index + 1 };
-      columns.forEach(col => {
-        if (col.key !== 'actions' && col.exportable !== false) {
+      const row = { "Nr. Crt.": index + 1 };
+      columns.forEach((col) => {
+        if (col.key !== "actions" && col.exportable !== false) {
           if (col.exportRender) {
             row[col.label] = col.exportRender(item);
           } else {
-            row[col.label] = item[col.key] !== null && typeof item[col.key] === 'object' 
-              ? JSON.stringify(item[col.key]) 
-              : item[col.key];
+            row[col.label] =
+              item[col.key] !== null && typeof item[col.key] === "object"
+                ? JSON.stringify(item[col.key])
+                : item[col.key];
           }
         }
       });
@@ -153,28 +162,28 @@ export default function DataTable({
     const worksheet = XLSX.utils.json_to_sheet(exportData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Date");
-    
+
     const today = new Date();
-    const dateString = `${today.getDate().toString().padStart(2, '0')}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getFullYear()}`;
-    const baseName = title ? title.replace(/\s+/g, '_') : 'Raport';
+    const dateString = `${today.getDate().toString().padStart(2, "0")}-${(today.getMonth() + 1).toString().padStart(2, "0")}-${today.getFullYear()}`;
+    const baseName = title ? title.replace(/\s+/g, "_") : "Raport";
     const fileName = `${baseName}_${dateString}.xlsx`;
-    
+
     XLSX.writeFile(workbook, fileName);
   };
 
   return (
     <div className="flex flex-col h-full space-y-4">
       {/* Header (Titlu + Acțiuni Principale) */}
-      {(title && !hideTitle || headerActions) && (
+      {((title && !hideTitle) || headerActions) && (
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           {title && !hideTitle ? (
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-white dark:text-white">{title}</h2>
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white dark:text-white">
+              {title}
+            </h2>
           ) : (
             <div></div>
           )}
-          <div className="flex items-center gap-3">
-            {headerActions}
-          </div>
+          <div className="flex items-center gap-3">{headerActions}</div>
         </div>
       )}
 
@@ -185,8 +194,14 @@ export default function DataTable({
           <div className="flex-1 w-full max-w-full overflow-hidden">
             {filters ? (
               <div className="flex items-start xl:items-center gap-2 w-full flex-col xl:flex-row xl:flex-nowrap">
-                <Filter size={16} className="text-slate-400 hidden xl:block shrink-0 mt-2 xl:mt-0" />
-                <div className="flex-1 w-full min-w-0 pb-1 xl:pb-0 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+                <Filter
+                  size={16}
+                  className="text-slate-400 hidden xl:block shrink-0 mt-2 xl:mt-0"
+                />
+                <div
+                  className="flex-1 w-full min-w-0 pb-1 xl:pb-0 overflow-x-auto"
+                  style={{ scrollbarWidth: "none" }}
+                >
                   {filters}
                 </div>
               </div>
@@ -200,8 +215,8 @@ export default function DataTable({
                 {bulkActions(selectedRowIds.size, handleClearSelection)}
               </div>
             )}
-            
-            <button 
+
+            <button
               onClick={handleExport}
               className="flex items-center px-4 h-10 rounded-full bg-green-600 hover:bg-green-700 text-white text-sm font-bold shadow-sm transition-colors"
             >
@@ -236,7 +251,7 @@ export default function DataTable({
           </div>
         </div>
       </div>
-      
+
       {/* Container Tabel (cu fundal alb și card) */}
       <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 dark:border-slate-700 shadow-sm flex flex-col flex-1 overflow-hidden min-h-[300px]">
         <div className="flex-1 overflow-x-auto">
@@ -245,153 +260,202 @@ export default function DataTable({
               <tr>
                 {selectable && (
                   <th className="pl-4 pr-2 py-3 w-10 text-center">
-                    <input 
-                      type="checkbox" 
+                    <input
+                      type="checkbox"
                       checked={isAllPageSelected}
                       onChange={handleSelectAll}
                       className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-primary-600 focus:ring-primary-500 cursor-pointer"
                     />
                   </th>
                 )}
-                {expandable && (
-                  <th className="px-3 py-3 w-10"></th>
-                )}
-              {/* Coloana Nr. Crt. */}
-              <th className="w-[50px] text-center px-3 py-3 text-slate-800 dark:text-white dark:text-slate-300 text-sm font-bold uppercase tracking-wider">
-                Nr.
-              </th>
-              
-              {columns.filter(c => !c.hidden).map((col, idx) => (
-                <th 
-                  key={idx}
-                  onClick={() => col.sortable !== false ? handleSort(col.key) : null}
-                  className={`px-4 py-3 text-slate-800 dark:text-white dark:text-slate-300 text-sm font-bold uppercase tracking-wider ${col.sortable !== false ? 'cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 dark:hover:bg-slate-700/50' : ''}`}
-                >
-                  <div className="flex items-center space-x-1">
-                    <span>{col.label}</span>
-                    {col.sortable !== false && (
-                      <span className="flex flex-col opacity-50 ml-1">
-                        <ChevronUp size={10} className={`${sortConfig.key === col.key && sortConfig.direction === 'asc' ? 'text-primary-600 opacity-100' : ''}`} />
-                        <ChevronDown size={10} className={`${sortConfig.key === col.key && sortConfig.direction === 'desc' ? 'text-primary-600 opacity-100' : '-mt-1'}`} />
-                      </span>
-                    )}
-                  </div>
+                {expandable && <th className="px-3 py-3 w-10"></th>}
+                {/* Coloana Nr. Crt. */}
+                <th className="w-[50px] text-center px-3 py-3 text-slate-800 dark:text-white dark:text-slate-300 text-sm font-bold uppercase tracking-wider">
+                  Nr.
                 </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-slate-700 bg-white dark:bg-slate-800">
-            {paginatedData.length > 0 ? (
-              paginatedData.map((row, rowIndex) => {
-                const isSelected = selectable && selectedRowIds.has(row[rowKey]);
-                const isExpanded = expandable && expandedRowIds.has(row[rowKey]);
-                
-                return (
-                  <React.Fragment key={row[rowKey] || rowIndex}>
-                    <tr 
-                      className={`transition-colors group ${isSelected ? 'bg-primary-50/50 dark:bg-primary-900/20' : 'hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 dark:hover:bg-slate-700/50'} ${expandable ? 'cursor-pointer' : ''}`}
-                      onClick={() => expandable && toggleRowExpanded(row[rowKey])}
-                    >
-                      {selectable && (
-                        <td className="pl-4 pr-2 py-3 text-center" onClick={e => e.stopPropagation()}>
-                          <input 
-                            type="checkbox" 
-                            checked={isSelected}
-                            onChange={() => handleSelectRow(row[rowKey])}
-                            className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-primary-600 focus:ring-primary-500 cursor-pointer"
-                          />
-                        </td>
-                      )}
-                      {expandable && (
-                        <td className="px-3 py-3 text-center text-slate-400">
-                          {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-                        </td>
-                      )}
-                      <td className="px-3 py-3 text-center text-slate-500 dark:text-slate-400 font-medium text-[13px]">
-                        {startIndex + rowIndex + 1}
-                      </td>
-                      {columns.filter(c => !c.hidden).map((col, colIdx) => (
-                        <td key={colIdx} className="px-4 py-3 text-slate-800 dark:text-white dark:text-slate-200 font-medium">
-                          {col.render ? col.render(row) : row[col.key] || '-'}
-                        </td>
-                      ))}
-                    </tr>
-                    {isExpanded && expandedRowRender && (
-                      <tr>
-                        <td colSpan={columns.length + (selectable ? 1 : 0) + (expandable ? 2 : 1)} className="p-0 border-b border-slate-100 dark:border-slate-700/50 bg-slate-50 dark:bg-slate-800/50/50 dark:bg-slate-900/50">
-                          {expandedRowRender(row)}
-                        </td>
-                      </tr>
-                    )}
-                  </React.Fragment>
-                );
-              })
-            ) : (
-              <tr>
-                <td colSpan={columns.length + 1} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400 dark:text-slate-400">
-                  Nu au fost găsite înregistrări.
-                </td>
-              </tr>
-            )}
-          </tbody>
-          
-          {hasAggregates && (
-            <tfoot className="bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700">
-              <tr>
-                {selectable && <td></td>}
-                <td className="px-6 py-3 font-bold text-primary-700 text-sm uppercase tracking-wider">Total</td>
-                {columns.filter(c => !c.hidden).map((col, idx) => (
-                  <td key={idx} className="px-6 py-3 font-bold text-primary-700 text-sm">
-                    {col.aggregate ? globalTotals[col.key] : ''}
-                  </td>
-                ))}
-              </tr>
-            </tfoot>
-          )}
-        </table>
-      </div>
 
-      {/* Footer / Paginare */}
-      <div className="px-5 py-3 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex flex-col md:flex-row items-center justify-between rounded-b-lg">
-        <div className="flex items-center gap-4 text-sm text-slate-600 dark:text-slate-300">
-          <span className="whitespace-nowrap flex items-center gap-1.5">
-            Afișează
-            <select
-              value={itemsPerPage}
-              onChange={(e) => {
-                setItemsPerPage(Number(e.target.value));
-                setCurrentPage(1);
-              }}
-              className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full px-2 py-0.5 outline-none focus:ring-1 focus:ring-primary-500"
-            >
-              <option value={10}>10</option>
-              <option value={15}>15</option>
-              <option value={25}>25</option>
-              <option value={50}>50</option>
-              <option value={9999}>Toți</option>
-            </select>
-          </span>
-          <span className="whitespace-nowrap">
-            Total înregistrări: <strong className="text-slate-900 dark:text-white">{totalItems}</strong>
-          </span>
+                {columns
+                  .filter((c) => !c.hidden)
+                  .map((col, idx) => (
+                    <th
+                      key={idx}
+                      onClick={() =>
+                        col.sortable !== false ? handleSort(col.key) : null
+                      }
+                      className={`px-4 py-3 text-slate-800 dark:text-white dark:text-slate-300 text-sm font-bold uppercase tracking-wider ${col.sortable !== false ? "cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 dark:hover:bg-slate-700/50" : ""}`}
+                    >
+                      <div className="flex items-center space-x-1">
+                        <span>{col.label}</span>
+                        {col.sortable !== false && (
+                          <span className="flex flex-col opacity-50 ml-1">
+                            <ChevronUp
+                              size={10}
+                              className={`${sortConfig.key === col.key && sortConfig.direction === "asc" ? "text-primary-600 opacity-100" : ""}`}
+                            />
+                            <ChevronDown
+                              size={10}
+                              className={`${sortConfig.key === col.key && sortConfig.direction === "desc" ? "text-primary-600 opacity-100" : "-mt-1"}`}
+                            />
+                          </span>
+                        )}
+                      </div>
+                    </th>
+                  ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700 bg-white dark:bg-slate-800">
+              {paginatedData.length > 0 ? (
+                paginatedData.map((row, rowIndex) => {
+                  const isSelected =
+                    selectable && selectedRowIds.has(row[rowKey]);
+                  const isExpanded =
+                    expandable && expandedRowIds.has(row[rowKey]);
+
+                  return (
+                    <React.Fragment key={row[rowKey] || rowIndex}>
+                      <tr
+                        className={`transition-colors group ${isSelected ? "bg-primary-50/50 dark:bg-primary-900/20" : "hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 dark:hover:bg-slate-700/50"} ${expandable ? "cursor-pointer" : ""}`}
+                        onClick={() =>
+                          expandable && toggleRowExpanded(row[rowKey])
+                        }
+                      >
+                        {selectable && (
+                          <td
+                            className="pl-4 pr-2 py-3 text-center"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => handleSelectRow(row[rowKey])}
+                              className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-primary-600 focus:ring-primary-500 cursor-pointer"
+                            />
+                          </td>
+                        )}
+                        {expandable && (
+                          <td className="px-3 py-3 text-center text-slate-400">
+                            {isExpanded ? (
+                              <ChevronDown size={16} />
+                            ) : (
+                              <ChevronRight size={16} />
+                            )}
+                          </td>
+                        )}
+                        <td className="px-3 py-3 text-center text-slate-500 dark:text-slate-400 font-medium text-[13px]">
+                          {startIndex + rowIndex + 1}
+                        </td>
+                        {columns
+                          .filter((c) => !c.hidden)
+                          .map((col, colIdx) => (
+                            <td
+                              key={colIdx}
+                              className="px-4 py-3 text-slate-800 dark:text-white dark:text-slate-200 font-medium"
+                            >
+                              {col.render
+                                ? col.render(row)
+                                : row[col.key] || "-"}
+                            </td>
+                          ))}
+                      </tr>
+                      {isExpanded && expandedRowRender && (
+                        <tr>
+                          <td
+                            colSpan={
+                              columns.length +
+                              (selectable ? 1 : 0) +
+                              (expandable ? 2 : 1)
+                            }
+                            className="p-0 border-b border-slate-100 dark:border-slate-700/50 bg-slate-50 dark:bg-slate-800/50/50 dark:bg-slate-900/50"
+                          >
+                            {expandedRowRender(row)}
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td
+                    colSpan={columns.length + 1}
+                    className="px-6 py-12 text-center text-slate-500 dark:text-slate-400 dark:text-slate-400"
+                  >
+                    Nu au fost găsite înregistrări.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+
+            {hasAggregates && (
+              <tfoot className="bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700">
+                <tr>
+                  {selectable && <td></td>}
+                  <td className="px-6 py-3 font-bold text-primary-700 text-sm uppercase tracking-wider">
+                    Total
+                  </td>
+                  {columns
+                    .filter((c) => !c.hidden)
+                    .map((col, idx) => (
+                      <td
+                        key={idx}
+                        className="px-6 py-3 font-bold text-primary-700 text-sm"
+                      >
+                        {col.aggregate ? globalTotals[col.key] : ""}
+                      </td>
+                    ))}
+                </tr>
+              </tfoot>
+            )}
+          </table>
         </div>
-        
-        <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
-          <span className="whitespace-nowrap mr-2">Pagina {currentPage} din {Math.max(1, totalPages)}</span>
-          <button
-            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-            disabled={currentPage === 1}
-            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-slate-600 dark:text-slate-300"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-            disabled={currentPage === totalPages || totalPages === 0}
-            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-slate-600 dark:text-slate-300"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
+
+        {/* Footer / Paginare */}
+        <div className="px-5 py-3 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex flex-col md:flex-row items-center justify-between rounded-b-lg">
+          <div className="flex items-center gap-4 text-sm text-slate-600 dark:text-slate-300">
+            <span className="whitespace-nowrap flex items-center gap-1.5">
+              Afișează
+              <select
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full px-2 py-0.5 outline-none focus:ring-1 focus:ring-primary-500"
+              >
+                <option value={10}>10</option>
+                <option value={15}>15</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={9999}>Toți</option>
+              </select>
+            </span>
+            <span className="whitespace-nowrap">
+              Total înregistrări:{" "}
+              <strong className="text-slate-900 dark:text-white">
+                {totalItems}
+              </strong>
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+            <span className="whitespace-nowrap mr-2">
+              Pagina {currentPage} din {Math.max(1, totalPages)}
+            </span>
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-slate-600 dark:text-slate-300"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages || totalPages === 0}
+              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-slate-600 dark:text-slate-300"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
     </div>
