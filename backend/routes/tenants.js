@@ -598,6 +598,35 @@ router.post('/:id/clock', async (req, res) => {
   }
 });
 
+// POST /api/tenants/:id/employees/:employeeId/close-shift
+router.post('/:id/employees/:employeeId/close-shift', async (req, res) => {
+  try {
+    const { date, time } = req.body;
+    if (!date || !time) return res.status(400).json({ error: 'Date and time are required' });
+
+    // Validate employee belongs to tenant
+    const empResult = await pool.query('SELECT id FROM qrp_employees WHERE id = $1 AND tenant_id = $2', [req.params.employeeId, req.params.id]);
+    if (empResult.rowCount === 0) {
+      return res.status(404).json({ error: 'Angajat inexistent' });
+    }
+
+    const timestamp = `${date} ${time}:00`;
+
+    const insertQuery = `
+      INSERT INTO qrp_timesheets (tenant_id, employee_id, action_type, created_at)
+      VALUES ($1, $2, 'OUT', $3)
+      RETURNING *
+    `;
+    const result = await pool.query(insertQuery, [req.params.id, req.params.employeeId, timestamp]);
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error closing shift:', error);
+    res.status(500).json({ error: 'Eroare la închiderea manuală a turei' });
+  }
+});
+
+
 // GET /api/tenants/:id/job-titles
 router.get('/:id/job-titles', async (req, res) => {
   try {
