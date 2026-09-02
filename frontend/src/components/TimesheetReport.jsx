@@ -175,6 +175,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
           last_name: t.last_name,
           employee_code: t.employee_code,
           avatar_path: t.avatar_path,
+          job_title: t.job_title,
           raw_logs: []
         };
       }
@@ -241,6 +242,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
           last_name: interval.employee.last_name,
           employee_code: interval.employee.employee_code,
           avatar_path: interval.employee.avatar_path,
+          job_title: interval.employee.job_title,
           date: date,
           intervals: [],
           ongoing_ms: 0,
@@ -322,6 +324,9 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
         rows.push({
           id: `${group.id}_${index}`,
           employee_id: group.employee_id,
+          first_name: group.first_name,
+          last_name: group.last_name,
+          job_title: group.job_title,
           date: group.date,
           in: interval.in,
           out: interval.out,
@@ -451,6 +456,18 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
   const columns = useMemo(() => {
     if (employeeId) {
       return [
+        {
+          key: 'nume',
+          label: 'Nume Angajat',
+          hidden: true,
+          exportRender: (row) => `${row.first_name || ''} ${row.last_name || ''}`.trim()
+        },
+        {
+          key: 'functie',
+          label: 'Funcția',
+          hidden: true,
+          exportRender: (row) => row.job_title || '-'
+        },
         {
           key: 'date',
           label: 'Data',

@@ -261,7 +261,7 @@ export default function DataTable({
                 Nr.
               </th>
               
-              {columns.map((col, idx) => (
+              {columns.filter(c => !c.hidden).map((col, idx) => (
                 <th 
                   key={idx}
                   onClick={() => col.sortable !== false ? handleSort(col.key) : null}
@@ -310,7 +310,7 @@ export default function DataTable({
                       <td className="px-3 py-3 text-center text-slate-500 dark:text-slate-400 font-medium text-[13px]">
                         {startIndex + rowIndex + 1}
                       </td>
-                      {columns.map((col, colIdx) => (
+                      {columns.filter(c => !c.hidden).map((col, colIdx) => (
                         <td key={colIdx} className="px-4 py-3 text-slate-800 dark:text-white dark:text-slate-200 font-medium">
                           {col.render ? col.render(row) : row[col.key] || '-'}
                         </td>
@@ -340,7 +340,7 @@ export default function DataTable({
               <tr>
                 {selectable && <td></td>}
                 <td className="px-6 py-3 font-bold text-primary-700 text-sm uppercase tracking-wider">Total</td>
-                {columns.map((col, idx) => (
+                {columns.filter(c => !c.hidden).map((col, idx) => (
                   <td key={idx} className="px-6 py-3 font-bold text-primary-700 text-sm">
                     {col.aggregate ? globalTotals[col.key] : ''}
                   </td>
