@@ -394,6 +394,7 @@ export default function DataTable({
           </button>
         </div>
       </div>
+      </div>
     </div>
   );
 }
