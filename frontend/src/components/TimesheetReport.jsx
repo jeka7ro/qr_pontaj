@@ -1435,15 +1435,37 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
                     'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border-slate-200'
                   ];
 
+                  const avatarSrc = emp.avatar_path 
+                    ? (emp.avatar_path.startsWith('http') ? emp.avatar_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${emp.avatar_path}`)
+                    : null;
+
                   return (
-                    <div key={emp.employee_id} className="p-2 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-700/60">
+                    <Link 
+                      key={emp.employee_id} 
+                      to={`/admin/employees/${emp.employee_id}?tab=details`}
+                      className="block p-2 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-700/60 hover:bg-slate-100/80 dark:hover:bg-slate-800/60 transition-colors group cursor-pointer"
+                    >
                       <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2 min-w-0">
+                        <div className="flex items-center gap-2.5 min-w-0">
                           <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black border shrink-0 ${badgeClasses[idx] || badgeClasses[4]}`}>
                             {idx + 1}
                           </span>
+
+                          {/* Foto Profil Angajat */}
+                          {avatarSrc ? (
+                            <img 
+                              src={avatarSrc}
+                              alt={emp.name}
+                              className="w-8 h-8 rounded-full object-cover border border-slate-200 dark:border-slate-700 shadow-xs shrink-0 group-hover:border-primary-400 transition-colors"
+                            />
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-[11px] font-bold flex items-center justify-center shrink-0 shadow-xs group-hover:bg-primary-50 group-hover:text-primary-600 transition-colors">
+                              {(emp.first_name?.[0] || '')}{(emp.last_name?.[0] || '')}
+                            </div>
+                          )}
+
                           <div className="min-w-0">
-                            <div className="text-xs font-bold text-slate-800 dark:text-white truncate">
+                            <div className="text-xs font-bold text-slate-800 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors truncate">
                               {emp.name}
                             </div>
                             <div className="text-[10px] text-slate-400 truncate">
@@ -1461,7 +1483,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
                           style={{ width: `${pct}%` }}
                         />
                       </div>
-                    </div>
+                    </Link>
                   );
                 })}
               </div>
