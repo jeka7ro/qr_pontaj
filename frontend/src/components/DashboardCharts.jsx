@@ -851,7 +851,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full md:w-auto">
                 {/* Live Search */}
                 <div className="relative w-full sm:w-auto">
-                  <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 z-10" />
                   <input
                     type="text"
                     placeholder="Caută după nume, cod, funcție..."
@@ -860,14 +860,17 @@ export default function DashboardCharts({ tenant, themeColor }) {
                     className={`pl-9 ${liveSearch ? 'pr-24' : 'pr-4'} h-9 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 w-full sm:w-64 transition-all`}
                   />
                   {liveSearch && (
-                    <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 pointer-events-none">
-                      <span className="text-[11px] font-medium text-slate-400">
-                        {filteredLiveShifts.length} din {liveShifts.length}
-                      </span>
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5 z-10">
+                      <div 
+                        className="text-white rounded-full px-2.5 py-0.5 text-[11px] font-bold whitespace-nowrap shadow-xs"
+                        style={{ backgroundColor: themeColor || '#2563eb' }}
+                      >
+                        {filteredLiveShifts.length} / {liveShifts.length}
+                      </div>
                       <button 
                         type="button"
                         onClick={(e) => { e.stopPropagation(); setLiveSearch(''); }} 
-                        className="pointer-events-auto text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                        className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 rounded-full hover:bg-slate-200/60 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                         title="Șterge căutarea"
                       >
                         <X size={13} />
