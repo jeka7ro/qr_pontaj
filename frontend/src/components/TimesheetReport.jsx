@@ -931,23 +931,23 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
 
     const rows = [];
     groupedTimesheets.forEach(group => {
+      const isToday = new Date().toLocaleDateString('en-CA') === group.date;
       group.intervals.forEach((interval, index) => {
         let ms = 0;
         let ongoing_ms = 0;
         if (interval.in && interval.out) {
           ms = interval.out - interval.in;
         } else if (interval.in && !interval.out) {
-          const isToday = new Date().toLocaleDateString('en-CA') === group.date;
           if (isToday) {
             ongoing_ms = new Date() - interval.in;
           }
         }
         
         const totalMs = ms + ongoing_ms;
-        const formatDuration = (m) => {
-          const h = Math.floor(m / (1000 * 60 * 60));
-          const mm = Math.floor((m % (1000 * 60 * 60)) / (1000 * 60));
-          return `${h}h ${m}m`;
+        const formatDuration = (valMs) => {
+          const h = Math.floor(valMs / (1000 * 60 * 60));
+          const mm = Math.floor((valMs % (1000 * 60 * 60)) / (1000 * 60));
+          return `${h}h ${mm}m`;
         };
 
         rows.push({
