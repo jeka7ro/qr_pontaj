@@ -205,28 +205,49 @@ export default function DataTable({
       )}
 
       {/* Toolbar (Căutare, Filtre, Export) */}
-      <div className="flex flex-col gap-4 mb-4">
-        {/* Rândul 1: Filtre și Acțiuni (Export) */}
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 w-full">
-          <div className="flex-1 w-full max-w-full overflow-hidden">
-            {filters ? (
-              <div className="flex items-start xl:items-center gap-2 w-full flex-col xl:flex-row xl:flex-nowrap">
-                <Filter
-                  size={16}
-                  className="text-slate-400 hidden xl:block shrink-0 mt-2 xl:mt-0"
-                />
-                <div
-                  className="flex-1 w-full min-w-0 pb-1 xl:pb-0 overflow-x-auto"
-                  style={{ scrollbarWidth: "none" }}
-                >
-                  {filters}
-                </div>
+      <div className="flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3 mb-4 w-full">
+        {/* Partea stângă: Filtre */}
+        {filters ? (
+          <div className="flex items-center gap-2 min-w-0 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+            <Filter
+              size={16}
+              className="text-slate-400 hidden 2xl:block shrink-0"
+            />
+            <div
+              className="min-w-0 overflow-x-auto w-full xl:w-auto"
+              style={{ scrollbarWidth: "none" }}
+            >
+              {filters}
+            </div>
+          </div>
+        ) : null}
+
+        {/* Partea dreaptă pe PC: Căutare + Acțiuni (Export) */}
+        <div className={`flex flex-col sm:flex-row items-stretch sm:items-center gap-3 ${!filters ? 'w-full justify-between' : 'shrink-0'}`}>
+          {/* Căutare */}
+          <div className={`relative ${!filters ? 'w-full sm:w-72' : 'w-full sm:w-60 xl:w-56 2xl:w-72'}`}>
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-10" />
+            <input
+              type="text"
+              placeholder={searchPlaceholder}
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="block w-full h-10 text-[16px] md:text-sm rounded-full border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm"
+              style={{ paddingLeft: 36, paddingRight: search ? 80 : 16 }}
+            />
+            {/* Contor Rezultate */}
+            {search && (
+              <div className="absolute right-2.5 top-1/2 -translate-y-1/2 bg-primary-600 text-white rounded-full px-2.5 py-0.5 text-[11px] font-bold whitespace-nowrap">
+                {filteredData.length} / {data.length}
               </div>
-            ) : null}
+            )}
           </div>
 
           {/* Export și Bulk Actions */}
-          <div className="flex items-center gap-3 self-end lg:self-auto shrink-0">
+          <div className="flex items-center gap-3 self-end sm:self-auto shrink-0">
             {bulkActions && selectedRowIds.size > 0 && (
               <div className="flex items-center gap-2 mr-2 animate-in fade-in slide-in-from-right-4">
                 {bulkActions(selectedRowIds.size, handleClearSelection)}
@@ -238,7 +259,7 @@ export default function DataTable({
                 <button
                   type="button"
                   onClick={() => exportOptions[0].onClick({ sortedData, search, columns, XLSX })}
-                  className="flex items-center pl-4 pr-3 h-10 rounded-l-full bg-green-600 hover:bg-green-700 text-white text-sm font-bold transition-colors cursor-pointer"
+                  className="flex items-center pl-4 pr-3 h-10 rounded-l-full bg-green-600 hover:bg-green-700 text-white text-sm font-bold transition-colors cursor-pointer whitespace-nowrap"
                   title={exportOptions[0].description || exportOptions[0].label}
                 >
                   <Download size={16} className="mr-2" />
@@ -305,7 +326,7 @@ export default function DataTable({
               <button
                 type="button"
                 onClick={() => onExport({ sortedData, search, columns, title, XLSX, defaultExport: handleExport })}
-                className="flex items-center px-4 h-10 rounded-full bg-green-600 hover:bg-green-700 text-white text-sm font-bold shadow-sm transition-colors cursor-pointer"
+                className="flex items-center px-4 h-10 rounded-full bg-green-600 hover:bg-green-700 text-white text-sm font-bold shadow-sm transition-colors cursor-pointer whitespace-nowrap"
               >
                 <Download size={16} className="mr-2" />
                 Export Excel
@@ -313,36 +334,11 @@ export default function DataTable({
             ) : (
               <button
                 onClick={handleExport}
-                className="flex items-center px-4 h-10 rounded-full bg-green-600 hover:bg-green-700 text-white text-sm font-bold shadow-sm transition-colors cursor-pointer"
+                className="flex items-center px-4 h-10 rounded-full bg-green-600 hover:bg-green-700 text-white text-sm font-bold shadow-sm transition-colors cursor-pointer whitespace-nowrap"
               >
                 <Download size={16} className="mr-2" />
                 Export Excel
               </button>
-            )}
-          </div>
-        </div>
-
-        {/* Rândul 2: Căutare */}
-        <div className="w-full">
-          {/* Căutare */}
-          <div className="relative w-full max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-10" />
-            <input
-              type="text"
-              placeholder={searchPlaceholder}
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="block w-full h-10 text-[16px] md:text-sm rounded-full border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm"
-              style={{ paddingLeft: 36, paddingRight: search ? 80 : 16 }}
-            />
-            {/* Contor Rezultate */}
-            {search && (
-              <div className="absolute right-2.5 top-1/2 -translate-y-1/2 bg-primary-600 text-white rounded-full px-2.5 py-0.5 text-[11px] font-bold whitespace-nowrap">
-                {filteredData.length} / {data.length}
-              </div>
             )}
           </div>
         </div>
