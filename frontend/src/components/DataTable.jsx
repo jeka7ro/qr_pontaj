@@ -204,10 +204,10 @@ export default function DataTable({
       )}
 
       {/* Toolbar (Căutare, Filtre, Export) */}
-      <div className="flex flex-wrap xl:flex-nowrap items-center justify-between xl:justify-start gap-2 sm:gap-2.5 mb-4 w-full">
-        {/* Căutare - Rândul 1 stânga pe mobil, Primul în rând pe PC */}
-        <div className={`relative order-1 ${!filters ? 'w-full sm:w-72' : 'flex-1 xl:flex-none w-auto sm:w-60 xl:w-52 2xl:w-64 min-w-[150px] shrink-0'}`}>
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-10" />
+      <div className="flex flex-wrap items-center gap-2.5 mb-4 w-full">
+        {/* Căutare */}
+        <div className={`relative ${!filters ? 'w-full sm:w-72' : 'w-full sm:w-60 md:w-64 shrink-0'}`}>
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-10 pointer-events-none" />
           <input
             type="text"
             placeholder={searchPlaceholder}
@@ -217,28 +217,26 @@ export default function DataTable({
               setCurrentPage(1);
             }}
             className="block w-full h-10 text-[16px] md:text-sm rounded-full border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm"
-            style={{ paddingLeft: 36, paddingRight: search ? 80 : 16 }}
+            style={{ paddingLeft: 36, paddingRight: search ? 88 : 16 }}
           />
-          {/* Contor Rezultate */}
+          {/* Contor Rezultate conform Design System */}
           {search && (
-            <div className="absolute right-2.5 top-1/2 -translate-y-1/2 bg-primary-600 text-white rounded-full px-2.5 py-0.5 text-[11px] font-bold whitespace-nowrap">
-              {filteredData.length} / {data.length}
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-slate-400 pointer-events-none whitespace-nowrap">
+              {filteredData.length} din {data.length}
             </div>
           )}
         </div>
 
-        {/* Filtre - Rândul 2 pe mobil (scroll orizontal lin), în continuarea căutării pe PC */}
+        {/* Filtre */}
         {filters ? (
-          <div
-            className="order-3 xl:order-2 w-full xl:w-auto min-w-0 overflow-x-auto py-0.5"
-            style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}
-          >
+          <div className="flex-1 min-w-0">
             {filters}
           </div>
         ) : null}
 
-        {/* Export și Bulk Actions - Rândul 1 dreapta pe mobil, extremitatea dreaptă pe PC */}
-        <div className="order-2 xl:order-3 xl:ml-auto flex items-center gap-2 sm:gap-3 shrink-0">
+        {/* Export și Bulk Actions (dacă există) */}
+        {((bulkActions && selectedRowIds.size > 0) || (exportOptions && exportOptions.length > 0) || onExport) ? (
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-auto">
             {bulkActions && selectedRowIds.size > 0 && (
               <div className="flex items-center gap-2 mr-2 animate-in fade-in slide-in-from-right-4">
                 {bulkActions(selectedRowIds.size, handleClearSelection)}
@@ -332,7 +330,8 @@ export default function DataTable({
               </button>
             )}
           </div>
-        </div>
+        ) : null}
+      </div>
 
       {/* Container Tabel (cu fundal alb și card) */}
       <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 dark:border-slate-700 shadow-sm flex flex-col flex-1 overflow-hidden min-h-[300px]">

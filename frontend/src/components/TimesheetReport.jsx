@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Clock, LogIn, LogOut, Eye, X, AlertTriangle, Users, Calendar, TrendingUp, CheckCircle2, PieChart, BarChart3, Award } from 'lucide-react';
+import { Clock, LogIn, LogOut, Eye, X, AlertTriangle, Users, Calendar, TrendingUp, CheckCircle2, PieChart, BarChart3, Award, Download, ChevronDown } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import ReactECharts from 'echarts-for-react';
 import DataTable from './DataTable';
@@ -12,6 +12,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
   const [locations, setLocations] = useState([]);
   const [locationId, setLocationId] = useState('all');
   const [viewMode, setViewMode] = useState('summary'); // 'summary' (Total per Angajat) | 'detailed' (Detaliat pe Zile)
+  const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
   
   const [closeShiftModal, setCloseShiftModal] = useState({ isOpen: false, rowData: null, date: '', time: '17:00' });
 
@@ -30,6 +31,30 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
   const [startDate, setStartDate] = useState(firstDay);
   const [endDate, setEndDate] = useState(lastDay);
   const [periodFilter, setPeriodFilter] = useState('this_month');
+
+  // Cross-filtering state (Roluri/Plăcintă, Zile/Bare, Angajați/Top 5)
+  const [crossFilter, setCrossFilter] = useState({
+    type: null, // 'role' | 'day' | 'employee'
+    value: null,
+    label: null
+  });
+
+  const toggleCrossFilter = (type, value, label) => {
+    setCrossFilter(prev => {
+      if (prev.type === type && String(prev.value) === String(value)) {
+        return { type: null, value: null, label: null };
+      }
+      return { type, value, label };
+    });
+  };
+
+  const clearCrossFilter = () => {
+    setCrossFilter({ type: null, value: null, label: null });
+  };
+
+  useEffect(() => {
+    clearCrossFilter();
+  }, [startDate, endDate, locationId, actionFilter]);
 
   const handlePeriodChange = (e) => {
     const val = e.target.value;
@@ -381,16 +406,98 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
     return `${h}h ${m}m`;
   };
 
+  const crossFilteredGroupedTimesheets = useMemo(() => {
+    if (!crossFilter.type || !crossFilter.value) {
+      return groupedTimesheets;
+    }
+    if (crossFilter.type === 'role') {
+      return groupedTimesheets.filter(g => g.job_title === crossFilter.value);
+    }
+    if (crossFilter.type === 'day') {
+      return groupedTimesheets.filter(g => g.date === crossFilter.value);
+    }
+    if (crossFilter.type === 'employee') {
+      return groupedTimesheets.filter(g => String(g.employee_id) === String(crossFilter.value));
+    }
+    return groupedTimesheets;
+  }, [groupedTimesheets, crossFilter]);
+
+  const crossFilteredEmployeeSummaryTotals = useMemo(() => {
+    if (!crossFilter.type || !crossFilter.value) {
+      return employeeSummaryTotals;
+    }
+    if (crossFilter.type === 'role') {
+      return employeeSummaryTotals.filter(e => e.job_title === crossFilter.value);
+    }
+    if (crossFilter.type === 'employee') {
+      return employeeSummaryTotals.filter(e => String(e.employee_id) === String(crossFilter.value));
+    }
+    if (crossFilter.type === 'day') {
+      const map = {};
+      crossFilteredGroupedTimesheets.forEach(group => {
+        const empId = group.employee_id;
+        if (!map[empId]) {
+          map[empId] = {
+            id: empId,
+            employee_id: empId,
+            name: `${group.first_name || ''} ${group.last_name || ''}`.trim(),
+            first_name: group.first_name,
+            last_name: group.last_name,
+            employee_code: group.employee_code,
+            job_title: group.job_title,
+            avatar_path: group.avatar_path,
+            days_set: new Set(),
+            total_sessions: 0,
+            has_ongoing: false,
+            missing_out_count: 0,
+            total_time_ms: 0
+          };
+        }
+        const emp = map[empId];
+        if (group.date) emp.days_set.add(group.date);
+        if (group.intervals) emp.total_sessions += group.intervals.length;
+        if (group.is_ongoing) emp.has_ongoing = true;
+        if (group.missing_out) emp.missing_out_count += 1;
+        emp.total_time_ms += (group.total_time_ms || 0);
+      });
+
+      return Object.values(map).map(emp => {
+        const daysCount = emp.days_set.size;
+        const totalHoursDecimal = Number((emp.total_time_ms / (1000 * 60 * 60)).toFixed(2));
+        const avgDailyMs = daysCount > 0 ? Math.round(emp.total_time_ms / daysCount) : 0;
+        return {
+          ...emp,
+          days_worked: daysCount,
+          total_time_str: emp.total_time_ms > 0 ? formatDurationHelper(emp.total_time_ms) : '0h 0m',
+          total_hours_decimal: totalHoursDecimal,
+          avg_daily_ms: avgDailyMs,
+          avg_daily_str: avgDailyMs > 0 ? formatDurationHelper(avgDailyMs) : '-'
+        };
+      }).sort((a, b) => b.total_time_ms - a.total_time_ms);
+    }
+    return employeeSummaryTotals;
+  }, [employeeSummaryTotals, crossFilter, crossFilteredGroupedTimesheets]);
+
+  const sortedDailyDates = useMemo(() => {
+    const dailyMap = {};
+    groupedTimesheets.forEach(g => {
+      if (g.date) {
+        dailyMap[g.date] = true;
+      }
+    });
+    return Object.keys(dailyMap).sort();
+  }, [groupedTimesheets]);
+
   const analyticsSummary = useMemo(() => {
-    const totalMs = employeeSummaryTotals.reduce((sum, e) => sum + e.total_time_ms, 0);
+    const totalMs = crossFilteredEmployeeSummaryTotals.reduce((sum, e) => sum + e.total_time_ms, 0);
     const totalHours = Math.floor(totalMs / 3600000);
     const totalMins = Math.floor((totalMs % 3600000) / 60000);
     const totalHoursDecimal = Number((totalMs / 3600000).toFixed(1));
 
-    const totalDaysWorked = employeeSummaryTotals.reduce((sum, e) => sum + e.days_worked, 0);
-    const totalSessions = employeeSummaryTotals.reduce((sum, e) => sum + e.total_sessions, 0);
+    const totalDaysWorked = crossFilteredEmployeeSummaryTotals.reduce((sum, e) => sum + e.days_worked, 0);
+    const totalSessions = crossFilteredEmployeeSummaryTotals.reduce((sum, e) => sum + e.total_sessions, 0);
 
-    const activeEmployeesCount = employeeSummaryTotals.length;
+    const activeEmployeesCount = crossFilteredEmployeeSummaryTotals.length;
     const avgPerEmployeeMs = activeEmployeesCount > 0 ? Math.round(totalMs / activeEmployeesCount) : 0;
     const avgPerEmployeeStr = formatDurationHelper(avgPerEmployeeMs);
 
@@ -408,17 +515,25 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
       avgPerEmployeeStr,
       avgDailyStr
     };
-  }, [employeeSummaryTotals]);
+  }, [crossFilteredEmployeeSummaryTotals]);
 
   const topEmployees = useMemo(() => {
-    return [...employeeSummaryTotals]
+    const dataset = crossFilter.type === 'role' || crossFilter.type === 'day'
+      ? crossFilteredEmployeeSummaryTotals
+      : employeeSummaryTotals;
+
+    return [...dataset]
       .sort((a, b) => b.total_time_ms - a.total_time_ms)
       .slice(0, 5);
-  }, [employeeSummaryTotals]);
+  }, [employeeSummaryTotals, crossFilteredEmployeeSummaryTotals, crossFilter]);
 
   const getDonutRoleOption = () => {
     const map = {};
-    employeeSummaryTotals.forEach(emp => {
+    const dataset = crossFilter.type === 'day' || crossFilter.type === 'employee'
+      ? crossFilteredEmployeeSummaryTotals
+      : employeeSummaryTotals;
+
+    dataset.forEach(emp => {
       const role = emp.job_title || 'Nespecificat';
       map[role] = (map[role] || 0) + emp.total_time_ms;
     });
@@ -429,12 +544,23 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
       '#f97316', '#84cc16', '#a855f7'
     ];
 
-    const data = Object.entries(map).map(([name, ms], i) => ({
-      name,
-      value: Number((ms / 3600000).toFixed(1)),
-      ms,
-      itemStyle: { color: palette[i % palette.length] }
-    })).sort((a, b) => b.value - a.value);
+    const isRoleActive = crossFilter.type === 'role';
+    const activeRole = crossFilter.value;
+
+    const data = Object.entries(map).map(([name, ms], i) => {
+      const isSelected = isRoleActive && activeRole === name;
+      return {
+        name,
+        value: Number((ms / 3600000).toFixed(1)),
+        ms,
+        itemStyle: { 
+          color: palette[i % palette.length],
+          opacity: isRoleActive ? (isSelected ? 1 : 0.25) : 1,
+          borderColor: isSelected ? '#10b981' : '#ffffff',
+          borderWidth: isSelected ? 3 : 2
+        }
+      };
+    }).sort((a, b) => b.value - a.value);
 
     return {
       tooltip: {
@@ -442,12 +568,14 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
         formatter: (params) => {
           const h = Math.floor(params.data.ms / 3600000);
           const m = Math.floor((params.data.ms % 3600000) / 60000);
+          const isSel = isRoleActive && activeRole === params.name;
           return `
-            <div style="font-weight:bold;margin-bottom:4px;">${params.name}</div>
+            <div style="font-weight:bold;margin-bottom:4px;">${params.name} ${isSel ? '(Filtru activ)' : ''}</div>
             <div style="display:flex;align-items:center;gap:6px;">
               <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background-color:${params.color};"></span>
               <span>${h}h ${m}m (${params.percent}%)</span>
             </div>
+            <div style="font-size:10px;color:#94a3b8;margin-top:4px;">${isSel ? 'Click pentru a anula filtrul' : 'Click pentru a filtra toată pagina'}</div>
           `;
         },
         backgroundColor: 'rgba(15, 23, 42, 0.9)',
@@ -481,6 +609,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
           radius: ['48%', '70%'],
           center: ['30%', '50%'],
           avoidLabelOverlap: false,
+          cursor: 'pointer',
           itemStyle: {
             borderRadius: 6,
             borderColor: '#ffffff',
@@ -510,18 +639,29 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
 
   const getDailyTrendOption = () => {
     const dailyMap = {};
-    groupedTimesheets.forEach(g => {
+    const dataset = crossFilter.type === 'role' || crossFilter.type === 'employee'
+      ? crossFilteredGroupedTimesheets
+      : groupedTimesheets;
+
+    dataset.forEach(g => {
       if (g.date) {
         dailyMap[g.date] = (dailyMap[g.date] || 0) + (g.total_time_ms || 0);
       }
     });
 
-    const sortedDates = Object.keys(dailyMap).sort();
+    const sortedDates = sortedDailyDates;
+    const dayNames = ['Dum', 'Lun', 'Mar', 'Mie', 'Joi', 'Vin', 'Sâm'];
     const xLabels = sortedDates.map(d => {
       const parts = d.split('-');
-      return parts.length === 3 ? `${parts[2]}.${parts[1]}` : d;
+      const dateObj = new Date(d + 'T00:00:00');
+      const dayName = !isNaN(dateObj.getTime()) ? dayNames[dateObj.getDay()] : '';
+      const dayMonth = parts.length === 3 ? `${parts[2]}.${parts[1]}` : d;
+      return `${dayName}\n${dayMonth}`;
     });
-    const hoursValues = sortedDates.map(d => Number((dailyMap[d] / 3600000).toFixed(1)));
+    const hoursValues = sortedDates.map(d => Number(((dailyMap[d] || 0) / 3600000).toFixed(1)));
+
+    const isDayActive = crossFilter.type === 'day';
+    const activeDay = crossFilter.value;
 
     return {
       tooltip: {
@@ -533,13 +673,16 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
           const item = params[0];
           if (!item) return '';
           const dateStr = sortedDates[item.dataIndex];
-          const formattedDate = dateStr ? new Date(dateStr).toLocaleDateString('ro-RO', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' }) : item.name;
+          const dObj = dateStr ? new Date(dateStr + 'T00:00:00') : null;
+          const formattedDate = dObj ? dObj.toLocaleDateString('ro-RO', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' }) : item.name;
+          const isSel = isDayActive && activeDay === dateStr;
           return `
-            <div style="font-weight:bold;margin-bottom:4px;">${formattedDate}</div>
+            <div style="font-weight:bold;margin-bottom:4px;text-transform:capitalize;">${formattedDate} ${isSel ? '(Filtru activ)' : ''}</div>
             <div style="display:flex;align-items:center;gap:6px;">
               <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background-color:#10b981;"></span>
               <span>Total Ore: <strong>${item.value}h</strong></span>
             </div>
+            <div style="font-size:10px;color:#94a3b8;margin-top:4px;">${isSel ? 'Click pentru a anula filtrul' : 'Click pentru a filtra toată pagina'}</div>
           `;
         },
         backgroundColor: 'rgba(15, 23, 42, 0.9)',
@@ -549,7 +692,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
       grid: {
         left: '2%',
         right: '3%',
-        bottom: '8%',
+        bottom: '12%',
         top: '14%',
         containLabel: true
       },
@@ -558,10 +701,21 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
         data: xLabels,
         axisLine: { lineStyle: { color: '#cbd5e1' } },
         axisLabel: { 
-          color: '#64748b', 
+          interval: 0,
+          color: (val, idx) => {
+            const dateStr = sortedDates[idx];
+            if (isDayActive && activeDay === dateStr) return '#10b981';
+            const d = new Date(dateStr + 'T00:00:00');
+            const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+            return isWeekend ? '#94a3b8' : '#475569';
+          }, 
           fontSize: 10.5, 
-          fontWeight: 600,
-          rotate: xLabels.length > 10 ? 35 : 0
+          lineHeight: 14,
+          fontWeight: (val, idx) => {
+            const dateStr = sortedDates[idx];
+            return isDayActive && activeDay === dateStr ? 'bold' : 600;
+          },
+          rotate: xLabels.length > 15 ? 35 : 0
         }
       },
       yAxis: {
@@ -576,15 +730,22 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
           name: 'Ore Lucrate',
           type: 'bar',
           barMaxWidth: 28,
+          cursor: 'pointer',
           itemStyle: {
             borderRadius: [6, 6, 0, 0],
-            color: {
-              type: 'linear',
-              x: 0, y: 0, x2: 0, y2: 1,
-              colorStops: [
-                { offset: 0, color: '#10b981' },
-                { offset: 1, color: '#059669' }
-              ]
+            color: (params) => {
+              const dateStr = sortedDates[params.dataIndex];
+              if (isDayActive) {
+                return activeDay === dateStr ? '#10b981' : 'rgba(16, 185, 129, 0.2)';
+              }
+              return {
+                type: 'linear',
+                x: 0, y: 0, x2: 0, y2: 1,
+                colorStops: [
+                  { offset: 0, color: '#10b981' },
+                  { offset: 1, color: '#059669' }
+                ]
+              };
             }
           },
           label: {
@@ -604,7 +765,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
           symbol: 'circle',
           symbolSize: 6,
           itemStyle: { color: '#f59e0b', borderWidth: 2, borderColor: '#fff' },
-          lineStyle: { width: 2.5, color: '#f59e0b' },
+          lineStyle: { width: 2.5, color: '#f59e0b', opacity: isDayActive ? 0.35 : 1 },
           data: hoursValues
         }
       ]
@@ -612,9 +773,10 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
   };
 
   const getFilteredEmployeeSummaries = (search) => {
-    if (!search) return employeeSummaryTotals;
+    const source = crossFilteredEmployeeSummaryTotals;
+    if (!search) return source;
     const q = search.toLowerCase();
-    return employeeSummaryTotals.filter(emp =>
+    return source.filter(emp =>
       emp.name.toLowerCase().includes(q) ||
       (emp.employee_code && emp.employee_code.toLowerCase().includes(q)) ||
       (emp.job_title && emp.job_title.toLowerCase().includes(q))
@@ -681,10 +843,10 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
 
   // 2. Export Excel Detaliat (pe Zile)
   const handleExportDetailed = ({ search } = {}) => {
-    let rowsToExport = groupedTimesheets;
+    let rowsToExport = crossFilteredGroupedTimesheets;
     if (search) {
       const q = search.toLowerCase();
-      rowsToExport = groupedTimesheets.filter(r => 
+      rowsToExport = crossFilteredGroupedTimesheets.filter(r => 
         (r.first_name && r.first_name.toLowerCase().includes(q)) ||
         (r.last_name && r.last_name.toLowerCase().includes(q)) ||
         (r.employee_code && r.employee_code.toLowerCase().includes(q))
@@ -756,10 +918,10 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
       });
     }
 
-    let detailedData = groupedTimesheets;
+    let detailedData = crossFilteredGroupedTimesheets;
     if (search) {
       const q = search.toLowerCase();
-      detailedData = groupedTimesheets.filter(r => 
+      detailedData = crossFilteredGroupedTimesheets.filter(r => 
         (r.first_name && r.first_name.toLowerCase().includes(q)) ||
         (r.last_name && r.last_name.toLowerCase().includes(q)) ||
         (r.employee_code && r.employee_code.toLowerCase().includes(q))
@@ -817,7 +979,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
         onClick: handleExportBoth
       }
     ];
-  }, [employeeSummaryTotals, groupedTimesheets, startDate, endDate, employeeId]);
+  }, [crossFilteredEmployeeSummaryTotals, crossFilteredGroupedTimesheets, startDate, endDate, employeeId]);
 
   const summaryColumns = useMemo(() => [
     {
@@ -865,24 +1027,19 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
     },
     {
       key: 'days_worked',
-      label: 'Zile Lucrate',
-      exportRender: (row) => row.days_worked.toString(),
+      label: 'Zile / Sesiuni',
+      exportRender: (row) => `${row.days_worked} ${row.days_worked === 1 ? 'zi' : 'zile'} / ${row.total_sessions} ${row.total_sessions === 1 ? 'sesiune' : 'sesiuni'}`,
       render: (row) => (
-        <div className="flex items-center gap-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2.5 py-1 rounded-lg w-fit text-xs font-bold">
-          <Calendar size={13} />
-          <span>{row.days_worked} {row.days_worked === 1 ? 'zi' : 'zile'}</span>
-        </div>
-      ),
-      sortable: true
-    },
-    {
-      key: 'total_sessions',
-      label: 'Total Sesiuni',
-      exportRender: (row) => row.total_sessions.toString(),
-      render: (row) => (
-        <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2.5 py-1 rounded-md w-fit text-xs font-bold">
-          <span>{row.total_sessions}</span>
-          <span className="text-[10px] uppercase">{row.total_sessions === 1 ? 'sesiune' : 'sesiuni'}</span>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2.5 py-1 rounded-lg w-fit text-xs font-bold shrink-0">
+            <Calendar size={13} />
+            <span>{row.days_worked} {row.days_worked === 1 ? 'zi' : 'zile'}</span>
+          </div>
+          <span className="text-slate-300 dark:text-slate-600 font-bold select-none">•</span>
+          <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2.5 py-1 rounded-md w-fit text-xs font-bold shrink-0">
+            <span>{row.total_sessions}</span>
+            <span className="text-[10px] uppercase">{row.total_sessions === 1 ? 'sesiune' : 'sesiuni'}</span>
+          </div>
         </div>
       ),
       sortable: true
@@ -926,11 +1083,11 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
 
   const tableData = useMemo(() => {
     if (!employeeId) {
-      return viewMode === 'summary' ? employeeSummaryTotals : groupedTimesheets;
+      return viewMode === 'summary' ? crossFilteredEmployeeSummaryTotals : crossFilteredGroupedTimesheets;
     }
 
     const rows = [];
-    groupedTimesheets.forEach(group => {
+    crossFilteredGroupedTimesheets.forEach(group => {
       const isToday = new Date().toLocaleDateString('en-CA') === group.date;
       group.intervals.forEach((interval, index) => {
         let ms = 0;
@@ -972,7 +1129,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
        if (dateDiff !== 0) return dateDiff;
        return (b.in || 0) - (a.in || 0);
     });
-  }, [groupedTimesheets, employeeId, viewMode, employeeSummaryTotals]);;
+  }, [crossFilteredGroupedTimesheets, employeeId, viewMode, crossFilteredEmployeeSummaryTotals]);
 
   const baseColumns = [
     {
@@ -1169,14 +1326,26 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
   }, [employeeId, viewMode, summaryColumns, baseColumns]);
 
   const tableFilters = (
-    <div 
-      className="flex flex-row flex-nowrap items-center gap-2 w-full xl:w-auto overflow-x-auto py-1" 
-      style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
-    >
+    <div className="flex flex-wrap items-center gap-2 w-full py-0.5">
+      {crossFilter.type && (
+        <div className="flex items-center gap-1.5 px-3 h-10 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-700 text-xs font-bold text-emerald-800 dark:text-emerald-200 shrink-0 shadow-xs">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+          <span className="truncate max-w-[160px] sm:max-w-none">{crossFilter.label}</span>
+          <button 
+            type="button" 
+            onClick={clearCrossFilter} 
+            className="p-0.5 hover:bg-emerald-200/60 dark:hover:bg-emerald-800 rounded-full cursor-pointer transition-colors text-emerald-700 dark:text-emerald-300 ml-0.5" 
+            title="Elimină filtrul"
+          >
+            <X size={13} />
+          </button>
+        </div>
+      )}
+
       <select 
         value={actionFilter}
         onChange={(e) => setActionFilter(e.target.value)}
-        className="px-3 h-9 sm:h-10 rounded-full border border-slate-200 dark:border-slate-700 text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer w-auto shrink-0 shadow-xs"
+        className="px-3 h-10 rounded-full border border-slate-200 dark:border-slate-700 text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer w-auto shrink-0 shadow-xs"
       >
         <option value="all">Toate acțiunile</option>
         <option value="in">Doar Intrări (IN)</option>
@@ -1186,7 +1355,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
       <select 
         value={locationId}
         onChange={(e) => setLocationId(e.target.value)}
-        className="px-3 h-9 sm:h-10 rounded-full border border-slate-200 dark:border-slate-700 text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer w-auto max-w-[150px] truncate shrink-0 shadow-xs"
+        className="px-3 h-10 rounded-full border border-slate-200 dark:border-slate-700 text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer w-auto max-w-[160px] truncate shrink-0 shadow-xs"
       >
         <option value="all">Toate locațiile</option>
         {locations.map(loc => (
@@ -1197,7 +1366,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
       <select 
         value={periodFilter}
         onChange={handlePeriodChange}
-        className="px-3 h-9 sm:h-10 rounded-full border border-slate-200 dark:border-slate-700 text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer w-auto shrink-0 shadow-xs"
+        className="px-3 h-10 rounded-full border border-slate-200 dark:border-slate-700 text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer w-auto shrink-0 shadow-xs"
       >
         <option value="today">Azi</option>
         <option value="yesterday">Ieri</option>
@@ -1209,20 +1378,23 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
         <option value="custom">Personalizat...</option>
       </select>
       
-      <div className="flex items-center gap-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full px-2.5 h-9 sm:h-10 shadow-xs focus-within:ring-2 focus-within:ring-primary-500 transition-all shrink-0 w-auto">
+      <div className="flex items-center gap-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full px-3.5 h-10 shadow-xs focus-within:ring-2 focus-within:ring-primary-500 transition-all shrink-0">
+        <Calendar size={14} className="text-slate-400 shrink-0 mr-1" />
         <input 
           type="date" 
           value={startDate}
           onChange={handleDateManualChange(setStartDate)}
-          className="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 bg-transparent outline-none cursor-pointer w-[95px] sm:w-[105px] text-center"
+          onClick={(e) => e.target.showPicker?.()}
+          className="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 bg-transparent outline-none cursor-pointer w-[105px] sm:w-[115px] text-center [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:w-0 [&::-webkit-calendar-picker-indicator]:opacity-0"
           title="Data Început"
         />
-        <span className="text-slate-300 dark:text-slate-600 font-bold">-</span>
+        <span className="text-slate-300 dark:text-slate-600 font-bold select-none px-0.5">-</span>
         <input 
           type="date" 
           value={endDate}
           onChange={handleDateManualChange(setEndDate)}
-          className="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 bg-transparent outline-none cursor-pointer w-[95px] sm:w-[105px] text-center"
+          onClick={(e) => e.target.showPicker?.()}
+          className="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 bg-transparent outline-none cursor-pointer w-[105px] sm:w-[115px] text-center [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:w-0 [&::-webkit-calendar-picker-indicator]:opacity-0"
           title="Data Sfârșit"
         />
       </div>
@@ -1242,8 +1414,8 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
             </p>
           </div>
 
-          {/* Acțiuni Antet: Toggle Vizualizare */}
-          <div className="flex flex-wrap items-center gap-2.5">
+          {/* Acțiuni Antet: Toggle Vizualizare + Buton Export Excel (aliniat ultimul spre dreapta) */}
+          <div className="flex flex-wrap items-center gap-3">
             {/* Toggle Vizualizare: Total pe Angajat vs Detaliat pe Zile */}
             <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-full border border-slate-200 dark:border-slate-700 shrink-0 shadow-sm">
               <button
@@ -1277,6 +1449,77 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
                 </span>
               </button>
             </div>
+
+            {/* Buton Export Excel aliniat ultimul spre dreapta */}
+            {exportOptions && exportOptions.length > 0 && (
+              <div className="relative inline-flex rounded-full shadow-sm shrink-0">
+                <button
+                  type="button"
+                  onClick={() => exportOptions[0].onClick()}
+                  className="flex items-center pl-4 pr-3 h-10 rounded-l-full bg-green-600 hover:bg-green-700 text-white text-sm font-bold transition-colors cursor-pointer whitespace-nowrap shadow-sm"
+                  title={exportOptions[0].description || exportOptions[0].label}
+                >
+                  <Download size={16} className="mr-2" />
+                  Export Excel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
+                  className="flex items-center justify-center px-2.5 h-10 rounded-r-full bg-green-700 hover:bg-green-800 text-white border-l border-green-500/50 transition-colors cursor-pointer shadow-sm"
+                  title="Alege opțiuni de export"
+                >
+                  <ChevronDown
+                    size={16}
+                    className={`transition-transform duration-200 ${
+                      isExportMenuOpen ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+
+                {isExportMenuOpen && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setIsExportMenuOpen(false)}
+                    />
+                    <div className="absolute right-0 top-12 z-50 w-72 rounded-2xl bg-white dark:bg-slate-800 shadow-xl border border-slate-200 dark:border-slate-700 py-2 divide-y divide-slate-100 dark:divide-slate-700/60 animate-in fade-in zoom-in-95">
+                      <div className="px-4 py-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                        Opțiuni Export Excel
+                      </div>
+                      <div className="py-1">
+                        {exportOptions.map((opt, idx) => (
+                          <button
+                            key={opt.id || idx}
+                            type="button"
+                            onClick={() => {
+                              setIsExportMenuOpen(false);
+                              opt.onClick();
+                            }}
+                            className="w-full text-left px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-700/50 flex flex-col group transition-colors cursor-pointer"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-bold text-slate-800 dark:text-white group-hover:text-green-600 dark:group-hover:text-green-400">
+                                {opt.label}
+                              </span>
+                              {idx === 0 && (
+                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300">
+                                  Principal
+                                </span>
+                              )}
+                            </div>
+                            {opt.description && (
+                              <span className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                {opt.description}
+                              </span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -1304,7 +1547,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
 
             {/* Card 2: Angajați Activi */}
             <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+              <div className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
                 <Users size={22} />
               </div>
               <div className="min-w-0">
@@ -1312,7 +1555,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
                 <div className="text-xl font-black text-slate-900 dark:text-white truncate">
                   {analyticsSummary.activeEmployeesCount} persoane
                 </div>
-                <div className="text-xs font-medium text-blue-600 dark:text-blue-400">
+                <div className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
                   {analyticsSummary.totalDaysWorked} zile lucrate pontate
                 </div>
               </div>
@@ -1320,7 +1563,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
 
             {/* Card 3: Medie / Angajat */}
             <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-xl bg-violet-50 dark:bg-violet-950/50 text-violet-600 dark:text-violet-400 flex items-center justify-center shrink-0">
+              <div className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
                 <TrendingUp size={22} />
               </div>
               <div className="min-w-0">
@@ -1328,7 +1571,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
                 <div className="text-xl font-black text-slate-900 dark:text-white truncate">
                   {analyticsSummary.avgPerEmployeeStr}
                 </div>
-                <div className="text-xs font-medium text-violet-600 dark:text-violet-400">
+                <div className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
                   Medie zi: {analyticsSummary.avgDailyStr}
                 </div>
               </div>
@@ -1336,7 +1579,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
 
             {/* Card 4: Sesiuni Pontaj */}
             <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+              <div className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
                 <CheckCircle2 size={22} />
               </div>
               <div className="min-w-0">
@@ -1344,7 +1587,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
                 <div className="text-xl font-black text-slate-900 dark:text-white truncate">
                   {analyticsSummary.totalSessions} pontări
                 </div>
-                <div className="text-xs font-medium text-amber-600 dark:text-amber-400 truncate">
+                <div className="text-xs font-medium text-emerald-600 dark:text-emerald-400 truncate">
                   {locations.find(l => String(l.id) === String(locationId))?.name || 'Toate locațiile'}
                 </div>
               </div>
@@ -1363,13 +1606,20 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
                 <PieChart size={18} className="text-slate-400" />
               </div>
 
-              <div className="h-[230px] w-full relative">
+              <div className="h-[275px] w-full relative">
                 {employeeSummaryTotals.length > 0 ? (
                   <>
                     <ReactECharts 
                       option={getDonutRoleOption()} 
                       style={{ height: '100%', width: '100%' }}
                       opts={{ renderer: 'svg' }}
+                      onEvents={{
+                        click: (params) => {
+                          if (params && params.name) {
+                            toggleCrossFilter('role', params.name, `Funcție: ${params.name}`);
+                          }
+                        }
+                      }}
                     />
                     {/* Text Suprapus Centrat pe Donut */}
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ width: '60%' }}>
@@ -1401,12 +1651,24 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
                 <BarChart3 size={18} className="text-slate-400" />
               </div>
 
-              <div className="h-[230px] w-full">
+              <div className="h-[275px] w-full">
                 {groupedTimesheets.length > 0 ? (
                   <ReactECharts 
                     option={getDailyTrendOption()} 
                     style={{ height: '100%', width: '100%' }}
                     opts={{ renderer: 'svg' }}
+                    onEvents={{
+                      click: (params) => {
+                        if (params && params.dataIndex !== undefined) {
+                          const dateStr = sortedDailyDates[params.dataIndex];
+                          if (dateStr) {
+                            const parts = dateStr.split('-');
+                            const labelDate = parts.length === 3 ? `${parts[2]}.${parts[1]}.${parts[0]}` : dateStr;
+                            toggleCrossFilter('day', dateStr, `Ziua: ${labelDate}`);
+                          }
+                        }
+                      }
+                    }}
                   />
                 ) : (
                   <div className="h-full flex items-center justify-center text-sm text-slate-400">
@@ -1417,16 +1679,15 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
             </div>
 
             {/* Grafic 3: Top 5 Angajați după Ore Lucrate */}
-            <div className="lg:col-span-3 bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col">
-              <div className="flex items-center justify-between mb-2">
+            <div className="lg:col-span-3 bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col justify-between">
+              <div className="flex items-center justify-between mb-1.5">
                 <div>
-                  <h3 className="text-sm font-bold text-slate-800 dark:text-white">Top 5 Ore Lucrate</h3>
-                  <p className="text-xs text-slate-400">Cei mai activi angajați</p>
+                  <h3 className="text-sm font-bold text-slate-800 dark:text-white">Top 5 Angajați</h3>
                 </div>
                 <Award size={18} className="text-amber-500" />
               </div>
 
-              <div className="flex-1 space-y-2 overflow-y-auto max-h-[230px]" style={{ scrollbarWidth: 'none' }}>
+              <div className="flex-1 flex flex-col justify-between space-y-1.5">
                 {topEmployees.map((emp, idx) => {
                   const maxHours = topEmployees[0]?.total_hours_decimal || 1;
                   const pct = Math.min(100, Math.max(15, Math.round((emp.total_hours_decimal / maxHours) * 100)));
@@ -1442,27 +1703,34 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
                     ? (emp.avatar_path.startsWith('http') ? emp.avatar_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${emp.avatar_path}`)
                     : null;
 
+                  const isEmpSelected = crossFilter.type === 'employee' && String(crossFilter.value) === String(emp.employee_id);
+
                   return (
-                    <Link 
+                    <div 
                       key={emp.employee_id} 
-                      to={`/admin/employees/${emp.employee_id}?tab=details`}
-                      className="block p-2 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-700/60 hover:bg-slate-100/80 dark:hover:bg-slate-800/60 transition-colors group cursor-pointer"
+                      onClick={() => toggleCrossFilter('employee', emp.employee_id, `Angajat: ${emp.name}`)}
+                      className={`block py-1.5 px-2.5 rounded-xl border transition-all cursor-pointer select-none group ${
+                        isEmpSelected 
+                          ? 'bg-emerald-50/70 dark:bg-emerald-950/40 border-emerald-400 dark:border-emerald-600 ring-2 ring-emerald-400/40 shadow-xs' 
+                          : 'bg-slate-50 dark:bg-slate-900/40 border-slate-100 dark:border-slate-700/60 hover:bg-slate-100/80 dark:hover:bg-slate-800/60'
+                      }`}
+                      title={isEmpSelected ? "Click pentru a anula filtrul" : "Click pentru a filtra toată pagina"}
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black border shrink-0 ${badgeClasses[idx] || badgeClasses[4]}`}>
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black border shrink-0 ${badgeClasses[idx] || badgeClasses[4]}`}>
                             {idx + 1}
                           </span>
 
                           {/* Foto Profil Angajat */}
                           {avatarSrc ? (
                             <img 
-                              src={avatarSrc}
-                              alt={emp.name}
-                              className="w-8 h-8 rounded-full object-cover border border-slate-200 dark:border-slate-700 shadow-xs shrink-0 group-hover:border-primary-400 transition-colors"
+                              src={avatarSrc} 
+                              alt={emp.name} 
+                              className="w-7 h-7 rounded-full object-cover border border-slate-200 dark:border-slate-700 shadow-xs shrink-0 group-hover:border-primary-400 transition-colors"
                             />
                           ) : (
-                            <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-[11px] font-bold flex items-center justify-center shrink-0 shadow-xs group-hover:bg-primary-50 group-hover:text-primary-600 transition-colors">
+                            <div className="w-7 h-7 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-[10px] font-bold flex items-center justify-center shrink-0 shadow-xs group-hover:bg-primary-50 group-hover:text-primary-600 transition-colors">
                               {(emp.first_name?.[0] || '')}{(emp.last_name?.[0] || '')}
                             </div>
                           )}
@@ -1471,22 +1739,33 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
                             <div className="text-xs font-bold text-slate-800 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors truncate">
                               {emp.name}
                             </div>
-                            <div className="text-[10px] text-slate-400 truncate">
-                              {emp.job_title}
+                            <div className="text-[10px] text-slate-400 truncate leading-tight">
+                              {emp.job_title || 'Fără rol'}
                             </div>
                           </div>
                         </div>
-                        <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 shrink-0">
-                          {emp.total_time_str}
-                        </span>
+
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <span className={`text-xs font-bold ${isEmpSelected ? 'text-emerald-700 dark:text-emerald-300' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                            {emp.total_time_str}
+                          </span>
+                          <Link
+                            to={`/admin/employees/${emp.employee_id}?tab=details`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="p-1 rounded-md text-slate-400 hover:text-primary-600 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                            title="Vezi profil angajat"
+                          >
+                            <Eye size={12} />
+                          </Link>
+                        </div>
                       </div>
-                      <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1 mt-1.5 overflow-hidden">
+                      <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1 mt-1 overflow-hidden">
                         <div 
-                          className="bg-emerald-500 h-1 rounded-full transition-all duration-500"
-                          style={{ width: `${pct}%` }}
+                          className="bg-emerald-500 h-1 rounded-full transition-all duration-500" 
+                          style={{ width: `${pct}%` }} 
                         />
                       </div>
-                    </Link>
+                    </div>
                   );
                 })}
               </div>
@@ -1504,7 +1783,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
           filters={tableFilters}
           emptyMessage="Nu există pontaje înregistrate."
           expandable={!employeeId}
-          exportOptions={exportOptions}
+          exportOptions={null}
           expandedRowRender={(row) => {
             if (viewMode === 'summary') {
               const empDays = groupedTimesheets.filter(g => String(g.employee_id) === String(row.employee_id));

@@ -155,6 +155,30 @@ export default function TenantDashboard() {
   const themeColor = tenant.theme_color || '#2563EB';
   const qrUrl = site ? `https://scan.pontaj.app/s/${site.id}` : window.location.origin;
 
+  const isColorDark = (hex) => {
+    if (!hex || typeof hex !== 'string') return true;
+    const clean = hex.replace('#', '');
+    const full = clean.length === 3 ? clean.split('').map(c => c + c).join('') : clean;
+    const r = parseInt(full.substring(0, 2), 16) || 0;
+    const g = parseInt(full.substring(2, 4), 16) || 0;
+    const b = parseInt(full.substring(4, 6), 16) || 0;
+    return (r * 299 + g * 587 + b * 114) / 1000 < 130;
+  };
+
+  const getNavStyle = (isActive) => {
+    if (!isActive) return {};
+    if (isDarkMode) {
+      return {
+        backgroundColor: isColorDark(themeColor) ? 'rgba(255, 255, 255, 0.12)' : `${themeColor}35`,
+        color: '#ffffff'
+      };
+    }
+    return {
+      backgroundColor: `${themeColor}15`,
+      color: themeColor
+    };
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-800/50 flex">
       {/* Mobile sidebar overlay */}
@@ -162,9 +186,9 @@ export default function TenantDashboard() {
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 md:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
-      <div className={`fixed inset-y-0 left-0 w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 dark:border-slate-700 flex flex-col z-50 transform transition-transform duration-300 ease-in-out md:translate-x-0 md:static ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <div className={`fixed inset-y-0 left-0 w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col z-50 transform transition-transform duration-300 ease-in-out md:translate-x-0 md:static ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         
-        <div className="h-16 flex items-center px-6 border-b border-slate-100 dark:border-slate-700/50 dark:border-slate-700 bg-white dark:bg-slate-800 justify-between">
+        <div className="h-16 flex items-center px-6 border-b border-slate-100 dark:border-slate-700/50 bg-white dark:bg-slate-800 justify-between">
           <div className="flex items-center gap-3 overflow-hidden">
             {tenant.logo_url ? (
               <div className="h-10 w-10 shrink-0 bg-slate-800 dark:bg-transparent rounded-lg flex items-center justify-center p-1 shadow-sm border border-slate-700/50">
@@ -178,11 +202,11 @@ export default function TenantDashboard() {
                 {tenant.name.substring(0, 2).toUpperCase()}
               </div>
             )}
-            <span className="font-bold text-slate-800 dark:text-white dark:text-white truncate" title={tenant.name}>{tenant.name}</span>
+            <span className="font-bold text-slate-800 dark:text-white truncate" title={tenant.name}>{tenant.name}</span>
           </div>
           <button 
             onClick={() => setIsDarkMode(!isDarkMode)}
-            className="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 dark:text-slate-400 transition-colors focus:outline-none hidden md:block"
+            className="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors focus:outline-none hidden md:block"
             title="Comută tema"
           >
             {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
@@ -198,8 +222,8 @@ export default function TenantDashboard() {
             to="/admin/dashboard"
             onClick={() => setSidebarOpen(false)}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-full transition-colors font-medium text-sm
-              ${location.pathname === '/admin/dashboard' ? 'bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-slate-800 dark:text-white'}`}
-            style={location.pathname === '/admin/dashboard' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
+              ${location.pathname === '/admin/dashboard' ? 'font-bold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/40 hover:text-slate-800 dark:hover:text-white'}`}
+            style={getNavStyle(location.pathname === '/admin/dashboard')}
           >
             <div className="w-5 h-5 flex items-center justify-center">
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
@@ -211,8 +235,8 @@ export default function TenantDashboard() {
             to="/admin/timesheets"
             onClick={() => setSidebarOpen(false)}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-full transition-colors font-medium text-sm
-              ${location.pathname === '/admin/timesheets' ? 'bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-slate-800 dark:text-white'}`}
-            style={location.pathname === '/admin/timesheets' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
+              ${location.pathname === '/admin/timesheets' ? 'font-bold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/40 hover:text-slate-800 dark:hover:text-white'}`}
+            style={getNavStyle(location.pathname === '/admin/timesheets')}
           >
             <div className="w-5 h-5 flex items-center justify-center">
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
@@ -224,8 +248,8 @@ export default function TenantDashboard() {
             to="/admin/employees"
             onClick={() => setSidebarOpen(false)}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-full transition-colors font-medium text-sm
-              ${location.pathname.startsWith('/admin/employees') ? 'bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-slate-800 dark:text-white'}`}
-            style={location.pathname.startsWith('/admin/employees') ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
+              ${location.pathname.startsWith('/admin/employees') ? 'font-bold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/40 hover:text-slate-800 dark:hover:text-white'}`}
+            style={getNavStyle(location.pathname.startsWith('/admin/employees'))}
           >
             <Users size={18} /> Modul HR (Angajați)
           </Link>
@@ -234,8 +258,8 @@ export default function TenantDashboard() {
             to="/admin/locations"
             onClick={() => setSidebarOpen(false)}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-full transition-colors font-medium text-sm
-              ${location.pathname === '/admin/locations' ? 'bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-slate-800 dark:text-white'}`}
-            style={location.pathname === '/admin/locations' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
+              ${location.pathname === '/admin/locations' ? 'font-bold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/40 hover:text-slate-800 dark:hover:text-white'}`}
+            style={getNavStyle(location.pathname === '/admin/locations')}
           >
             <MapPin size={18} /> Puncte de Lucru
           </Link>
@@ -244,8 +268,8 @@ export default function TenantDashboard() {
             to="/admin/qr"
             onClick={() => setSidebarOpen(false)}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-full transition-colors font-medium text-sm
-              ${location.pathname === '/admin/qr' ? 'bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-slate-800 dark:text-white'}`}
-            style={location.pathname === '/admin/qr' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
+              ${location.pathname === '/admin/qr' ? 'font-bold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/40 hover:text-slate-800 dark:hover:text-white'}`}
+            style={getNavStyle(location.pathname === '/admin/qr')}
           >
             <QrCode size={18} /> Kiosk-uri QR
           </Link>
@@ -255,8 +279,8 @@ export default function TenantDashboard() {
               to="/admin/shifts"
               onClick={() => setSidebarOpen(false)}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-full transition-colors font-medium text-sm
-                ${location.pathname === '/admin/shifts' ? 'bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-slate-800 dark:text-white'}`}
-              style={location.pathname === '/admin/shifts' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
+                ${location.pathname === '/admin/shifts' ? 'font-bold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/40 hover:text-slate-800 dark:hover:text-white'}`}
+              style={getNavStyle(location.pathname === '/admin/shifts')}
             >
               <CalendarClock size={18} /> Planificator Ture
             </Link>
@@ -267,8 +291,8 @@ export default function TenantDashboard() {
               to="/admin/leaves"
               onClick={() => setSidebarOpen(false)}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-full transition-colors font-medium text-sm
-                ${location.pathname === '/admin/leaves' ? 'bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-slate-800 dark:text-white'}`}
-              style={location.pathname === '/admin/leaves' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
+                ${location.pathname === '/admin/leaves' ? 'font-bold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/40 hover:text-slate-800 dark:hover:text-white'}`}
+              style={getNavStyle(location.pathname === '/admin/leaves')}
             >
               <CalendarDays size={18} /> <span className="flex-1 text-left">Zile Libere (CO/CM)</span> <span className="text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide" style={{ backgroundColor: themeColor }}>PRO</span>
             </Link>
@@ -279,8 +303,8 @@ export default function TenantDashboard() {
               to="/admin/export"
               onClick={() => setSidebarOpen(false)}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-full transition-colors font-medium text-sm
-                ${location.pathname === '/admin/export' ? 'bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-slate-800 dark:text-white'}`}
-              style={location.pathname === '/admin/export' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
+                ${location.pathname === '/admin/export' ? 'font-bold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/40 hover:text-slate-800 dark:hover:text-white'}`}
+              style={getNavStyle(location.pathname === '/admin/export')}
             >
               <FileSpreadsheet size={18} /> <span className="flex-1 text-left">Export Conta (SAGA)</span> <span className="text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide" style={{ backgroundColor: themeColor }}>PRO</span>
             </Link>
@@ -291,8 +315,8 @@ export default function TenantDashboard() {
               to="/admin/geofence"
               onClick={() => setSidebarOpen(false)}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-full transition-colors font-medium text-sm
-                ${location.pathname === '/admin/geofence' ? 'bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-slate-800 dark:text-white'}`}
-              style={location.pathname === '/admin/geofence' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
+                ${location.pathname === '/admin/geofence' ? 'font-bold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/40 hover:text-slate-800 dark:hover:text-white'}`}
+              style={getNavStyle(location.pathname === '/admin/geofence')}
             >
               <Map size={18} /> <span className="flex-1 text-left">Hartă Geofence</span> <span className="text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide" style={{ backgroundColor: themeColor }}>PRO</span>
             </Link>
@@ -303,8 +327,8 @@ export default function TenantDashboard() {
               to="/admin/offline"
               onClick={() => setSidebarOpen(false)}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-full transition-colors font-medium text-sm
-                ${location.pathname === '/admin/offline' ? 'bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-slate-800 dark:text-white'}`}
-              style={location.pathname === '/admin/offline' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
+                ${location.pathname === '/admin/offline' ? 'font-bold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/40 hover:text-slate-800 dark:hover:text-white'}`}
+              style={getNavStyle(location.pathname === '/admin/offline')}
             >
               <Globe size={18} /> <span className="flex-1 text-left">Mod Offline</span> <span className="text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide" style={{ backgroundColor: themeColor }}>PRO</span>
             </Link>
@@ -315,8 +339,8 @@ export default function TenantDashboard() {
               to="/admin/billing"
               onClick={() => setSidebarOpen(false)}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-full transition-colors font-medium text-sm
-                ${location.pathname === '/admin/billing' ? 'bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-slate-800 dark:text-white'}`}
-              style={location.pathname === '/admin/billing' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
+                ${location.pathname === '/admin/billing' ? 'font-bold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/40 hover:text-slate-800 dark:hover:text-white'}`}
+              style={getNavStyle(location.pathname === '/admin/billing')}
             >
               <CreditCard size={18} /> <span className="flex-1 text-left">Abonament & Facturi</span> <span className="text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide" style={{ backgroundColor: themeColor }}>PRO</span>
             </Link>
@@ -327,8 +351,8 @@ export default function TenantDashboard() {
               to="/admin/revisal"
               onClick={() => setSidebarOpen(false)}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-full transition-colors font-medium text-sm
-                ${location.pathname === '/admin/revisal' ? 'bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-slate-800 dark:text-white'}`}
-              style={location.pathname === '/admin/revisal' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
+                ${location.pathname === '/admin/revisal' ? 'font-bold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/40 hover:text-slate-800 dark:hover:text-white'}`}
+              style={getNavStyle(location.pathname === '/admin/revisal')}
             >
               <BookOpenCheck size={18} /> <span className="flex-1 text-left">Integrare REVISAL</span> <span className="text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide" style={{ backgroundColor: themeColor }}>PRO</span>
             </Link>
@@ -339,22 +363,20 @@ export default function TenantDashboard() {
               to="/admin/erp"
               onClick={() => setSidebarOpen(false)}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-full transition-colors font-medium text-sm
-                ${location.pathname === '/admin/erp' ? 'bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-slate-800 dark:text-white'}`}
-              style={location.pathname === '/admin/erp' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
+                ${location.pathname === '/admin/erp' ? 'font-bold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/40 hover:text-slate-800 dark:hover:text-white'}`}
+              style={getNavStyle(location.pathname === '/admin/erp')}
             >
               <Calculator size={18} /> <span className="flex-1 text-left">Gestiune & ERP</span> <span className="text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide" style={{ backgroundColor: themeColor }}>PRO</span>
             </Link>
           )}
-
-
 
           {tenant.modules?.face_recognition && (
             <Link 
               to="/admin/face"
               onClick={() => setSidebarOpen(false)}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-full transition-colors font-medium text-sm
-                ${location.pathname === '/admin/face' ? 'bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-slate-800 dark:text-white'}`}
-              style={location.pathname === '/admin/face' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
+                ${location.pathname === '/admin/face' ? 'font-bold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/40 hover:text-slate-800 dark:hover:text-white'}`}
+              style={getNavStyle(location.pathname === '/admin/face')}
             >
               <ScanFace size={18} /> <span className="flex-1 text-left">Recunoaștere Facială</span> <span className="text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide" style={{ backgroundColor: themeColor }}>PRO</span>
             </Link>
@@ -365,8 +387,8 @@ export default function TenantDashboard() {
               to="/admin/whatsapp"
               onClick={() => setSidebarOpen(false)}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-full transition-colors font-medium text-sm
-                ${location.pathname === '/admin/whatsapp' ? 'bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-slate-800 dark:text-white'}`}
-              style={location.pathname === '/admin/whatsapp' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
+                ${location.pathname === '/admin/whatsapp' ? 'font-bold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/40 hover:text-slate-800 dark:hover:text-white'}`}
+              style={getNavStyle(location.pathname === '/admin/whatsapp')}
             >
               <MessageSquare size={18} /> <span className="flex-1 text-left">Alerte WhatsApp</span> <span className="text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide" style={{ backgroundColor: themeColor }}>PRO</span>
             </Link>
@@ -377,8 +399,8 @@ export default function TenantDashboard() {
               to="/admin/assets"
               onClick={() => setSidebarOpen(false)}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-full transition-colors font-medium text-sm
-                ${location.pathname === '/admin/assets' ? 'bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-slate-800 dark:text-white'}`}
-              style={location.pathname === '/admin/assets' ? { backgroundColor: `${themeColor}15`, color: themeColor } : {}}
+                ${location.pathname === '/admin/assets' ? 'font-bold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/40 hover:text-slate-800 dark:hover:text-white'}`}
+              style={getNavStyle(location.pathname === '/admin/assets')}
             >
               <Wrench size={18} /> <span className="flex-1 text-left">Gestiune Echipamente</span> <span className="text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide" style={{ backgroundColor: themeColor }}>PRO</span>
             </Link>
