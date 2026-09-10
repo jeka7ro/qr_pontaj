@@ -12,15 +12,41 @@ export default function CreateShiftModal({ onClose, onShiftCreated, tenantId, em
   });
   
   // Dacă este edit, suprascriem data dacă a venit din initialData (ca să nu mai ținem cont de timezone offset care schimbă ziua la editare)
+  const getTargetDate = () => {
+    if (!pendingChangeRequest) return null;
+    if (pendingChangeRequest.end_date) {
+      const d = new Date(pendingChangeRequest.end_date);
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      const formatted = `${yyyy}-${mm}-${dd}`;
+      // Verify it's valid
+      if (!isNaN(d.getTime())) return formatted;
+    }
+    if (pendingChangeRequest.reason) {
+      const isoMatch = pendingChangeRequest.reason.match(/\b(\d{4}-\d{2}-\d{2})\b/);
+      if (isoMatch) return isoMatch[1];
+      const roMatch = pendingChangeRequest.reason.match(/\b(\d{2})[./-](\d{2})[./-](\d{4})\b/);
+      if (roMatch) return `${roMatch[3]}-${roMatch[2]}-${roMatch[1]}`;
+    }
+    return null;
+  };
+  const targetDate = getTargetDate();
+
+  // Dacă este edit, suprascriem data dacă a venit din initialData sau din cererea de schimbare
   useEffect(() => {
     if (isEdit && initialData?.date) {
-      const dateObj = new Date(initialData.date);
-      const yyyy = dateObj.getFullYear();
-      const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
-      const dd = String(dateObj.getDate()).padStart(2, '0');
-      setFormData(prev => ({ ...prev, date: `${yyyy}-${mm}-${dd}` }));
+      if (targetDate) {
+        setFormData(prev => ({ ...prev, date: targetDate }));
+      } else {
+        const dateObj = new Date(initialData.date);
+        const yyyy = dateObj.getFullYear();
+        const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const dd = String(dateObj.getDate()).padStart(2, '0');
+        setFormData(prev => ({ ...prev, date: `${yyyy}-${mm}-${dd}` }));
+      }
     }
-  }, [isEdit, initialData]);
+  }, [isEdit, initialData, targetDate]);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -29,12 +55,12 @@ export default function CreateShiftModal({ onClose, onShiftCreated, tenantId, em
   const [searchEmp, setSearchEmp] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const saveShiftWithDate = async (finalDate) => {
     setLoading(true);
     setError(null);
 
     try {
+      const payload = { ...formData, date: finalDate };
       const url = isEdit 
         ? `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenants/${tenantId}/shifts/${initialData.id}`
         : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenants/${tenantId}/shifts`;
@@ -42,7 +68,7 @@ export default function CreateShiftModal({ onClose, onShiftCreated, tenantId, em
       const response = await fetch(url, {
         method: isEdit ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       });
 
       if (!response.ok) {
@@ -52,9 +78,11 @@ export default function CreateShiftModal({ onClose, onShiftCreated, tenantId, em
 
       // Approve pending change request if present
       if (pendingChangeRequest) {
-        await fetch(`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenants/${tenantId}/leaves/${pendingChangeRequest.id}/status`, {
+        const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
+        const token = localStorage.getItem('token');
+        await fetch(`${baseUrl}/api/tenants/${tenantId}/leaves/${pendingChangeRequest.id}/status`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
           body: JSON.stringify({ status: 'APPROVED' })
         }).catch(err => console.error("Eroare la aprobarea cererii de modificare:", err));
       }
@@ -67,10 +95,15 @@ export default function CreateShiftModal({ onClose, onShiftCreated, tenantId, em
     }
   };
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    await saveShiftWithDate(formData.date);
+  };
+
   return (
-    <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-slate-200 dark:border-slate-800">
-        <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
+    <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-slate-200 dark:border-slate-800 my-auto">
+        <div className="px-4 sm:px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
           <h2 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
             <Clock size={20} style={{ color: themeColor }} />
             {isEdit ? 'Editează Tura' : initialData ? 'Duplică Tura' : 'Adaugă Tură Nouă'}
@@ -80,47 +113,62 @@ export default function CreateShiftModal({ onClose, onShiftCreated, tenantId, em
           </button>
         </div>
 
-        <div className="p-6">
+        <div className="p-4 sm:p-6 max-h-[85vh] overflow-y-auto">
           {pendingChangeRequest && (
-            <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg flex flex-col gap-3">
-              <div className="text-amber-800 dark:text-amber-300 text-sm flex items-start gap-2">
-                <span className="font-bold shrink-0">Cerere modificare:</span>
-                <span className="italic">{pendingChangeRequest.reason}</span>
+            <div className="mb-4 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-xl flex flex-col gap-3 shadow-sm">
+              <div className="text-amber-900 dark:text-amber-200 text-sm">
+                <div className="flex items-center gap-2 font-bold mb-1">
+                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                  <span>Solicitare Modificare Tură de la Angajat:</span>
+                </div>
+                {targetDate && (
+                  <div className="mt-1 font-semibold text-amber-800 dark:text-amber-300 bg-amber-100/70 dark:bg-amber-800/40 px-3 py-1.5 rounded-lg border border-amber-300/60">
+                    📅 Angajatul dorește mutarea pe data de: <span className="font-black underline text-amber-950 dark:text-white">{new Date(targetDate + 'T00:00:00').toLocaleDateString('ro-RO', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                  </div>
+                )}
+                {pendingChangeRequest.reason && (
+                  <p className="text-xs italic text-slate-600 dark:text-slate-300 mt-1.5 bg-white/70 dark:bg-slate-800/70 p-2 rounded-lg border border-amber-200/50">
+                    "{pendingChangeRequest.reason}"
+                  </p>
+                )}
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2 pt-2 border-t border-amber-200/60">
                 <button 
                   type="button"
+                  disabled={loading}
                   onClick={async (e) => {
                     e.preventDefault();
-                    await handleSubmit(e); // Save new hours and approve
+                    const finalDate = targetDate || formData.date;
+                    await saveShiftWithDate(finalDate);
                   }}
-                  className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-md transition-colors"
+                  className="px-4 py-2 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white text-xs font-bold rounded-xl transition-all shadow flex items-center justify-center gap-1.5 disabled:opacity-50"
                 >
-                  Aprobă
+                  ✓ Aprobă și mută tura {targetDate ? `pe ${new Date(targetDate + 'T00:00:00').toLocaleDateString('ro-RO', { day: 'numeric', month: 'short' })}` : ''}
                 </button>
                 <button 
                   type="button"
+                  disabled={loading}
                   onClick={async (e) => {
                     e.preventDefault();
                     if (!window.confirm("Ești sigur că vrei să respingi această cerere?")) return;
                     try {
+                      setLoading(true);
                       const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
                       const token = localStorage.getItem('token');
-                      const tenantId = localStorage.getItem('tenant_id');
                       await fetch(`${baseUrl}/api/tenants/${tenantId}/leaves/${pendingChangeRequest.id}/status`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                         body: JSON.stringify({ status: 'REJECTED' })
                       });
-                      onSuccess();
-                      onClose();
+                      onShiftCreated();
                     } catch(err) {
                       setError(err.message);
+                      setLoading(false);
                     }
                   }}
-                  className="px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold rounded-md transition-colors"
+                  className="px-4 py-2 bg-red-100 hover:bg-red-200 active:scale-95 text-red-700 text-xs font-bold rounded-xl transition-colors disabled:opacity-50"
                 >
-                  Respinge
+                  ✕ Respinge Cererea
                 </button>
               </div>
             </div>
@@ -211,7 +259,7 @@ export default function CreateShiftModal({ onClose, onShiftCreated, tenantId, em
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div>
                 <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Ora Început</label>
                 <input
@@ -265,18 +313,18 @@ export default function CreateShiftModal({ onClose, onShiftCreated, tenantId, em
               />
             </div>
 
-            <div className="pt-4 flex gap-3">
+            <div className="pt-4 flex flex-col-reverse sm:flex-row gap-3">
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 px-4 h-10 px-5 text-sm flex items-center justify-center bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-full font-bold text-sm transition-colors"
+                className="flex-1 h-10 px-5 text-sm flex items-center justify-center bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-full font-bold transition-colors"
               >
                 Anulează
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="flex-1 px-4 h-10 px-5 text-sm flex items-center justify-center text-white rounded-full font-bold text-sm transition-opacity hover:opacity-90 disabled:opacity-50"
+                className="flex-1 h-10 px-5 text-sm flex items-center justify-center text-white rounded-full font-bold transition-opacity hover:opacity-90 disabled:opacity-50"
                 style={{ backgroundColor: themeColor }}
               >
                 {loading ? 'Se salvează...' : 'Salvează Tura'}

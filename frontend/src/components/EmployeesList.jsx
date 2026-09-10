@@ -230,8 +230,8 @@ export default function EmployeesList({ tenant, themeColor }) {
   };
 
   return (
-    <div className="max-w-6xl">
-      <div className="mb-6 flex justify-between items-center">
+    <div className="w-full">
+      <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white dark:text-white">Echipa Angajați</h1>
           <p className="text-slate-500 dark:text-slate-400 dark:text-slate-400 mt-1">Gestionează personalul care are acces să scaneze la această locație.</p>
@@ -239,7 +239,7 @@ export default function EmployeesList({ tenant, themeColor }) {
         {!showAddModal && (
           <button 
             onClick={() => { setShowAddModal(true); setSaveError(null); setOcrError(null); }}
-            className="px-4 py-2.5 text-sm rounded-full text-white font-bold shadow-sm transition-all flex items-center gap-2"
+            className="px-4 py-2.5 text-sm rounded-full text-white font-bold shadow-sm transition-all flex items-center gap-2 shrink-0"
             style={{ backgroundColor: themeColor }}
           >
             <UserPlus size={18} /> Adaugă Angajat
@@ -270,8 +270,8 @@ export default function EmployeesList({ tenant, themeColor }) {
             </div>
           </div>
 
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 dark:border-slate-700 overflow-hidden">
-            <table className="w-full text-left border-collapse">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 dark:border-slate-700 overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
+            <table className="w-full text-left border-collapse min-w-[650px]">
               <thead>
                 <tr className="bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700 dark:border-slate-700">
                   <th style={{ width: 50, textAlign: 'center' }} className="py-3 font-bold text-xs tracking-wider text-slate-500 dark:text-slate-400 dark:text-slate-400">Nr.</th>
@@ -410,11 +410,11 @@ export default function EmployeesList({ tenant, themeColor }) {
             </table>
             
             {/* FOOTER PAGINARE */}
-            <div className="px-5 py-3 border-t border-slate-200 dark:border-slate-700 dark:border-slate-700 flex items-center justify-between bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-800/50 rounded-b-2xl">
-              <div className="flex items-center gap-4">
-                <span className="whitespace-nowrap text-[13px] text-slate-500 dark:text-slate-400 dark:text-slate-400 font-bold">
+            <div className="px-4 sm:px-5 py-3 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-50 dark:bg-slate-800/50 rounded-b-2xl">
+              <div className="flex flex-wrap items-center justify-between sm:justify-start w-full sm:w-auto gap-3 sm:gap-4">
+                <span className="whitespace-nowrap text-[13px] text-slate-500 dark:text-slate-400 font-bold">
                   Afișează&nbsp;
-                  <select value={rowsPerPage} onChange={e => { setRowsPerPage(Number(e.target.value)); setPage(1); }} className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 dark:border-slate-600 rounded-full px-2 py-0.5 outline-none dark:text-white">
+                  <select value={rowsPerPage} onChange={e => { setRowsPerPage(Number(e.target.value)); setPage(1); }} className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-full px-2 py-0.5 outline-none dark:text-white">
                     <option value={10}>10</option>
                     <option value={15}>15</option>
                     <option value={25}>25</option>
@@ -422,12 +422,12 @@ export default function EmployeesList({ tenant, themeColor }) {
                     <option value={9999}>Toți</option>
                   </select>
                 </span>
-                <span className="whitespace-nowrap text-[13px] text-slate-500 dark:text-slate-400 dark:text-slate-400">Total înregistrări: <strong className="text-slate-800 dark:text-white dark:text-white">{total}</strong></span>
+                <span className="whitespace-nowrap text-[13px] text-slate-500 dark:text-slate-400">Total înregistrări: <strong className="text-slate-800 dark:text-white">{total}</strong></span>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="whitespace-nowrap text-[13px] text-slate-500 dark:text-slate-400 dark:text-slate-400 font-bold mr-2">Pagina {safePage} din {totalPages || 1}</span>
-                <button className="w-8 h-8 flex items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 dark:border-slate-700 text-slate-500 dark:text-slate-400 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors shadow-sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={safePage === 1}><ChevronLeft size={16} /></button>
-                <button className="w-8 h-8 flex items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 dark:border-slate-700 text-slate-500 dark:text-slate-400 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors shadow-sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={safePage >= totalPages}><ChevronRight size={16} /></button>
+              <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-2">
+                <span className="whitespace-nowrap text-[13px] text-slate-500 dark:text-slate-400 font-bold mr-2">Pagina {safePage} din {totalPages || 1}</span>
+                <button className="w-8 h-8 flex items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors shadow-sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={safePage === 1}><ChevronLeft size={16} /></button>
+                <button className="w-8 h-8 flex items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors shadow-sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={safePage >= totalPages}><ChevronRight size={16} /></button>
               </div>
             </div>
           </div>
@@ -485,12 +485,7 @@ export default function EmployeesList({ tenant, themeColor }) {
             <div className="bg-primary-50 dark:bg-primary-900/20 p-6 rounded-3xl border border-primary-100 dark:border-primary-800/50 flex flex-col items-center justify-center mx-auto mb-6 w-full text-primary-900 dark:text-primary-100">
               <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 mb-4">
                 <QRCodeSVG 
-                  value={JSON.stringify({ 
-                    employee_id: qrEmployee.id, 
-                    code: qrEmployee.code,
-                    t: tenant.id,
-                    ts: dynamicTs
-                  })}
+                  value={`QRP-EMP-${tenant.id}-${qrEmployee.id}`}
                   size={160}
                   level="H"
                   includeMargin={true}
@@ -622,7 +617,7 @@ export default function EmployeesList({ tenant, themeColor }) {
               <form id="add-employee-form" onSubmit={handleSave} className="flex flex-col gap-6">
                 
                 {/* TAB 1: IDENTIFICARE */}
-                <div className={activeTab === 'identificare' ? 'grid grid-cols-2 gap-4' : 'hidden'}>
+                <div className={activeTab === 'identificare' ? 'grid grid-cols-1 sm:grid-cols-2 gap-4' : 'hidden'}>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase mb-1 ml-1">Nume *</label>
                   <input type="text" required value={formData.last_name} onChange={e => setFormData({...formData, last_name: e.target.value})} className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm" />
@@ -661,7 +656,7 @@ export default function EmployeesList({ tenant, themeColor }) {
                 </div>
 
                 {/* TAB 2: CONTRACT */}
-                <div className={activeTab === 'contract' ? 'grid grid-cols-2 gap-4' : 'hidden'}>
+                <div className={activeTab === 'contract' ? 'grid grid-cols-1 sm:grid-cols-2 gap-4' : 'hidden'}>
                   <div className="col-span-1">
                     <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase mb-1 ml-1">Meserie (Funcția din Firmă)</label>
                     {!showNewJobInput ? (
@@ -735,11 +730,11 @@ export default function EmployeesList({ tenant, themeColor }) {
                     <input type="text" maxLength="4" value={formData.pin_code} onChange={e => setFormData({...formData, pin_code: e.target.value})} className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm" />
                   </div>
 
-                  <div className="col-span-2 -mt-2">
+                  <div className="col-span-1 sm:col-span-2 -mt-2">
                     <p className="text-xs text-slate-400 dark:text-slate-500 ml-1">Acest PIN (parolă scurtă) este extras din ultimele 4 cifre ale CNP-ului. Angajatul îl va folosi exclusiv pentru a scana codul QR pe tabletă la intrare/ieșire.</p>
                   </div>
 
-                  <div className="col-span-2 mt-2">
+                  <div className="col-span-1 sm:col-span-2 mt-2">
                     <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-2">Punct de Lucru</label>
                     <div className="relative">
                       <MapPin className="w-5 h-5 text-slate-400 dark:text-slate-500 absolute left-3 top-1/2 transform -translate-y-1/2" />
@@ -775,7 +770,7 @@ export default function EmployeesList({ tenant, themeColor }) {
                       onChange={e => setFormData({...formData, salary: e.target.value})}
                     />
                   </div>
-                  <div className="col-span-2">
+                  <div className="col-span-1 sm:col-span-2">
                     <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-2">Notițe Contract</label>
                     <textarea
                       rows="2"
@@ -792,7 +787,7 @@ export default function EmployeesList({ tenant, themeColor }) {
               </form>
             </div>
             
-            <div className="px-6 py-4 bg-white dark:bg-slate-800 border-t border-slate-100 dark:border-slate-700/50 dark:border-slate-700 flex justify-end gap-3 rounded-b-2xl">
+            <div className="px-4 sm:px-6 py-4 bg-white dark:bg-slate-800 border-t border-slate-100 dark:border-slate-700/50 dark:border-slate-700 flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 rounded-b-2xl">
               <button type="button" onClick={() => {
                 setShowAddModal(false);
                 setAvatarBlob(null);

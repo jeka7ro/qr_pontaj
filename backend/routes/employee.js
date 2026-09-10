@@ -15,7 +15,7 @@ router.post('/login', async (req, res) => {
     }
 
     const result = await db.query(
-      `SELECT e.id, e.tenant_id, e.first_name, e.last_name, e.avatar_path, e.job_title, t.theme_color as tenant_culoare, t.logo_url as tenant_logo, t.name as tenant_nume
+      `SELECT e.id, e.tenant_id, e.first_name, e.last_name, e.avatar_path, e.job_title, t.theme_color as tenant_culoare, t.logo_url as tenant_logo, t.favicon_url as tenant_favicon, t.name as tenant_nume
        FROM qrp_employees e
        JOIN qrp_tenants t ON e.tenant_id = t.id
        WHERE e.employee_code = $1 AND e.pin_code = $2`,
@@ -36,7 +36,7 @@ router.post('/login', async (req, res) => {
         role: 'EMPLOYEE'
       }, 
       JWT_SECRET, 
-      { expiresIn: '7d' }
+      { expiresIn: '180d' }
     );
 
     res.json({
@@ -51,6 +51,7 @@ router.post('/login', async (req, res) => {
         job_title: emp.job_title,
         tenant_culoare: emp.tenant_culoare,
         tenant_logo: emp.tenant_logo,
+        tenant_favicon: emp.tenant_favicon,
         tenant_nume: emp.tenant_nume
       }
     });
@@ -87,7 +88,7 @@ router.get('/dashboard', employeeAuthMiddleware, async (req, res) => {
       `SELECT e.id, e.tenant_id, e.first_name, e.last_name, e.avatar_path, e.job_title, 
               e.employee_code, e.phone, e.email, e.cnp, e.address,
               e.contract_start_date, e.birth_date,
-              t.theme_color as tenant_culoare, t.logo_url as tenant_logo, t.name as tenant_nume
+              t.theme_color as tenant_culoare, t.logo_url as tenant_logo, t.favicon_url as tenant_favicon, t.name as tenant_nume
        FROM qrp_employees e 
        JOIN qrp_tenants t ON e.tenant_id = t.id 
        WHERE e.id = $1`,
@@ -134,6 +135,34 @@ router.get('/shifts', employeeAuthMiddleware, async (req, res) => {
   }
 });
 
+// GET /api/employee/worked-days - Zilele în care angajatul a pontat prin QR (action_type = 'IN')
+router.get('/worked-days', employeeAuthMiddleware, async (req, res) => {
+  try {
+    const { employee_id } = req.user;
+    const { start_date, end_date } = req.query;
+    
+    let query = `
+      SELECT DISTINCT to_char(created_at AT TIME ZONE 'Europe/Bucharest', 'YYYY-MM-DD') as date_str
+      FROM qrp_timesheets
+      WHERE employee_id = $1 AND action_type = 'IN'
+    `;
+    const params = [employee_id];
+    
+    if (start_date && end_date) {
+      query += ` AND (created_at AT TIME ZONE 'Europe/Bucharest')::date >= $2 AND (created_at AT TIME ZONE 'Europe/Bucharest')::date <= $3`;
+      params.push(start_date, end_date);
+    }
+    
+    query += ` ORDER BY date_str ASC`;
+    
+    const result = await db.query(query, params);
+    res.json(result.rows.map(r => r.date_str));
+  } catch (error) {
+    console.error('Error fetching employee worked days:', error);
+    res.status(500).json({ error: 'Eroare la preluarea pontajelor' });
+  }
+});
+
 // PUT /api/employee/shifts/:shiftId/seen - Marchează tura ca văzută
 router.put('/shifts/:shiftId/seen', employeeAuthMiddleware, async (req, res) => {
   try {
@@ -160,10 +189,10 @@ router.put('/shifts/:shiftId/seen', employeeAuthMiddleware, async (req, res) => 
 router.post('/shift-change-request', employeeAuthMiddleware, async (req, res) => {
   try {
     const { employee_id, tenant_id } = req.user;
-    const { shift_id, reason } = req.body;
+    const { shift_id, reason, new_date } = req.body;
     
-    if (!shift_id || !reason) {
-      return res.status(400).json({ error: 'ID-ul turei și motivul sunt obligatorii.' });
+    if (!shift_id || (!reason && !new_date)) {
+      return res.status(400).json({ error: 'ID-ul turei și motivul/data sunt obligatorii.' });
     }
 
     // Verificăm că tura aparține angajatului
@@ -173,13 +202,23 @@ router.post('/shift-change-request', employeeAuthMiddleware, async (req, res) =>
     }
 
     const shift = shiftCheck.rows[0];
+    const targetDate = new_date || shift.date;
+    
+    let formattedReason = `Modificare tură ${shift.start_time.slice(0,5)}-${shift.end_time.slice(0,5)}`;
+    if (new_date && new Date(new_date).toDateString() !== new Date(shift.date).toDateString()) {
+      formattedReason += ` -> Mutare pe data ${new_date}`;
+    }
+    if (reason) {
+      formattedReason += `: ${reason}`;
+    }
     
     // Salvăm ca o cerere de concediu de tip SHIFT_CHANGE  
+    // start_date = tura actuală, end_date = data solicitată (targetDate)
     const result = await db.query(
       `INSERT INTO qrp_leaves (tenant_id, employee_id, start_date, end_date, leave_type, reason, status)
-       VALUES ($1, $2, $3, $3, 'SHIFT_CHANGE', $4, 'PENDING')
+       VALUES ($1, $2, $3, $4, 'SHIFT_CHANGE', $5, 'PENDING')
        RETURNING *`,
-      [tenant_id, employee_id, shift.date, `Modificare tură ${shift.start_time.slice(0,5)}-${shift.end_time.slice(0,5)}: ${reason}`]
+      [tenant_id, employee_id, shift.date, targetDate, formattedReason]
     );
     
     res.status(201).json(result.rows[0]);

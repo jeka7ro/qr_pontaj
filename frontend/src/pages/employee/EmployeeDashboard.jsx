@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LogOut, CalendarDays, Clock, MapPin, ChevronLeft, ChevronRight, Loader2, QrCode, User, Phone, Mail, MapPinned, Briefcase, Hash, Calendar, FileText, Send, CheckCircle2, XCircle, Clock3, Edit3, X } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
+import { updatePageFavicon } from '../../utils/favicon';
 
 export default function EmployeeDashboard() {
   const [employee, setEmployee] = useState(null);
@@ -10,19 +11,76 @@ export default function EmployeeDashboard() {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  // Pentru navigare prin saptamani/luni
+  // Pentru navigare prin luni
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState('list'); // 'list' | 'calendar'
   
   const [activeTab, setActiveTab] = useState('schedule');
+  const [viewMode, setViewMode] = useState(() => localStorage.getItem('emp_schedule_view') || 'calendar');
   const [dynamicTs, setDynamicTs] = useState(Math.floor(Date.now() / 10000) * 10);
   const [avatarError, setAvatarError] = useState(false);
 
-  // Concedii
+  // Concedii & Notificări
   const [leaves, setLeaves] = useState([]);
+  const [workedDays, setWorkedDays] = useState([]); // Zile pontate prin QR (YYYY-MM-DD)
   const [leaveForm, setLeaveForm] = useState({ leave_type: 'CO', start_date: '', end_date: '', reason: '' });
   const [leaveSubmitting, setLeaveSubmitting] = useState(false);
   const [leaveSuccess, setLeaveSuccess] = useState(null);
+  
+  const [dismissedNotifs, setDismissedNotifs] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('dismissed_leaves') || '[]');
+    } catch(e) {
+      return [];
+    }
+  });
+
+  const dismissNotif = (id) => {
+    const updated = [...dismissedNotifs, id];
+    setDismissedNotifs(updated);
+    try {
+      localStorage.setItem('dismissed_leaves', JSON.stringify(updated));
+    } catch(e) {}
+  };
+
+  const fetchLeaves = async (token) => {
+    try {
+      const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
+      const res = await fetch(`${baseUrl}/api/employee/leaves?_t=${Date.now()}`, {
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setLeaves(data);
+      }
+    } catch(e) { /* silent */ }
+  };
+
+  const unreadLeaves = leaves.filter(l => (l.status === 'APPROVED' || l.status === 'REJECTED') && !dismissedNotifs.includes(l.id));
+
+  // Cerere permisiune notificări browser
+  useEffect(() => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission().catch(() => {});
+    }
+  }, []);
+
+  // Notificare nativă de browser când există cereri aprobate/respinse
+  useEffect(() => {
+    if (unreadLeaves.length > 0 && 'Notification' in window && Notification.permission === 'granted') {
+      try {
+        const notif = unreadLeaves[0];
+        new Notification(notif.status === 'APPROVED' ? 'Tură Modificată (Aprobată)' : 'Cerere Respinsă', {
+          body: notif.leave_type === 'SHIFT_CHANGE' 
+            ? `Tura ta a fost mutată pe data de ${new Date(notif.end_date).toLocaleDateString('ro-RO', { weekday: 'long', day: 'numeric', month: 'long' })}.`
+            : 'Verifică noul tău program în aplicație.'
+        });
+      } catch(e) {}
+    }
+  }, [unreadLeaves]);
 
   // Detaliu tură
   const [selectedShift, setSelectedShift] = useState(null);
@@ -45,55 +103,59 @@ export default function EmployeeDashboard() {
       navigate('/');
       return;
     }
-    setEmployee(JSON.parse(empData));
+    const parsed = JSON.parse(empData);
+    setEmployee(parsed);
+    if (parsed?.tenant_favicon || parsed?.tenant_logo) {
+      updatePageFavicon(parsed.tenant_favicon || parsed.tenant_logo, `${parsed.tenant_nume || 'Portal Angajat'}`);
+    }
     fetchShifts(token, currentDate, false);
+    fetchLeaves(token);
 
     // Refresh pe focus/revenire in aplicatie
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         fetchShifts(token, currentDate, true);
+        fetchLeaves(token);
       }
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [currentDate, navigate]);
 
-  const fetchShifts = async (token, date, isBackground = false, mode = viewMode) => {
+  const fetchShifts = async (token, date, isBackground = false) => {
     if (!isBackground) setLoading(true);
     try {
-      let startStr, endStr;
+      const curr = new Date(date);
+      const start = new Date(curr.getFullYear(), curr.getMonth(), 1);
+      const firstDayOfWeek = start.getDay() === 0 ? 6 : start.getDay() - 1;
+      start.setDate(start.getDate() - firstDayOfWeek);
       
-      if (mode === 'calendar') {
-        const curr = new Date(date);
-        const start = new Date(curr.getFullYear(), curr.getMonth(), 1);
-        const firstDayOfWeek = start.getDay() === 0 ? 6 : start.getDay() - 1;
-        start.setDate(start.getDate() - firstDayOfWeek);
-        
-        const end = new Date(curr.getFullYear(), curr.getMonth() + 1, 0);
-        const lastDayOfWeek = end.getDay() === 0 ? 6 : end.getDay() - 1;
-        end.setDate(end.getDate() + (6 - lastDayOfWeek));
-        
-        startStr = `${start.getFullYear()}-${String(start.getMonth()+1).padStart(2,'0')}-${String(start.getDate()).padStart(2,'0')}`;
-        endStr = `${end.getFullYear()}-${String(end.getMonth()+1).padStart(2,'0')}-${String(end.getDate()).padStart(2,'0')}`;
-      } else {
-        const curr = new Date(date);
-        const first = curr.getDate() - curr.getDay() + (curr.getDay() === 0 ? -6 : 1); 
-        const start = new Date(curr.setDate(first));
-        const end = new Date(curr.setDate(start.getDate() + 6));
-
-        startStr = `${start.getFullYear()}-${String(start.getMonth()+1).padStart(2,'0')}-${String(start.getDate()).padStart(2,'0')}`;
-        endStr = `${end.getFullYear()}-${String(end.getMonth()+1).padStart(2,'0')}-${String(end.getDate()).padStart(2,'0')}`;
-      }
+      const end = new Date(curr.getFullYear(), curr.getMonth() + 1, 0);
+      const lastDayOfWeek = end.getDay() === 0 ? 6 : end.getDay() - 1;
+      end.setDate(end.getDate() + (6 - lastDayOfWeek));
+      
+      const startStr = `${start.getFullYear()}-${String(start.getMonth()+1).padStart(2,'0')}-${String(start.getDate()).padStart(2,'0')}`;
+      const endStr = `${end.getFullYear()}-${String(end.getMonth()+1).padStart(2,'0')}-${String(end.getDate()).padStart(2,'0')}`;
 
       const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
-      const res = await fetch(`${baseUrl}/api/employee/shifts?start_date=${startStr}&end_date=${endStr}&_t=${Date.now()}`, {
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache'
-        },
-        cache: 'no-store'
-      });
+      const [res, workedRes] = await Promise.all([
+        fetch(`${baseUrl}/api/employee/shifts?start_date=${startStr}&end_date=${endStr}&_t=${Date.now()}`, {
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache'
+          },
+          cache: 'no-store'
+        }),
+        fetch(`${baseUrl}/api/employee/worked-days?start_date=${startStr}&end_date=${endStr}&_t=${Date.now()}`, {
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache'
+          },
+          cache: 'no-store'
+        }).catch(() => null)
+      ]);
 
       if (!res.ok) {
         if (res.status === 401 || res.status === 403) {
@@ -105,6 +167,11 @@ export default function EmployeeDashboard() {
 
       const data = await res.json();
       setShifts(data);
+
+      if (workedRes && workedRes.ok) {
+        const wData = await workedRes.json();
+        setWorkedDays(wData);
+      }
     } catch (err) {
       if (!isBackground) setError(err.message);
     } finally {
@@ -120,39 +187,14 @@ export default function EmployeeDashboard() {
 
   const prevPeriod = () => {
     const newDate = new Date(currentDate);
-    if (viewMode === 'calendar') {
-      newDate.setMonth(currentDate.getMonth() - 1);
-    } else {
-      newDate.setDate(currentDate.getDate() - 7);
-    }
+    newDate.setMonth(currentDate.getMonth() - 1);
     setCurrentDate(newDate);
   };
 
   const nextPeriod = () => {
     const newDate = new Date(currentDate);
-    if (viewMode === 'calendar') {
-      newDate.setMonth(currentDate.getMonth() + 1);
-    } else {
-      newDate.setDate(currentDate.getDate() + 7);
-    }
+    newDate.setMonth(currentDate.getMonth() + 1);
     setCurrentDate(newDate);
-  };
-
-  const getWeekDays = () => {
-    const curr = new Date(currentDate);
-    const dayOfWeek = curr.getDay();
-    const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-    
-    const monday = new Date(curr);
-    monday.setDate(curr.getDate() + mondayOffset);
-    
-    const days = [];
-    for (let i = 0; i < 7; i++) {
-      const day = new Date(monday);
-      day.setDate(monday.getDate() + i);
-      days.push(day);
-    }
-    return days;
   };
 
   const getCalendarDays = () => {
@@ -174,7 +216,6 @@ export default function EmployeeDashboard() {
     return days;
   };
 
-  const weekDays = getWeekDays();
   const calendarDays = getCalendarDays();
 
   const getShiftForDate = (date) => {
@@ -191,15 +232,8 @@ export default function EmployeeDashboard() {
   };
 
   const formatPeriodRange = () => {
-    if (viewMode === 'calendar') {
-      const curr = new Date(currentDate);
-      return curr.toLocaleDateString('ro-RO', { month: 'long', year: 'numeric' }).toUpperCase();
-    }
-    const start = weekDays[0];
-    const end = weekDays[6];
-    
-    const options = { month: 'short', day: 'numeric' };
-    return `${start.toLocaleDateString('ro-RO', options)} - ${end.toLocaleDateString('ro-RO', { ...options, year: 'numeric' })}`;
+    const curr = new Date(currentDate);
+    return curr.toLocaleDateString('ro-RO', { month: 'long', year: 'numeric' }).toUpperCase();
   };
 
   if (!employee) return null;
@@ -271,7 +305,7 @@ export default function EmployeeDashboard() {
               <ChevronLeft size={20} />
             </button>
             <div className="text-center">
-              <span className="block text-xs text-white/80 font-medium mb-0.5 uppercase tracking-wider">{viewMode === 'calendar' ? 'LUNA CURENTĂ' : 'Săptămâna curentă'}</span>
+              <span className="block text-xs text-white/80 font-medium mb-0.5 uppercase tracking-wider">LUNA CURENTĂ</span>
               <span className="font-bold text-sm">{formatPeriodRange()}</span>
             </div>
             <button onClick={nextPeriod} className="p-2 hover:bg-white/20 rounded-full transition-colors">
@@ -283,23 +317,90 @@ export default function EmployeeDashboard() {
 
       {/* Main Content */}
       <div className="p-4 max-w-md mx-auto space-y-4 pb-32">
+        {/* Notificări Status Cereri (In-App) */}
+        {leaves.filter(l => (l.status === 'APPROVED' || l.status === 'REJECTED') && !dismissedNotifs.includes(l.id)).map(l => (
+          <div 
+            key={l.id} 
+            className={`p-4 rounded-2xl shadow-lg border relative flex items-start justify-between gap-3 animate-in fade-in slide-in-from-top-2 duration-300 ${
+              l.status === 'APPROVED' 
+                ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-700 text-emerald-950 dark:text-emerald-100' 
+                : 'bg-rose-50 dark:bg-rose-950/30 border-rose-300 dark:border-rose-700 text-rose-950 dark:text-rose-100'
+            }`}
+          >
+            <div className="flex items-start gap-3">
+              <div className={`p-2 rounded-xl mt-0.5 shrink-0 ${l.status === 'APPROVED' ? 'bg-emerald-100 dark:bg-emerald-800 text-emerald-700 dark:text-emerald-200' : 'bg-rose-100 dark:bg-rose-800 text-rose-700 dark:text-rose-200'}`}>
+                {l.status === 'APPROVED' ? <CheckCircle2 size={20} /> : <XCircle size={20} />}
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/10">
+                    {l.leave_type === 'SHIFT_CHANGE' ? 'Modificare Tură' : 'Cerere Concediu'}
+                  </span>
+                  <span className={`text-[11px] font-black uppercase ${l.status === 'APPROVED' ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'}`}>
+                    {l.status === 'APPROVED' ? 'Aprobată' : 'Respinsă'}
+                  </span>
+                </div>
+                <p className="text-xs font-bold mt-1 leading-snug">
+                  {l.status === 'APPROVED'
+                    ? (l.leave_type === 'SHIFT_CHANGE' 
+                        ? `Tura ta a fost mutată pe data de ${new Date(l.end_date).toLocaleDateString('ro-RO', { weekday: 'long', day: 'numeric', month: 'long' })}.`
+                        : `Cererea din perioada ${new Date(l.start_date).toLocaleDateString('ro-RO')} a fost aprobată.`)
+                    : 'Cererea ta a fost respinsă de către administrator.'}
+                </p>
+                {l.reason && (
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 italic mt-0.5">{l.reason}</p>
+                )}
+              </div>
+            </div>
+            <button 
+              onClick={() => dismissNotif(l.id)}
+              className="p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-colors text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 shrink-0"
+              title="Închide notificarea"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        ))}
+
         {activeTab === 'schedule' ? (
           <>
             <div className="flex items-center justify-between mb-2 px-1">
               <div className="flex items-center gap-2">
                 <CalendarDays size={18} className="text-[var(--tc)]" />
-                <h2 className="font-bold text-slate-700">Programul meu</h2>
+                <h2 className="font-bold text-slate-700 dark:text-white">Programul meu</h2>
               </div>
               
-              <div className="flex bg-slate-200/50 p-1 rounded-lg">
-                <button 
-                  onClick={() => setViewMode('list')}
-                  className={`px-3 py-1 text-[11px] font-bold rounded-md transition-all ${viewMode === 'list' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}
-                >LISTĂ</button>
-                <button 
-                  onClick={() => setViewMode('calendar')}
-                  className={`px-3 py-1 text-[11px] font-bold rounded-md transition-all ${viewMode === 'calendar' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}
-                >CALENDAR</button>
+              <div className="flex bg-slate-200/60 dark:bg-slate-800 p-1 rounded-full border border-slate-200/50 dark:border-slate-700">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setViewMode('calendar');
+                    localStorage.setItem('emp_schedule_view', 'calendar');
+                  }}
+                  className={`px-3 py-1 text-[11px] font-bold rounded-full transition-all flex items-center gap-1.5 cursor-pointer ${
+                    viewMode === 'calendar'
+                      ? 'bg-white dark:bg-slate-700 shadow-xs text-slate-900 dark:text-white'
+                      : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'
+                  }`}
+                >
+                  <Calendar size={12} />
+                  CALENDAR
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setViewMode('list');
+                    localStorage.setItem('emp_schedule_view', 'list');
+                  }}
+                  className={`px-3 py-1 text-[11px] font-bold rounded-full transition-all flex items-center gap-1.5 cursor-pointer ${
+                    viewMode === 'list'
+                      ? 'bg-white dark:bg-slate-700 shadow-xs text-slate-900 dark:text-white'
+                      : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'
+                  }`}
+                >
+                  <Clock size={12} />
+                  LISTĂ
+                </button>
               </div>
             </div>
 
@@ -313,128 +414,184 @@ export default function EmployeeDashboard() {
                 {error}
               </div>
             ) : viewMode === 'list' ? (
-              <div className="space-y-3">
-                {weekDays.map((day, idx) => {
-                  const shift = getShiftForDate(day);
-                  const isToday = new Date().toDateString() === day.toDateString();
-                  
-                  const dayName = day.toLocaleDateString('ro-RO', { weekday: 'long' });
-                  const dayNum = day.getDate();
-                  const monthName = day.toLocaleDateString('ro-RO', { month: 'short' });
+              <div className="space-y-2.5">
+                {(() => {
+                  const monthDaysWithItems = calendarDays
+                    .filter(day => day.getMonth() === currentDate.getMonth())
+                    .filter(day => {
+                      const shift = getShiftForDate(day);
+                      const dayStr = `${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,'0')}-${String(day.getDate()).padStart(2,'0')}`;
+                      return !!shift || workedDays.includes(dayStr);
+                    });
 
-                  return (
-                    <div key={idx} 
-                      className={`bg-white rounded-2xl p-4 shadow-sm border relative ${isToday ? 'border-[var(--tc)] shadow-[0_4px_20px_var(--tc-50)]' : 'border-slate-100'} ${shift ? 'cursor-pointer active:scale-[0.98] transition-transform' : ''}`}
-                      onClick={async () => {
-                        if (!shift) return;
-                        setSelectedShift({ ...shift, dayName, dayNum, monthName });
-                        // Marchează ca văzută dacă nu e deja
-                        if (!shift.seen_at) {
-                          try {
-                            const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
-                            await fetch(`${baseUrl}/api/employee/shifts/${shift.id}/seen`, {
-                              method: 'PUT',
-                              headers: { 'Authorization': `Bearer ${localStorage.getItem('employee_token')}` }
+                  if (monthDaysWithItems.length === 0) {
+                    return (
+                      <div className="bg-white dark:bg-slate-900 rounded-2xl p-8 text-center text-slate-400 border border-slate-100 dark:border-slate-800">
+                        <CalendarDays size={32} className="mx-auto mb-2 opacity-50" />
+                        <p className="font-bold text-sm">Nu există ture sau pontaje programate în această lună.</p>
+                      </div>
+                    );
+                  }
+
+                  return monthDaysWithItems.map((day, idx) => {
+                    const dayStr = `${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,'0')}-${String(day.getDate()).padStart(2,'0')}`;
+                    const shift = getShiftForDate(day);
+                    const isWorkedQR = workedDays.includes(dayStr);
+                    const isToday = new Date().toDateString() === day.toDateString();
+                    const dayName = day.toLocaleDateString('ro-RO', { weekday: 'long' });
+                    const dayNum = day.getDate();
+                    const monthName = day.toLocaleDateString('ro-RO', { month: 'short' });
+
+                    return (
+                      <div 
+                        key={idx}
+                        onClick={() => {
+                          if (shift) {
+                            setSelectedShift({ ...shift, dayName, dayNum, monthName, isWorkedQR });
+                          } else if (isWorkedQR) {
+                            setSelectedShift({
+                              id: 'qr-' + dayStr,
+                              dayName,
+                              dayNum,
+                              monthName,
+                              start_time: 'Confirmat',
+                              end_time: 'QR',
+                              shift_type: 'DAY',
+                              notes: 'Zi lucrată confirmată prin scanare QR.',
+                              isWorkedQR: true
                             });
-                            // Actualizăm local
-                            setShifts(prev => prev.map(s => s.id === shift.id ? { ...s, seen_at: new Date().toISOString() } : s));
-                          } catch(e) { /* silent */ }
-                        }
-                      }}
-                    >
-                      <div className="flex items-start gap-4">
-                        <div className="flex flex-col items-center justify-center min-w-[50px]">
-                          <span className={`text-xs font-bold uppercase tracking-wider ${isToday ? 'text-[var(--tc)]' : 'text-slate-400'}`}>
-                            {dayName.slice(0, 3)}
-                          </span>
-                          <span className={`text-2xl font-bold ${isToday ? 'text-[var(--tc)]' : 'text-slate-700'}`}>
-                            {dayNum}
-                          </span>
-                          <span className="text-[10px] font-bold text-slate-400 uppercase">{monthName}</span>
-                        </div>
-                        
-                        <div className="flex-1 border-l border-slate-100 pl-4 py-1">
-                          {shift ? (
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-2">
-                                <Clock size={16} className="text-[var(--tc)]" />
-                                <span className="font-bold text-slate-700">
-                                  {shift.start_time.slice(0,5)} - {shift.end_time.slice(0,5)}
-                                </span>
-                                <span className="text-[10px] font-bold text-slate-500 uppercase ml-auto">
-                                  {shift.shift_type === 'NIGHT' ? 'NOAPTE' : 'ZI'}
-                                </span>
-                                {!shift.seen_at && (
-                                  <span className="px-1.5 py-0.5 rounded-md text-[9px] font-black text-white animate-pulse" style={{ backgroundColor: tc }}>NOU</span>
-                                )}
-                              </div>
-                              {shift.notes && (
-                                <div className="flex items-start gap-2 text-sm text-slate-500">
-                                  <MapPin size={14} className="mt-0.5 shrink-0" />
-                                  <span className="leading-snug">{shift.notes}</span>
-                                </div>
+                          }
+                        }}
+                        className={`bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-xs border transition-all cursor-pointer flex items-center justify-between active:scale-[0.99] ${
+                          isToday 
+                            ? 'border-emerald-500 shadow-[0_4px_20px_rgba(16,185,129,0.15)] ring-1 ring-emerald-500' 
+                            : 'border-slate-100 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 flex flex-col items-center justify-center shrink-0">
+                            <span className="text-[10px] font-black uppercase text-emerald-700 dark:text-emerald-400 leading-none">{dayName.slice(0, 3)}</span>
+                            <span className="text-base font-black text-emerald-950 dark:text-emerald-100 leading-tight">{dayNum}</span>
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-black text-slate-800 dark:text-white capitalize">{dayName}</span>
+                              {isToday && (
+                                <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-300">Azi</span>
                               )}
                             </div>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                              {shift ? `${shift.start_time?.slice(0, 5)} - ${shift.end_time?.slice(0, 5)}` : 'Pontat prin QR'}
+                              {shift?.shift_type === 'NIGHT' && ' (Noapte)'}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="text-right">
+                          {isWorkedQR ? (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-black px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                              <CheckCircle2 size={12} /> Pontat QR
+                            </span>
                           ) : (
-                            <div className="h-full flex items-center py-2">
-                              <span className="text-sm font-medium text-slate-400 italic">Liber (fără tură)</span>
-                            </div>
+                            <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                              Programat
+                            </span>
                           )}
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  });
+                })()}
               </div>
             ) : (
-              <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+              <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-sm border border-slate-100 dark:border-slate-800">
                 <div className="grid grid-cols-7 mb-2 text-center">
                   {['L', 'M', 'M', 'J', 'V', 'S', 'D'].map(d => (
                     <div key={d} className="text-[10px] font-bold text-slate-400">{d}</div>
                   ))}
                 </div>
-                <div className="grid grid-cols-7 gap-1">
+                <div className="grid grid-cols-7 gap-1.5">
                   {calendarDays.map((day, idx) => {
+                    const dayStr = `${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,'0')}-${String(day.getDate()).padStart(2,'0')}`;
                     const isCurrentMonth = day.getMonth() === currentDate.getMonth();
                     const isWeekend = day.getDay() === 0 || day.getDay() === 6;
                     const shift = getShiftForDate(day);
+                    const isWorkedQR = workedDays.includes(dayStr);
+                    const hasShiftOrWorked = !!shift || isWorkedQR;
                     const isToday = new Date().toDateString() === day.toDateString();
                     
                     return (
                       <div 
                         key={idx}
                         onClick={async () => {
-                          if (!shift) return;
+                          if (!shift && !isWorkedQR) return;
                           const dayName = day.toLocaleDateString('ro-RO', { weekday: 'long' });
                           const dayNum = day.getDate();
                           const monthName = day.toLocaleDateString('ro-RO', { month: 'short' });
-                          setSelectedShift({ ...shift, dayName, dayNum, monthName });
-                          if (!shift.seen_at) {
-                            try {
-                              const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
-                              await fetch(`${baseUrl}/api/employee/shifts/${shift.id}/seen`, {
-                                method: 'PUT',
-                                headers: { 'Authorization': `Bearer ${localStorage.getItem('employee_token')}` }
-                              });
-                              setShifts(prev => prev.map(s => s.id === shift.id ? { ...s, seen_at: new Date().toISOString() } : s));
-                            } catch(e) {}
+                          if (shift) {
+                            setSelectedShift({ ...shift, dayName, dayNum, monthName, isWorkedQR });
+                            if (!shift.seen_at) {
+                              try {
+                                const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
+                                await fetch(`${baseUrl}/api/employee/shifts/${shift.id}/seen`, {
+                                  method: 'PUT',
+                                  headers: { 'Authorization': `Bearer ${localStorage.getItem('employee_token')}` }
+                                });
+                                setShifts(prev => prev.map(s => s.id === shift.id ? { ...s, seen_at: new Date().toISOString() } : s));
+                              } catch(e) {}
+                            }
+                          } else if (isWorkedQR) {
+                            setSelectedShift({
+                              id: 'qr-' + dayStr,
+                              dayName,
+                              dayNum,
+                              monthName,
+                              start_time: 'Confirmat',
+                              end_time: 'QR',
+                              shift_type: 'DAY',
+                              notes: 'Zi lucrată confirmată prin scanare QR la locație.',
+                              isWorkedQR: true
+                            });
                           }
                         }}
                         className={`
                           aspect-square flex flex-col items-center justify-center rounded-xl relative transition-all
                           ${!isCurrentMonth ? 'opacity-30' : ''}
-                          ${shift ? (shift.shift_type === 'NIGHT' ? 'bg-slate-200 dark:bg-slate-700' : 'bg-[var(--tc-50)]') : (isWeekend ? 'bg-orange-50/50 dark:bg-orange-900/10' : 'bg-slate-50 dark:bg-slate-800')}
-                          ${isToday ? 'ring-2 ring-[var(--tc)] ring-offset-1' : ''}
-                          ${shift ? 'cursor-pointer hover:bg-opacity-80 active:scale-95' : ''}
+                          ${hasShiftOrWorked 
+                            ? 'bg-[#dcfce7] dark:bg-emerald-950/60 border border-[#86efac] dark:border-emerald-700/60 text-emerald-950 dark:text-emerald-100 font-bold shadow-sm' 
+                            : (isWeekend ? 'bg-orange-50/50 dark:bg-orange-900/10 text-slate-500 dark:text-slate-400' : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300')}
+                          ${isToday ? 'ring-2 ring-emerald-600 ring-offset-1 font-black' : ''}
+                          ${hasShiftOrWorked ? 'cursor-pointer hover:bg-[#bbf7d0] dark:hover:bg-emerald-900/80 active:scale-95' : ''}
                         `}
                       >
-                        <span className={`text-sm font-bold ${isToday ? 'text-[var(--tc)]' : 'text-slate-700 dark:text-slate-300'}`}>{day.getDate()}</span>
+                        <span className={`text-sm ${hasShiftOrWorked ? 'font-black' : 'font-bold'} ${isToday ? 'text-emerald-700 dark:text-emerald-300 underline' : ''}`}>
+                          {day.getDate()}
+                        </span>
+                        
+                        {/* Bulină indicator pentru pontaj QR */}
+                        {isWorkedQR && (
+                          <div className="absolute bottom-1 w-1.5 h-1.5 rounded-full bg-emerald-600 dark:bg-emerald-400" title="Pontat prin QR"></div>
+                        )}
+                        
+                        {/* Bulină pulsing pentru tură nouă nevizualizată */}
                         {shift && !shift.seen_at && (
-                          <div className="absolute top-1 right-1 w-1.5 h-1.5 bg-[var(--tc)] rounded-full animate-pulse"></div>
+                          <div className="absolute top-1 right-1 w-2 h-2 bg-emerald-600 rounded-full animate-pulse" title="Nou"></div>
                         )}
                       </div>
                     )
                   })}
+                </div>
+
+                {/* Legendă culori sub calendar */}
+                <div className="flex items-center justify-center gap-4 mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-500 font-medium">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-3.5 h-3.5 rounded-md bg-[#dcfce7] border border-[#86efac]"></span>
+                    <span className="font-bold text-emerald-800 dark:text-emerald-300">Zile cu Tură / Pontaj QR</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-3.5 h-3.5 rounded-md bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"></span>
+                    <span>Liber</span>
+                  </div>
                 </div>
               </div>
             )}
@@ -697,12 +854,66 @@ export default function EmployeeDashboard() {
               if (res.ok) setLeaves(await res.json());
             } catch(e) { /* silent */ }
           }}
-          className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'leaves' ? 'text-white' : 'text-white/60 hover:text-white/80'}`}
+          className={`flex flex-col items-center gap-1 transition-colors relative ${activeTab === 'leaves' ? 'text-white' : 'text-white/60 hover:text-white/80'}`}
         >
+          {leaves.some(l => (l.status === 'APPROVED' || l.status === 'REJECTED') && !dismissedNotifs.includes(l.id)) && (
+            <span className="absolute top-0 right-1 w-2.5 h-2.5 bg-rose-500 rounded-full ring-2 ring-white animate-pulse" />
+          )}
           <FileText size={24} className={activeTab === 'leaves' ? 'drop-shadow-md' : ''} />
           <span className="text-[10px] font-bold uppercase tracking-wider">Concedii</span>
         </button>
       </div>
+
+      {/* Modal Notificare Urgentă Modificare Program / Cerere */}
+      {unreadLeaves.length > 0 && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-[200] flex items-center justify-center p-4 animate-in fade-in duration-300">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-sm shadow-2xl border border-slate-100 dark:border-slate-800 text-center space-y-4">
+            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto shadow-inner ${
+              unreadLeaves[0].status === 'APPROVED' ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400' : 'bg-rose-100 text-rose-600 dark:bg-rose-900/40 dark:text-rose-400'
+            }`}>
+              {unreadLeaves[0].status === 'APPROVED' ? <CheckCircle2 size={36} /> : <XCircle size={36} />}
+            </div>
+            
+            <div className="space-y-2">
+              <span className="text-[11px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                {unreadLeaves[0].leave_type === 'SHIFT_CHANGE' ? 'Modificare Tură' : 'Cerere Concediu'}
+              </span>
+              <h3 className="text-lg font-black text-slate-900 dark:text-white pt-1">
+                {unreadLeaves[0].status === 'APPROVED' ? 'Cererea ta a fost Aprobată!' : 'Cererea ta a fost Respinsă'}
+              </h3>
+              
+              {unreadLeaves[0].status === 'APPROVED' && unreadLeaves[0].leave_type === 'SHIFT_CHANGE' && unreadLeaves[0].end_date ? (
+                <div className="bg-emerald-50 dark:bg-emerald-950/40 p-3.5 rounded-2xl border border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200 text-xs text-left space-y-1">
+                  <p className="font-medium text-slate-600 dark:text-slate-400">Noua ta tură a fost mutată pe:</p>
+                  <p className="text-base font-black text-emerald-700 dark:text-emerald-300 capitalize">
+                    📅 {new Date(unreadLeaves[0].end_date).toLocaleDateString('ro-RO', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                  </p>
+                </div>
+              ) : (
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {unreadLeaves[0].status === 'APPROVED' ? 'Modificările au fost aplicate cu succes în orar.' : 'Administratorul a respins solicitarea ta.'}
+                </p>
+              )}
+
+              {unreadLeaves[0].reason && (
+                <p className="text-[11px] text-slate-400 italic bg-slate-50 dark:bg-slate-800/50 p-2 rounded-xl">
+                  "{unreadLeaves[0].reason}"
+                </p>
+              )}
+            </div>
+
+            <button
+              onClick={() => {
+                dismissNotif(unreadLeaves[0].id);
+              }}
+              className="w-full py-3.5 rounded-2xl text-white font-black text-sm shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2"
+              style={{ backgroundColor: tc }}
+            >
+              Am înțeles, mulțumesc!
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Modal Detaliu Tură */}
       {selectedShift && (

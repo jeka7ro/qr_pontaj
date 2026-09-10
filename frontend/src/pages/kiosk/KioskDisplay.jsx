@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import { Loader2, AlertCircle, Maximize, Smartphone, WifiOff, ScanLine, CheckCircle2, User, XCircle } from 'lucide-react';
+import { updatePageFavicon } from '../../utils/favicon';
 
 export default function KioskDisplay() {
   const { tenantId, kioskId } = useParams();
@@ -59,6 +60,9 @@ export default function KioskDisplay() {
         if (!res.ok) throw new Error('Nu am putut încărca datele tenantului.');
         const data = await res.json();
         setTenant(data);
+        if (data.favicon_url || data.logo_url) {
+          updatePageFavicon(data.favicon_url || data.logo_url, `${data.name || 'Kiosk'} - Pontaj`);
+        }
         localStorage.setItem(`kiosk_tenant_${tenantId}`, JSON.stringify(data));
       } catch (err) {
         if (!localStorage.getItem(`kiosk_tenant_${tenantId}`)) {

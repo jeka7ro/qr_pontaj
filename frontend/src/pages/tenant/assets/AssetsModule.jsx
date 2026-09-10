@@ -75,7 +75,7 @@ export default function AssetsModule({ tenant, themeColor }) {
   };
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
+    <div className="space-y-6 w-full">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white dark:bg-slate-900 p-6 rounded-lg shadow-sm border border-slate-100 dark:border-slate-800">
         <div>
           <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
@@ -117,7 +117,7 @@ export default function AssetsModule({ tenant, themeColor }) {
                       <div className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
                         <KeyRound size={16} className="text-slate-400" /> {asset.name}
                       </div>
-                      <div className="text-xs text-slate-500 font-mono mt-1">SN: {asset.serial_number || 'N/A'}</div>
+                      <div className="text-xs text-slate-500 font-medium mt-1">SN: {asset.serial_number || 'N/A'}</div>
                     </td>
                     <td className="p-4">
                       <span className={`px-3 py-1 text-xs font-bold rounded-lg ${

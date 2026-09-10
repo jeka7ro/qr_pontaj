@@ -23,6 +23,8 @@ export default function DataTable({
   rowKey = "id",
   expandable = false,
   expandedRowRender = null,
+  exportOptions = null,
+  onExport = null,
 }) {
   const [search, setSearch] = useState("");
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
@@ -30,6 +32,7 @@ export default function DataTable({
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [selectedRowIds, setSelectedRowIds] = useState(new Set());
   const [expandedRowIds, setExpandedRowIds] = useState(new Set());
+  const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
 
   // 1. Căutare Globală
   const filteredData = useMemo(() => {
@@ -160,6 +163,20 @@ export default function DataTable({
     });
 
     const worksheet = XLSX.utils.json_to_sheet(exportData);
+
+    // Auto-ajustare lățime coloane pentru lizibilitate optimă în Excel
+    if (exportData.length > 0) {
+      const colWidths = Object.keys(exportData[0]).map((key) => {
+        let maxLen = key.length;
+        exportData.forEach((row) => {
+          const valStr = row[key] !== null && row[key] !== undefined ? String(row[key]) : "";
+          if (valStr.length > maxLen) maxLen = valStr.length;
+        });
+        return { wch: Math.max(maxLen + 3, 10) };
+      });
+      worksheet["!cols"] = colWidths;
+    }
+
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Date");
 
@@ -216,13 +233,92 @@ export default function DataTable({
               </div>
             )}
 
-            <button
-              onClick={handleExport}
-              className="flex items-center px-4 h-10 rounded-full bg-green-600 hover:bg-green-700 text-white text-sm font-bold shadow-sm transition-colors"
-            >
-              <Download size={16} className="mr-2" />
-              Export Excel
-            </button>
+            {exportOptions && exportOptions.length > 0 ? (
+              <div className="relative inline-flex rounded-full shadow-sm">
+                <button
+                  type="button"
+                  onClick={() => exportOptions[0].onClick({ sortedData, search, columns, XLSX })}
+                  className="flex items-center pl-4 pr-3 h-10 rounded-l-full bg-green-600 hover:bg-green-700 text-white text-sm font-bold transition-colors cursor-pointer"
+                  title={exportOptions[0].description || exportOptions[0].label}
+                >
+                  <Download size={16} className="mr-2" />
+                  Export Excel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
+                  className="flex items-center justify-center px-2.5 h-10 rounded-r-full bg-green-700 hover:bg-green-800 text-white border-l border-green-500/50 transition-colors cursor-pointer"
+                  title="Alege opțiuni de export"
+                >
+                  <ChevronDown
+                    size={16}
+                    className={`transition-transform duration-200 ${
+                      isExportMenuOpen ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+
+                {isExportMenuOpen && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setIsExportMenuOpen(false)}
+                    />
+                    <div className="absolute right-0 top-12 z-50 w-72 rounded-2xl bg-white dark:bg-slate-800 shadow-xl border border-slate-200 dark:border-slate-700 py-2 divide-y divide-slate-100 dark:divide-slate-700/60 animate-in fade-in zoom-in-95">
+                      <div className="px-4 py-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                        Opțiuni Export Excel
+                      </div>
+                      <div className="py-1">
+                        {exportOptions.map((opt, idx) => (
+                          <button
+                            key={opt.id || idx}
+                            type="button"
+                            onClick={() => {
+                              setIsExportMenuOpen(false);
+                              opt.onClick({ sortedData, search, columns, XLSX });
+                            }}
+                            className="w-full text-left px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-700/50 flex flex-col group transition-colors cursor-pointer"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-bold text-slate-800 dark:text-white group-hover:text-green-600 dark:group-hover:text-green-400">
+                                {opt.label}
+                              </span>
+                              {idx === 0 && (
+                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300">
+                                  Principal
+                                </span>
+                              )}
+                            </div>
+                            {opt.description && (
+                              <span className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                {opt.description}
+                              </span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            ) : onExport ? (
+              <button
+                type="button"
+                onClick={() => onExport({ sortedData, search, columns, title, XLSX, defaultExport: handleExport })}
+                className="flex items-center px-4 h-10 rounded-full bg-green-600 hover:bg-green-700 text-white text-sm font-bold shadow-sm transition-colors cursor-pointer"
+              >
+                <Download size={16} className="mr-2" />
+                Export Excel
+              </button>
+            ) : (
+              <button
+                onClick={handleExport}
+                className="flex items-center px-4 h-10 rounded-full bg-green-600 hover:bg-green-700 text-white text-sm font-bold shadow-sm transition-colors cursor-pointer"
+              >
+                <Download size={16} className="mr-2" />
+                Export Excel
+              </button>
+            )}
           </div>
         </div>
 
@@ -410,7 +506,7 @@ export default function DataTable({
         </div>
 
         {/* Footer / Paginare */}
-        <div className="px-5 py-3 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex flex-col md:flex-row items-center justify-between rounded-b-lg">
+        <div className="px-5 py-3 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex flex-col sm:flex-row items-center justify-between gap-3 rounded-b-lg">
           <div className="flex items-center gap-4 text-sm text-slate-600 dark:text-slate-300">
             <span className="whitespace-nowrap flex items-center gap-1.5">
               Afișează

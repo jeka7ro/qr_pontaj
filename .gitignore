@@ -7,3 +7,17 @@ build/
 backend/uploads/
 .agents/
 .tempmediaStorage/
+
+# Temporary debug scripts
+check_*.js
+debug_*.js
+fix_*.js
+query_*.js
+test_*.js
+test_id.js
+test_late.js
+test_shift.js
+test_utc_dates.js
+test.html
+update_pro_badges.js
+backend/test_schema.js

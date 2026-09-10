@@ -61,8 +61,35 @@ router.put('/:leaveId/status', async (req, res) => {
     );
 
     const leave = result.rows[0];
-    
-    // Notificare WhatsApp
+
+    // Dacă este cerere de modificare tură și a fost aprobată, mutăm automat tura pe noua dată
+    if (status === 'APPROVED' && leave.leave_type === 'SHIFT_CHANGE') {
+      try {
+        const origDate = leave.start_date;
+        const targetDate = leave.end_date;
+        if (origDate && targetDate) {
+          // Găsim tura angajatului de la data inițială
+          const shiftRes = await db.query(
+            `SELECT id FROM qrp_shifts 
+             WHERE tenant_id = $1 AND employee_id = $2 AND date = $3 
+             ORDER BY id DESC LIMIT 1`,
+            [id, leave.employee_id, origDate]
+          );
+          if (shiftRes.rows.length > 0) {
+            const shiftId = shiftRes.rows[0].id;
+            // Mutăm tura pe noua dată și resetăm seen_at = NULL
+            await db.query(
+              `UPDATE qrp_shifts 
+               SET date = $1, seen_at = NULL 
+               WHERE id = $2`,
+              [targetDate, shiftId]
+            );
+          }
+        }
+      } catch (shiftErr) {
+        console.error('Eroare la mutarea automată a turei:', shiftErr);
+      }
+    }
     try {
       const empRes = await db.query('SELECT phone, first_name FROM qrp_employees WHERE id = $1', [leave.employee_id]);
       if (empRes.rows.length > 0 && empRes.rows[0].phone) {

@@ -21,6 +21,7 @@ import FaceRecognitionModule from './face_recognition/FaceRecognitionModule';
 import WhatsappModule from './whatsapp/WhatsappModule';
 import AssetsModule from './assets/AssetsModule';
 import { QRCodeSVG } from 'qrcode.react';
+import { updatePageFavicon } from '../../utils/favicon';
 
 export default function TenantDashboard() {
   const navigate = useNavigate();
@@ -75,6 +76,11 @@ export default function TenantDashboard() {
         // Dacă e setată culoarea, o aplicăm global pentru acest dashboard
         if (data.tenant?.theme_color) {
           document.documentElement.style.setProperty('--color-tenant-theme', data.tenant.theme_color);
+        }
+
+        // Aplicăm Favicon-ul specific tenantului și titlul paginii
+        if (data.tenant?.favicon_url || data.tenant?.logo_url) {
+          updatePageFavicon(data.tenant.favicon_url || data.tenant.logo_url, `${data.tenant.name || 'QR Pontaj'} - Panou Administrare`);
         }
       } catch (err) {
         setError(err.message);
@@ -410,7 +416,7 @@ export default function TenantDashboard() {
         </header>
 
         {/* Content Area */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-8 bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-900 transition-colors">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-900 transition-colors">
           <Routes>
             <Route path="/" element={<Navigate to="dashboard" replace />} />
             
@@ -419,23 +425,23 @@ export default function TenantDashboard() {
             } />
             
             <Route path="timesheets" element={
-              <div className="max-w-5xl">
+              <div className="w-full">
                 <TimesheetReport tenant={tenant} themeColor={themeColor} />
               </div>
             } />
 
             <Route path="employees" element={
-              <div className="max-w-6xl">
-                <div className="mb-6 flex gap-4 border-b border-slate-200 dark:border-slate-700 dark:border-slate-700">
+              <div className="w-full">
+                <div className="mb-6 flex gap-2 sm:gap-4 border-b border-slate-200 dark:border-slate-700 overflow-x-auto whitespace-nowrap pb-0.5">
                   <Link 
                     to="/admin/employees"
-                    className={`pb-3 px-2 font-bold text-sm border-b-2 transition-colors ${location.pathname === '/admin/employees' ? 'text-slate-800 dark:text-white dark:text-white border-slate-800 dark:border-white' : 'text-slate-500 dark:text-slate-400 border-transparent hover:text-slate-700 dark:text-slate-300 dark:hover:text-slate-300'}`}
+                    className={`pb-3 px-2 font-bold text-sm border-b-2 transition-colors ${location.pathname === '/admin/employees' ? 'text-slate-800 dark:text-white border-slate-800 dark:border-white' : 'text-slate-500 dark:text-slate-400 border-transparent hover:text-slate-700 dark:text-slate-300'}`}
                   >
                     Angajați
                   </Link>
                   <Link 
                     to="/admin/employees/roles"
-                    className={`pb-3 px-2 font-bold text-sm border-b-2 transition-colors ${location.pathname === '/admin/employees/roles' ? 'text-slate-800 dark:text-white dark:text-white border-slate-800 dark:border-white' : 'text-slate-500 dark:text-slate-400 border-transparent hover:text-slate-700 dark:text-slate-300 dark:hover:text-slate-300'}`}
+                    className={`pb-3 px-2 font-bold text-sm border-b-2 transition-colors ${location.pathname === '/admin/employees/roles' ? 'text-slate-800 dark:text-white border-slate-800 dark:border-white' : 'text-slate-500 dark:text-slate-400 border-transparent hover:text-slate-700 dark:text-slate-300'}`}
                   >
                     Roluri (Funcții)
                   </Link>
@@ -445,17 +451,17 @@ export default function TenantDashboard() {
             } />
 
             <Route path="employees/roles" element={
-              <div className="max-w-6xl">
-                <div className="mb-6 flex gap-4 border-b border-slate-200 dark:border-slate-700 dark:border-slate-700">
+              <div className="w-full">
+                <div className="mb-6 flex gap-2 sm:gap-4 border-b border-slate-200 dark:border-slate-700 overflow-x-auto whitespace-nowrap pb-0.5">
                   <Link 
                     to="/admin/employees"
-                    className={`pb-3 px-2 font-bold text-sm border-b-2 transition-colors ${location.pathname === '/admin/employees' ? 'text-slate-800 dark:text-white dark:text-white border-slate-800 dark:border-white' : 'text-slate-500 dark:text-slate-400 border-transparent hover:text-slate-700 dark:text-slate-300 dark:hover:text-slate-300'}`}
+                    className={`pb-3 px-2 font-bold text-sm border-b-2 transition-colors ${location.pathname === '/admin/employees' ? 'text-slate-800 dark:text-white border-slate-800 dark:border-white' : 'text-slate-500 dark:text-slate-400 border-transparent hover:text-slate-700 dark:text-slate-300'}`}
                   >
                     Angajați
                   </Link>
                   <Link 
                     to="/admin/employees/roles"
-                    className={`pb-3 px-2 font-bold text-sm border-b-2 transition-colors ${location.pathname === '/admin/employees/roles' ? 'text-slate-800 dark:text-white dark:text-white border-slate-800 dark:border-white' : 'text-slate-500 dark:text-slate-400 border-transparent hover:text-slate-700 dark:text-slate-300 dark:hover:text-slate-300'}`}
+                    className={`pb-3 px-2 font-bold text-sm border-b-2 transition-colors ${location.pathname === '/admin/employees/roles' ? 'text-slate-800 dark:text-white border-slate-800 dark:border-white' : 'text-slate-500 dark:text-slate-400 border-transparent hover:text-slate-700 dark:text-slate-300'}`}
                   >
                     Roluri (Funcții)
                   </Link>
@@ -473,14 +479,14 @@ export default function TenantDashboard() {
             } />
 
             <Route path="qr" element={
-              <div className="max-w-4xl">
+              <div className="w-full">
                 <QrSelector tenant={tenant} themeColor={themeColor} />
               </div>
             } />
             
             <Route path="leaves" element={
               tenant.modules?.leaves ? (
-                <div className="max-w-4xl">
+                <div className="w-full">
                   <LeavesModule tenant={tenant} themeColor={themeColor} />
                 </div>
               ) : (
@@ -500,7 +506,7 @@ export default function TenantDashboard() {
 
             <Route path="geofence" element={
               tenant.modules?.geofence ? (
-                <div className="max-w-6xl">
+                <div className="w-full">
                   <GeofenceModule tenant={tenant} themeColor={themeColor} />
                 </div>
               ) : (
@@ -550,7 +556,7 @@ export default function TenantDashboard() {
 
             <Route path="shifts" element={
               tenant.modules?.shifts ? (
-                <div className="max-w-6xl">
+                <div className="w-full">
                   <ShiftsModule tenant={tenant} themeColor={themeColor} />
                 </div>
               ) : (

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { X, Upload, Copy, ExternalLink } from 'lucide-react';
+import { X, Upload, Copy, ExternalLink, Image as ImageIcon } from 'lucide-react';
+import { resolveFaviconUrl } from '../utils/favicon';
 
 export default function CreateTenantModal({ onClose, onTenantCreated, editTenant = null }) {
   const [formData, setFormData] = useState({
@@ -27,6 +28,50 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
       show_upsells: true
     }
   });
+  
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadingFavicon, setUploadingFavicon] = useState(false);
+
+  const handleFileUpload = async (e, field) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const isLogo = field === 'logo_url';
+    if (isLogo) setUploadingLogo(true);
+    else setUploadingFavicon(true);
+
+    try {
+      const formPayload = new FormData();
+      formPayload.append('file', file);
+      
+      const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
+      const res = await fetch(`${baseUrl}/api/tenants/upload-branding`, {
+        method: 'POST',
+        body: formPayload
+      });
+      
+      if (!res.ok) throw new Error('Eroare la încărcarea imaginii.');
+      const data = await res.json();
+      if (data.url) {
+        setFormData(prev => ({ ...prev, [field]: data.url }));
+      }
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      if (isLogo) setUploadingLogo(false);
+      else setUploadingFavicon(false);
+    }
+  };
+
+  const handleAutoDetectFavicon = () => {
+    if (!formData.favicon_url) return;
+    const resolved = resolveFaviconUrl(formData.favicon_url);
+    if (resolved) {
+      setFormData(prev => ({ ...prev, favicon_url: resolved }));
+    }
+  };
+
+  const resolvedFavicon = resolveFaviconUrl(formData.favicon_url);
   
   useEffect(() => {
     if (editTenant) {
@@ -150,10 +195,10 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
-        <div className="flex justify-between items-center px-6 py-4 border-b border-slate-200 dark:border-slate-700 dark:border-slate-700">
-          <h3 className="text-lg font-semibold text-slate-800 dark:text-white dark:text-white dark:text-white">
+    <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4 overflow-y-auto">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh] my-auto">
+        <div className="flex justify-between items-center px-4 sm:px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+          <h3 className="text-lg font-semibold text-slate-800 dark:text-white">
             {editTenant ? 'Editează Tenant' : 'Creează Tenant Nou'}
           </h3>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-300 transition-colors">
@@ -161,7 +206,7 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
           </button>
         </div>
         
-        <div className="p-6 overflow-y-auto">
+        <div className="p-4 sm:p-6 overflow-y-auto">
           {error && (
             <div className="mb-6 p-4 rounded-2xl bg-red-50 border border-red-200">
               <p className="text-sm font-bold text-red-600">{error}</p>
@@ -170,8 +215,8 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
 
           <form id="create-tenant-form" onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-4">
-              <h4 className="text-sm font-semibold text-slate-800 dark:text-white dark:text-white uppercase tracking-wider">1. Detalii Generale</h4>
-              <div className="grid grid-cols-2 gap-4">
+              <h4 className="text-sm font-semibold text-slate-800 dark:text-white uppercase tracking-wider">1. Detalii Generale</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 dark:text-slate-400 mb-1">Nume Locație *</label>
                   <input 
@@ -201,13 +246,24 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
               </div>
             </div>
 
-            <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-700 dark:border-slate-700">
-              <h4 className="text-sm font-semibold text-slate-800 dark:text-white dark:text-white uppercase tracking-wider">2. Branding (White-Label)</h4>
+            <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+              <h4 className="text-sm font-semibold text-slate-800 dark:text-white uppercase tracking-wider">2. Branding (White-Label)</h4>
               
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 {/* Logo Section */}
                 <div className="space-y-3">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 dark:text-slate-400">Logo Companie</label>
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Logo Companie</label>
+                    {formData.logo_url && (
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, logo_url: '' }))}
+                        className="text-[11px] text-red-500 hover:text-red-600 font-semibold"
+                      >
+                        Elimină
+                      </button>
+                    )}
+                  </div>
                   <div className="flex flex-col space-y-2">
                     <input 
                       type="text" 
@@ -215,31 +271,44 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
                       value={formData.logo_url}
                       onChange={handleChange}
                       placeholder="Adresa Web (URL)..." 
-                      className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm" 
+                      className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm" 
                     />
-                    <div className="relative flex items-center justify-center text-sm text-slate-500 dark:text-slate-400 dark:text-slate-400">
-                      <span className="bg-white px-2">SAU</span>
+                    <div className="relative flex items-center justify-center text-sm text-slate-500 dark:text-slate-400">
+                      <span className="bg-white dark:bg-slate-900 px-2 text-xs">SAU</span>
                       <div className="absolute inset-0 flex items-center" aria-hidden="true">
-                        <div className="w-full border-t border-slate-100 dark:border-slate-700/50 dark:border-slate-700/50"></div>
+                        <div className="w-full border-t border-slate-100 dark:border-slate-800"></div>
                       </div>
                     </div>
-                    <div className="border-2 border-dashed border-slate-200 dark:border-slate-700 dark:border-slate-700 rounded-lg p-3 text-center hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 dark:bg-slate-800/50 transition-colors cursor-pointer flex flex-col items-center justify-center h-24 overflow-hidden relative">
+                    <label className="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-lg p-3 text-center hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer flex flex-col items-center justify-center h-24 overflow-hidden relative">
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        className="hidden" 
+                        onChange={(e) => handleFileUpload(e, 'logo_url')} 
+                        disabled={uploadingLogo}
+                      />
                       {formData.logo_url ? (
-                        <img src={formData.logo_url} alt="Logo Preview" className="w-full h-full object-cover" />
+                        <img 
+                          src={formData.logo_url.startsWith('/uploads') ? `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${formData.logo_url}` : formData.logo_url} 
+                          alt="Logo Preview" 
+                          className="w-full h-full object-contain" 
+                        />
                       ) : (
                         <>
                           <Upload size={16} className="text-slate-400 mb-1" />
-                          <span className="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-400">Încarcă Fișier (Max 2MB)</span>
+                          <span className="text-xs text-slate-500 dark:text-slate-400">
+                            {uploadingLogo ? 'Se încarcă...' : 'Încarcă Fișier (Max 2MB)'}
+                          </span>
                         </>
                       )}
-                    </div>
+                    </label>
                   </div>
                 </div>
 
                 {/* Favicon & Color Section */}
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 dark:text-slate-400 mb-1">Culoare Temă (Hex)</label>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Culoare Temă (Hex)</label>
                     <div className="flex space-x-2">
                       <input 
                         type="color" 
@@ -258,23 +327,77 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
                         name="culoare_tema"
                         value={formData.culoare_tema}
                         onChange={handleChange}
-                        className="flex-1 px-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white dark:border-slate-700 outline-none transition-all shadow-sm" 
+                        className="flex-1 px-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm" 
                       />
                     </div>
                   </div>
                   
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 dark:text-slate-400 mb-1">Favicon</label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Favicon</label>
+                      {formData.favicon_url && (
+                        <button
+                          type="button"
+                          onClick={() => setFormData(prev => ({ ...prev, favicon_url: '' }))}
+                          className="text-[11px] text-red-500 hover:text-red-600 font-semibold"
+                        >
+                          Elimină
+                        </button>
+                      )}
+                    </div>
                     <div className="flex flex-col space-y-2">
-                      <input 
-                        type="text" 
-                        name="favicon_url"
-                        value={formData.favicon_url}
-                        onChange={handleChange}
-                        placeholder="Adresa Web (URL)..." 
-                        className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm" 
-                      />
-                      <input type="file" className="block w-full text-xs text-slate-500 dark:text-slate-400 dark:text-slate-400 file:mr-4 file:py-1.5 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-slate-100 dark:bg-slate-800 file:text-slate-700 dark:text-slate-300 hover:file:bg-slate-200 dark:bg-slate-700 transition-colors cursor-pointer" />
+                      <div className="flex gap-2">
+                        <input 
+                          type="text" 
+                          name="favicon_url"
+                          value={formData.favicon_url}
+                          onChange={handleChange}
+                          placeholder="Ex: https://unda.ro sau link direct icon" 
+                          className="flex-1 px-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm" 
+                        />
+                        {formData.favicon_url && !formData.favicon_url.match(/\.(ico|png|jpg|jpeg|svg|webp)($|\?)/i) && (
+                          <button
+                            type="button"
+                            onClick={handleAutoDetectFavicon}
+                            className="px-3 h-10 text-xs font-bold rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 transition-colors shrink-0"
+                            title="Transformă domeniul în favicon oficial"
+                          >
+                            Extrage
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Preview & File Upload */}
+                      <div className="flex items-center gap-3 p-2 rounded-xl border border-dashed border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50">
+                        <div className="w-10 h-10 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 flex items-center justify-center overflow-hidden shrink-0 shadow-xs">
+                          {resolvedFavicon ? (
+                            <img 
+                              src={resolvedFavicon} 
+                              alt="Favicon" 
+                              className="w-7 h-7 object-contain"
+                              onError={(e) => { e.target.style.display = 'none'; }} 
+                            />
+                          ) : (
+                            <span className="text-[10px] text-slate-400 font-bold">ICO</span>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-2xs">
+                            <Upload size={13} className="text-slate-500" />
+                            <span>{uploadingFavicon ? 'Se încarcă...' : 'Încarcă fișier (.ico, .png)'}</span>
+                            <input 
+                              type="file" 
+                              accept=".ico,.png,.jpg,.jpeg,.svg,.webp" 
+                              className="hidden" 
+                              onChange={(e) => handleFileUpload(e, 'favicon_url')} 
+                              disabled={uploadingFavicon}
+                            />
+                          </label>
+                          <p className="text-[10px] text-slate-400 mt-0.5 truncate">
+                            {resolvedFavicon ? 'Favicon activ și vizibil' : 'Sau alege un fișier local'}
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -283,8 +406,8 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
 
             {!editTenant && (
               <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-700/50 dark:border-slate-700/50">
-                <h4 className="text-sm font-semibold text-slate-800 dark:text-white dark:text-white uppercase tracking-wider">3. Cont Admin Local</h4>
-                <div className="grid grid-cols-2 gap-4">
+                <h4 className="text-sm font-semibold text-slate-800 dark:text-white uppercase tracking-wider">3. Cont Admin Local</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 dark:text-slate-400 mb-1">Email Administrator *</label>
                     <input 
@@ -472,7 +595,7 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
                         type="text" 
                         readOnly 
                         value={managerLink} 
-                        className="flex-1 px-3 h-9 text-xs rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white dark:border-slate-700 outline-none text-slate-600 dark:text-slate-300 dark:text-slate-300 font-mono" 
+                        className="flex-1 px-3 h-9 text-xs rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white outline-none text-slate-600 dark:text-slate-300 font-medium" 
                       />
                       <a 
                         href={managerLink} 
@@ -496,7 +619,7 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
                   <div className="pt-2">
                     <p className="text-xs font-bold text-slate-700 dark:text-slate-300 dark:text-slate-300 mb-1">Aplicație Scanare Angajați (URL Cod QR)</p>
                     <div className="flex items-center gap-2">
-                      <input type="text" readOnly value={scanLink} className="flex-1 px-3 h-9 text-xs rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white dark:border-slate-700 outline-none text-slate-600 dark:text-slate-300 dark:text-slate-300 font-mono" />
+                      <input type="text" readOnly value={scanLink} className="flex-1 px-3 h-9 text-xs rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white outline-none text-slate-600 dark:text-slate-300 font-medium" />
                       <a 
                         href={scanLink} 
                         target="_blank" 
@@ -525,11 +648,11 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
           </form>
         </div>
         
-        <div className="p-6 border-t border-slate-200 dark:border-slate-700 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-800/50 flex justify-end gap-3">
+        <div className="p-4 sm:p-6 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex flex-col-reverse sm:flex-row justify-end gap-3">
           <button 
             type="button" 
             onClick={onClose}
-            className="px-6 py-2.5 rounded-full text-sm font-bold text-slate-600 dark:text-slate-300 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-700 transition-colors"
+            className="w-full sm:w-auto px-6 py-2.5 rounded-full text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors text-center"
           >
             Anulează
           </button>
@@ -537,7 +660,7 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
             type="submit"
             form="create-tenant-form"
             disabled={loading}
-            className="px-4 py-2.5 text-sm rounded-full bg-primary-600 hover:bg-primary-700 text-white text-sm font-bold shadow-sm transition-all disabled:opacity-50"
+            className="w-full sm:w-auto px-6 py-2.5 text-sm rounded-full bg-primary-600 hover:bg-primary-700 text-white font-bold shadow-sm transition-all disabled:opacity-50 text-center"
           >
             {loading ? 'Se salvează...' : (editTenant ? 'Salvează Modificările' : 'Salvează și Creează')}
           </button>

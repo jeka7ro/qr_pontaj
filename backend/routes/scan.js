@@ -22,9 +22,21 @@ router.get('/stream/:kioskId', (req, res) => {
   }
   sseClients[kioskId].push(res);
 
+  // Periodic keepalive to prevent proxy/browser timeouts
+  const heartbeatInterval = setInterval(() => {
+    try {
+      res.write(': keepalive\n\n');
+    } catch (e) {
+      clearInterval(heartbeatInterval);
+    }
+  }, 20000);
+
   // Remove client when connection closes
   req.on('close', () => {
-    sseClients[kioskId] = sseClients[kioskId].filter(client => client !== res);
+    clearInterval(heartbeatInterval);
+    if (sseClients[kioskId]) {
+      sseClients[kioskId] = sseClients[kioskId].filter(client => client !== res);
+    }
   });
 });
 
@@ -47,7 +59,16 @@ router.post('/status', async (req, res) => {
       [employee.id]
     );
 
-    const lastAction = lastEntryRes.rows.length > 0 ? lastEntryRes.rows[0].action_type : 'OUT';
+    let lastAction = 'OUT';
+    if (lastEntryRes.rows.length > 0) {
+      lastAction = lastEntryRes.rows[0].action_type;
+      const lastCreated = new Date(lastEntryRes.rows[0].created_at);
+      const diffHours = (Date.now() - lastCreated.getTime()) / (1000 * 3600);
+      // Daca a uitat sa ponteze IESIRE si au trecut >14 ore, tratam ca OUT pentru a-i permite INTRARE in noua tura
+      if (lastAction === 'IN' && diffHours > 14) {
+        lastAction = 'OUT';
+      }
+    }
     
     // Obține setarea kiosk_show_photo
     let showPhoto = true;
@@ -105,7 +126,9 @@ router.post('/', async (req, res) => {
         return res.status(400).json({ error: `Ai scanat prea repede. Așteaptă ${Math.ceil(60 - secondsSince)} secunde.` });
       }
       
-      if (type === 'IN' && lastAction === 'IN') {
+      const isStaleIn = lastAction === 'IN' && (secondsSince > 14 * 3600);
+
+      if (type === 'IN' && lastAction === 'IN' && !isStaleIn) {
         return res.status(400).json({ error: 'Sunteți deja pontat la intrare!' });
       }
       if (type === 'OUT' && lastAction === 'OUT') {

@@ -60,15 +60,22 @@ router.get('/live', async (req, res) => {
   try {
     const tenantId = req.user.tenant_id;
     const query = `
-      SELECT e.id, e.first_name, e.last_name, e.avatar_path,
+      SELECT e.id, e.first_name, e.last_name, e.avatar_path, e.employee_code, e.job_title,
              COALESCE((SELECT action_type FROM qrp_timesheets WHERE employee_id = e.id ORDER BY created_at DESC LIMIT 1), 'OUT') as current_status,
              (SELECT is_manual FROM qrp_timesheets WHERE employee_id = e.id ORDER BY created_at DESC LIMIT 1) as current_is_manual,
              (SELECT created_at FROM qrp_timesheets WHERE employee_id = e.id AND action_type = 'IN' ORDER BY created_at DESC LIMIT 1) as last_in_time,
+             (SELECT created_at FROM qrp_timesheets WHERE employee_id = e.id AND action_type = 'OUT' ORDER BY created_at DESC LIMIT 1) as last_out_time,
              (SELECT MAX(created_at) FROM qrp_timesheets WHERE employee_id = e.id AND action_type = 'OUT' AND (created_at AT TIME ZONE 'Europe/Bucharest')::date = (CURRENT_TIMESTAMP AT TIME ZONE 'Europe/Bucharest')::date) as last_scan_time,
              (SELECT MAX(created_at) FROM qrp_timesheets WHERE employee_id = e.id) as absolute_last_scan,
-             (SELECT s.name FROM qrp_sites s JOIN qrp_timesheets t ON t.site_id = s.id WHERE t.employee_id = e.id AND t.action_type = 'IN' ORDER BY t.created_at DESC LIMIT 1) as site_name,
+             COALESCE(
+               (SELECT l.name FROM qrp_locations l JOIN qrp_timesheets t ON t.site_id = l.id WHERE t.employee_id = e.id AND t.action_type = 'IN' ORDER BY t.created_at DESC LIMIT 1),
+               (SELECT s.name FROM qrp_sites s JOIN qrp_timesheets t ON t.site_id = s.id WHERE t.employee_id = e.id AND t.action_type = 'IN' ORDER BY t.created_at DESC LIMIT 1),
+               (SELECT l.name FROM qrp_locations l WHERE l.tenant_id = e.tenant_id ORDER BY l.id ASC LIMIT 1),
+               (SELECT s.name FROM qrp_sites s WHERE s.tenant_id = e.tenant_id ORDER BY s.id ASC LIMIT 1)
+             ) as site_name,
              (SELECT start_time FROM qrp_shifts WHERE employee_id = e.id AND date = (CURRENT_TIMESTAMP AT TIME ZONE 'Europe/Bucharest')::date LIMIT 1) as scheduled_start_time,
-             (SELECT end_time FROM qrp_shifts WHERE employee_id = e.id AND date = (CURRENT_TIMESTAMP AT TIME ZONE 'Europe/Bucharest')::date LIMIT 1) as scheduled_end_time
+             (SELECT end_time FROM qrp_shifts WHERE employee_id = e.id AND date = (CURRENT_TIMESTAMP AT TIME ZONE 'Europe/Bucharest')::date LIMIT 1) as scheduled_end_time,
+             (SELECT shift_type FROM qrp_shifts WHERE employee_id = e.id AND date = (CURRENT_TIMESTAMP AT TIME ZONE 'Europe/Bucharest')::date LIMIT 1) as scheduled_shift_type
       FROM qrp_employees e
       WHERE e.tenant_id = $1
       ORDER BY 
@@ -146,29 +153,131 @@ router.get('/stats', async (req, res) => {
       'Prezenți': presentDetails
     };
     
-    // Weekly Data
-    const weeklyQueryStr = `
+    // Weekly Data (Ultimele 7 zile: Prezenți, Ore lucrate, Absenți)
+    const seriesRes = await pool.query(`
       WITH date_series AS (
-        SELECT generate_series((CURRENT_TIMESTAMP AT TIME ZONE 'Europe/Bucharest')::date - INTERVAL '6 days', (CURRENT_TIMESTAMP AT TIME ZONE 'Europe/Bucharest')::date, '1 day')::date AS d
+        SELECT generate_series(
+          (CURRENT_TIMESTAMP AT TIME ZONE 'Europe/Bucharest')::date - INTERVAL '6 days',
+          (CURRENT_TIMESTAMP AT TIME ZONE 'Europe/Bucharest')::date,
+          '1 day'
+        )::date AS d
       )
       SELECT 
-        TO_CHAR(ds.d, 'Dy') as name,
-        ds.d as full_date,
-        COUNT(DISTINCT t.employee_id) as value
+        ds.d as day_date,
+        TO_CHAR(ds.d, 'Dy') as day_name,
+        TO_CHAR(ds.d, 'DD.MM') as day_formatted
       FROM date_series ds
-      LEFT JOIN qrp_timesheets t 
-        ON t.created_at::date = ds.d 
-        AND t.tenant_id = $1 
-        AND t.action_type = 'IN'
-      GROUP BY ds.d
       ORDER BY ds.d ASC
-    `;
-    const weeklyRes = await pool.query(weeklyQueryStr, [tenantId]);
+    `);
+    
+    const days = seriesRes.rows;
     const dayMap = { 'Mon': 'L', 'Tue': 'M', 'Wed': 'Mi', 'Thu': 'J', 'Fri': 'V', 'Sat': 'S', 'Sun': 'D' };
-    const weeklyData = weeklyRes.rows.map(r => ({
-      name: dayMap[r.name] || r.name,
-      value: parseInt(r.value)
-    }));
+    
+    // Preluare pontaje din ultimele 7 zile
+    const tsRes = await pool.query(`
+      SELECT 
+        id,
+        employee_id,
+        action_type,
+        created_at,
+        (created_at AT TIME ZONE 'Europe/Bucharest')::date as work_date
+      FROM qrp_timesheets 
+      WHERE tenant_id = $1 
+        AND (created_at AT TIME ZONE 'Europe/Bucharest')::date >= (CURRENT_TIMESTAMP AT TIME ZONE 'Europe/Bucharest')::date - INTERVAL '6 days'
+      ORDER BY employee_id, created_at ASC
+    `, [tenantId]);
+
+    // Preluare ture planificate din ultimele 7 zile
+    const shiftsRes = await pool.query(`
+      SELECT 
+        (date AT TIME ZONE 'Europe/Bucharest')::date as shift_date,
+        count(DISTINCT employee_id) as planned_count
+      FROM qrp_shifts
+      WHERE tenant_id = $1
+        AND (date AT TIME ZONE 'Europe/Bucharest')::date >= (CURRENT_TIMESTAMP AT TIME ZONE 'Europe/Bucharest')::date - INTERVAL '6 days'
+      GROUP BY (date AT TIME ZONE 'Europe/Bucharest')::date
+    `, [tenantId]);
+    
+    const shiftsByDate = {};
+    shiftsRes.rows.forEach(s => {
+      const key = new Date(s.shift_date).toLocaleDateString('en-CA');
+      shiftsByDate[key] = parseInt(s.planned_count, 10);
+    });
+
+    const now = new Date();
+
+    const statsByDate = {};
+    days.forEach(d => {
+      const key = new Date(d.day_date).toLocaleDateString('en-CA');
+      statsByDate[key] = {
+        date: key,
+        name: dayMap[d.day_name] || d.day_name,
+        formattedDate: d.day_formatted,
+        presentEmps: new Set(),
+        totalHours: 0,
+        planned: shiftsByDate[key] || 0
+      };
+    });
+
+    const empDayTs = {};
+    tsRes.rows.forEach(r => {
+      const dateKey = new Date(r.work_date).toLocaleDateString('en-CA');
+      if (!statsByDate[dateKey]) return;
+      
+      if (r.action_type === 'IN') {
+        statsByDate[dateKey].presentEmps.add(r.employee_id);
+      }
+      
+      const key = `${r.employee_id}_${dateKey}`;
+      if (!empDayTs[key]) empDayTs[key] = [];
+      empDayTs[key].push(r);
+    });
+
+    const todayStr = new Date(days[days.length - 1].day_date).toLocaleDateString('en-CA');
+
+    Object.entries(empDayTs).forEach(([key, rows]) => {
+      const dateKey = key.split('_')[1];
+      let currentIn = null;
+      rows.forEach(r => {
+        if (r.action_type === 'IN') {
+          currentIn = new Date(r.created_at);
+        } else if (r.action_type === 'OUT' && currentIn) {
+          const durMs = new Date(r.created_at) - currentIn;
+          statsByDate[dateKey].totalHours += durMs / (1000 * 3600);
+          currentIn = null;
+        }
+      });
+      if (currentIn && dateKey === todayStr) {
+        const durMs = now - currentIn;
+        statsByDate[dateKey].totalHours += durMs / (1000 * 3600);
+      }
+    });
+
+    const weeklyData = days.map(d => {
+      const key = new Date(d.day_date).toLocaleDateString('en-CA');
+      const item = statsByDate[key];
+      const present = item.presentEmps.size;
+      let absent = 0;
+      if (item.planned > 0) {
+        absent = Math.max(0, item.planned - present);
+      } else if (present > 0) {
+        absent = Math.max(0, totalEmployees - present);
+      } else {
+        absent = 0;
+      }
+      
+      return {
+        name: item.name,
+        date: item.date,
+        formattedDate: item.formattedDate,
+        value: present,
+        present: present,
+        hours: Math.round(item.totalHours * 10) / 10,
+        absent: absent,
+        totalEmployees: totalEmployees,
+        planned: item.planned
+      };
+    });
     
     res.json({
       totalEmployees,

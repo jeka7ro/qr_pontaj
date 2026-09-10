@@ -8,18 +8,26 @@ router.post('/', async (req, res) => {
   const { payload, kiosk_id } = req.body;
 
   try {
-    if (!payload || typeof payload !== 'string' || !payload.startsWith('QRP-EMP-')) {
-      return res.status(400).json({ error: 'Cod QR invalid pentru angajat.' });
+    let qrTenantId = null;
+    let employeeId = null;
+
+    if (payload && typeof payload === 'string' && payload.startsWith('QRP-EMP-')) {
+      const parts = payload.split('-');
+      if (parts.length === 4) {
+        qrTenantId = parseInt(parts[2], 10);
+        employeeId = parseInt(parts[3], 10);
+      }
+    } else if (payload && typeof payload === 'string' && payload.startsWith('{')) {
+      try {
+        const parsed = JSON.parse(payload);
+        qrTenantId = parseInt(parsed.t || parsed.tenant_id, 10);
+        employeeId = parseInt(parsed.employee_id || parsed.id, 10);
+      } catch (e) {}
     }
 
-    // Payload format: QRP-EMP-{tenantId}-{employeeId}
-    const parts = payload.split('-');
-    if (parts.length !== 4) {
-      return res.status(400).json({ error: 'Format QR nerecunoscut.' });
+    if (!qrTenantId || !employeeId) {
+      return res.status(400).json({ error: 'Cod QR invalid sau nerecunoscut.' });
     }
-
-    const qrTenantId = parseInt(parts[2], 10);
-    const employeeId = parseInt(parts[3], 10);
 
     if (qrTenantId !== parseInt(tenantId, 10)) {
       return res.status(403).json({ error: 'Codul QR nu aparține acestei companii.' });
@@ -85,8 +93,13 @@ router.post('/', async (req, res) => {
     let nextAction = 'IN';
     if (lastScanRes.rows.length > 0) {
       const lastAction = lastScanRes.rows[0].action_type;
-      if (lastAction === 'IN' || lastAction === 'INTRARE') {
+      const lastScanTime = new Date(lastScanRes.rows[0].created_at);
+      const secondsSinceLastScan = (Date.now() - lastScanTime.getTime()) / 1000;
+      // Daca a fost IN si a trecut mai putin de 14 ore, este IESIRE. Daca a trecut >14 ore, e tura noua (INTRARE).
+      if ((lastAction === 'IN' || lastAction === 'INTRARE') && secondsSinceLastScan <= (14 * 3600)) {
         nextAction = 'OUT';
+      } else {
+        nextAction = 'IN';
       }
     }
 

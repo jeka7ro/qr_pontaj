@@ -16,6 +16,7 @@ import DataTable from '../../components/DataTable';
 import ProfileModal from '../../components/ProfileModal';
 import CreateTenantModal from '../../components/CreateTenantModal';
 import TenantAdminsModal from '../../components/TenantAdminsModal';
+import { resolveFaviconUrl } from '../../utils/favicon';
 
 export default function AdminDashboard() {
   const location = useLocation();
@@ -60,16 +61,24 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-900 flex transition-colors">
+      {/* Mobile Drawer Overlay */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-40 md:hidden animate-fade-in"
+          onClick={() => setSidebarOpen(false)} 
+        />
+      )}
+
       {/* Sidebar */}
-      <div className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 dark:border-slate-700 transition-all duration-300 flex flex-col z-10`}>
-        <div className="h-16 flex items-center justify-between px-4 border-b border-slate-200 dark:border-slate-700 dark:border-slate-700">
-          {sidebarOpen && <span className="font-bold text-lg text-slate-800 dark:text-white dark:text-white">SaaS Admin</span>}
-          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 dark:text-slate-400 transition-colors">
+      <div className={`fixed inset-y-0 left-0 z-50 transform ${sidebarOpen ? 'translate-x-0 w-64 shadow-2xl' : '-translate-x-full w-64'} md:translate-x-0 md:static ${sidebarOpen ? 'md:w-64' : 'md:w-20'} md:shadow-none bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 transition-all duration-300 flex flex-col`}>
+        <div className="h-16 flex items-center justify-between px-4 border-b border-slate-200 dark:border-slate-700">
+          {(sidebarOpen || window.innerWidth < 768) && <span className="font-bold text-lg text-slate-800 dark:text-white">SaaS Admin</span>}
+          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors">
             <Menu size={20} />
           </button>
         </div>
         
-        <nav className="flex-1 p-4 space-y-2">
+        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
@@ -77,51 +86,59 @@ export default function AdminDashboard() {
               <Link
                 key={item.name}
                 to={item.path}
+                onClick={() => {
+                  if (window.innerWidth < 768) setSidebarOpen(false);
+                }}
                 className={`flex items-center space-x-3 px-3 py-2.5 rounded-full transition-colors ${
                   isActive 
                     ? 'bg-primary-50 text-primary-600' 
-                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-slate-900 dark:text-white'
+                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:text-white'
                 }`}
               >
                 <Icon size={20} className={isActive ? 'text-primary-600' : 'text-slate-400'} />
-                {sidebarOpen && <span className="font-medium">{item.name}</span>}
+                {(sidebarOpen || window.innerWidth < 768) && <span className="font-medium">{item.name}</span>}
               </Link>
             );
           })}
         </nav>
 
-        <div className="p-4 border-t border-slate-200 dark:border-slate-700 dark:border-slate-700">
+        <div className="p-4 border-t border-slate-200 dark:border-slate-700">
           <Link to="/admin/login" onClick={handleLogout} className="flex items-center space-x-3 px-3 py-2.5 rounded-full text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
             <LogOut size={20} />
-            {sidebarOpen && <span className="font-medium">Deconectare</span>}
+            {(sidebarOpen || window.innerWidth < 768) && <span className="font-medium">Deconectare</span>}
           </Link>
         </div>
       </div>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-16 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 dark:border-slate-700 flex items-center justify-between px-4 md:px-8 shrink-0 z-10 transition-colors">
-          <div></div>
+        <header className="h-16 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-4 md:px-8 shrink-0 z-10 transition-colors">
+          <div className="flex items-center gap-3">
+            <button onClick={() => setSidebarOpen(true)} className="p-2 -ml-2 text-slate-500 dark:text-slate-400 md:hidden">
+              <Menu size={24} />
+            </button>
+            <span className="font-bold text-lg text-slate-800 dark:text-white md:hidden">SaaS Admin</span>
+          </div>
           
           <div className="flex items-center gap-4 md:gap-6 ml-auto">
             {/* Dark Mode Toggle */}
             <button 
               onClick={() => setIsDarkMode(!isDarkMode)}
-              className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 dark:text-slate-400 transition-colors focus:outline-none"
+              className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors focus:outline-none"
               title="Comută tema"
             >
               {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
             </button>
 
             <div 
-              className="flex items-center gap-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 dark:hover:bg-slate-700 p-1.5 rounded-lg md:rounded-lg md:pr-4 transition-colors"
+              className="flex items-center gap-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 p-1.5 rounded-lg md:pr-4 transition-colors"
               onClick={() => setIsProfileModalOpen(true)}
             >
               <div className="text-right hidden md:block">
-                <div className="text-sm font-bold text-slate-800 dark:text-white dark:text-slate-100">
+                <div className="text-sm font-bold text-slate-800 dark:text-white">
                   {currentUser.nume} {currentUser.prenume}
                 </div>
-                <div className="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-400 font-medium">
+                <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
                   {currentUser.role || 'Super Admin'}
                 </div>
               </div>
@@ -140,7 +157,7 @@ export default function AdminDashboard() {
           </div>
         </header>
         
-        <main className="flex-1 p-8 overflow-auto">
+        <main className="flex-1 p-4 sm:p-6 md:p-8 overflow-auto">
           <Routes>
             <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
             <Route path="/dashboard" element={<TenantsList />} />
@@ -212,29 +229,50 @@ function TenantsList() {
       key: 'branding', 
       label: 'Branding',
       sortable: false,
-      render: (row) => (
-        <div className="flex items-center">
-          {row.logo_url ? (
-            <div 
-              className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 mr-3 shadow-sm overflow-hidden flex items-center justify-center shrink-0"
-              style={{ backgroundColor: row.culoare || '#ffffff' }}
-            >
-              <img 
-                src={row.logo_url} 
-                alt={row.nume} 
-                className="w-full h-full object-cover p-1" 
-              />
-            </div>
-          ) : (
-            <div 
-              className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center text-xs font-bold mr-3 shadow-sm"
-              style={{ backgroundColor: row.culoare || '#f8fafc', color: '#fff' }}
-            >
-              {row.nume.substring(0, 2).toUpperCase()}
-            </div>
-          )}
-        </div>
-      )
+      render: (row) => {
+        const resolvedFav = resolveFaviconUrl(row.favicon_url);
+        return (
+          <div className="flex items-center gap-2">
+            {row.logo_url ? (
+              <div 
+                className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden flex items-center justify-center shrink-0"
+                style={{ backgroundColor: row.culoare || '#ffffff' }}
+                title="Logo"
+              >
+                <img 
+                  src={row.logo_url.startsWith('/uploads') ? `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${row.logo_url}` : row.logo_url} 
+                  alt={row.nume} 
+                  className="w-full h-full object-contain p-1" 
+                />
+              </div>
+            ) : (
+              <div 
+                className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center text-xs font-bold shadow-sm"
+                style={{ backgroundColor: row.culoare || '#f8fafc', color: '#fff' }}
+                title="Inițiale"
+              >
+                {row.nume.substring(0, 2).toUpperCase()}
+              </div>
+            )}
+
+            {resolvedFav ? (
+              <div 
+                className="w-6 h-6 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xs flex items-center justify-center shrink-0"
+                title="Favicon activ"
+              >
+                <img 
+                  src={resolvedFav} 
+                  alt="Favicon" 
+                  className="w-4 h-4 object-contain"
+                  onError={(e) => { e.target.style.display = 'none'; }}
+                />
+              </div>
+            ) : (
+              <span className="text-[10px] text-slate-400 italic">fără fav.</span>
+            )}
+          </div>
+        );
+      }
     },
     { 
       key: 'mod_qr', 

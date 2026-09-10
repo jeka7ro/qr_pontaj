@@ -21,15 +21,7 @@ router.post('/login', async (req, res) => {
 
     const user = userResult.rows[0];
 
-    // Dacă utilizatorul are un domeniu asociat, permitem login-ul doar de pe acel domeniu (sau localhost pentru testare)
-    const requestOrigin = req.get('origin') || req.get('referer') || '';
-    if (user.active_domain && !requestOrigin.includes('localhost')) {
-      if (!requestOrigin.includes(user.active_domain)) {
-        return res.status(403).json({ error: 'Acest cont nu poate fi accesat de pe acest domeniu.' });
-      }
-    }
-
-    // Verificăm parola
+    // Verificăm parola unică salvată în baza de date
     const isMatch = await bcrypt.compare(password, user.password_hash);
     if (!isMatch) {
       return res.status(401).json({ error: 'Credențiale incorecte' });

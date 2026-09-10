@@ -199,7 +199,7 @@ const EmployeeProfile = ({ tenant, themeColor }) => {
   const idCardSrc = employee.id_card_path ? ( employee.id_card_path?.startsWith('http') ? employee.id_card_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${employee.id_card_path}` ) : null;
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-6">
+    <div className="w-full space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4 mb-6">
         <button 
@@ -229,34 +229,34 @@ const EmployeeProfile = ({ tenant, themeColor }) => {
       )}
 
       {/* Tabs Navigation */}
-      <div className="flex flex-wrap items-center gap-6 border-b border-slate-200 dark:border-slate-700 mb-6">
+      <div className="flex overflow-x-auto whitespace-nowrap items-center gap-3 sm:gap-6 border-b border-slate-200 dark:border-slate-700 mb-6 pb-0.5">
         <button 
           onClick={() => setActiveTab('details')}
-          className={`pb-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'details' ? 'border-primary-600 text-primary-600' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300'}`}
+          className={`shrink-0 pb-3 sm:pb-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'details' ? 'border-primary-600 text-primary-600' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300'}`}
         >
           Detalii Angajat
         </button>
         <button 
           onClick={() => setActiveTab('history')}
-          className={`pb-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'history' ? 'border-primary-600 text-primary-600' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300'}`}
+          className={`shrink-0 pb-3 sm:pb-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'history' ? 'border-primary-600 text-primary-600' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300'}`}
         >
           Istoric Angajat
         </button>
         <button 
           onClick={() => setActiveTab('timesheets')}
-          className={`pb-4 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'timesheets' ? 'border-primary-600 text-primary-600' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300'}`}
+          className={`shrink-0 pb-3 sm:pb-4 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'timesheets' ? 'border-primary-600 text-primary-600' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300'}`}
         >
           <CalendarDays size={16} /> Istoric Pontaj
         </button>
         <button 
           onClick={() => setActiveTab('evaluation')}
-          className={`pb-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'evaluation' ? 'border-primary-600 text-primary-600' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300'}`}
+          className={`shrink-0 pb-3 sm:pb-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'evaluation' ? 'border-primary-600 text-primary-600' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300'}`}
         >
           Evaluare Performanță
         </button>
         <button 
           onClick={() => setActiveTab('documents')}
-          className={`pb-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'documents' ? 'border-primary-600 text-primary-600' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300'}`}
+          className={`shrink-0 pb-3 sm:pb-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'documents' ? 'border-primary-600 text-primary-600' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300'}`}
         >
           Dosar Documente
           <span className="ml-2 px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10px]">{documents.length}</span>
@@ -550,7 +550,7 @@ const EmployeeProfile = ({ tenant, themeColor }) => {
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-2" onClick={e => e.stopPropagation()}>
+                <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0 ml-2" onClick={e => e.stopPropagation()}>
                   <button onClick={() => setLightboxIndex(index)} className="p-2 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-full transition-colors">
                     <Eye size={18} />
                   </button>

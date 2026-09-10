@@ -98,7 +98,7 @@ export default function RevisalModule({ tenant, themeColor }) {
   const currentRows = filteredContracts.slice((safePage - 1) * rowsPerPage, safePage * rowsPerPage);
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto">
+    <div className="space-y-6 w-full">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white dark:bg-slate-900 p-6 rounded-lg shadow-sm border border-slate-200 dark:border-slate-800">
         <div>
@@ -109,10 +109,10 @@ export default function RevisalModule({ tenant, themeColor }) {
           <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Gestionează contractele de muncă și generează XML-ul oficial pentru Inspecția Muncii.</p>
         </div>
         
-        <div className="flex items-center gap-3 w-full md:w-auto">
+        <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
           <button 
             onClick={() => setIsModalOpen(true)}
-            className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 h-10 px-5 text-sm flex items-center justify-center bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-full font-bold text-sm transition-colors"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 h-10 px-5 text-sm bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-full font-bold transition-colors"
           >
             <UserPlus size={18} /> Adaugă Contract
           </button>
@@ -120,7 +120,7 @@ export default function RevisalModule({ tenant, themeColor }) {
           <button 
             onClick={handleDownload}
             disabled={downloading || contracts.length === 0}
-            className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 h-10 px-5 text-sm flex items-center justify-center text-white rounded-full font-bold text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 h-10 px-5 text-sm text-white rounded-full font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
             style={{ backgroundColor: themeColor }}
           >
             <Download size={18} /> {downloading ? 'Se generează...' : 'Descarcă XML Revisal'}
@@ -139,14 +139,14 @@ export default function RevisalModule({ tenant, themeColor }) {
       <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col">
         
         {/* Search Bar Top */}
-        <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+        <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <h3 className="font-bold text-slate-800 dark:text-white mr-4 whitespace-nowrap">Contracte Active</h3>
-          <div style={{ position: 'relative', width: '260px' }}>
-            <Search className="w-4 h-4 text-slate-400 dark:text-slate-500" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', zIndex: 1 }} />
+          <div className="relative w-full sm:w-[260px]">
+            <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 z-[1]" />
             <input
               type="text"
-              className="w-full h-9 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all"
-              style={{ paddingLeft: 36, paddingRight: search ? 80 : 16, borderRadius: 9999 }}
+              className="w-full h-9 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all rounded-full"
+              style={{ paddingLeft: 36, paddingRight: search ? 80 : 16 }}
               placeholder="Caută contract/angajat..."
               value={search}
               onChange={e => setSearch(e.target.value)}
@@ -161,7 +161,7 @@ export default function RevisalModule({ tenant, themeColor }) {
 
         {/* Table Content */}
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full text-left border-collapse min-w-[550px]">
             <thead>
               <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
                 <th className="py-3 px-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-16 text-center">Nr.</th>
@@ -196,7 +196,7 @@ export default function RevisalModule({ tenant, themeColor }) {
                     <td className="py-3 px-4 text-sm font-medium text-slate-700 dark:text-slate-300">
                       {new Date(contract.hire_date).toLocaleDateString('ro-RO')}
                     </td>
-                    <td className="py-3 px-4 text-sm font-mono font-medium text-slate-500 dark:text-slate-400 text-right">
+                    <td className="py-3 px-4 text-sm font-medium text-slate-500 dark:text-slate-400 text-right">
                       {contract.cor_code}
                     </td>
                   </tr>
@@ -207,15 +207,14 @@ export default function RevisalModule({ tenant, themeColor }) {
         </div>
 
         {/* Footer Paginare */}
-        <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#f8fafc' }} className="dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }} className="text-sm font-medium text-slate-500 dark:text-slate-400">
-            <span style={{ whiteSpace: 'nowrap' }} className="flex items-center gap-2">
+        <div className="px-4 sm:px-5 py-3 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-50 dark:bg-slate-900 text-sm font-medium text-slate-500 dark:text-slate-400">
+          <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-start">
+            <span className="flex items-center gap-2 whitespace-nowrap">
               Afișează
               <select 
                 value={rowsPerPage} 
                 onChange={e => setRowsPerPage(Number(e.target.value))} 
-                className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 outline-none focus:ring-1 focus:ring-primary-500 transition-shadow"
-                style={{ borderRadius: 9999, padding: '2px 8px' }}
+                className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 outline-none focus:ring-1 focus:ring-primary-500 transition-shadow rounded-full px-2.5 py-0.5"
               >
                 <option value={10}>10</option>
                 <option value={15}>15</option>
@@ -224,33 +223,35 @@ export default function RevisalModule({ tenant, themeColor }) {
                 <option value={9999}>Toți</option>
               </select>
             </span>
-            <span style={{ whiteSpace: 'nowrap' }}>Total: <strong className="text-slate-700 dark:text-white">{total}</strong></span>
+            <span className="whitespace-nowrap">Total: <strong className="text-slate-700 dark:text-white">{total}</strong></span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }} className="text-sm font-medium text-slate-500 dark:text-slate-400">
-            <span style={{ whiteSpace: 'nowrap' }}>Pagina {page} din {totalPages}</span>
-            <button 
-              className="p-1 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed" 
-              onClick={() => setPage(p => p - 1)} 
-              disabled={page === 1}
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-            <button 
-              className="p-1 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed" 
-              onClick={() => setPage(p => p + 1)} 
-              disabled={page === totalPages}
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+            <span className="whitespace-nowrap">Pagina {page} din {totalPages}</span>
+            <div className="flex items-center gap-1">
+              <button 
+                className="p-1 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed" 
+                onClick={() => setPage(p => p - 1)} 
+                disabled={page === 1}
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <button 
+                className="p-1 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed" 
+                onClick={() => setPage(p => p + 1)} 
+                disabled={page === totalPages}
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 w-full max-w-md shadow-xl border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-6 w-full max-w-md shadow-xl border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200 my-auto">
             <h3 className="text-lg font-black text-slate-900 dark:text-white mb-6">Înregistrare Contract Nou</h3>
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
               <div>
                 <label className="block text-sm font-bold mb-1.5 text-slate-700 dark:text-slate-300">Angajat (CNP)</label>
                 <select 
@@ -263,7 +264,7 @@ export default function RevisalModule({ tenant, themeColor }) {
                   {employees.map(e => <option key={e.id} value={e.id}>{e.full_name} ({e.cnp})</option>)}
                 </select>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-bold mb-1.5 text-slate-700 dark:text-slate-300">Salariu de bază</label>
                   <input type="number" required value={formData.salary} onChange={e => setFormData({...formData, salary: e.target.value})} className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:text-white" placeholder="ex. 3500" />
@@ -273,7 +274,7 @@ export default function RevisalModule({ tenant, themeColor }) {
                   <input type="text" required value={formData.cor_code} onChange={e => setFormData({...formData, cor_code: e.target.value})} className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:text-white" placeholder="ex. 123456" />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-bold mb-1.5 text-slate-700 dark:text-slate-300">Nr. Contract</label>
                   <input type="text" value={formData.contract_number} onChange={e => setFormData({...formData, contract_number: e.target.value})} className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:text-white" placeholder="ex. 1/2023" />
@@ -284,7 +285,7 @@ export default function RevisalModule({ tenant, themeColor }) {
                 </div>
               </div>
               
-              <div className="flex gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+              <div className="flex flex-col-reverse sm:flex-row gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
                 <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 h-10 px-5 text-sm flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-full font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Anulează</button>
                 <button type="submit" className="flex-1 h-10 px-5 text-sm flex items-center justify-center text-white rounded-full font-bold hover:opacity-90 transition-opacity" style={{ backgroundColor: themeColor }}>Salvează Contract</button>
               </div>

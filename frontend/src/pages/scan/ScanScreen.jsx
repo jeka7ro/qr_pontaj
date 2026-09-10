@@ -11,9 +11,25 @@ export default function ScanScreen() {
   const [tenant, setTenant] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [employeeCode, setEmployeeCode] = useState(localStorage.getItem('saved_employee_code') || '');
-  const [pinCode, setPinCode] = useState('');
-  const [rememberMe, setRememberMe] = useState(!!localStorage.getItem('saved_employee_code'));
+  const getInitialCredentials = () => {
+    try {
+      const savedCreds = localStorage.getItem('emp_saved_credentials');
+      if (savedCreds) {
+        const parsed = JSON.parse(savedCreds);
+        if (parsed.code) {
+          return { code: parsed.code, pin: parsed.pin || '', remember: true };
+        }
+      }
+    } catch (e) {}
+    const legacyCode = localStorage.getItem('saved_employee_code') || '';
+    const legacyPin = localStorage.getItem('saved_employee_pin') || '';
+    return { code: legacyCode, pin: legacyPin, remember: !!legacyCode || true };
+  };
+
+  const initialCreds = React.useMemo(() => getInitialCredentials(), []);
+  const [employeeCode, setEmployeeCode] = useState(initialCreds.code);
+  const [pinCode, setPinCode] = useState(initialCreds.pin);
+  const [rememberMe, setRememberMe] = useState(initialCreds.remember ?? true);
   const [showPin, setShowPin] = useState(false);
   
   const [submitting, setSubmitting] = useState(false);
@@ -39,8 +55,8 @@ export default function ScanScreen() {
     }
 
     const now = Math.floor(Date.now() / 1000);
-    // Allow a 30 second window (15s refresh + 15s scan delay allowance)
-    if (now - ts > 30) {
+    // Allow a 90 second window (supports mobile 4G latency, clock drifts, and scan time)
+    if (now - ts > 90) {
       setError('Cod QR expirat. Vă rugăm să scanați noul cod afișat pe ecranul tabletei.');
       setLoading(false);
       return;
@@ -71,8 +87,14 @@ export default function ScanScreen() {
 
     if (rememberMe) {
       localStorage.setItem('saved_employee_code', employeeCode);
+      localStorage.setItem('saved_employee_pin', pinCode);
+      try {
+        localStorage.setItem('emp_saved_credentials', JSON.stringify({ code: employeeCode, pin: pinCode }));
+      } catch (e) {}
     } else {
       localStorage.removeItem('saved_employee_code');
+      localStorage.removeItem('saved_employee_pin');
+      localStorage.removeItem('emp_saved_credentials');
     }
 
     setSubmitting(true);

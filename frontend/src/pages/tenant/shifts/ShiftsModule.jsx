@@ -122,9 +122,9 @@ export default function ShiftsModule({ tenant, themeColor }) {
   ] : shifts;
 
   return (
-    <div className="space-y-6 max-w-[1400px] mx-auto">
+    <div className="space-y-6 w-full">
       {/* Header & Controls */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
         <div>
           <h2 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-2">
             <Calendar className="text-primary-500" size={24} />
@@ -133,8 +133,8 @@ export default function ShiftsModule({ tenant, themeColor }) {
           <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Gestionează schimburile angajaților și evită suprapunerile.</p>
         </div>
         
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          <div className="flex items-center bg-slate-50 dark:bg-slate-800 rounded-full border border-slate-200 dark:border-slate-700 p-1 shadow-inner">
+        <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+          <div className="flex items-center justify-between sm:justify-start w-full sm:w-auto bg-slate-50 dark:bg-slate-800 rounded-full border border-slate-200 dark:border-slate-700 p-1 shadow-inner">
             <button onClick={prevWeek} className="p-1.5 hover:bg-white dark:hover:bg-slate-700 rounded-full transition-colors text-slate-600 dark:text-slate-300">
               <ChevronLeft size={18} />
             </button>
@@ -148,7 +148,7 @@ export default function ShiftsModule({ tenant, themeColor }) {
           
           <button 
             onClick={() => openNewShift()}
-            className="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 h-10 px-5 text-sm flex items-center justify-center text-white rounded-full font-bold text-sm hover:opacity-90 transition-all shadow-md hover:shadow-lg"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 h-10 px-5 text-white rounded-full font-bold text-sm hover:opacity-90 transition-all shadow-md hover:shadow-lg"
             style={{ backgroundColor: themeColor }}
           >
             <Plus size={18} /> Tură Nouă
@@ -209,22 +209,22 @@ export default function ShiftsModule({ tenant, themeColor }) {
               )}
               {displayEmployees.map(emp => (
                 <div key={emp.id} className="grid grid-cols-[200px_repeat(7,minmax(140px,1fr))] hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors group/row">
-                  {/* Employee Cell */}
-                  <div className="p-4 flex items-center gap-3 border-r border-slate-100 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 group-hover/row:bg-transparent transition-colors">
-                    <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-sm font-black text-slate-600 dark:text-slate-300 shrink-0 shadow-sm overflow-hidden">
+                  {/* Employee Cell - Strict 2 rows height */}
+                  <div className="px-3 py-1.5 flex items-center gap-2.5 border-r border-slate-100 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 group-hover/row:bg-transparent transition-colors">
+                    <div className="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-xs font-black text-slate-600 dark:text-slate-300 shrink-0 shadow-xs overflow-hidden">
                       {emp.avatar_path ? (
                         <img src={( emp.avatar_path?.startsWith('http') ? emp.avatar_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${emp.avatar_path}` )} alt={emp.first_name + ' ' + emp.last_name} className="w-full h-full object-cover" />
                       ) : (
                         (emp.first_name + ' ' + emp.last_name).substring(0, 2).toUpperCase()
                       )}
                     </div>
-                    <div className="min-w-0 flex-1 pr-2">
-                      <div className="text-xs font-black text-slate-800 dark:text-white leading-tight break-words">{emp.first_name} {emp.last_name}</div>
-                      <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 truncate uppercase tracking-wide mt-0.5">{emp.job_title || 'Fără funcție'}</div>
+                    <div className="min-w-0 flex-1 pr-1">
+                      <div className="text-xs font-black text-slate-800 dark:text-white leading-tight truncate">{emp.first_name} {emp.last_name}</div>
+                      <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 truncate uppercase tracking-wide leading-tight mt-0.5">{emp.job_title || 'Fără funcție'}</div>
                     </div>
                   </div>
                   
-                  {/* Days Cells */}
+                  {/* Days Cells - Compact 2 rows */}
                   {weekDays.map((day, i) => {
                     const yyyy = day.getFullYear();
                     const mm = String(day.getMonth() + 1).padStart(2, '0');
@@ -242,7 +242,7 @@ export default function ShiftsModule({ tenant, themeColor }) {
                     return (
                       <div 
                         key={i} 
-                        className={`p-2 border-r border-slate-100 dark:border-slate-800 last:border-r-0 min-h-[100px] relative group cursor-pointer transition-colors ${isToday ? 'bg-primary-50/10 dark:bg-primary-900/10' : ''} hover:bg-slate-50 dark:hover:bg-slate-800/50`}
+                        className={`p-1 border-r border-slate-100 dark:border-slate-800 last:border-r-0 min-h-[44px] flex flex-col justify-center relative group cursor-pointer transition-colors ${isToday ? 'bg-primary-50/10 dark:bg-primary-900/10' : ''} hover:bg-slate-50 dark:hover:bg-slate-800/50`}
                         onClick={() => !isEmpty && openNewShift(day)}
                       >
                         {dayShifts.map(shift => {
@@ -256,7 +256,7 @@ export default function ShiftsModule({ tenant, themeColor }) {
                               e.stopPropagation();
                               openNewShift(null, shift, true, pendingChange);
                             }}
-                            className={`px-1.5 py-2 rounded-lg mb-2 relative group/shift border shadow-sm transition-all hover:shadow-md cursor-pointer
+                            className={`px-1 py-1 rounded-md relative group/shift border shadow-xs transition-all hover:shadow-md cursor-pointer
                               bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700
                             `}
                           >
@@ -269,37 +269,35 @@ export default function ShiftsModule({ tenant, themeColor }) {
                                 <Info size={12} />
                               </div>
                             )}
-                            <div className="flex flex-col items-center justify-center gap-1 min-w-0 relative">
-                              <div className="font-black text-slate-800 dark:text-slate-200 text-[11px] tracking-tight">
-                                {shift.start_time.substring(0,5)}
-                              </div>
-                              <div className="font-bold text-slate-400 dark:text-slate-500 text-[10px] tracking-tight">
-                                {shift.end_time.substring(0,5)}
+                            <div className="flex flex-col items-center justify-center min-w-0 relative">
+                              {/* Rând 1: Interval orar */}
+                              <div className="font-bold text-slate-800 dark:text-slate-100 text-xs tracking-tight whitespace-nowrap">
+                                {shift.start_time.substring(0,5)} - {shift.end_time.substring(0,5)}
                               </div>
                               
-                              {/* Status Icons - visible normally, hidden on hover */}
-                              <div className="flex items-center justify-center gap-1 shrink-0 transition-opacity group-hover/shift:opacity-0 mt-0.5">
+                              {/* Rând 2: Iconițe stare (vizualizat / zi-noapte) */}
+                              <div className="flex items-center justify-center gap-2 transition-opacity group-hover/shift:opacity-0 mt-1">
                                 <div title={shift.seen_at ? "Vizualizat de angajat" : "Nevizualizat"}>
                                   {shift.seen_at ? (
-                                    <svg className="text-green-500" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                                    <svg className="text-emerald-500" xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
                                   ) : (
-                                    <svg className="text-red-500" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>
+                                    <svg className="text-rose-500" xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>
                                   )}
                                 </div>
                                 {shift.shift_type === 'DAY' ? (
-                                  <div className="text-yellow-500 dark:text-yellow-400">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+                                  <div className="text-amber-500" title="Tură de zi">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
                                   </div>
                                 ) : (
-                                  <div className="text-slate-900 dark:text-slate-100">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+                                  <div className="text-slate-800 dark:text-slate-200" title="Tură de noapte">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
                                   </div>
                                 )}
                               </div>
 
                               {/* Action Buttons - absolutely positioned on hover */}
                               {!isEmpty && (
-                                <div className="absolute inset-0 flex items-center justify-center gap-2 opacity-0 group-hover/shift:opacity-100 transition-all bg-white/90 dark:bg-slate-800/90 backdrop-blur-[1px] rounded-lg">
+                                <div className="absolute inset-0 flex items-center justify-center gap-2 opacity-0 group-hover/shift:opacity-100 transition-all bg-white/95 dark:bg-slate-800/95 backdrop-blur-[1px] rounded-lg">
                                   <button 
                                     onClick={(e) => { e.stopPropagation(); openNewShift(null, shift, true, pendingChange); }}
                                     className="text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-full p-1.5 transition-all shadow-sm bg-white dark:bg-slate-800"
@@ -324,13 +322,6 @@ export default function ShiftsModule({ tenant, themeColor }) {
                                 </div>
                               )}
                             </div>
-                            
-                            {shift.notes && (
-                              <div className="flex items-start gap-1 mt-2 text-[10px] font-medium text-slate-600 dark:text-slate-400 leading-tight">
-                                <MapPin size={10} className="shrink-0 mt-0.5" />
-                                <span className="line-clamp-2">{shift.notes}</span>
-                              </div>
-                            )}
                           </div>
                         )})}
                         

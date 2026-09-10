@@ -119,7 +119,7 @@ export default function GeofenceModule({ tenant, themeColor }) {
 
           {/* Form */}
           {selectedLocation && (
-            <div className="col-span-2 bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-slate-100 dark:border-slate-800 p-6">
+            <div className="col-span-1 md:col-span-2 bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-slate-100 dark:border-slate-800 p-4 sm:p-6">
               <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-6 flex items-center gap-2">
                 Configurare Geofence: <span style={{ color: themeColor }}>{selectedLocation.name}</span>
               </h3>

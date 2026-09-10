@@ -48,28 +48,28 @@ export default function ProfileModal({ isOpen, onClose, user, onSave }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md shadow-2xl border border-slate-200 dark:border-slate-700 dark:border-slate-800 overflow-hidden mx-4 md:mx-0">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden mx-auto my-auto">
         
         {/* Header */}
-        <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-700/50 dark:border-slate-800 flex justify-between items-center">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white dark:text-white">Editare Profil</h2>
+        <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white">Editare Profil</h2>
           <button 
             onClick={onClose}
-            className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 dark:hover:bg-slate-800 transition-colors"
+            className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
           >
             <X size={16} className="text-slate-500 dark:text-slate-400" />
           </button>
         </div>
 
         {/* Body */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-5 sm:space-y-6 max-h-[85vh] overflow-y-auto">
           
           {/* Avatar Upload */}
           <div className="flex flex-col items-center justify-center space-y-3">
             <div 
               onClick={handleAvatarClick}
-              className="relative w-20 h-20 rounded-full bg-slate-100 dark:bg-slate-800 border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 dark:bg-slate-700 transition-colors group overflow-hidden"
+              className="relative w-20 h-20 rounded-full bg-slate-100 dark:bg-slate-800 border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors group overflow-hidden"
             >
               {avatarPreview ? (
                 <img src={avatarPreview} alt="Avatar Preview" className="w-full h-full object-cover" />
@@ -96,7 +96,7 @@ export default function ProfileModal({ isOpen, onClose, user, onSave }) {
             </span>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Nume</label>
               <input 
@@ -104,7 +104,7 @@ export default function ProfileModal({ isOpen, onClose, user, onSave }) {
                 name="nume"
                 value={formData.nume}
                 onChange={handleChange}
-                className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white dark:border-slate-700 outline-none transition-all shadow-sm"
+                className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm"
               />
             </div>
             <div className="space-y-1">
@@ -114,7 +114,7 @@ export default function ProfileModal({ isOpen, onClose, user, onSave }) {
                 name="prenume"
                 value={formData.prenume}
                 onChange={handleChange}
-                className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white dark:border-slate-700 outline-none transition-all shadow-sm"
+                className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm"
               />
             </div>
           </div>
@@ -126,7 +126,7 @@ export default function ProfileModal({ isOpen, onClose, user, onSave }) {
               name="email"
               value={formData.email}
               onChange={handleChange}
-              className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white dark:border-slate-700 outline-none transition-all shadow-sm"
+              className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm"
             />
           </div>
 
@@ -138,22 +138,22 @@ export default function ProfileModal({ isOpen, onClose, user, onSave }) {
               value={formData.parola}
               onChange={handleChange}
               placeholder="Lasă gol pentru a păstra parola actuală"
-              className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white dark:border-slate-700 outline-none transition-all shadow-sm"
+              className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm"
             />
           </div>
 
           {/* Footer Actions */}
-          <div className="pt-4 flex items-center justify-end gap-3 border-t border-slate-100 dark:border-slate-700/50">
+          <div className="pt-4 flex flex-col-reverse sm:flex-row items-center justify-end gap-3 border-t border-slate-100 dark:border-slate-800">
             <button 
               type="button" 
               onClick={onClose}
-              className="px-4 py-2.5 text-sm rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-sm font-bold transition-colors"
+              className="w-full sm:w-auto px-5 py-2.5 text-sm rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold transition-colors text-center"
             >
               Anulează
             </button>
             <button 
               type="submit"
-              className="px-4 py-2.5 text-sm rounded-full bg-primary-600 hover:bg-primary-700 text-white text-sm font-bold shadow-sm transition-all"
+              className="w-full sm:w-auto px-5 py-2.5 text-sm rounded-full bg-primary-600 hover:bg-primary-700 text-white font-bold shadow-sm transition-all text-center"
             >
               Salvează
             </button>

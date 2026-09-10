@@ -43,6 +43,72 @@ const uploadToSupabase = async (file, folder = 'avatars') => {
   return publicUrlData.publicUrl;
 };
 
+const sanitizeFaviconUrl = (url) => {
+  if (!url) return null;
+  const trimmed = url.trim();
+  if (!trimmed) return null;
+  
+  if (
+    trimmed.startsWith('data:') || 
+    trimmed.startsWith('/uploads') ||
+    trimmed.match(/\.(ico|png|jpg|jpeg|svg|webp)($|\?)/i) ||
+    trimmed.includes('google.com/s2/favicons') ||
+    trimmed.includes('gstatic.com/faviconV2')
+  ) {
+    return trimmed;
+  }
+  
+  try {
+    let hostname = trimmed;
+    if (!hostname.startsWith('http://') && !hostname.startsWith('https://')) {
+      hostname = 'https://' + hostname;
+    }
+    const parsed = new URL(hostname);
+    const domain = parsed.hostname.replace(/^www\./, '');
+    if (domain && domain.includes('.')) {
+      return `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+    }
+    return trimmed;
+  } catch (e) {
+    return trimmed;
+  }
+};
+
+// POST /api/tenants/upload-branding - Încărcare imagini branding (Logo, Favicon, Fundal)
+router.post('/upload-branding', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'Niciun fișier trimis.' });
+    }
+    
+    // Încercăm Supabase Storage mai întâi
+    try {
+      const publicUrl = await uploadToSupabase(req.file, 'branding');
+      if (publicUrl) {
+        return res.json({ url: publicUrl });
+      }
+    } catch (supaErr) {
+      console.warn('Supabase upload warning, fallback to local:', supaErr.message);
+    }
+    
+    // Fallback: stocare locală în uploads/branding
+    const uploadsDir = path.join(__dirname, '../uploads/branding');
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+    const ext = path.extname(req.file.originalname) || '.png';
+    const localFileName = `branding_${Date.now()}_${Math.round(Math.random() * 1e9)}${ext}`;
+    const filePath = path.join(uploadsDir, localFileName);
+    fs.writeFileSync(filePath, req.file.buffer);
+    
+    const localUrl = `/uploads/branding/${localFileName}`;
+    return res.json({ url: localUrl });
+  } catch (err) {
+    console.error('Upload branding error:', err);
+    res.status(500).json({ error: 'Eroare la încărcarea fișierului.' });
+  }
+});
+
 // Mount sub-routers
 router.use('/:id/shifts', shiftsRouter);
 router.use('/:id/leaves', leavesRouter);
@@ -59,7 +125,7 @@ router.get('/', async (req, res) => {
   try {
     const query = `
       SELECT 
-        t.id, t.name as nume, t.subdomain, t.theme_color as culoare, t.logo_url, t.modules,
+        t.id, t.name as nume, t.subdomain, t.theme_color as culoare, t.logo_url, t.favicon_url, t.modules,
         s.qr_mode as mod_qr, s.allowed_radius_meters as raza_gps, s.name as tip_modul
       FROM qrp_tenants t
       LEFT JOIN qrp_sites s ON s.tenant_id = t.id
@@ -115,7 +181,7 @@ router.post('/', async (req, res) => {
       nume_locatie, 
       subdomain,
       logo_url || null, 
-      favicon_url || null, 
+      sanitizeFaviconUrl(favicon_url), 
       culoare_tema || '#2563EB',
       modules || {}
     ]);
@@ -128,7 +194,7 @@ router.post('/', async (req, res) => {
     `;
     await client.query(siteQuery, [
       tenantId,
-      tip_modul || 'Birou', // Poate fi salvat ca nume de site de bază
+      'Punct de Lucru Principal',
       mod_qr || 'STATIC',
       distanta_gps ? parseInt(distanta_gps, 10) : 100
     ]);
@@ -175,7 +241,7 @@ router.get('/subdomain/:subdomain', async (req, res) => {
   try {
     const sub = req.params.subdomain.replace(/-/g, '').toLowerCase();
     const query = `
-      SELECT t.id, t.name, t.subdomain, t.logo_url, t.theme_color, t.portal_bg_image_url, t.portal_bg_color
+      SELECT t.id, t.name, t.subdomain, t.logo_url, t.favicon_url, t.theme_color, t.portal_bg_image_url, t.portal_bg_color
       FROM qrp_tenants t
       WHERE LOWER(t.subdomain) = $1
       LIMIT 1
@@ -340,7 +406,7 @@ router.put('/:id', async (req, res) => {
       nume_locatie,
       subdomain,
       logo_url || null, 
-      favicon_url || null, 
+      sanitizeFaviconUrl(favicon_url), 
       culoare_tema || '#3B82F6',
       modules || {},
       portal_bg_image_url || null,
@@ -536,7 +602,7 @@ router.get('/:id/timesheets', async (req, res) => {
       LEFT JOIN qrp_locations l ON t.site_id = l.id
       WHERE ${whereClauses.join(' AND ')}
       ORDER BY t.created_at DESC
-      LIMIT 2000
+      LIMIT 10000
     `;
     const result = await pool.query(query, queryParams);
     res.json(result.rows);
@@ -598,28 +664,97 @@ router.post('/:id/clock', async (req, res) => {
   }
 });
 
+// POST /api/tenants/:id/employees/:employeeId/start-shift
+router.post('/:id/employees/:employeeId/start-shift', async (req, res) => {
+  try {
+    const { date, time, timestamp } = req.body;
+    let finalTimestamp = timestamp;
+    if (!finalTimestamp) {
+      if (date && time) {
+        finalTimestamp = `${date} ${time}:00`;
+      } else {
+        finalTimestamp = new Date().toISOString();
+      }
+    }
+
+    // Validate employee belongs to tenant & fetch details
+    const empResult = await pool.query(
+      'SELECT id, location_id, first_name, last_name FROM qrp_employees WHERE id = $1 AND tenant_id = $2',
+      [req.params.employeeId, req.params.id]
+    );
+    if (empResult.rowCount === 0) {
+      return res.status(404).json({ error: 'Angajat inexistent' });
+    }
+    const emp = empResult.rows[0];
+
+    // Resolve site_id from emp.location_id or fallback
+    let siteId = emp.location_id;
+    if (!siteId) {
+      const siteRes = await pool.query('SELECT id FROM qrp_sites WHERE tenant_id = $1 ORDER BY id ASC LIMIT 1', [req.params.id]);
+      if (siteRes.rows.length > 0) siteId = siteRes.rows[0].id;
+    }
+
+    const insertQuery = `
+      INSERT INTO qrp_timesheets (tenant_id, employee_id, action_type, site_id, created_at, is_manual)
+      VALUES ($1, $2, 'IN', $3, $4, true)
+      RETURNING *
+    `;
+    const result = await pool.query(insertQuery, [req.params.id, req.params.employeeId, siteId, finalTimestamp]);
+
+    // Save to history
+    await pool.query(
+      'INSERT INTO qrp_employee_history (employee_id, change_type, new_value) VALUES ($1, $2, $3)',
+      [req.params.employeeId, 'pontaj', `Tură PORNITĂ MANUAL de către administrator.`]
+    );
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error starting shift manually:', error);
+    res.status(500).json({ error: 'Eroare la pornirea manuală a turei' });
+  }
+});
+
 // POST /api/tenants/:id/employees/:employeeId/close-shift
 router.post('/:id/employees/:employeeId/close-shift', async (req, res) => {
   try {
     const { date, time, timestamp } = req.body;
     let finalTimestamp = timestamp;
     if (!finalTimestamp) {
-      if (!date || !time) return res.status(400).json({ error: 'Date/time or timestamp are required' });
-      finalTimestamp = `${date} ${time}:00`;
+      if (date && time) {
+        finalTimestamp = `${date} ${time}:00`;
+      } else {
+        finalTimestamp = new Date().toISOString();
+      }
     }
 
-    // Validate employee belongs to tenant
-    const empResult = await pool.query('SELECT id FROM qrp_employees WHERE id = $1 AND tenant_id = $2', [req.params.employeeId, req.params.id]);
+    // Validate employee belongs to tenant & fetch details
+    const empResult = await pool.query(
+      'SELECT id, location_id, first_name, last_name FROM qrp_employees WHERE id = $1 AND tenant_id = $2',
+      [req.params.employeeId, req.params.id]
+    );
     if (empResult.rowCount === 0) {
       return res.status(404).json({ error: 'Angajat inexistent' });
     }
+    const emp = empResult.rows[0];
+
+    let siteId = emp.location_id;
+    if (!siteId) {
+      const siteRes = await pool.query('SELECT id FROM qrp_sites WHERE tenant_id = $1 ORDER BY id ASC LIMIT 1', [req.params.id]);
+      if (siteRes.rows.length > 0) siteId = siteRes.rows[0].id;
+    }
 
     const insertQuery = `
-      INSERT INTO qrp_timesheets (tenant_id, employee_id, action_type, created_at, is_manual)
-      VALUES ($1, $2, 'OUT', $3, true)
+      INSERT INTO qrp_timesheets (tenant_id, employee_id, action_type, site_id, created_at, is_manual)
+      VALUES ($1, $2, 'OUT', $3, $4, true)
       RETURNING *
     `;
-    const result = await pool.query(insertQuery, [req.params.id, req.params.employeeId, timestamp]);
+    const result = await pool.query(insertQuery, [req.params.id, req.params.employeeId, siteId, finalTimestamp]);
+
+    // Save to history
+    await pool.query(
+      'INSERT INTO qrp_employee_history (employee_id, change_type, new_value) VALUES ($1, $2, $3)',
+      [req.params.employeeId, 'pontaj', `Tură ÎNCHISĂ MANUAL de către administrator.`]
+    );
 
     res.json(result.rows[0]);
   } catch (error) {
@@ -875,6 +1010,8 @@ router.post('/:id/locations', async (req, res) => {
       'INSERT INTO qrp_locations (tenant_id, name, address, latitude, longitude, radius, qr_mode) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
       [req.params.id, name, address, latitude || null, longitude || null, radius || 100, qr_mode || 'DYNAMIC']
     );
+    // Keep qrp_sites in sync
+    await pool.query('UPDATE qrp_sites SET name = $1 WHERE tenant_id = $2', [name, req.params.id]).catch(() => {});
     res.status(201).json(result.rows[0]);
   } catch (error) {
     console.error('Error creating location:', error);
@@ -890,6 +1027,8 @@ router.put('/:id/locations/:locId', async (req, res) => {
       [name, address, latitude || null, longitude || null, radius || 100, req.params.locId, req.params.id, qr_mode || 'DYNAMIC']
     );
     if (result.rowCount === 0) return res.status(404).json({ error: 'Locație negăsită' });
+    // Keep qrp_sites in sync
+    await pool.query('UPDATE qrp_sites SET name = $1 WHERE tenant_id = $2', [name, req.params.id]).catch(() => {});
     res.json(result.rows[0]);
   } catch (error) {
     console.error('Error updating location:', error);

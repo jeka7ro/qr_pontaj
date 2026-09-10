@@ -85,7 +85,7 @@ export default function ErpModule({ tenant, themeColor }) {
   const currentRows = filteredProjects.slice((safePage - 1) * rowsPerPage, safePage * rowsPerPage);
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto">
+    <div className="space-y-6 w-full">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white dark:bg-slate-900 p-6 rounded-lg shadow-sm border border-slate-200 dark:border-slate-800">
         <div>
@@ -138,7 +138,7 @@ export default function ErpModule({ tenant, themeColor }) {
 
         {/* Table Content */}
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full text-left border-collapse min-w-[650px]">
             <thead>
               <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
                 <th className="py-3 px-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-16 text-center">Nr.</th>
@@ -184,7 +184,7 @@ export default function ErpModule({ tenant, themeColor }) {
                     <td className="py-3 px-4 text-right">
                         <button 
                           onClick={() => setDeleteConfirmId(project.id)}
-                          className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors inline-flex opacity-0 group-hover:opacity-100"
+                          className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors inline-flex opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
                           title="Șterge Proiect"
                         >
                         <Trash2 size={18} />
@@ -198,15 +198,14 @@ export default function ErpModule({ tenant, themeColor }) {
         </div>
 
         {/* Footer Paginare */}
-        <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#f8fafc' }} className="dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }} className="text-sm font-medium text-slate-500 dark:text-slate-400">
+        <div className="px-4 sm:px-5 py-3 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-50 dark:bg-slate-900 rounded-b-2xl">
+          <div className="flex flex-wrap items-center justify-between sm:justify-start w-full sm:w-auto gap-3 sm:gap-4 text-sm font-medium text-slate-500 dark:text-slate-400">
             <span style={{ whiteSpace: 'nowrap' }} className="flex items-center gap-2">
               Afișează
               <select 
                 value={rowsPerPage} 
                 onChange={e => setRowsPerPage(Number(e.target.value))} 
-                className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 outline-none focus:ring-1 focus:ring-primary-500 transition-shadow"
-                style={{ borderRadius: 9999, padding: '2px 8px' }}
+                className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 outline-none focus:ring-1 focus:ring-primary-500 transition-shadow rounded-full px-2 py-0.5"
               >
                 <option value={10}>10</option>
                 <option value={15}>15</option>
@@ -217,8 +216,8 @@ export default function ErpModule({ tenant, themeColor }) {
             </span>
             <span style={{ whiteSpace: 'nowrap' }}>Total: <strong className="text-slate-700 dark:text-white">{total}</strong></span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }} className="text-sm font-medium text-slate-500 dark:text-slate-400">
-            <span style={{ whiteSpace: 'nowrap' }}>Pagina {page} din {totalPages}</span>
+          <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-2 text-sm font-medium text-slate-500 dark:text-slate-400">
+            <span style={{ whiteSpace: 'nowrap' }}>Pagina {page} din {totalPages || 1}</span>
             <button 
               className="p-1 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed" 
               onClick={() => setPage(p => p - 1)} 

@@ -108,7 +108,7 @@ export default function LocationsList({ tenant, themeColor }) {
   }
 
   return (
-    <div className="max-w-7xl space-y-6">
+    <div className="w-full space-y-6">
       
       {/* Header & Controls */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -249,11 +249,11 @@ export default function LocationsList({ tenant, themeColor }) {
         {/* Search Bar + Header Informațional */}
         <div className="p-4 border-b border-slate-100 dark:border-slate-700/50 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-800/50 rounded-t-lg">
           <div className="font-bold text-slate-700 dark:text-slate-300 dark:text-white">Total: {total} înregistrări</div>
-          </div>
+        </div>
 
         {/* Tabelul - vizibil mereu */}
         <div className="overflow-x-auto min-h-[300px]">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full text-left border-collapse min-w-[550px]">
             <thead>
               <tr className="bg-slate-50 dark:bg-slate-800/50/50 dark:bg-slate-800/30 border-b border-slate-200 dark:border-slate-700 dark:border-slate-700">
                 <th style={{ width: 50, textAlign: 'center' }} className="py-3 font-bold text-xs tracking-wider text-slate-500 dark:text-slate-400 dark:text-slate-400">Nr.</th>
@@ -266,17 +266,17 @@ export default function LocationsList({ tenant, themeColor }) {
               {currentData.length > 0 ? (
                 currentData.map((loc, index) => (
                   <tr key={loc.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50/80 dark:hover:bg-slate-700/50 transition-colors group">
-                    <td className="text-center text-slate-500 dark:text-slate-400 dark:text-slate-400 text-[13px]">
+                    <td style={{ textAlign: 'center' }} className="text-slate-500 dark:text-slate-400 dark:text-slate-400 text-[13px]">
                       {(page - 1) * rowsPerPage + index + 1}
                     </td>
                     <td className="py-3 px-4">
-                      <div className="font-bold text-slate-800 dark:text-white dark:text-white">{loc.name}</div>
+                      <div className="font-bold text-slate-800 dark:text-white dark:text-white flex items-center gap-2">
+                        <MapPin size={16} className="text-primary-500" />
+                        {loc.name}
+                      </div>
                     </td>
                     <td className="py-3 px-4 text-sm text-slate-600 dark:text-slate-300 dark:text-slate-300">
-                      {loc.address || <span className="text-slate-400 dark:text-slate-500 italic">Nespecificat</span>}
-                      <div className="text-sm text-slate-500 mt-1 font-medium bg-slate-100 dark:bg-slate-800 inline-block px-2 py-0.5 rounded">
-                        Mod QR: {loc.qr_mode === 'HARDWARE' ? 'Scanner' : loc.qr_mode === 'STATIC' ? 'Static (Tipărit)' : loc.qr_mode === 'HYBRID' ? 'Hibrid' : 'Dinamic'}
-                      </div>
+                      {loc.address || <span className="text-slate-400 italic">Fără adresă specificată</span>}
                     </td>
                     <td className="py-3 px-4 text-right">
                       {deleteConfirmId === loc.id ? (
@@ -327,11 +327,11 @@ export default function LocationsList({ tenant, themeColor }) {
         </div>
 
         {/* FOOTER PAGINARE (Regula 3 - SmartDevize) */}
-        <div className="px-5 py-3 border-t border-slate-200 dark:border-slate-700 dark:border-slate-700 flex items-center justify-between bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-800/50 rounded-b-xl">
-          <div className="flex items-center gap-4">
-            <span className="whitespace-nowrap text-[13px] text-slate-500 dark:text-slate-400 dark:text-slate-400 font-bold">
+        <div className="px-4 sm:px-5 py-3 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-50 dark:bg-slate-800/50 rounded-b-xl">
+          <div className="flex flex-wrap items-center justify-between sm:justify-start w-full sm:w-auto gap-3 sm:gap-4">
+            <span className="whitespace-nowrap text-[13px] text-slate-500 dark:text-slate-400 font-bold">
               Afișează&nbsp;
-              <select value={rowsPerPage} onChange={e => { setRowsPerPage(Number(e.target.value)); setPage(1); }} className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 dark:border-slate-600 rounded-full px-2 py-0.5 outline-none dark:text-white">
+              <select value={rowsPerPage} onChange={e => { setRowsPerPage(Number(e.target.value)); setPage(1); }} className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-full px-2 py-0.5 outline-none dark:text-white">
                 <option value={10}>10</option>
                 <option value={15}>15</option>
                 <option value={25}>25</option>
@@ -339,12 +339,12 @@ export default function LocationsList({ tenant, themeColor }) {
                 <option value={9999}>Toți</option>
               </select>
             </span>
-            <span className="whitespace-nowrap text-[13px] text-slate-500 dark:text-slate-400 dark:text-slate-400">Total înregistrări: <strong className="text-slate-800 dark:text-white dark:text-white">{total}</strong></span>
+            <span className="whitespace-nowrap text-[13px] text-slate-500 dark:text-slate-400">Total înregistrări: <strong className="text-slate-800 dark:text-white">{total}</strong></span>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="whitespace-nowrap text-[13px] text-slate-500 dark:text-slate-400 dark:text-slate-400 font-bold mr-2">Pagina {page} din {totalPages || 1}</span>
-            <button className="w-8 h-8 flex items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 dark:border-slate-700 text-slate-500 dark:text-slate-400 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors shadow-sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}><ChevronLeft size={16} /></button>
-            <button className="w-8 h-8 flex items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 dark:border-slate-700 text-slate-500 dark:text-slate-400 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors shadow-sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages}><ChevronRight size={16} /></button>
+          <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-2">
+            <span className="whitespace-nowrap text-[13px] text-slate-500 dark:text-slate-400 font-bold mr-2">Pagina {page} din {totalPages || 1}</span>
+            <button className="w-8 h-8 flex items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors shadow-sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}><ChevronLeft size={16} /></button>
+            <button className="w-8 h-8 flex items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors shadow-sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages}><ChevronRight size={16} /></button>
           </div>
         </div>
       </div>
