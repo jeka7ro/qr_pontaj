@@ -12,7 +12,6 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
   const [locations, setLocations] = useState([]);
   const [locationId, setLocationId] = useState('all');
   const [viewMode, setViewMode] = useState('summary'); // 'summary' (Total per Angajat) | 'detailed' (Detaliat pe Zile)
-  const [showCharts, setShowCharts] = useState(true);
   
   const [closeShiftModal, setCloseShiftModal] = useState({ isOpen: false, rowData: null, date: '', time: '17:00' });
 
@@ -1240,23 +1239,8 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
             </p>
           </div>
 
-          {/* Acțiuni Antet: Toggle Grafice + Toggle Vizualizare */}
+          {/* Acțiuni Antet: Toggle Vizualizare */}
           <div className="flex flex-wrap items-center gap-2.5">
-            {/* Buton Toggle Grafice */}
-            <button
-              type="button"
-              onClick={() => setShowCharts(!showCharts)}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer border shadow-sm ${
-                showCharts
-                  ? 'bg-primary-50 dark:bg-primary-950/40 text-primary-600 dark:text-primary-400 border-primary-200 dark:border-primary-800'
-                  : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50'
-              }`}
-              title="Afișează sau ascunde panoul de grafice"
-            >
-              <BarChart3 size={14} />
-              <span>{showCharts ? 'Ascunde Grafice' : 'Grafice & Analitice'}</span>
-            </button>
-
             {/* Toggle Vizualizare: Total pe Angajat vs Detaliat pe Zile */}
             <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-full border border-slate-200 dark:border-slate-700 shrink-0 shadow-sm">
               <button
@@ -1295,7 +1279,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
       )}
 
       {/* Panou Grafice & KPI Rapoarte */}
-      {showCharts && !employeeId && (
+      {!employeeId && (
         <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
           {/* 4 Carduri KPI */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
