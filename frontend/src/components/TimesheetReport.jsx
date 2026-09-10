@@ -1169,11 +1169,14 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
   }, [employeeId, viewMode, summaryColumns, baseColumns]);
 
   const tableFilters = (
-    <div className="flex flex-col xl:flex-row xl:flex-nowrap items-stretch xl:items-center gap-2 sm:gap-2.5 w-full xl:w-auto xl:overflow-x-auto py-1" style={{ scrollbarWidth: 'none' }}>
+    <div 
+      className="flex flex-row flex-nowrap items-center gap-2 w-full xl:w-auto overflow-x-auto py-1" 
+      style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
+    >
       <select 
         value={actionFilter}
         onChange={(e) => setActionFilter(e.target.value)}
-        className="px-3 h-10 rounded-full border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer w-full xl:w-auto shrink-0"
+        className="px-3 h-9 sm:h-10 rounded-full border border-slate-200 dark:border-slate-700 text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer w-auto shrink-0 shadow-xs"
       >
         <option value="all">Toate acțiunile</option>
         <option value="in">Doar Intrări (IN)</option>
@@ -1183,7 +1186,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
       <select 
         value={locationId}
         onChange={(e) => setLocationId(e.target.value)}
-        className="px-3 h-10 rounded-full border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer w-full xl:w-auto truncate shrink-0 max-w-[170px]"
+        className="px-3 h-9 sm:h-10 rounded-full border border-slate-200 dark:border-slate-700 text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer w-auto max-w-[150px] truncate shrink-0 shadow-xs"
       >
         <option value="all">Toate locațiile</option>
         {locations.map(loc => (
@@ -1194,7 +1197,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
       <select 
         value={periodFilter}
         onChange={handlePeriodChange}
-        className="px-3 h-10 rounded-full border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer w-full xl:w-auto shrink-0"
+        className="px-3 h-9 sm:h-10 rounded-full border border-slate-200 dark:border-slate-700 text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer w-auto shrink-0 shadow-xs"
       >
         <option value="today">Azi</option>
         <option value="yesterday">Ieri</option>
@@ -1206,12 +1209,12 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
         <option value="custom">Personalizat...</option>
       </select>
       
-      <div className="flex items-center justify-between xl:justify-start gap-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full px-2.5 h-10 shadow-sm focus-within:ring-2 focus-within:ring-primary-500 transition-all w-full xl:w-auto shrink-0">
+      <div className="flex items-center gap-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full px-2.5 h-9 sm:h-10 shadow-xs focus-within:ring-2 focus-within:ring-primary-500 transition-all shrink-0 w-auto">
         <input 
           type="date" 
           value={startDate}
           onChange={handleDateManualChange(setStartDate)}
-          className="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 bg-transparent outline-none cursor-pointer w-full xl:w-auto text-center xl:text-left"
+          className="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 bg-transparent outline-none cursor-pointer w-[95px] sm:w-[105px] text-center"
           title="Data Început"
         />
         <span className="text-slate-300 dark:text-slate-600 font-bold">-</span>
@@ -1219,7 +1222,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
           type="date" 
           value={endDate}
           onChange={handleDateManualChange(setEndDate)}
-          className="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 bg-transparent outline-none cursor-pointer w-full xl:w-auto text-center xl:text-left"
+          className="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 bg-transparent outline-none cursor-pointer w-[95px] sm:w-[105px] text-center"
           title="Data Sfârșit"
         />
       </div>

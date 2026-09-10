@@ -204,44 +204,41 @@ export default function DataTable({
       )}
 
       {/* Toolbar (Căutare, Filtre, Export) */}
-      <div className="flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-2.5 mb-4 w-full">
-        {/* Partea stângă pe PC: Căutare (prima) + Filtre */}
-        <div className="flex flex-col xl:flex-row items-stretch xl:items-center gap-2 xl:gap-2.5 min-w-0 flex-1">
-          {/* Căutare - PRIMA ÎN RÂND */}
-          <div className={`relative ${!filters ? 'w-full sm:w-72' : 'w-full sm:w-60 xl:w-52 2xl:w-64 shrink-0'}`}>
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-10" />
-            <input
-              type="text"
-              placeholder={searchPlaceholder}
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="block w-full h-10 text-[16px] md:text-sm rounded-full border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm"
-              style={{ paddingLeft: 36, paddingRight: search ? 80 : 16 }}
-            />
-            {/* Contor Rezultate */}
-            {search && (
-              <div className="absolute right-2.5 top-1/2 -translate-y-1/2 bg-primary-600 text-white rounded-full px-2.5 py-0.5 text-[11px] font-bold whitespace-nowrap">
-                {filteredData.length} / {data.length}
-              </div>
-            )}
-          </div>
-
-          {/* Filtre */}
-          {filters ? (
-            <div
-              className="min-w-0 overflow-x-auto w-full xl:w-auto"
-              style={{ scrollbarWidth: "none" }}
-            >
-              {filters}
+      <div className="flex flex-wrap xl:flex-nowrap items-center justify-between xl:justify-start gap-2 sm:gap-2.5 mb-4 w-full">
+        {/* Căutare - Rândul 1 stânga pe mobil, Primul în rând pe PC */}
+        <div className={`relative order-1 ${!filters ? 'w-full sm:w-72' : 'flex-1 xl:flex-none w-auto sm:w-60 xl:w-52 2xl:w-64 min-w-[150px] shrink-0'}`}>
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-10" />
+          <input
+            type="text"
+            placeholder={searchPlaceholder}
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="block w-full h-10 text-[16px] md:text-sm rounded-full border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm"
+            style={{ paddingLeft: 36, paddingRight: search ? 80 : 16 }}
+          />
+          {/* Contor Rezultate */}
+          {search && (
+            <div className="absolute right-2.5 top-1/2 -translate-y-1/2 bg-primary-600 text-white rounded-full px-2.5 py-0.5 text-[11px] font-bold whitespace-nowrap">
+              {filteredData.length} / {data.length}
             </div>
-          ) : null}
+          )}
         </div>
 
-        {/* Partea dreaptă pe PC: Export și Bulk Actions */}
-        <div className="flex items-center gap-3 self-end sm:self-auto shrink-0">
+        {/* Filtre - Rândul 2 pe mobil (scroll orizontal lin), în continuarea căutării pe PC */}
+        {filters ? (
+          <div
+            className="order-3 xl:order-2 w-full xl:w-auto min-w-0 overflow-x-auto py-0.5"
+            style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}
+          >
+            {filters}
+          </div>
+        ) : null}
+
+        {/* Export și Bulk Actions - Rândul 1 dreapta pe mobil, extremitatea dreaptă pe PC */}
+        <div className="order-2 xl:order-3 xl:ml-auto flex items-center gap-2 sm:gap-3 shrink-0">
             {bulkActions && selectedRowIds.size > 0 && (
               <div className="flex items-center gap-2 mr-2 animate-in fade-in slide-in-from-right-4">
                 {bulkActions(selectedRowIds.size, handleClearSelection)}
