@@ -1206,7 +1206,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
         <option value="custom">Personalizat...</option>
       </select>
       
-      <div className="flex items-center justify-between xl:justify-start gap-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full px-3 h-10 shadow-sm focus-within:ring-2 focus-within:ring-primary-500 transition-all w-full xl:w-auto shrink-0">
+      <div className="flex items-center justify-between xl:justify-start gap-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full px-2.5 h-10 shadow-sm focus-within:ring-2 focus-within:ring-primary-500 transition-all w-full xl:w-auto shrink-0">
         <input 
           type="date" 
           value={startDate}

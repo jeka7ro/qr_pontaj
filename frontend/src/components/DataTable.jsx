@@ -6,7 +6,6 @@ import {
   ChevronUp,
   ChevronLeft,
   ChevronRight,
-  Filter,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 
@@ -205,27 +204,11 @@ export default function DataTable({
       )}
 
       {/* Toolbar (Căutare, Filtre, Export) */}
-      <div className="flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3 mb-4 w-full">
-        {/* Partea stângă: Filtre */}
-        {filters ? (
-          <div className="flex items-center gap-2 min-w-0 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
-            <Filter
-              size={16}
-              className="text-slate-400 hidden 2xl:block shrink-0"
-            />
-            <div
-              className="min-w-0 overflow-x-auto w-full xl:w-auto"
-              style={{ scrollbarWidth: "none" }}
-            >
-              {filters}
-            </div>
-          </div>
-        ) : null}
-
-        {/* Partea dreaptă pe PC: Căutare + Acțiuni (Export) */}
-        <div className={`flex flex-col sm:flex-row items-stretch sm:items-center gap-3 ${!filters ? 'w-full justify-between' : 'shrink-0'}`}>
-          {/* Căutare */}
-          <div className={`relative ${!filters ? 'w-full sm:w-72' : 'w-full sm:w-60 xl:w-56 2xl:w-72'}`}>
+      <div className="flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-2.5 mb-4 w-full">
+        {/* Partea stângă pe PC: Căutare (prima) + Filtre */}
+        <div className="flex flex-col xl:flex-row items-stretch xl:items-center gap-2 xl:gap-2.5 min-w-0 flex-1">
+          {/* Căutare - PRIMA ÎN RÂND */}
+          <div className={`relative ${!filters ? 'w-full sm:w-72' : 'w-full sm:w-60 xl:w-52 2xl:w-64 shrink-0'}`}>
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-10" />
             <input
               type="text"
@@ -246,8 +229,19 @@ export default function DataTable({
             )}
           </div>
 
-          {/* Export și Bulk Actions */}
-          <div className="flex items-center gap-3 self-end sm:self-auto shrink-0">
+          {/* Filtre */}
+          {filters ? (
+            <div
+              className="min-w-0 overflow-x-auto w-full xl:w-auto"
+              style={{ scrollbarWidth: "none" }}
+            >
+              {filters}
+            </div>
+          ) : null}
+        </div>
+
+        {/* Partea dreaptă pe PC: Export și Bulk Actions */}
+        <div className="flex items-center gap-3 self-end sm:self-auto shrink-0">
             {bulkActions && selectedRowIds.size > 0 && (
               <div className="flex items-center gap-2 mr-2 animate-in fade-in slide-in-from-right-4">
                 {bulkActions(selectedRowIds.size, handleClearSelection)}
@@ -342,7 +336,6 @@ export default function DataTable({
             )}
           </div>
         </div>
-      </div>
 
       {/* Container Tabel (cu fundal alb și card) */}
       <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 dark:border-slate-700 shadow-sm flex flex-col flex-1 overflow-hidden min-h-[300px]">
