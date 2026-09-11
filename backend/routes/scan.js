@@ -10,7 +10,7 @@ const adminSseClients = {};
 
 // SSE Endpoint for Admin Dashboard
 router.get('/admin-stream/:tenantId', (req, res) => {
-  const { tenantId } = req.params;
+  const tenantId = String(req.params.tenantId);
   
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
@@ -134,7 +134,7 @@ router.post('/', async (req, res) => {
   try {
     // 1. Gaseste angajatul
     const empResult = await pool.query(
-      'SELECT id, first_name, last_name, avatar_path FROM qrp_employees WHERE employee_code = $1 AND pin_code = $2 AND tenant_id = $3',
+      'SELECT id, first_name, last_name, avatar_path, job_title FROM qrp_employees WHERE employee_code = $1 AND pin_code = $2 AND tenant_id = $3',
       [employee_code, pin_code, tenant_id]
     );
 
@@ -265,18 +265,13 @@ router.post('/', async (req, res) => {
       employee: {
         first_name: employee.first_name,
         last_name: employee.last_name,
-        avatar_path: employee.avatar_path
+        avatar_path: employee.avatar_path,
+        job_title: employee.job_title || 'Angajat'
       }
     };
 
     // Emite eveniment catre Admin Dashboard (Live Updates)
-    if (adminSseClients[tenant_id]) {
-      adminSseClients[tenant_id].forEach(client => {
-        try {
-          client.write(`data: ${JSON.stringify(adminEventPayload)}\n\n`);
-        } catch(e) {}
-      });
-    }
+    router.notifyAdmin(tenant_id, adminEventPayload);
 
     // Emite eveniment catre Kiosk-ul din acea locatie
     if (kiosk_id && sseClients[kiosk_id]) {
@@ -335,8 +330,9 @@ router.post('/reset-pin-request', async (req, res) => {
 
 
 router.notifyAdmin = (tenantId, eventData) => {
-  if (adminSseClients[tenantId]) {
-    adminSseClients[tenantId].forEach(client => {
+  const tId = String(tenantId);
+  if (adminSseClients[tId]) {
+    adminSseClients[tId].forEach(client => {
       try {
         client.write(`data: ${JSON.stringify(eventData)}\n\n`);
       } catch (e) {}

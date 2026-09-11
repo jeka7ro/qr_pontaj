@@ -179,7 +179,19 @@ export default function EmployeeDashboard() {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      const token = localStorage.getItem('employee_token');
+      if (token) {
+        const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
+        await fetch(`${baseUrl}/api/employee/logout`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+      }
+    } catch (e) {}
     localStorage.removeItem('employee_token');
     localStorage.removeItem('employee_data');
     navigate('/');

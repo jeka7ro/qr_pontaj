@@ -39,6 +39,23 @@ router.post('/login', async (req, res) => {
       { expiresIn: '180d' }
     );
 
+    // Notifică Admin Dashboard în timp real
+    try {
+      const scanRouter = require('./scan');
+      scanRouter.notifyAdmin(emp.tenant_id, {
+        type: 'LOGIN',
+        timestamp: new Date().toISOString(),
+        employee: {
+          first_name: emp.first_name,
+          last_name: emp.last_name,
+          avatar_path: emp.avatar_path,
+          job_title: emp.job_title || 'Angajat'
+        }
+      });
+    } catch (e) {
+      console.error('Error notifying admin on employee login:', e);
+    }
+
     res.json({
       token,
       employee: {
@@ -79,6 +96,34 @@ const employeeAuthMiddleware = (req, res, next) => {
     return res.status(401).json({ error: 'Token invalid' });
   }
 };
+
+// POST /api/employee/logout
+router.post('/logout', employeeAuthMiddleware, async (req, res) => {
+  try {
+    const { employee_id, tenant_id } = req.user;
+    const empRes = await db.query(
+      'SELECT first_name, last_name, avatar_path, job_title FROM qrp_employees WHERE id = $1',
+      [employee_id]
+    );
+    if (empRes.rows.length > 0) {
+      const emp = empRes.rows[0];
+      const scanRouter = require('./scan');
+      scanRouter.notifyAdmin(tenant_id, {
+        type: 'LOGOUT',
+        timestamp: new Date().toISOString(),
+        employee: {
+          first_name: emp.first_name,
+          last_name: emp.last_name,
+          avatar_path: emp.avatar_path,
+          job_title: emp.job_title || 'Angajat'
+        }
+      });
+    }
+  } catch (e) {
+    console.error('Error notifying admin on employee logout:', e);
+  }
+  res.json({ success: true });
+});
 
 // GET /api/employee/dashboard
 router.get('/dashboard', employeeAuthMiddleware, async (req, res) => {

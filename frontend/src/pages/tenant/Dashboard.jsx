@@ -1,6 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Routes, Route, Link, Navigate } from 'react-router-dom';
-import { QrCode, Users, LogOut, Menu, X, Info, MapPin, Sun, Moon, CreditCard, CalendarDays, FileSpreadsheet, Globe, Map, BookOpenCheck, Calculator, CalendarClock, ScanFace, MessageSquare, Wrench, Table, ChevronDown } from 'lucide-react';
+import { 
+  QrCode, Users, LogOut, Menu, X, Info, MapPin, Sun, Moon, CreditCard, 
+  CalendarDays, FileSpreadsheet, Globe, Map, BookOpenCheck, Calculator, 
+  CalendarClock, ScanFace, MessageSquare, Wrench, Table, ChevronDown,
+  Bell, LogIn, Briefcase, Clock, User
+} from 'lucide-react';
+
+const getAvatarUrl = (avatarPath, firstName, lastName) => {
+  if (avatarPath) {
+    if (avatarPath.startsWith('http')) return avatarPath;
+    const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
+    return `${baseUrl}${avatarPath}`;
+  }
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(firstName || '')}+${encodeURIComponent(lastName || '')}&background=random`;
+};
 import EmployeesList from '../../components/EmployeesList';
 import TimesheetReport from '../../components/TimesheetReport';
 import DashboardCharts from '../../components/DashboardCharts';
@@ -702,6 +716,93 @@ export default function TenantDashboard() {
 
           </Routes>
         </main>
+      </div>
+
+      {/* 🔔 Notificări Popup Live Activitate (Pontaj / Autentificare / Deconectare) */}
+      <div className="fixed top-5 right-5 z-50 flex flex-col gap-3 pointer-events-none max-w-sm w-full sm:w-[360px]">
+        {liveScans.map((scan) => {
+          const emp = scan.employee || {};
+          const isEntry = scan.type === 'IN' || scan.type === 'LOGIN';
+          const isExit = scan.type === 'OUT' || scan.type === 'LOGOUT';
+          
+          let actionLabel = 'Pontaj Înregistrat';
+          let actionColor = 'text-slate-600 dark:text-slate-300';
+          let badgeBg = 'bg-slate-600';
+          if (scan.type === 'IN') {
+            actionLabel = 'Pontaj: INTRARE';
+            actionColor = 'text-emerald-600 dark:text-emerald-400';
+            badgeBg = 'bg-emerald-500';
+          } else if (scan.type === 'OUT') {
+            actionLabel = 'Pontaj: IEȘIRE';
+            actionColor = 'text-amber-600 dark:text-amber-400';
+            badgeBg = 'bg-amber-500';
+          } else if (scan.type === 'LOGIN') {
+            actionLabel = 'Autentificat în aplicație';
+            actionColor = 'text-blue-600 dark:text-blue-400';
+            badgeBg = 'bg-blue-500';
+          } else if (scan.type === 'LOGOUT') {
+            actionLabel = 'Deconectat din aplicație';
+            actionColor = 'text-slate-500 dark:text-slate-400';
+            badgeBg = 'bg-slate-500';
+          }
+
+          const avatarSrc = getAvatarUrl(emp.avatar_path, emp.first_name, emp.last_name);
+          const timeStr = new Date(scan.timestamp || Date.now()).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+          return (
+            <div 
+              key={scan.id} 
+              className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 p-3.5 pointer-events-auto flex items-center gap-3.5 animate-in slide-in-from-top-4 fade-in duration-200 transition-all hover:scale-[1.01]"
+            >
+              {/* Avatar cu badge de acțiune */}
+              <div className="relative shrink-0">
+                <img 
+                  src={avatarSrc} 
+                  alt="" 
+                  className="w-12 h-12 rounded-full object-cover border border-slate-200 dark:border-slate-700 shadow-xs"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(emp.first_name || '')}+${encodeURIComponent(emp.last_name || '')}&background=random`;
+                  }}
+                />
+                <span className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full text-white flex items-center justify-center shadow-xs border-2 border-white dark:border-slate-900 ${badgeBg}`}>
+                  {isEntry ? <LogIn size={10} /> : <LogOut size={10} />}
+                </span>
+              </div>
+
+              {/* Informații Angajat & Rol & Status */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-1">
+                  <h4 className="font-bold text-sm text-slate-900 dark:text-white truncate">
+                    {emp.first_name || 'Angajat'} {emp.last_name || ''}
+                  </h4>
+                  <button 
+                    onClick={() => setLiveScans(prev => prev.filter(s => s.id !== scan.id))} 
+                    className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 -mr-1 transition-colors"
+                    title="Închide"
+                  >
+                    <X size={15} />
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  <Briefcase size={12} className="shrink-0 text-slate-400" />
+                  <span className="truncate font-medium">{emp.job_title || 'Angajat'}</span>
+                </div>
+
+                <div className="flex items-center justify-between text-[11px] mt-1 pt-1 border-t border-slate-100 dark:border-slate-800/80">
+                  <span className={`font-bold flex items-center gap-1 ${actionColor}`}>
+                    {actionLabel}
+                  </span>
+                  <span className="text-slate-400 dark:text-slate-500 flex items-center gap-1">
+                    <Clock size={10} />
+                    {timeStr}
+                  </span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* Notificari Popup */}

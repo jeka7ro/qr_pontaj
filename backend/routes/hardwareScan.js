@@ -36,7 +36,7 @@ router.post('/', async (req, res) => {
 
     // Găsim angajatul
     const empResult = await pool.query(
-      'SELECT id, first_name, last_name, avatar_path FROM qrp_employees WHERE id = $1 AND tenant_id = $2',
+      'SELECT id, first_name, last_name, avatar_path, job_title FROM qrp_employees WHERE id = $1 AND tenant_id = $2',
       [employeeId, tenantId]
     );
 
@@ -126,7 +126,8 @@ router.post('/', async (req, res) => {
       employee: {
         first_name: employee.first_name,
         last_name: employee.last_name,
-        avatar_path: showPhoto ? employee.avatar_path : null
+        avatar_path: showPhoto ? employee.avatar_path : null,
+        job_title: employee.job_title || 'Angajat'
       }
     };
     if (typeof scanRouter.notifyAdmin === 'function') scanRouter.notifyAdmin(tenantId, successPayload);
