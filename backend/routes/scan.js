@@ -254,15 +254,7 @@ router.post('/', async (req, res) => {
       }
     }
 
-    const eventPayload = {
-      type: type,
-      employee: {
-        first_name: employee.first_name,
-        last_name: employee.last_name,
-        avatar_path: employee.avatar_path,
-        showPhoto: showPhoto
-      }
-    };
+
 
     const adminEventPayload = {
       type: type, // 'IN' or 'OUT'

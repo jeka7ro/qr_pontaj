@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Hash, useParams, Link, useLocation } from 'react-router-dom';
+import { QRCodeSVG } from 'qrcode.react';
 import { ArrowLeft, User, MapPin, Briefcase, Calendar, Clock, Banknote, Shield, History, Activity, Image as ImageIcon, Camera, FileText, Upload, Trash2, Download, Loader2, X, ArrowRight, Eye, CalendarDays } from 'lucide-react';
 import TimesheetReport from './TimesheetReport';
 import ConfirmModal from './ConfirmModal';
@@ -290,6 +291,15 @@ const EmployeeProfile = ({ tenant, themeColor }) => {
               <span className="inline-flex items-center px-3 py-1 mt-2 rounded-full text-xs font-bold bg-primary-50 text-primary-600">
                 <Briefcase size={12} className="mr-1" /> {employee.job_title || 'Fără funcție'}
               </span>
+              <div className="mt-4 bg-white p-2 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 inline-block">
+                <QRCodeSVG 
+                  value={`QRP-EMP-${tenant.id}-${employee.id}`}
+                  size={96}
+                  level="M"
+                  includeMargin={true}
+                />
+              </div>
+              <p className="text-[10px] text-slate-400 mt-2">Cod QR Legitimație</p>
             </div>
 
             <div className="mt-8 space-y-4">
