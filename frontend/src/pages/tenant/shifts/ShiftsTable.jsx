@@ -48,7 +48,6 @@ export default function ShiftsTable({ tenant, themeColor }) {
   const [editNotes, setEditNotes] = useState('');
   const [editShiftIdsToKeep, setEditShiftIdsToKeep] = useState([]);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
-  const [editingShift, setEditingShift] = useState(null);
 
   // Modal duplicare tură
   const [duplicateGroup, setDuplicateGroup] = useState(null);
@@ -915,17 +914,17 @@ export default function ShiftsTable({ tenant, themeColor }) {
         )}
       </div>
 
-      {/* 6. Modal Editare Individuală */}
-      {editingShift && (
+      {/* 6. Modal Editare Tură */}
+      {editingGroup && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden animate-in zoom-in-95 duration-150">
             <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
               <h3 className="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
                 <Edit3 size={18} style={{ color: themeColor }} />
-                Editează Tura ({formatDateCell(editingShift.date)})
+                Editează Tura ({formatDateCell(editingGroup.date)})
               </h3>
               <button 
-                onClick={() => setEditingShift(null)}
+                onClick={() => setEditingGroup(null)}
                 className="text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors"
               >
                 <X size={20} />
@@ -1003,13 +1002,16 @@ export default function ShiftsTable({ tenant, themeColor }) {
                   Angajați în această tură
                 </label>
                 <div className="max-h-32 overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-2 space-y-1">
-                  {editingGroup.employees.map(e => {
+                  {editingGroup.employees?.map(e => {
                     const isKept = editShiftIdsToKeep.includes(e.shift_id);
                     if (!isKept) return null; // ascundem din lista pt feedback vizual
+                    const empName = (e.emp?.first_name || e.emp?.last_name)
+                      ? `${e.emp?.first_name || ''} ${e.emp?.last_name || ''}`.trim()
+                      : `Angajat #${e.employee_id || e.shift_id}`;
                     return (
                       <div key={e.shift_id} className="flex justify-between items-center bg-white dark:bg-slate-900 px-3 py-1.5 rounded-md shadow-xs border border-slate-100 dark:border-slate-700">
                         <span className="text-sm font-bold text-slate-700 dark:text-slate-200">
-                          {e.emp.first_name} {e.emp.last_name}
+                          {empName}
                         </span>
                         <button
                           type="button"
@@ -1031,7 +1033,7 @@ export default function ShiftsTable({ tenant, themeColor }) {
               <div className="pt-2 flex gap-2">
                 <button
                   type="button"
-                  onClick={() => setEditingShift(null)}
+                  onClick={() => setEditingGroup(null)}
                   className="flex-1 h-10 px-4 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold transition-colors"
                 >
                   Anulează
