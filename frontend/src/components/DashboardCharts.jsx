@@ -18,6 +18,14 @@ export default function DashboardCharts({ tenant, themeColor }) {
   const [liveLoading, setLiveLoading] = useState(true);
 
   const [shiftModal, setShiftModal] = useState({ isOpen: false, type: 'CLOSE', rowData: null, date: '', time: '17:00' });
+  const [closeAllModal, setCloseAllModal] = useState({ isOpen: false, date: '', time: '' });
+  const [closingAllLoading, setClosingAllLoading] = useState(false);
+  const [toastMessage, setToastMessage] = useState(null);
+
+  const showToast = (text, type = 'success') => {
+    setToastMessage({ text, type });
+    setTimeout(() => setToastMessage(null), 4000);
+  };
 
   const [drillLevel, setDrillLevel] = useState('root');
   const [drillParentName, setDrillParentName] = useState('');
@@ -132,32 +140,89 @@ export default function DashboardCharts({ tenant, themeColor }) {
     });
   };
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const res = await fetch(`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenant/dashboard/stats`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setStats(prev => ({
-            ...prev,
-            totalEmployees: data.totalEmployees,
-            presentNow: data.presentNow,
-            todayCheckins: data.todayCheckins,
-            donutDataRoot: data.donutDataRoot,
-            donutDataDetails: data.donutDataDetails || {},
-            weeklyData: data.weeklyData || []
-          }));
-          setActiveDonutData(data.donutDataRoot.map(d => ({ name: d.name, value: d.value, itemStyle: { color: d.name === 'Prezenți' ? '#3b82f6' : '#f59e0b' } })));
-          setLoading(false);
-        }
-      } catch (err) {
-        console.error('Error fetching stats', err);
+  const fetchStats = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenant/dashboard/stats`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setStats(prev => ({
+          ...prev,
+          totalEmployees: data.totalEmployees,
+          presentNow: data.presentNow,
+          todayCheckins: data.todayCheckins,
+          donutDataRoot: data.donutDataRoot,
+          donutDataDetails: data.donutDataDetails || {},
+          weeklyData: data.weeklyData || []
+        }));
+        setActiveDonutData(data.donutDataRoot.map(d => ({ name: d.name, value: d.value, itemStyle: { color: d.name === 'Prezenți' ? '#3b82f6' : '#f59e0b' } })));
         setLoading(false);
       }
-    };
+    } catch (err) {
+      console.error('Error fetching stats', err);
+      setLoading(false);
+    }
+  };
+
+  const handleOpenCloseAllModal = (e) => {
+    if (e) e.preventDefault();
+    const presentCount = liveShifts.filter(emp => emp.current_status === 'IN').length;
+    if (presentCount === 0) {
+      showToast('Nu există niciun angajat prezent în tura curentă.', 'info');
+      return;
+    }
+    const todayStr = new Date().toLocaleDateString('en-CA');
+    const now = new Date();
+    const currentHours = now.getHours().toString().padStart(2, '0');
+    const currentMinutes = now.getMinutes().toString().padStart(2, '0');
+    setCloseAllModal({
+      isOpen: true,
+      date: todayStr,
+      time: `${currentHours}:${currentMinutes}`
+    });
+  };
+
+  const handleConfirmCloseAll = async () => {
+    if (!closeAllModal.date || !closeAllModal.time) return;
+    setClosingAllLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const apiUrl = `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}`;
+      const localDateTime = new Date(`${closeAllModal.date}T${closeAllModal.time}:00`);
+
+      const res = await fetch(`${apiUrl}/api/tenant/dashboard/close-all-shifts`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` })
+        },
+        body: JSON.stringify({
+          timestamp: localDateTime.toISOString(),
+          date: closeAllModal.date,
+          time: closeAllModal.time
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Eroare la închiderea colectivă a turelor');
+      }
+
+      setCloseAllModal({ isOpen: false, date: '', time: '' });
+      showToast(data.message || 'Turele au fost închise cu succes pentru toți angajații prezenți.');
+      fetchLive();
+      fetchStats();
+    } catch (err) {
+      console.error(err);
+      showToast(err.message, 'error');
+    } finally {
+      setClosingAllLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchStats();
     const interval = setInterval(fetchStats, 30000);
     return () => clearInterval(interval);
@@ -907,6 +972,27 @@ export default function DashboardCharts({ tenant, themeColor }) {
                     Absenți ({absentCount})
                   </button>
                 </div>
+
+                {/* Buton Închidere Tură pentru Toți (Aliniat spre dreapta ultimul) */}
+                <button
+                  type="button"
+                  onClick={handleOpenCloseAllModal}
+                  disabled={inCount === 0 || closingAllLoading}
+                  className={`h-9 px-4 rounded-full font-bold text-xs flex items-center gap-2 transition-all whitespace-nowrap shrink-0 shadow-xs cursor-pointer select-none ${
+                    inCount > 0 
+                      ? 'bg-rose-600 hover:bg-rose-700 active:scale-95 text-white shadow-rose-200 dark:shadow-none hover:shadow-md' 
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed border border-slate-200/60 dark:border-slate-700/60'
+                  }`}
+                  title={inCount > 0 ? `Închide manual tura pentru toți cei ${inCount} angajați prezenți` : 'Niciun angajat prezent în tură'}
+                >
+                  <LogOut size={14} className="shrink-0" />
+                  <span>Închide Tura la Toți</span>
+                  {inCount > 0 && (
+                    <span className="bg-white/20 text-white px-1.5 py-0.5 rounded-full text-[10px] font-black">
+                      {inCount}
+                    </span>
+                  )}
+                </button>
               </div>
             </div>
             
@@ -1149,6 +1235,148 @@ export default function DashboardCharts({ tenant, themeColor }) {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Închidere Tură Colectivă (Toți Angajații Prezenți) */}
+      {closeAllModal.isOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-md shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col max-h-[90vh]">
+            {/* Modal Header */}
+            <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-rose-50/40 dark:bg-rose-950/20">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center bg-rose-100 text-rose-700 dark:bg-rose-950/80 dark:text-rose-300 shadow-sm shrink-0">
+                  <LogOut size={20} />
+                </div>
+                <div>
+                  <h3 className="font-black text-base text-slate-900 dark:text-white leading-tight">
+                    Închidere Tură pentru Toți
+                  </h3>
+                  <p className="text-xs text-rose-600 dark:text-rose-400 font-bold mt-0.5">
+                    {liveShifts.filter(emp => emp.current_status === 'IN').length} angajați prezenți în tura curentă
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setCloseAllModal({ isOpen: false, date: '', time: '' })} 
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-4 overflow-y-auto flex-1">
+              <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/40 rounded-2xl p-3.5 text-xs text-amber-800 dark:text-amber-200 flex items-start gap-2.5">
+                <AlertTriangle size={18} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                <div className="leading-relaxed">
+                  Această acțiune va ponta <strong>IEȘIREA (OUT)</strong> manuală pentru toți angajații aflați în prezent la lucru.
+                </div>
+              </div>
+
+              {/* Lista angajaților afectați */}
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+                  Angajați Afectați ({liveShifts.filter(emp => emp.current_status === 'IN').length})
+                </label>
+                <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto p-2 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200/60 dark:border-slate-700/60">
+                  {liveShifts.filter(emp => emp.current_status === 'IN').map(emp => (
+                    <span key={emp.id} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 shadow-2xs">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                      {emp.first_name} {emp.last_name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Dată și Oră */}
+              <div className="grid grid-cols-2 gap-3 pt-1">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+                    Data Ieșirii
+                  </label>
+                  <input
+                    type="date"
+                    value={closeAllModal.date}
+                    onChange={(e) => setCloseAllModal({ ...closeAllModal, date: e.target.value })}
+                    className="w-full px-3 h-10 rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-rose-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-semibold text-xs"
+                  />
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                      Ora Ieșirii
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const now = new Date();
+                        const h = now.getHours().toString().padStart(2, '0');
+                        const m = now.getMinutes().toString().padStart(2, '0');
+                        setCloseAllModal(prev => ({ ...prev, time: `${h}:${m}` }));
+                      }}
+                      className="text-[10px] font-bold text-rose-600 dark:text-rose-400 hover:underline cursor-pointer"
+                    >
+                      Ora Acum
+                    </button>
+                  </div>
+                  <input
+                    type="time"
+                    value={closeAllModal.time}
+                    onChange={(e) => setCloseAllModal({ ...closeAllModal, time: e.target.value })}
+                    className="w-full px-3 h-10 rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-rose-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-semibold text-xs"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setCloseAllModal({ isOpen: false, date: '', time: '' })}
+                className="px-4 py-2 rounded-full border border-slate-200 dark:border-slate-700 font-bold text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              >
+                Anulează
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmCloseAll}
+                disabled={closingAllLoading}
+                className="px-5 py-2 rounded-full bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-2 shadow-sm transition-all disabled:opacity-50 cursor-pointer"
+              >
+                {closingAllLoading ? (
+                  <>
+                    <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                    <span>Se închid turele...</span>
+                  </>
+                ) : (
+                  <>
+                    <LogOut size={14} />
+                    <span>Confirmă Închiderea ({liveShifts.filter(emp => emp.current_status === 'IN').length})</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Floating Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-[120] animate-in fade-in slide-in-from-bottom-4 duration-200">
+          <div className={`px-4 py-3 rounded-2xl shadow-xl border flex items-center gap-3 text-xs font-bold ${
+            toastMessage.type === 'error'
+              ? 'bg-rose-900 text-white border-rose-800'
+              : toastMessage.type === 'info'
+              ? 'bg-slate-900 text-white border-slate-800'
+              : 'bg-emerald-900 text-white border-emerald-800'
+          }`}>
+            <span>{toastMessage.text}</span>
+            <button onClick={() => setToastMessage(null)} className="opacity-70 hover:opacity-100">
+              <X size={14} />
+            </button>
           </div>
         </div>
       )}

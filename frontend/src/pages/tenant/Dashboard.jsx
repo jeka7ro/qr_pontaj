@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Routes, Route, Link, Navigate } from 'react-router-dom';
-import { QrCode, Users, LogOut, Menu, X, Info, MapPin, Sun, Moon, CreditCard, CalendarDays, FileSpreadsheet, Globe, Map, BookOpenCheck, Calculator, CalendarClock, ScanFace, MessageSquare, Wrench } from 'lucide-react';
+import { QrCode, Users, LogOut, Menu, X, Info, MapPin, Sun, Moon, CreditCard, CalendarDays, FileSpreadsheet, Globe, Map, BookOpenCheck, Calculator, CalendarClock, ScanFace, MessageSquare, Wrench, Table, ChevronDown } from 'lucide-react';
 import EmployeesList from '../../components/EmployeesList';
 import TimesheetReport from '../../components/TimesheetReport';
 import DashboardCharts from '../../components/DashboardCharts';
@@ -32,6 +32,13 @@ export default function TenantDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [pendingNotifs, setPendingNotifs] = useState([]);
   const [dismissedNotifs, setDismissedNotifs] = useState(new Set());
+  const [shiftsExpanded, setShiftsExpanded] = useState(() => location.pathname.startsWith('/admin/shifts'));
+
+  useEffect(() => {
+    if (location.pathname.startsWith('/admin/shifts')) {
+      setShiftsExpanded(true);
+    }
+  }, [location.pathname]);
 
   const [isDarkMode, setIsDarkMode] = useState(() => {
     return localStorage.getItem('theme') === 'dark';
@@ -275,15 +282,66 @@ export default function TenantDashboard() {
           </Link>
 
           {tenant.modules?.shifts && (
-            <Link 
-              to="/admin/shifts"
-              onClick={() => setSidebarOpen(false)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-full transition-colors font-medium text-sm
-                ${location.pathname === '/admin/shifts' ? 'font-bold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/40 hover:text-slate-800 dark:hover:text-white'}`}
-              style={getNavStyle(location.pathname === '/admin/shifts')}
-            >
-              <CalendarClock size={18} /> Planificator Ture
-            </Link>
+            <div className="space-y-1">
+              <button
+                type="button"
+                onClick={() => {
+                  if (!location.pathname.startsWith('/admin/shifts')) {
+                    navigate('/admin/shifts');
+                  }
+                  setShiftsExpanded(!shiftsExpanded);
+                }}
+                className={`w-full flex items-center justify-between px-4 py-3 rounded-full transition-colors font-medium text-sm text-left
+                  ${location.pathname.startsWith('/admin/shifts') ? 'font-bold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/40 hover:text-slate-800 dark:hover:text-white'}`}
+                style={location.pathname.startsWith('/admin/shifts') ? getNavStyle(true) : {}}
+              >
+                <div className="flex items-center gap-3">
+                  <CalendarClock size={18} />
+                  <span>Planificator Ture</span>
+                </div>
+                <ChevronDown 
+                  size={16} 
+                  className={`transition-transform duration-200 ${shiftsExpanded ? 'rotate-180' : ''}`}
+                />
+              </button>
+
+              {shiftsExpanded && (
+                <div className="pl-4 pr-1 py-1 space-y-1">
+                  <Link 
+                    to="/admin/shifts/planner"
+                    onClick={() => setSidebarOpen(false)}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-full transition-colors text-xs font-semibold
+                      ${(location.pathname === '/admin/shifts' || location.pathname === '/admin/shifts/planner') ? 'font-bold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700/50 hover:text-slate-800 dark:hover:text-white'}`}
+                    style={getNavStyle(location.pathname === '/admin/shifts' || location.pathname === '/admin/shifts/planner')}
+                  >
+                    <CalendarClock size={14} />
+                    <span>Planificator</span>
+                  </Link>
+
+                  <Link 
+                    to="/admin/shifts/table"
+                    onClick={() => setSidebarOpen(false)}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-full transition-colors text-xs font-semibold
+                      ${location.pathname === '/admin/shifts/table' ? 'font-bold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700/50 hover:text-slate-800 dark:hover:text-white'}`}
+                    style={getNavStyle(location.pathname === '/admin/shifts/table')}
+                  >
+                    <Table size={14} />
+                    <span>Tabel Ture</span>
+                  </Link>
+
+                  <Link 
+                    to="/admin/shifts/calendar"
+                    onClick={() => setSidebarOpen(false)}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-full transition-colors text-xs font-semibold
+                      ${location.pathname === '/admin/shifts/calendar' ? 'font-bold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700/50 hover:text-slate-800 dark:hover:text-white'}`}
+                    style={getNavStyle(location.pathname === '/admin/shifts/calendar')}
+                  >
+                    <CalendarDays size={14} />
+                    <span>Calendar Ture</span>
+                  </Link>
+                </div>
+              )}
+            </div>
           )}
 
           {tenant.modules?.leaves && (
@@ -576,7 +634,7 @@ export default function TenantDashboard() {
               )
             } />
 
-            <Route path="shifts" element={
+            <Route path="shifts/*" element={
               tenant.modules?.shifts ? (
                 <div className="w-full">
                   <ShiftsModule tenant={tenant} themeColor={themeColor} />

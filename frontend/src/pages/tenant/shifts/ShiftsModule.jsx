@@ -1,9 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, Users, Plus, ChevronLeft, ChevronRight, Trash2, Info, MapPin, Copy, Edit2 } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
+import { Calendar, Clock, Users, Plus, ChevronLeft, ChevronRight, Trash2, Info, MapPin, Copy, Edit2, Table } from 'lucide-react';
 import CreateShiftModal from '../../../components/CreateShiftModal';
 import ConfirmModal from '../../../components/ConfirmModal';
+import DailyShiftPlanner from './DailyShiftPlanner';
+import ShiftsTable from './ShiftsTable';
 
 export default function ShiftsModule({ tenant, themeColor }) {
+  const location = useLocation();
+
+  // Determinare sub-pagină activă pe baza rutei din sidebar
+  let viewMode = 'planner';
+  if (location.pathname.includes('/calendar')) {
+    viewMode = 'calendar';
+  } else if (location.pathname.includes('/table')) {
+    viewMode = 'table';
+  }
+
   const [currentWeek, setCurrentWeek] = useState(new Date());
   const [employees, setEmployees] = useState([]);
   const [shifts, setShifts] = useState([]);
@@ -121,24 +134,46 @@ export default function ShiftsModule({ tenant, themeColor }) {
     { id: 's3', employee_id: 'm3', date: weekDays[1].toISOString(), shift_type: 'NIGHT', start_time: '20:00', end_time: '04:00', notes: 'Livrări' },
   ] : shifts;
 
+  // Dacă utilizatorul a selectat din sidebar pagina Tabel Ture, randăm direct ShiftsTable
+  if (viewMode === 'table') {
+    return (
+      <div className="w-full">
+        <ShiftsTable tenant={tenant} themeColor={themeColor} />
+      </div>
+    );
+  }
+
+  // Dacă utilizatorul a selectat Planificator Ture din sidebar, randăm DailyShiftPlanner
+  if (viewMode === 'planner') {
+    return (
+      <div className="w-full">
+        <DailyShiftPlanner tenant={tenant} themeColor={themeColor} />
+      </div>
+    );
+  }
+
+  // În caz contrar (Calendar Ture)
   return (
     <div className="space-y-6 w-full">
-      {/* Header & Controls */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
+      {/* Header Calendar Ture (fără butoane de tab-uri, conform cerinței) */}
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
         <div>
           <h2 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-2">
-            <Calendar className="text-primary-500" size={24} />
-            Planificator de Ture
+            <Calendar className="text-primary-600 dark:text-primary-400" size={24} />
+            Calendar Ture
           </h2>
-          <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Gestionează schimburile angajaților și evită suprapunerile.</p>
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">
+            Vizualizează matricea săptămânală a schimburilor pe fiecare zi și angajat.
+          </p>
         </div>
         
-        <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-          <div className="flex items-center justify-between sm:justify-start w-full sm:w-auto bg-slate-50 dark:bg-slate-800 rounded-full border border-slate-200 dark:border-slate-700 p-1 shadow-inner">
+        {/* Controale Calendar (Navigare săptămână + Adăugare Tură) */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center justify-between sm:justify-start bg-slate-50 dark:bg-slate-800 rounded-full border border-slate-200 dark:border-slate-700 p-1 shadow-inner">
             <button onClick={prevWeek} className="p-1.5 hover:bg-white dark:hover:bg-slate-700 rounded-full transition-colors text-slate-600 dark:text-slate-300">
               <ChevronLeft size={18} />
             </button>
-            <span className="px-4 text-sm font-bold text-slate-700 dark:text-white min-w-[170px] text-center">
+            <span className="px-4 text-xs sm:text-sm font-bold text-slate-700 dark:text-white min-w-[150px] text-center">
               {formatWeek()}
             </span>
             <button onClick={nextWeek} className="p-1.5 hover:bg-white dark:hover:bg-slate-700 rounded-full transition-colors text-slate-600 dark:text-slate-300">
@@ -148,7 +183,7 @@ export default function ShiftsModule({ tenant, themeColor }) {
           
           <button 
             onClick={() => openNewShift()}
-            className="w-full sm:w-auto flex items-center justify-center gap-2 h-10 px-5 text-white rounded-full font-bold text-sm hover:opacity-90 transition-all shadow-md hover:shadow-lg"
+            className="flex items-center justify-center gap-2 h-10 px-5 text-white rounded-full font-bold text-sm hover:opacity-90 transition-all shadow-sm hover:shadow-md"
             style={{ backgroundColor: themeColor }}
           >
             <Plus size={18} /> Tură Nouă
@@ -156,12 +191,11 @@ export default function ShiftsModule({ tenant, themeColor }) {
         </div>
       </div>
 
-      {/* Main Grid */}
+      {/* Matricea Calendar Ture */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden relative">
-        
         {loading && !isEmpty && (
            <div className="absolute inset-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm z-10 flex items-center justify-center">
-              <div className="text-lg font-bold text-slate-600 dark:text-slate-300 animate-pulse">Se încarcă planificatorul...</div>
+              <div className="text-lg font-bold text-slate-600 dark:text-slate-300 animate-pulse">Se încarcă calendarul...</div>
            </div>
         )}
 
@@ -171,8 +205,8 @@ export default function ShiftsModule({ tenant, themeColor }) {
               <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-500">
                 <Users size={32} />
               </div>
-              <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2">Planificatorul este Gol</h3>
-              <p className="text-slate-500 dark:text-slate-400 mb-6 font-medium">Nu există angajați în acest departament. Acesta este un exemplu de afișare. Adaugă angajați din Modulul HR pentru a începe planificarea.</p>
+              <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2">Calendarul este Gol</h3>
+              <p className="text-slate-500 dark:text-slate-400 mb-6 font-medium">Nu există angajați în acest departament.</p>
             </div>
           </div>
         )}
@@ -186,13 +220,40 @@ export default function ShiftsModule({ tenant, themeColor }) {
               </div>
               {weekDays.map((day, i) => {
                 const isToday = new Date().toDateString() === day.toDateString();
+                const yyyy = day.getFullYear();
+                const mm = String(day.getMonth() + 1).padStart(2, '0');
+                const dd = String(day.getDate()).padStart(2, '0');
+                const dateStr = `${yyyy}-${mm}-${dd}`;
+
+                // Număr angajați unici programați în această zi
+                const dayScheduledCount = new Set(
+                  displayShifts.filter(s => {
+                    if (!s.date) return false;
+                    const shiftDate = new Date(s.date);
+                    const sDateStr = `${shiftDate.getFullYear()}-${String(shiftDate.getMonth()+1).padStart(2,'0')}-${String(shiftDate.getDate()).padStart(2,'0')}`;
+                    return sDateStr === dateStr;
+                  }).map(s => s.employee_id)
+                ).size;
+
                 return (
-                  <div key={i} className={`p-4 text-center border-r border-slate-200 dark:border-slate-700 last:border-r-0 ${isToday ? 'bg-primary-50/50 dark:bg-primary-900/20' : ''}`}>
+                  <div key={i} className={`p-3 text-center border-r border-slate-200 dark:border-slate-700 last:border-r-0 ${isToday ? 'bg-primary-50/50 dark:bg-primary-900/20' : ''}`}>
                     <div className={`text-xs font-black uppercase tracking-wider ${isToday ? 'text-primary-600 dark:text-primary-400' : 'text-slate-500 dark:text-slate-400'}`}>
                       {day.toLocaleDateString('ro-RO', { weekday: 'short' })}
                     </div>
-                    <div className={`text-xl font-black mt-1 ${isToday ? 'text-primary-700 dark:text-primary-300' : 'text-slate-800 dark:text-white'}`}>
+                    <div className={`text-xl font-black mt-0.5 ${isToday ? 'text-primary-700 dark:text-primary-300' : 'text-slate-800 dark:text-white'}`}>
                       {day.getDate()}
+                    </div>
+
+                    {/* Indicator număr angajați programați sub dată conform cerinței */}
+                    <div className="mt-1 flex justify-center">
+                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
+                        dayScheduledCount > 0
+                          ? 'bg-primary-50 dark:bg-primary-950/50 text-primary-700 dark:text-primary-300 border border-primary-200/60 dark:border-primary-800/40 shadow-2xs'
+                          : 'text-slate-400 dark:text-slate-500 bg-slate-100/60 dark:bg-slate-800/60 border border-slate-200/40 dark:border-slate-700/40'
+                      }`}>
+                        <Users size={11} className={dayScheduledCount > 0 ? "text-primary-600 dark:text-primary-400" : "opacity-40"} />
+                        <span>{dayScheduledCount} {dayScheduledCount === 1 ? 'planificat' : 'planificați'}</span>
+                      </span>
                     </div>
                   </div>
                 )

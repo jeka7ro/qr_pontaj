@@ -306,4 +306,72 @@ router.get('/pending-notifications', async (req, res) => {
   }
 });
 
+// POST /api/tenant/dashboard/close-all-shifts
+router.post('/close-all-shifts', async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const tenantId = req.user.tenant_id;
+    const { date, time, timestamp } = req.body;
+    let finalTimestamp = timestamp;
+    if (!finalTimestamp) {
+      if (date && time) {
+        finalTimestamp = `${date} ${time}:00`;
+      } else {
+        finalTimestamp = new Date().toISOString();
+      }
+    }
+
+    await client.query('BEGIN');
+
+    // Găsim toți angajații activi ai tenant-ului care au ultimul status 'IN'
+    const activeQuery = `
+      SELECT e.id, e.first_name, e.last_name, e.location_id,
+             (SELECT site_id FROM qrp_timesheets WHERE employee_id = e.id AND action_type = 'IN' ORDER BY created_at DESC LIMIT 1) as last_site_id
+      FROM qrp_employees e
+      WHERE e.tenant_id = $1
+        AND COALESCE((SELECT action_type FROM qrp_timesheets WHERE employee_id = e.id ORDER BY created_at DESC LIMIT 1), 'OUT') = 'IN'
+    `;
+    const activeEmployeesRes = await client.query(activeQuery, [tenantId]);
+    const activeEmployees = activeEmployeesRes.rows;
+
+    if (activeEmployees.length === 0) {
+      await client.query('ROLLBACK');
+      return res.json({ success: true, count: 0, message: 'Nu există angajați prezenți în tura curentă.' });
+    }
+
+    // Luăm un site de fallback în caz că angajatul nu are site_id
+    let defaultSiteId = null;
+    const siteRes = await client.query('SELECT id FROM qrp_sites WHERE tenant_id = $1 ORDER BY id ASC LIMIT 1', [tenantId]);
+    if (siteRes.rows.length > 0) defaultSiteId = siteRes.rows[0].id;
+
+    for (const emp of activeEmployees) {
+      const siteId = emp.last_site_id || emp.location_id || defaultSiteId;
+      await client.query(
+        `INSERT INTO qrp_timesheets (tenant_id, employee_id, action_type, site_id, created_at, is_manual)
+         VALUES ($1, $2, 'OUT', $3, $4, true)`,
+        [tenantId, emp.id, siteId, finalTimestamp]
+      );
+
+      await client.query(
+        `INSERT INTO qrp_employee_history (employee_id, change_type, new_value)
+         VALUES ($1, 'pontaj', 'Tură ÎNCHISĂ MANUAL (colectiv) de către administrator.')`,
+        [emp.id]
+      );
+    }
+
+    await client.query('COMMIT');
+    res.json({
+      success: true,
+      count: activeEmployees.length,
+      message: `Au fost închise cu succes turele pentru toți cei ${activeEmployees.length} angajați prezenți.`
+    });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error closing all shifts:', error);
+    res.status(500).json({ error: 'Eroare la închiderea colectivă a turelor.' });
+  } finally {
+    client.release();
+  }
+});
+
 module.exports = router;

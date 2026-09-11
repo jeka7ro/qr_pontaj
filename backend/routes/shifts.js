@@ -64,6 +64,131 @@ router.post('/', async (req, res) => {
   }
 });
 
+// POST /api/tenants/:id/shifts/bulk
+router.post('/bulk', async (req, res) => {
+  const client = await db.connect();
+  try {
+    const { id } = req.params;
+    const { employee_ids, date, dates, start_time, end_time, shift_type, notes } = req.body;
+
+    const targetDates = Array.isArray(dates) && dates.length > 0 ? dates : (date ? [date] : []);
+
+    if (!Array.isArray(employee_ids) || employee_ids.length === 0 || targetDates.length === 0 || !start_time || !end_time) {
+      return res.status(400).json({ error: 'Date incomplete pentru alocarea în masă.' });
+    }
+
+    await client.query('BEGIN');
+
+    const upsertedShifts = [];
+    for (const d of targetDates) {
+      for (const empId of employee_ids) {
+        const existing = await client.query(
+          `SELECT id FROM qrp_shifts WHERE tenant_id = $1 AND employee_id = $2 AND date = $3`,
+          [id, empId, d]
+        );
+
+        let savedShift;
+        if (existing.rowCount > 0) {
+          const updateRes = await client.query(
+            `UPDATE qrp_shifts 
+             SET start_time = $1, end_time = $2, shift_type = $3, notes = $4, seen_at = NULL
+             WHERE id = $5 AND tenant_id = $6
+             RETURNING *`,
+            [start_time, end_time, shift_type || 'DAY', notes || null, existing.rows[0].id, id]
+          );
+          savedShift = updateRes.rows[0];
+        } else {
+          const insertRes = await client.query(
+            `INSERT INTO qrp_shifts (tenant_id, employee_id, date, start_time, end_time, shift_type, notes)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)
+             RETURNING *`,
+            [id, empId, d, start_time, end_time, shift_type || 'DAY', notes || null]
+          );
+          savedShift = insertRes.rows[0];
+        }
+        upsertedShifts.push(savedShift);
+      }
+    }
+
+    await client.query('COMMIT');
+    res.status(200).json({ success: true, count: upsertedShifts.length, shifts: upsertedShifts });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error in bulk assigning shifts:', error);
+    res.status(500).json({ error: 'Eroare la salvarea turelor în masă' });
+  } finally {
+    client.release();
+  }
+});
+
+// POST /api/tenants/:id/shifts/bulk-update
+router.post('/bulk-update', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { shift_ids, start_time, end_time, shift_type, notes } = req.body;
+
+    if (!Array.isArray(shift_ids) || shift_ids.length === 0 || !start_time || !end_time) {
+      return res.status(400).json({ error: 'Date incomplete pentru actualizarea în masă a turelor.' });
+    }
+
+    const result = await db.query(
+      `UPDATE qrp_shifts 
+       SET start_time = $1, 
+           end_time = $2, 
+           shift_type = COALESCE($3, shift_type), 
+           notes = COALESCE($4, notes), 
+           seen_at = NULL
+       WHERE tenant_id = $5 AND id = ANY($6::int[])
+       RETURNING *`,
+      [start_time, end_time, shift_type || 'DAY', notes || null, id, shift_ids]
+    );
+
+    res.json({ success: true, count: result.rowCount, shifts: result.rows });
+  } catch (error) {
+    console.error('Error in bulk updating shifts:', error);
+    res.status(500).json({ error: 'Eroare la actualizarea turelor în masă' });
+  }
+});
+
+// POST /api/tenants/:id/shifts/bulk-delete
+router.post('/bulk-delete', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { shift_ids, employee_ids, date, dates } = req.body;
+
+    let result;
+    if (Array.isArray(shift_ids) && shift_ids.length > 0) {
+      result = await db.query(
+        `DELETE FROM qrp_shifts 
+         WHERE tenant_id = $1 AND id = ANY($2::int[])
+         RETURNING id`,
+        [id, shift_ids]
+      );
+    } else if (Array.isArray(employee_ids) && employee_ids.length > 0 && date) {
+      result = await db.query(
+        `DELETE FROM qrp_shifts 
+         WHERE tenant_id = $1 AND date = $2 AND employee_id = ANY($3::int[])
+         RETURNING id`,
+        [id, date, employee_ids]
+      );
+    } else if (Array.isArray(employee_ids) && employee_ids.length > 0 && Array.isArray(dates) && dates.length > 0) {
+      result = await db.query(
+        `DELETE FROM qrp_shifts 
+         WHERE tenant_id = $1 AND date = ANY($2::date[]) AND employee_id = ANY($3::int[])
+         RETURNING id`,
+        [id, dates, employee_ids]
+      );
+    } else {
+      return res.status(400).json({ error: 'Parametri insuficienți pentru ștergerea în masă.' });
+    }
+
+    res.json({ success: true, count: result.rowCount, message: `${result.rowCount} ture au fost șterse.` });
+  } catch (error) {
+    console.error('Error in bulk deleting shifts:', error);
+    res.status(500).json({ error: 'Eroare la ștergerea turelor în masă' });
+  }
+});
+
 // PUT /api/tenants/:id/shifts/:shiftId
 router.put('/:shiftId', async (req, res) => {
   try {
