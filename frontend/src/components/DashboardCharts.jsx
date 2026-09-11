@@ -1136,6 +1136,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
                           hasHistory={true} 
                           onOpenStartShift={() => handleOpenStartShift(emp)}
                           onOpenCloseShift={() => handleOpenCloseShift(emp)}
+                          themeColor={themeColor}
                         />
                       )) : (
                         <tr>
@@ -1434,7 +1435,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
   );
 }
 
-function LiveShiftRow({ indexNumber, emp, isPresent, isOut, hasHistory, onOpenStartShift, onOpenCloseShift }) {
+function LiveShiftRow({ indexNumber, emp, isPresent, isOut, hasHistory, onOpenStartShift, onOpenCloseShift, themeColor }) {
   const [now, setNow] = useState(new Date());
 
   useEffect(() => {

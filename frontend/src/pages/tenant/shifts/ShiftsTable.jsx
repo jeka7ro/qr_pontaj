@@ -48,6 +48,7 @@ export default function ShiftsTable({ tenant, themeColor }) {
   const [editNotes, setEditNotes] = useState('');
   const [editShiftIdsToKeep, setEditShiftIdsToKeep] = useState([]);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [editingShift, setEditingShift] = useState(null);
 
   // Modal duplicare tură
   const [duplicateGroup, setDuplicateGroup] = useState(null);
