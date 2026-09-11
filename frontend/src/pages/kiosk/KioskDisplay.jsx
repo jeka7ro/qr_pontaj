@@ -27,7 +27,8 @@ export default function KioskDisplay() {
   });
   const [qrMode, setQrMode] = useState(() => localStorage.getItem(`kiosk_qr_mode_${kioskId}`) || 'DYNAMIC');
 
-  const effectiveQrMode = (qrMode === 'HYBRID' && overrideMode === 'scanner') ? 'HARDWARE' : 
+  const effectiveQrMode = qrMode === 'HARDWARE' || qrMode === 'SCANNER' ? 'HARDWARE' :
+                          (qrMode === 'HYBRID' && overrideMode === 'scanner') ? 'HARDWARE' : 
                           (qrMode === 'HYBRID' && overrideMode === 'kiosk') ? 'DYNAMIC' : 
                           (qrMode === 'HYBRID' ? 'DYNAMIC' : qrMode);
                           
@@ -353,8 +354,14 @@ export default function KioskDisplay() {
       
       clearTimeout(timeout);
       timeout = setTimeout(() => {
+        const buffer = scanBufferRef.current.trim();
+        if (buffer.length > 5) {
+          if ((buffer.startsWith('{') && buffer.endsWith('}')) || (buffer.startsWith('QRP-EMP-') && buffer.length > 10)) {
+            processHardwareScan(buffer);
+          }
+        }
         scanBufferRef.current = '';
-      }, 300);
+      }, 800);
     };
 
     window.addEventListener('keydown', handleKeyDown);

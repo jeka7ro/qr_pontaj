@@ -3,6 +3,55 @@ import { Link } from 'react-router-dom';
 import { Users, Clock, LogIn, LogOut, MapPin, UserMinus, X, AlertTriangle, Search, ChevronLeft, ChevronRight, QrCode, Sun, Moon, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 
+
+const fuzzyMatch = (str, pattern, threshold = 2) => {
+  if (!pattern) return true;
+  str = str.toLowerCase();
+  pattern = pattern.toLowerCase();
+  
+  if (str.includes(pattern)) return true;
+  
+  // Basic Levenshtein distance (up to threshold)
+  const a = str;
+  const b = pattern;
+  if (a.length === 0) return b.length <= threshold;
+  if (b.length === 0) return a.length <= threshold;
+
+  const matrix = [];
+  for (let i = 0; i <= b.length; i++) {
+    matrix[i] = [i];
+  }
+  for (let j = 0; j <= a.length; j++) {
+    matrix[0][j] = j;
+  }
+  for (let i = 1; i <= b.length; i++) {
+    for (let j = 1; j <= a.length; j++) {
+      if (b.charAt(i - 1) === a.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(matrix[i - 1][j - 1] + 1, Math.min(matrix[i][j - 1] + 1, matrix[i - 1][j] + 1));
+      }
+    }
+  }
+  
+  // Also check if any substring matches with threshold
+  // To simulate "search" we check if pattern is close to any part of str
+  // Simpler: if the distance is within threshold, or if pattern characters appear in order
+  let dist = matrix[b.length][a.length];
+  if (dist <= threshold) return true;
+  
+  // Let's check for contiguous sub-matches allowing errors
+  for (let i = 0; i <= a.length - b.length; i++) {
+    let err = 0;
+    for (let j = 0; j < b.length; j++) {
+      if (a[i+j] !== b[j]) err++;
+    }
+    if (err <= threshold) return true;
+  }
+  
+  return false;
+};
+
 export default function DashboardCharts({ tenant, themeColor }) {
   const [stats, setStats] = useState({
     totalEmployees: 0,
@@ -845,7 +894,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
             const fullName = `${e.first_name || ''} ${e.last_name || ''}`.toLowerCase();
             const job = (e.job_title || '').toLowerCase();
             const code = (e.employee_code || '').toLowerCase();
-            if (!fullName.includes(q) && !job.includes(q) && !code.includes(q)) return false;
+            if (!fullName.includes(q) && !job.includes(q) && !code.includes(q) && !fuzzyMatch(fullName, q, 2)) return false;
           }
           return true;
         });
@@ -954,7 +1003,8 @@ export default function DashboardCharts({ tenant, themeColor }) {
                   </button>
                   <button
                     onClick={() => { setLiveFilter('IN'); setLivePage(1); }}
-                    className={`px-3 py-1 rounded-full shrink-0 whitespace-nowrap transition-all flex items-center gap-1.5 ${liveFilter === 'IN' ? 'bg-white dark:bg-slate-800 text-emerald-600 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-emerald-600'}`}
+                    className={`px-3 py-1 rounded-full shrink-0 whitespace-nowrap transition-all flex items-center gap-1.5 ${liveFilter === 'IN' ? 'bg-white dark:bg-slate-800 shadow-sm' : 'text-slate-500 dark:text-slate-400'}`}
+                    style={liveFilter === 'IN' ? { color: themeColor } : {}}
                   >
                     <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
                     Prezenți ({inCount})
@@ -1641,7 +1691,7 @@ function LiveShiftRow({ indexNumber, emp, isPresent, isOut, hasHistory, onOpenSt
         {isPresent ? (
           <button
             onClick={() => onOpenCloseShift(emp)}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:text-rose-400 dark:hover:bg-rose-900/50 border border-rose-200 dark:border-rose-800 transition-colors shadow-2xs whitespace-nowrap"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:text-rose-400 dark:hover:bg-rose-900/50 border border-rose-200 dark:border-rose-800 transition-colors shadow-2xs whitespace-nowrap"
             title="Închide tura manual (ieșire)"
           >
             <LogOut size={12} className="shrink-0" />
@@ -1650,7 +1700,8 @@ function LiveShiftRow({ indexNumber, emp, isPresent, isOut, hasHistory, onOpenSt
         ) : (
           <button
             onClick={() => onOpenStartShift(emp)}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-400 dark:hover:bg-emerald-900/50 border border-emerald-200 dark:border-emerald-800 transition-colors shadow-2xs whitespace-nowrap"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-colors shadow-2xs whitespace-nowrap"
+            style={{ color: themeColor, backgroundColor: themeColor + '1A', borderColor: themeColor + '40' }}
             title="Pornește tura manual (intrare)"
           >
             <LogIn size={12} className="shrink-0" />

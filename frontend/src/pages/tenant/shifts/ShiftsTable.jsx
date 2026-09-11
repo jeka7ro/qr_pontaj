@@ -37,16 +37,22 @@ export default function ShiftsTable({ tenant, themeColor }) {
   const [selectedEmployeeId, setSelectedEmployeeId] = useState('ALL');
   const [selectedRole, setSelectedRole] = useState('ALL');
 
-  // Selectie multipla
-  const [selectedShiftIds, setSelectedShiftIds] = useState([]);
+  // Selectie multipla (grupuri de ture)
+  const [selectedGroupIds, setSelectedGroupIds] = useState([]);
 
-  // Modal editare individuala tură
-  const [editingShift, setEditingShift] = useState(null);
+  // Modal editare tură grupată
+  const [editingGroup, setEditingGroup] = useState(null);
   const [editStartTime, setEditStartTime] = useState('09:00');
   const [editEndTime, setEditEndTime] = useState('17:30');
   const [editShiftType, setEditShiftType] = useState('DAY');
   const [editNotes, setEditNotes] = useState('');
+  const [editShiftIdsToKeep, setEditShiftIdsToKeep] = useState([]);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
+
+  // Modal duplicare tură
+  const [duplicateGroup, setDuplicateGroup] = useState(null);
+  const [duplicateDate, setDuplicateDate] = useState('');
+  const [isSavingDuplicate, setIsSavingDuplicate] = useState(false);
 
   // Modal modificare in masa (Bulk Edit)
   const [bulkEditModalOpen, setBulkEditModalOpen] = useState(false);
@@ -57,7 +63,7 @@ export default function ShiftsTable({ tenant, themeColor }) {
   const [isSavingBulk, setIsSavingBulk] = useState(false);
 
   // Modal confirmare stergere
-  const [shiftToDelete, setShiftToDelete] = useState(null); // single ID or 'BULK'
+  const [groupToDelete, setGroupToDelete] = useState(null); // the group object or 'BULK'
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
 
   // Sortare & Paginare
@@ -126,7 +132,7 @@ export default function ShiftsTable({ tenant, themeColor }) {
 
   useEffect(() => {
     fetchShiftsAndEmployees();
-    setSelectedShiftIds([]);
+    setSelectedGroupIds([]);
     setCurrentPage(1);
   }, [periodType, customStartDate, customEndDate, tenant.id]);
 
@@ -148,59 +154,84 @@ export default function ShiftsTable({ tenant, themeColor }) {
     return Array.from(roles).sort();
   }, [employees]);
 
-  // Filtrare & Sortare Ture
-  const filteredShifts = useMemo(() => {
-    return shifts.filter(s => {
+    // Filtrare & Sortare Grupuri de Ture
+  const filteredGroups = useMemo(() => {
+    // 1. Group all shifts
+    const groupsMap = new Map();
+    shifts.forEach(s => {
       const emp = employeeMap.get(s.employee_id) || {};
-      const fullName = `${emp.first_name || ''} ${emp.last_name || ''}`.toLowerCase();
-      const cnp = (emp.cnp || '').toLowerCase();
-      const query = searchQuery.toLowerCase();
+      const key = `${s.date}_${s.start_time}_${s.end_time}_${s.shift_type}`;
+      if (!groupsMap.has(key)) {
+        groupsMap.set(key, {
+          id: key,
+          date: s.date,
+          start_time: s.start_time,
+          end_time: s.end_time,
+          shift_type: s.shift_type,
+          notes: s.notes,
+          shift_ids: [],
+          employees: []
+        });
+      }
+      const group = groupsMap.get(key);
+      group.shift_ids.push(s.id);
+      group.employees.push({
+        shift_id: s.id,
+        employee_id: s.employee_id,
+        emp: emp,
+        seen_at: s.seen_at
+      });
+    });
 
-      const matchesSearch = fullName.includes(query) || cnp.includes(query) || (s.notes || '').toLowerCase().includes(query);
-      const matchesEmp = selectedEmployeeId === 'ALL' || String(s.employee_id) === String(selectedEmployeeId);
-      const matchesRole = selectedRole === 'ALL' || (emp.job_title || '').trim() === selectedRole;
+    // 2. Filter groups
+    let result = Array.from(groupsMap.values()).filter(group => {
+      const query = searchQuery.toLowerCase();
+      const matchesSearch = query === '' || group.employees.some(e => 
+        `${e.emp.first_name || ''} ${e.emp.last_name || ''}`.toLowerCase().includes(query) ||
+        (e.emp.cnp || '').toLowerCase().includes(query)
+      ) || (group.notes || '').toLowerCase().includes(query);
+
+      const matchesEmp = selectedEmployeeId === 'ALL' || group.employees.some(e => String(e.employee_id) === String(selectedEmployeeId));
+      const matchesRole = selectedRole === 'ALL' || group.employees.some(e => (e.emp.job_title || '').trim() === selectedRole);
 
       return matchesSearch && matchesEmp && matchesRole;
-    }).sort((a, b) => {
+    });
+
+    // 3. Sort groups
+    result.sort((a, b) => {
       let comparison = 0;
       if (sortField === 'date') {
         comparison = new Date(a.date).getTime() - new Date(b.date).getTime();
-      } else if (sortField === 'name') {
-        const empA = employeeMap.get(a.employee_id);
-        const empB = employeeMap.get(b.employee_id);
-        const nameA = `${empA?.first_name || ''} ${empA?.last_name || ''}`.toLowerCase();
-        const nameB = `${empB?.first_name || ''} ${empB?.last_name || ''}`.toLowerCase();
-        comparison = nameA.localeCompare(nameB, 'ro');
-      } else if (sortField === 'role') {
-        const empA = employeeMap.get(a.employee_id);
-        const empB = employeeMap.get(b.employee_id);
-        comparison = (empA?.job_title || '').localeCompare(empB?.job_title || '', 'ro');
       } else if (sortField === 'hours') {
         comparison = (a.start_time || '').localeCompare(b.start_time || '');
+      } else if (sortField === 'count') {
+        comparison = a.employees.length - b.employees.length;
       }
       return sortDirection === 'asc' ? comparison : -comparison;
     });
+
+    return result;
   }, [shifts, employeeMap, searchQuery, selectedEmployeeId, selectedRole, sortField, sortDirection]);
 
   // Paginare
-  const totalRecords = filteredShifts.length;
+  const totalRecords = filteredGroups.length;
   const totalPages = Math.ceil(totalRecords / rowsPerPage) || 1;
   const validPage = Math.min(currentPage, totalPages);
   const startIndex = (validPage - 1) * rowsPerPage;
-  const currentShifts = filteredShifts.slice(startIndex, startIndex + rowsPerPage);
+  const currentGroups = filteredGroups.slice(startIndex, startIndex + rowsPerPage);
 
-  // Gestionare selectie multipla
+    // Gestionare selectie multipla
   const handleToggleSelectAll = () => {
-    if (selectedShiftIds.length === filteredShifts.length && filteredShifts.length > 0) {
-      setSelectedShiftIds([]);
+    if (selectedGroupIds.length === filteredGroups.length && filteredGroups.length > 0) {
+      setSelectedGroupIds([]);
     } else {
-      setSelectedShiftIds(filteredShifts.map(s => s.id));
+      setSelectedGroupIds(filteredGroups.map(g => g.id));
     }
   };
 
-  const handleToggleShift = (shiftId) => {
-    setSelectedShiftIds(prev => 
-      prev.includes(shiftId) ? prev.filter(id => id !== shiftId) : [...prev, shiftId]
+  const handleToggleGroup = (groupId) => {
+    setSelectedGroupIds(prev => 
+      prev.includes(groupId) ? prev.filter(id => id !== groupId) : [...prev, groupId]
     );
   };
 
@@ -214,43 +245,55 @@ export default function ShiftsTable({ tenant, themeColor }) {
     }
   };
 
-  // Deschidere modal editare individuala
-  const openEditModal = (shift) => {
-    setEditingShift(shift);
-    setEditStartTime(shift.start_time?.substring(0, 5) || '09:00');
-    setEditEndTime(shift.end_time?.substring(0, 5) || '17:30');
-    setEditShiftType(shift.shift_type || 'DAY');
-    setEditNotes(shift.notes || '');
+  // Deschidere modal editare tură grupată
+  const openEditModal = (group) => {
+    setEditingGroup(group);
+    setEditStartTime(group.start_time?.substring(0, 5) || '09:00');
+    setEditEndTime(group.end_time?.substring(0, 5) || '17:30');
+    setEditShiftType(group.shift_type || 'DAY');
+    setEditNotes(group.notes || '');
+    setEditShiftIdsToKeep(group.shift_ids);
   };
 
-  // Salvare editare individuala
+  // Salvare editare tură grupată (prin bulk-update)
   const handleSaveEdit = async (e) => {
     e.preventDefault();
-    if (!editingShift) return;
+    if (!editingGroup) return;
     setIsSavingEdit(true);
 
     try {
       const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
-      const response = await fetch(`${baseUrl}/api/tenants/${tenant.id}/shifts/${editingShift.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          employee_id: editingShift.employee_id,
-          date: editingShift.date,
-          start_time: editStartTime,
-          end_time: editEndTime,
-          shift_type: editShiftType,
-          notes: editNotes || null
-        })
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Eroare la salvarea turei');
+      
+      const removedIds = editingGroup.shift_ids.filter(id => !editShiftIdsToKeep.includes(id));
+      
+      // Delete removed ones
+      if (removedIds.length > 0) {
+        const delResponse = await fetch(`${baseUrl}/api/tenants/${tenant.id}/shifts/bulk-delete`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ shift_ids: removedIds })
+        });
+        if (!delResponse.ok) throw new Error('Eroare la ștergerea angajaților eliminați din tură.');
       }
 
-      showToast('✓ Tura a fost actualizată cu succes!');
-      setEditingShift(null);
+      // Update remaining ones
+      if (editShiftIdsToKeep.length > 0) {
+        const updateResponse = await fetch(`${baseUrl}/api/tenants/${tenant.id}/shifts/bulk-update`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            shift_ids: editShiftIdsToKeep,
+            start_time: editStartTime,
+            end_time: editEndTime,
+            shift_type: editShiftType,
+            notes: editNotes || null
+          })
+        });
+        if (!updateResponse.ok) throw new Error('Eroare la actualizarea turei.');
+      }
+
+      showToast('✓ Tura a fost salvată cu succes!');
+      setEditingGroup(null);
       await fetchShiftsAndEmployees();
     } catch (err) {
       showToast(err.message, 'error');
@@ -259,11 +302,15 @@ export default function ShiftsTable({ tenant, themeColor }) {
     }
   };
 
-  // Salvare modificare in masa (Bulk Update)
+  // Salvare modificare in masa (Bulk Update) multiple grupuri
   const handleSaveBulkUpdate = async (e) => {
     e.preventDefault();
-    if (selectedShiftIds.length === 0) return;
+    if (selectedGroupIds.length === 0) return;
     setIsSavingBulk(true);
+
+    const shiftIdsToUpdate = filteredGroups
+      .filter(g => selectedGroupIds.includes(g.id))
+      .flatMap(g => g.shift_ids);
 
     try {
       const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
@@ -271,7 +318,7 @@ export default function ShiftsTable({ tenant, themeColor }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          shift_ids: selectedShiftIds,
+          shift_ids: shiftIdsToUpdate,
           start_time: bulkStartTime,
           end_time: bulkEndTime,
           shift_type: bulkShiftType,
@@ -284,9 +331,9 @@ export default function ShiftsTable({ tenant, themeColor }) {
         throw new Error(data.error || 'Eroare la actualizarea turelor în masă');
       }
 
-      showToast(`✓ ${selectedShiftIds.length} ture au fost actualizate la noul program (${bulkStartTime} - ${bulkEndTime})!`);
+      showToast(`✓ ${shiftIdsToUpdate.length} ture individuale (din ${selectedGroupIds.length} grupuri) au fost actualizate!`);
       setBulkEditModalOpen(false);
-      setSelectedShiftIds([]);
+      setSelectedGroupIds([]);
       await fetchShiftsAndEmployees();
     } catch (err) {
       showToast(err.message, 'error');
@@ -295,71 +342,108 @@ export default function ShiftsTable({ tenant, themeColor }) {
     }
   };
 
-  // Executare stergere (individual sau bulk)
-  const executeDelete = async () => {
-    const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
+  // Salvare Duplicare Grup
+  const handleSaveDuplicate = async (e) => {
+    e.preventDefault();
+    if (!duplicateGroup || !duplicateDate) return;
+    setIsSavingDuplicate(true);
+
+    const employee_ids = duplicateGroup.employees.map(e => e.employee_id);
 
     try {
-      if (shiftToDelete === 'BULK') {
-        const response = await fetch(`${baseUrl}/api/tenants/${tenant.id}/shifts/bulk-delete`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ shift_ids: selectedShiftIds })
-        });
+      const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
+      const response = await fetch(`${baseUrl}/api/tenants/${tenant.id}/shifts/bulk`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          employee_ids: employee_ids,
+          date: duplicateDate,
+          start_time: duplicateGroup.start_time,
+          end_time: duplicateGroup.end_time,
+          shift_type: duplicateGroup.shift_type,
+          notes: duplicateGroup.notes || null
+        })
+      });
 
-        if (!response.ok) {
-          const data = await response.json();
-          throw new Error(data.error || 'Eroare la ștergerea turelor');
-        }
-
-        showToast(`✓ ${selectedShiftIds.length} ture au fost șterse cu succes.`);
-        setSelectedShiftIds([]);
-      } else {
-        const response = await fetch(`${baseUrl}/api/tenants/${tenant.id}/shifts/${shiftToDelete}`, {
-          method: 'DELETE'
-        });
-
-        if (!response.ok) {
-          const data = await response.json();
-          throw new Error(data.error || 'Eroare la ștergerea turei');
-        }
-
-        showToast('✓ Tura a fost ștearsă cu succes.');
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Eroare la duplicarea turelor');
       }
 
+      showToast(`✓ Tura a fost duplicată pe ${duplicateDate} pentru ${employee_ids.length} angajați.`);
+      setDuplicateGroup(null);
+      setDuplicateDate('');
       await fetchShiftsAndEmployees();
     } catch (err) {
       showToast(err.message, 'error');
     } finally {
-      setShiftToDelete(null);
+      setIsSavingDuplicate(false);
+    }
+  };
+
+  // Executare stergere (grup individual sau bulk grupuri)
+  const executeDelete = async () => {
+    const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
+    
+    let shiftIdsToDelete = [];
+    if (groupToDelete === 'BULK') {
+      shiftIdsToDelete = filteredGroups
+        .filter(g => selectedGroupIds.includes(g.id))
+        .flatMap(g => g.shift_ids);
+    } else if (groupToDelete) {
+      shiftIdsToDelete = groupToDelete.shift_ids;
+    }
+
+    if (shiftIdsToDelete.length === 0) return;
+
+    try {
+      const response = await fetch(`${baseUrl}/api/tenants/${tenant.id}/shifts/bulk-delete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shift_ids: shiftIdsToDelete })
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Eroare la ștergerea turelor');
+      }
+
+      showToast(`✓ ${shiftIdsToDelete.length} ture individuale au fost șterse cu succes.`);
+      
+      if (groupToDelete === 'BULK') {
+        setSelectedGroupIds([]);
+      }
+      await fetchShiftsAndEmployees();
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      setGroupToDelete(null);
       setConfirmModalOpen(false);
     }
   };
 
-  // Export Excel conform Design System
+    // Export Excel conform Design System
   const handleExportExcel = () => {
-    const exportRows = filteredShifts.map((s, idx) => {
-      const emp = employeeMap.get(s.employee_id) || {};
-      const d = new Date(s.date);
+    const exportRows = filteredGroups.map((g, idx) => {
+      const d = new Date(g.date);
       const dateFormatted = d.toLocaleDateString('ro-RO', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      const angajati = g.employees.map(e => `${e.emp.first_name || ''} ${e.emp.last_name || ''}`).join(', ');
 
       return {
         'Nr. Crt.': idx + 1,
         'Data Turei': dateFormatted,
-        'Angajat': `${emp.first_name || ''} ${emp.last_name || ''}`.trim(),
-        'CNP': emp.cnp || '',
-        'Funcție / Rol': emp.job_title || 'Fără funcție',
-        'Interval Orar': `${s.start_time?.substring(0, 5)} - ${s.end_time?.substring(0, 5)}`,
-        'Tip Tură': s.shift_type === 'DAY' ? 'Zi' : 'Noapte',
-        'Vizualizat de Angajat': s.seen_at ? 'Da' : 'Nu',
-        'Observații': s.notes || ''
+        'Interval Orar': `${g.start_time?.substring(0, 5)} - ${g.end_time?.substring(0, 5)}`,
+        'Tip Tură': g.shift_type === 'DAY' ? 'Zi' : 'Noapte',
+        'Nr. Angajați': g.employees.length,
+        'Angajați': angajati,
+        'Observații': g.notes || ''
       };
     });
 
     const worksheet = XLSX.utils.json_to_sheet(exportRows);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Tabel Ture');
-    XLSX.writeFile(workbook, `Tabel_Ture_${getTodayStr()}.xlsx`);
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Tabel Ture Grupate');
+    XLSX.writeFile(workbook, `Tabel_Ture_Grupate_${getTodayStr()}.xlsx`);
     showToast('Fișierul Excel a fost descărcat cu succes!');
   };
 
@@ -469,15 +553,15 @@ export default function ShiftsTable({ tenant, themeColor }) {
       </div>
 
       {/* 2. Panou Acțiuni Multiple (Apare când sunt bifate ture) */}
-      {selectedShiftIds.length > 0 && (
+      {selectedGroupIds.length > 0 && (
         <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-lg border-2 border-primary-500/40 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-2 duration-150">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-primary-50 dark:bg-primary-950/50 text-primary-600 dark:text-primary-400 flex items-center justify-center font-black text-sm">
-              {selectedShiftIds.length}
+              {selectedGroupIds.length}
             </div>
             <div>
               <div className="font-bold text-slate-900 dark:text-white text-sm">
-                {selectedShiftIds.length} {selectedShiftIds.length === 1 ? 'tură selectată' : 'ture selectate'}
+                {selectedGroupIds.length} {selectedGroupIds.length === 1 ? 'tură selectată' : 'ture selectate'}
               </div>
               <div className="text-xs text-slate-500">
                 Poți modifica orele în masă sau șterge turele selectate dintr-un singur click.
@@ -505,7 +589,7 @@ export default function ShiftsTable({ tenant, themeColor }) {
               className="flex-1 sm:flex-initial h-10 px-4 rounded-full bg-red-50 hover:bg-red-100 dark:bg-red-950/30 dark:hover:bg-red-950/50 text-red-600 dark:text-red-400 text-xs font-bold border border-red-200 dark:border-red-900 transition-colors flex items-center justify-center gap-1.5"
             >
               <Trash2 size={15} />
-              Șterge ({selectedShiftIds.length})
+              Șterge ({selectedGroupIds.length})
             </button>
 
             <button
@@ -538,7 +622,7 @@ export default function ShiftsTable({ tenant, themeColor }) {
             {/* Contor rezultate interior — apare doar când se tastează */}
             {searchQuery.trim() !== '' && (
               <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-medium text-slate-400 pointer-events-none transition-opacity duration-200">
-                {filteredShifts.length} din {shifts.length}
+                {filteredGroups.length} din {shifts.length}
               </span>
             )}
           </div>
@@ -598,7 +682,7 @@ export default function ShiftsTable({ tenant, themeColor }) {
           <div className="p-12 text-center text-slate-500 dark:text-slate-400">
             <div className="text-sm font-bold animate-pulse">Se încarcă turele...</div>
           </div>
-        ) : filteredShifts.length === 0 ? (
+        ) : filteredGroups.length === 0 ? (
           <div className="p-12 text-center text-slate-500 dark:text-slate-400">
             <Clock size={36} className="mx-auto mb-3 text-slate-400 opacity-60" />
             <p className="text-sm font-bold text-slate-700 dark:text-slate-200">Nu există ture înregistrate pentru filtrele selectate.</p>
@@ -609,24 +693,21 @@ export default function ShiftsTable({ tenant, themeColor }) {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50/80 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  {/* Select All */}
                   <th className="py-3 px-4 w-10 text-center">
                     <button
                       type="button"
                       onClick={handleToggleSelectAll}
                       className="p-1 hover:text-primary-600 transition-colors text-slate-400 flex items-center justify-center"
-                      title={selectedShiftIds.length === filteredShifts.length ? 'Deselectează toate' : 'Selectează toate'}
+                      title={selectedGroupIds.length === filteredGroups.length && filteredGroups.length > 0 ? 'Deselectează toate' : 'Selectează toate'}
                     >
-                      {selectedShiftIds.length > 0 && selectedShiftIds.length === filteredShifts.length ? (
+                      {selectedGroupIds.length > 0 && selectedGroupIds.length === filteredGroups.length ? (
                         <CheckSquare size={18} className="text-primary-600" />
                       ) : (
                         <Square size={18} />
                       )}
                     </button>
                   </th>
-
                   <th className="py-3 px-3 w-16 text-center">Nr. Crt.</th>
-
                   <th 
                     className="py-3 px-4 cursor-pointer hover:text-slate-800 dark:hover:text-white transition-colors"
                     onClick={() => handleSort('date')}
@@ -636,27 +717,6 @@ export default function ShiftsTable({ tenant, themeColor }) {
                       <ArrowUpDown size={12} className={sortField === 'date' ? 'text-primary-600' : 'opacity-40'} />
                     </div>
                   </th>
-
-                  <th 
-                    className="py-3 px-4 cursor-pointer hover:text-slate-800 dark:hover:text-white transition-colors"
-                    onClick={() => handleSort('name')}
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <span>Angajat</span>
-                      <ArrowUpDown size={12} className={sortField === 'name' ? 'text-primary-600' : 'opacity-40'} />
-                    </div>
-                  </th>
-
-                  <th 
-                    className="py-3 px-4 cursor-pointer hover:text-slate-800 dark:hover:text-white transition-colors"
-                    onClick={() => handleSort('role')}
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <span>Funcție / Rol</span>
-                      <ArrowUpDown size={12} className={sortField === 'role' ? 'text-primary-600' : 'opacity-40'} />
-                    </div>
-                  </th>
-
                   <th 
                     className="py-3 px-4 cursor-pointer hover:text-slate-800 dark:hover:text-white transition-colors"
                     onClick={() => handleSort('hours')}
@@ -666,32 +726,37 @@ export default function ShiftsTable({ tenant, themeColor }) {
                       <ArrowUpDown size={12} className={sortField === 'hours' ? 'text-primary-600' : 'opacity-40'} />
                     </div>
                   </th>
-
                   <th className="py-3 px-4 text-center">Tip Tură</th>
-                  <th className="py-3 px-4 text-center">Stare</th>
+                  <th 
+                    className="py-3 px-4 cursor-pointer hover:text-slate-800 dark:hover:text-white transition-colors"
+                    onClick={() => handleSort('count')}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>Angajați</span>
+                      <ArrowUpDown size={12} className={sortField === 'count' ? 'text-primary-600' : 'opacity-40'} />
+                    </div>
+                  </th>
                   <th className="py-3 px-4">Observații</th>
                   <th className="py-3 px-4 text-right">Acțiuni</th>
                 </tr>
               </thead>
 
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800 bg-white dark:bg-slate-900">
-                {currentShifts.map((shift, idx) => {
-                  const emp = employeeMap.get(shift.employee_id) || {};
-                  const isSelected = selectedShiftIds.includes(shift.id);
+                {currentGroups.map((group, idx) => {
+                  const isSelected = selectedGroupIds.includes(group.id);
                   const rowNumber = startIndex + idx + 1;
 
                   return (
                     <tr 
-                      key={shift.id}
+                      key={group.id}
                       className={`hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors group ${
                         isSelected ? 'bg-primary-50/20 dark:bg-primary-950/20' : ''
                       }`}
                     >
-                      {/* Checkbox */}
                       <td className="py-3 px-4 text-center">
                         <button
                           type="button"
-                          onClick={() => handleToggleShift(shift.id)}
+                          onClick={() => handleToggleGroup(group.id)}
                           className="p-1 hover:text-primary-600 transition-colors text-slate-400 flex items-center justify-center mx-auto"
                         >
                           {isSelected ? (
@@ -701,64 +766,22 @@ export default function ShiftsTable({ tenant, themeColor }) {
                           )}
                         </button>
                       </td>
-
-                      {/* Nr. Crt. */}
                       <td className="py-3 px-3 text-center text-xs font-bold text-slate-400">
                         {rowNumber}
                       </td>
-
-                      {/* Data Turei */}
                       <td className="py-3 px-4">
                         <span className="text-xs font-bold text-slate-900 dark:text-white">
-                          {formatDateCell(shift.date)}
+                          {formatDateCell(group.date)}
                         </span>
                       </td>
-
-                      {/* Angajat: Avatar, Nume, CNP */}
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-xs font-black text-slate-600 dark:text-slate-300 shrink-0 overflow-hidden">
-                            {emp.avatar_path ? (
-                              <img 
-                                src={emp.avatar_path.startsWith('http') ? emp.avatar_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${emp.avatar_path}`} 
-                                alt="" 
-                                className="w-full h-full object-cover" 
-                              />
-                            ) : (
-                              `${emp.first_name?.[0] || ''}${emp.last_name?.[0] || ''}`.toUpperCase()
-                            )}
-                          </div>
-                          <div>
-                            <div className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
-                              {emp.first_name} {emp.last_name}
-                            </div>
-                            {emp.cnp && (
-                              <div className="text-[11px] font-medium text-slate-400 font-mono mt-0.5">
-                                CNP: {emp.cnp}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Funcție / Rol */}
-                      <td className="py-3 px-4">
-                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                          {emp.job_title || 'Fără funcție'}
-                        </span>
-                      </td>
-
-                      {/* Interval Orar */}
                       <td className="py-3 px-4">
                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-black text-slate-800 dark:text-white">
                           <Clock size={12} className="text-slate-400" />
-                          <span>{shift.start_time?.substring(0, 5)} - {shift.end_time?.substring(0, 5)}</span>
+                          <span>{group.start_time?.substring(0, 5)} - {group.end_time?.substring(0, 5)}</span>
                         </div>
                       </td>
-
-                      {/* Tip Tură */}
                       <td className="py-3 px-4 text-center">
-                        {shift.shift_type === 'DAY' ? (
+                        {group.shift_type === 'DAY' ? (
                           <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-600 dark:text-amber-400">
                             <Sun size={14} /> Zi
                           </span>
@@ -768,33 +791,43 @@ export default function ShiftsTable({ tenant, themeColor }) {
                           </span>
                         )}
                       </td>
-
-                      {/* Stare Vizualizare */}
-                      <td className="py-3 px-4 text-center">
-                        <span 
-                          className={`inline-flex items-center gap-1 text-xs font-medium ${
-                            shift.seen_at ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'
-                          }`}
-                          title={shift.seen_at ? `Vizualizat de angajat la ${new Date(shift.seen_at).toLocaleDateString('ro-RO')}` : 'Nevizualizat'}
-                        >
-                          {shift.seen_at ? <Eye size={14} /> : <EyeOff size={14} />}
-                          <span>{shift.seen_at ? 'Văzut' : 'Nevăzut'}</span>
-                        </span>
-                      </td>
-
-                      {/* Observații */}
                       <td className="py-3 px-4">
-                        <span className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[150px] block" title={shift.notes}>
-                          {shift.notes || '-'}
+                        <div className="flex items-center gap-2 group-hover/tooltip cursor-pointer relative" title={group.employees.map(e => `${e.emp.first_name} ${e.emp.last_name}`).join('\n')}>
+                           <div className="flex -space-x-2">
+                              {group.employees.slice(0, 3).map((e, i) => (
+                                 <div key={i} className="w-8 h-8 rounded-full border-2 border-white dark:border-slate-900 bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-[9px] font-black overflow-hidden">
+                                   {e.emp.avatar_path ? (
+                                     <img 
+                                      src={e.emp.avatar_path.startsWith('http') ? e.emp.avatar_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${e.emp.avatar_path}`} 
+                                      alt="" 
+                                      className="w-full h-full object-cover" 
+                                     />
+                                   ) : (
+                                     `${e.emp.first_name?.[0] || ''}${e.emp.last_name?.[0] || ''}`.toUpperCase()
+                                   )}
+                                 </div>
+                              ))}
+                              {group.employees.length > 3 && (
+                                 <div className="w-8 h-8 rounded-full border-2 border-white dark:border-slate-900 bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-[10px] font-bold text-slate-500">
+                                   +{group.employees.length - 3}
+                                 </div>
+                              )}
+                           </div>
+                           <span className="text-xs font-bold text-slate-700 dark:text-slate-300 ml-2">
+                             {group.employees.length} {group.employees.length === 1 ? 'Angajat' : 'Angajați'}
+                           </span>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[150px] block" title={group.notes}>
+                          {group.notes || '-'}
                         </span>
                       </td>
-
-                      {/* Acțiuni */}
                       <td className="py-3 px-4 text-right">
                         <div className="flex items-center justify-end gap-1">
                           <button
                             type="button"
-                            onClick={() => openEditModal(shift)}
+                            onClick={() => openEditModal(group)}
                             className="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-primary-600 transition-colors"
                             title="Editează tura"
                           >
@@ -802,8 +835,16 @@ export default function ShiftsTable({ tenant, themeColor }) {
                           </button>
                           <button
                             type="button"
+                            onClick={() => setDuplicateGroup(group)}
+                            className="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-blue-600 transition-colors"
+                            title="Duplică tura"
+                          >
+                            <FileSpreadsheet size={15} />
+                          </button>
+                          <button
+                            type="button"
                             onClick={() => {
-                              setShiftToDelete(shift.id);
+                              setGroupToDelete(group);
                               setConfirmModalOpen(true);
                             }}
                             className="p-1.5 rounded-full hover:bg-red-50 dark:hover:bg-red-950/40 text-slate-400 hover:text-red-600 transition-colors"
@@ -822,7 +863,7 @@ export default function ShiftsTable({ tenant, themeColor }) {
         )}
 
         {/* 5. Footer Paginare conform Design System (stânga jos obligatoriu) */}
-        {!loading && filteredShifts.length > 0 && (
+        {!loading && filteredGroups.length > 0 && (
           <div className="px-4 sm:px-6 py-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
             {/* Stânga: Selector număr rânduri */}
             <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
@@ -956,6 +997,36 @@ export default function ShiftsTable({ tenant, themeColor }) {
                 />
               </div>
 
+              <div>
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-500 block mb-1">
+                  Angajați în această tură
+                </label>
+                <div className="max-h-32 overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-2 space-y-1">
+                  {editingGroup.employees.map(e => {
+                    const isKept = editShiftIdsToKeep.includes(e.shift_id);
+                    if (!isKept) return null; // ascundem din lista pt feedback vizual
+                    return (
+                      <div key={e.shift_id} className="flex justify-between items-center bg-white dark:bg-slate-900 px-3 py-1.5 rounded-md shadow-xs border border-slate-100 dark:border-slate-700">
+                        <span className="text-sm font-bold text-slate-700 dark:text-slate-200">
+                          {e.emp.first_name} {e.emp.last_name}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setEditShiftIdsToKeep(prev => prev.filter(id => id !== e.shift_id))}
+                          className="text-slate-400 hover:text-red-500 transition-colors p-1"
+                          title="Scoate angajatul din tură"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    );
+                  })}
+                  {editShiftIdsToKeep.length === 0 && (
+                    <div className="text-xs text-red-500 font-bold p-2 text-center">Toți angajații au fost scoși. Tura va fi ștearsă.</div>
+                  )}
+                </div>
+              </div>
+
               <div className="pt-2 flex gap-2">
                 <button
                   type="button"
@@ -986,7 +1057,7 @@ export default function ShiftsTable({ tenant, themeColor }) {
             <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
               <h3 className="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
                 <Clock size={18} style={{ color: themeColor }} />
-                Modificare Ore pentru {selectedShiftIds.length} Ture
+                Modificare Ore pentru {selectedGroupIds.length} Ture
               </h3>
               <button 
                 onClick={() => setBulkEditModalOpen(false)}
@@ -1078,7 +1149,7 @@ export default function ShiftsTable({ tenant, themeColor }) {
                   style={{ backgroundColor: themeColor }}
                 >
                   <Check size={16} />
-                  {isSavingBulk ? 'Se aplică...' : `Aplică la ${selectedShiftIds.length} Ture`}
+                  {isSavingBulk ? 'Se aplică...' : `Aplică la ${selectedGroupIds.length} Ture`}
                 </button>
               </div>
             </form>
@@ -1094,15 +1165,73 @@ export default function ShiftsTable({ tenant, themeColor }) {
           setShiftToDelete(null);
         }}
         onConfirm={executeDelete}
-        title={shiftToDelete === 'BULK' ? `Ștergere ${selectedShiftIds.length} Ture` : 'Ștergere Tură'}
+        title={groupToDelete === 'BULK' ? `Ștergere ${selectedGroupIds.length} Ture` : 'Ștergere Tură'}
         message={
-          shiftToDelete === 'BULK'
-            ? `Ești sigur că vrei să ștergi toate cele ${selectedShiftIds.length} ture selectate? Această acțiune este ireversibilă.`
+          groupToDelete === 'BULK'
+            ? `Ești sigur că vrei să ștergi toate cele ${selectedGroupIds.length} ture selectate? Această acțiune este ireversibilă.`
             : 'Ești sigur că vrei să ștergi această tură? Această acțiune este ireversibilă.'
         }
-        confirmText={shiftToDelete === 'BULK' ? `Șterge ${selectedShiftIds.length} Ture` : 'Șterge Tura'}
+        confirmText={groupToDelete === 'BULK' ? `Șterge ${selectedGroupIds.length} Ture` : 'Șterge Tura'}
         isDanger={true}
       />
+      {/* 9. Modal Duplicare Tura */}
+      {duplicateGroup && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden animate-in zoom-in-95 duration-150">
+            <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
+              <h3 className="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
+                <FileSpreadsheet size={18} style={{ color: themeColor }} />
+                Duplicare Tură
+              </h3>
+              <button 
+                onClick={() => setDuplicateGroup(null)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveDuplicate} className="p-6 space-y-4">
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                Tura din <strong>{formatDateCell(duplicateGroup.date)}</strong> ({duplicateGroup.start_time?.substring(0, 5)} - {duplicateGroup.end_time?.substring(0, 5)}) 
+                cu <strong>{duplicateGroup.employees.length} angajați</strong> va fi copiată la o dată nouă.
+              </p>
+              
+              <div>
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-500 block mb-1">
+                  Alege Data Nouă
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={duplicateDate}
+                  onChange={(e) => setDuplicateDate(e.target.value)}
+                  className="w-full px-4 h-10 text-sm font-bold rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:ring-2 focus:ring-primary-500 outline-none"
+                />
+              </div>
+
+              <div className="pt-2 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setDuplicateGroup(null)}
+                  className="flex-1 h-10 px-4 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold transition-colors"
+                >
+                  Anulează
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingDuplicate}
+                  className="flex-1 h-10 px-5 rounded-full bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold shadow-xs transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
+                  style={{ backgroundColor: themeColor }}
+                >
+                  <Check size={16} />
+                  {isSavingDuplicate ? 'Se duplică...' : 'Duplică Tura'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

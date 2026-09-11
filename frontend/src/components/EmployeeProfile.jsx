@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link, useLocation } from 'react-router-dom';
+import { Hash, useParams, Link, useLocation } from 'react-router-dom';
 import { ArrowLeft, User, MapPin, Briefcase, Calendar, Clock, Banknote, Shield, History, Activity, Image as ImageIcon, Camera, FileText, Upload, Trash2, Download, Loader2, X, ArrowRight, Eye, CalendarDays } from 'lucide-react';
 import TimesheetReport from './TimesheetReport';
 import ConfirmModal from './ConfirmModal';

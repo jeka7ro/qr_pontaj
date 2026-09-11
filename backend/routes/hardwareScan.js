@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router({ mergeParams: true });
 const pool = require('../db');
+const scanRouter = require('./scan');
 
 // POST /api/tenants/:id/hardware-scan
 router.post('/', async (req, res) => {
@@ -71,7 +72,7 @@ router.post('/', async (req, res) => {
       if (secondsSinceLastScan < 60) {
         const lastAction = lastScanRes.rows[0].action_type;
         const wasEntry = lastAction === 'IN' || lastAction === 'INTRARE';
-        return res.json({
+        const duplicatePayload = {
           success: true,
           duplicate: true,
           action: lastAction,
@@ -85,7 +86,9 @@ router.post('/', async (req, res) => {
             last_name: employee.last_name,
             avatar_path: showPhoto ? employee.avatar_path : null
           }
-        });
+        };
+        if (typeof scanRouter.notifyAdmin === 'function') scanRouter.notifyAdmin(tenantId, duplicatePayload);
+        return res.json(duplicatePayload);
       }
     }
 
@@ -115,7 +118,7 @@ router.post('/', async (req, res) => {
       [employeeId, 'pontaj', `Pontaj ${nextAction === 'IN' ? 'INTRARE' : 'IEȘIRE'} via QR hardware. Kiosk ID: ${kiosk_id}`]
     );
 
-    res.json({
+    const successPayload = {
       success: true,
       action: nextAction,
       type: nextAction,
@@ -125,7 +128,9 @@ router.post('/', async (req, res) => {
         last_name: employee.last_name,
         avatar_path: showPhoto ? employee.avatar_path : null
       }
-    });
+    };
+    if (typeof scanRouter.notifyAdmin === 'function') scanRouter.notifyAdmin(tenantId, successPayload);
+    res.json(successPayload);
 
   } catch (err) {
     console.error('Eroare hardware scan:', err);

@@ -33,6 +33,7 @@ export default function TenantDashboard() {
   const [pendingNotifs, setPendingNotifs] = useState([]);
   const [dismissedNotifs, setDismissedNotifs] = useState(new Set());
   const [shiftsExpanded, setShiftsExpanded] = useState(() => location.pathname.startsWith('/admin/shifts'));
+  const [liveScans, setLiveScans] = useState([]);
 
   useEffect(() => {
     if (location.pathname.startsWith('/admin/shifts')) {
@@ -119,6 +120,31 @@ export default function TenantDashboard() {
     fetchNotifs();
     const interval = setInterval(fetchNotifs, 30000);
     return () => clearInterval(interval);
+  }, [tenantInfo?.tenant?.id]);
+
+  
+  useEffect(() => {
+    if (!tenantInfo?.tenant?.id) return;
+    const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
+    const evtSource = new EventSource(`${baseUrl}/api/scan/admin-stream/${tenantInfo.tenant.id}`);
+    
+    evtSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.status === 'connected') return;
+        
+        // Add new scan to state
+        const newScan = { ...data, id: Date.now() };
+        setLiveScans(prev => [newScan, ...prev].slice(0, 5)); // pastram max 5 popups
+        
+        // Auto-remove after 8 seconds
+        setTimeout(() => {
+          setLiveScans(prev => prev.filter(s => s.id !== newScan.id));
+        }, 8000);
+      } catch(e) {}
+    };
+
+    return () => evtSource.close();
   }, [tenantInfo?.tenant?.id]);
 
   const dismissNotif = (id) => {

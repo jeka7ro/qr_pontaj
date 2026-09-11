@@ -5,6 +5,39 @@ const pool = require('../db');
 // Global object to store active SSE connections per location
 // Format: { [locationId]: [res1, res2, ...] }
 const sseClients = {};
+const adminSseClients = {};
+
+
+// SSE Endpoint for Admin Dashboard
+router.get('/admin-stream/:tenantId', (req, res) => {
+  const { tenantId } = req.params;
+  
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  
+  res.write(`data: {"status": "connected"}\n\n`);
+
+  if (!adminSseClients[tenantId]) {
+    adminSseClients[tenantId] = [];
+  }
+  adminSseClients[tenantId].push(res);
+
+  const heartbeatInterval = setInterval(() => {
+    try {
+      res.write(': keepalive\n\n');
+    } catch (e) {
+      clearInterval(heartbeatInterval);
+    }
+  }, 20000);
+
+  req.on('close', () => {
+    clearInterval(heartbeatInterval);
+    if (adminSseClients[tenantId]) {
+      adminSseClients[tenantId] = adminSseClients[tenantId].filter(client => client !== res);
+    }
+  });
+});
 
 // SSE Endpoint for Kiosk Displays
 router.get('/stream/:kioskId', (req, res) => {
@@ -194,10 +227,71 @@ router.post('/', async (req, res) => {
       }
     };
 
+    // Check if late (only for IN)
+    let isLate = false;
+    let shiftStart = null;
+    let expectedTimeFormatted = null;
+
+    if (type === 'IN') {
+      const shiftRes = await pool.query(
+        'SELECT start_time FROM qrp_shifts WHERE employee_id = $1 AND date = CURRENT_DATE LIMIT 1',
+        [employee.id]
+      );
+      if (shiftRes.rows.length > 0) {
+        shiftStart = shiftRes.rows[0].start_time; // e.g. "09:00:00"
+        expectedTimeFormatted = shiftStart.substring(0, 5);
+        
+        // Time calculations (timezone independent, using local server time for simple matching)
+        const now = new Date();
+        const scanTime = now.getHours() * 60 + now.getMinutes(); 
+        const [h, m] = shiftStart.split(':');
+        const expectedTime = parseInt(h) * 60 + parseInt(m);
+        
+        // Late if scanned more than 5 minutes after shift start
+        if (scanTime > expectedTime + 5) {
+          isLate = true;
+        }
+      }
+    }
+
+    const eventPayload = {
+      type: type,
+      employee: {
+        first_name: employee.first_name,
+        last_name: employee.last_name,
+        avatar_path: employee.avatar_path,
+        showPhoto: showPhoto
+      }
+    };
+
+    const adminEventPayload = {
+      type: type, // 'IN' or 'OUT'
+      timesheet_id: newTimesheet ? newTimesheet.id : null,
+      timestamp: new Date().toISOString(),
+      isLate: isLate,
+      shiftStart: expectedTimeFormatted,
+      employee: {
+        first_name: employee.first_name,
+        last_name: employee.last_name,
+        avatar_path: employee.avatar_path
+      }
+    };
+
+    // Emite eveniment catre Admin Dashboard (Live Updates)
+    if (adminSseClients[tenant_id]) {
+      adminSseClients[tenant_id].forEach(client => {
+        try {
+          client.write(`data: ${JSON.stringify(adminEventPayload)}\n\n`);
+        } catch(e) {}
+      });
+    }
+
     // Emite eveniment catre Kiosk-ul din acea locatie
     if (kiosk_id && sseClients[kiosk_id]) {
       sseClients[kiosk_id].forEach(client => {
-        client.write(`data: ${JSON.stringify(eventPayload)}\n\n`);
+        try {
+          client.write(`data: ${JSON.stringify(eventPayload)}\n\n`);
+        } catch(e) {}
       });
     }
 
@@ -247,4 +341,15 @@ router.post('/reset-pin-request', async (req, res) => {
   }
 });
 
+
+router.notifyAdmin = (tenantId, eventData) => {
+  if (adminSseClients[tenantId]) {
+    adminSseClients[tenantId].forEach(client => {
+      try {
+        client.write(`data: ${JSON.stringify(eventData)}\n\n`);
+      } catch (e) {}
+    });
+  }
+};
 module.exports = router;
+
