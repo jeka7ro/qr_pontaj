@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
-import { Loader2, AlertCircle, Maximize, Smartphone, WifiOff, ScanLine, CheckCircle2, User, XCircle } from 'lucide-react';
+import { Loader2, AlertCircle, Maximize, Smartphone, WifiOff, ScanLine, CheckCircle2, User, Lock, Delete, ShieldCheck, RefreshCw, X } from 'lucide-react';
 import { updatePageFavicon } from '../../utils/favicon';
 
 export default function KioskDisplay() {
@@ -16,8 +16,7 @@ export default function KioskDisplay() {
   const [time, setTime] = useState(new Date());
   const [qrPayload, setQrPayload] = useState('');
   
-  // Security PIN and layout state
-  const [isAuthorized, setIsAuthorized] = useState(false);
+  // Kiosk layout & branding state
   const [orientation, setOrientation] = useState(() => localStorage.getItem(`kiosk_orientation_${kioskId}`) || 'horizontal');
   const [kioskColors, setKioskColors] = useState(() => {
     try { return JSON.parse(localStorage.getItem(`kiosk_colors_${kioskId}`)) || {}; } catch { return {}; }
@@ -31,11 +30,7 @@ export default function KioskDisplay() {
                           (qrMode === 'HYBRID' && overrideMode === 'scanner') ? 'HARDWARE' : 
                           (qrMode === 'HYBRID' && overrideMode === 'kiosk') ? 'DYNAMIC' : 
                           (qrMode === 'HYBRID' ? 'DYNAMIC' : qrMode);
-                          
 
-  const [pinEntry, setPinEntry] = useState('');
-  const [pinError, setPinError] = useState('');
-  const [checkingAuth, setCheckingAuth] = useState(true);
   const [networkIp, setNetworkIp] = useState(null);
   const [isOffline, setIsOffline] = useState(false);
   const [scanBuffer, setScanBuffer] = useState('');
@@ -45,6 +40,7 @@ export default function KioskDisplay() {
   // Kiosk history state
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [historyPin, setHistoryPin] = useState('');
+  const [historyPinShake, setHistoryPinShake] = useState(false);
   const [historyData, setHistoryData] = useState(null);
   const [historyError, setHistoryError] = useState(null);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -194,11 +190,12 @@ export default function KioskDisplay() {
               message: data.message || ''
             });
             
-            // Clear after 3 seconds
+            // Clear after 4s (or 6.5s if birthday)
+            const duration = data.employee?.is_birthday ? 6500 : 4000;
             if (timeoutId) clearTimeout(timeoutId);
             timeoutId = setTimeout(() => {
               setScanSuccess(null);
-            }, 3000);
+            }, duration);
           }
         } catch (e) {
           console.error('Error parsing SSE event:', e);
@@ -221,19 +218,11 @@ export default function KioskDisplay() {
     };
   }, [kioskId]);
 
-  // Auth check
+  // Incarcare configuratie Kiosk (culori, orientare, branding)
   useEffect(() => {
-    const checkAuth = async () => {
+    const fetchKioskConfig = async () => {
       try {
         const apiUrl = `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}`;
-
-
-        if (localStorage.getItem(`kiosk_auth_${kioskId}`) === 'true') {
-          setIsAuthorized(true);
-          setCheckingAuth(false);
-          return;
-        }
-        
         const res = await fetch(`${apiUrl}/api/tenants/${tenantId}/kiosks/${kioskId}/auth_kiosk`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -241,7 +230,6 @@ export default function KioskDisplay() {
         });
         
         const data = await res.json();
-        
         if (data.orientation) {
           setOrientation(data.orientation);
           localStorage.setItem(`kiosk_orientation_${kioskId}`, data.orientation);
@@ -249,56 +237,15 @@ export default function KioskDisplay() {
         if (data.colors) {
           setKioskColors(data.colors);
         }
-
-        if (data.message === 'Fără PIN' || data.message === 'Autorizat') {
-          setIsAuthorized(true);
+        if (data.content) {
+          setKioskContent(data.content);
         }
       } catch (err) {
-        console.error('Error checking kiosk auth:', err);
-      } finally {
-        setCheckingAuth(false);
+        console.error('Error loading kiosk config:', err);
       }
     };
-    checkAuth();
+    fetchKioskConfig();
   }, [tenantId, kioskId]);
-
-  const handlePinSubmit = async (e) => {
-    e.preventDefault();
-    if (pinEntry.length !== 4) return;
-    
-    setPinError('');
-    try {
-      const apiUrl = `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}`;
-      const res = await fetch(`${apiUrl}/api/tenants/${tenantId}/kiosks/${kioskId}/auth_kiosk`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin: pinEntry })
-      });
-      
-      if (!res.ok) {
-        setPinError('PIN Incorect');
-        setPinEntry('');
-        return;
-      }
-      
-      const data = await res.json();
-      if (data.orientation) {
-        setOrientation(data.orientation);
-        localStorage.setItem(`kiosk_orientation_${kioskId}`, data.orientation);
-      }
-      if (data.colors) {
-        setKioskColors(data.colors);
-      }
-      if (data.content) {
-        setKioskContent(data.content);
-      }
-      
-      localStorage.setItem(`kiosk_auth_${kioskId}`, 'true');
-      setIsAuthorized(true);
-    } catch (err) {
-      setPinError('Eroare de conexiune.');
-    }
-  };
 
   // 4. WakeLock API (Prevenire Standby)
   useEffect(() => {
@@ -383,10 +330,11 @@ export default function KioskDisplay() {
       const data = await res.json();
       if (res.ok) {
         setScanSuccess(data);
-        setTimeout(() => setScanSuccess(null), 3000);
+        const duration = data.employee?.is_birthday ? 6500 : 4000;
+        setTimeout(() => setScanSuccess(null), duration);
       } else {
         setScanError(data.error || 'Eroare scanare');
-        setTimeout(() => setScanError(null), 3000);
+        setTimeout(() => setScanError(null), 3500);
       }
     } catch (err) {
       setScanError(err.message || 'Eroare conexiune.');
@@ -394,7 +342,11 @@ export default function KioskDisplay() {
     }
   };
 
-  const fetchHistory = async () => {
+  const fetchHistory = async (pinToVerify = historyPin) => {
+    if (!pinToVerify || pinToVerify.length !== 4) {
+      setHistoryError('Introduceți codul PIN de 4 cifre.');
+      return;
+    }
     setHistoryLoading(true);
     setHistoryError(null);
     try {
@@ -402,16 +354,47 @@ export default function KioskDisplay() {
       const res = await fetch(`${apiUrl}/api/tenants/${tenantId}/hardware-scan/history`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ kiosk_id: kioskId, pin_code: historyPin })
+        body: JSON.stringify({ kiosk_id: kioskId, pin_code: pinToVerify })
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Eroare incarcare istoric');
+      if (!res.ok) throw new Error(data.error || 'PIN incorect.');
       setHistoryData(data);
     } catch (err) {
-      setHistoryError(err.message);
+      setHistoryError(err.message || 'PIN incorect.');
+      setHistoryPinShake(true);
+      setTimeout(() => {
+        setHistoryPinShake(false);
+        setHistoryPin('');
+      }, 500);
+    } finally {
+      setHistoryLoading(false);
     }
-    setHistoryLoading(false);
   };
+
+  // Keyboard listener for history modal
+  useEffect(() => {
+    if (!showHistoryModal || historyData) return;
+    const handleKeyDown = (e) => {
+      if (e.key >= '0' && e.key <= '9') {
+        if (historyLoading || historyPin.length >= 4) return;
+        const next = historyPin + e.key;
+        setHistoryPin(next);
+        setHistoryError(null);
+        if (next.length === 4) {
+          fetchHistory(next);
+        }
+      } else if (e.key === 'Backspace') {
+        setHistoryPin(prev => prev.slice(0, -1));
+        setHistoryError(null);
+      } else if (e.key === 'Escape') {
+        setShowHistoryModal(false);
+        setHistoryPin('');
+        setHistoryError(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showHistoryModal, historyData, historyPin, historyLoading]);
 
   // 5. Fullscreen helper (optional, pentru experienta reala kiosk)
   const toggleFullscreen = () => {
@@ -442,74 +425,7 @@ export default function KioskDisplay() {
   const customTimerColor = kioskColors.timer || themeColor;
   const customLogoBg = kioskColors.logo_bg || 'rgba(15, 23, 42, 0.5)'; // bg-slate-900/50 fallback
 
-  if (!isAuthorized) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6 font-sans" style={{ backgroundColor: customBgColor || '#020617', '--tenant-color': themeColor }}>
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 md:p-12 max-w-md w-full shadow-2xl flex flex-col items-center text-center">
-          <div className="w-20 h-20 rounded-full bg-slate-800 flex items-center justify-center mb-6">
-            <Smartphone size={40} className="text-blue-500" />
-          </div>
-          <h2 className="text-2xl font-black text-white mb-2">Kiosk Securizat</h2>
-          <p className="text-slate-400 font-medium mb-8">Introduceți codul PIN pentru a debloca tableta.</p>
-          
-          <form onSubmit={handlePinSubmit} className="w-full">
-            <div className="flex justify-center gap-3 mb-8">
-              {[...Array(4)].map((_, i) => (
-                <div 
-                  key={i} 
-                  className={`w-14 h-16 rounded-full flex items-center justify-center text-2xl font-black border-2 transition-colors ${
-                    pinEntry.length > i 
-                      ? 'bg-blue-500/20 border-blue-500 text-blue-400' 
-                      : 'bg-slate-950 border-slate-800 text-slate-600 dark:text-slate-300'
-                  }`}
-                >
-                  {pinEntry.length > i ? '•' : ''}
-                </div>
-              ))}
-            </div>
-            
-            {pinError && <p className="text-red-500 font-bold mb-6">{pinError}</p>}
-            
-            <div className="grid grid-cols-3 gap-3 mb-6 max-w-[280px] mx-auto">
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
-                <button
-                  key={num}
-                  type="button"
-                  onClick={() => pinEntry.length < 4 && setPinEntry(prev => prev + num)}
-                  className="h-16 rounded-full bg-slate-800 hover:bg-slate-700 text-white font-black text-xl transition-colors"
-                >
-                  {num}
-                </button>
-              ))}
-              <div className="h-16"></div>
-              <button
-                type="button"
-                onClick={() => pinEntry.length < 4 && setPinEntry(prev => prev + '0')}
-                className="h-16 rounded-full bg-slate-800 hover:bg-slate-700 text-white font-black text-xl transition-colors"
-              >
-                0
-              </button>
-              <button
-                type="button"
-                onClick={() => setPinEntry(prev => prev.slice(0, -1))}
-                className="h-16 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 font-black text-xl transition-colors flex items-center justify-center"
-              >
-                ⌫
-              </button>
-            </div>
-            
-            <button 
-              type="submit"
-              disabled={pinEntry.length !== 4}
-              className="w-full h-14 rounded-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:bg-slate-800 text-white font-black uppercase tracking-wider transition-colors"
-            >
-              Deblochează
-            </button>
-          </form>
-        </div>
-      </div>
-    );
-  }
+
 
   if (error) {
     return (
@@ -565,100 +481,243 @@ export default function KioskDisplay() {
           </div>
         )}
         
-        <button 
-          onClick={toggleFullscreen}
-          className={`absolute top-4 ${kioskColors.show_logo_bg === false ? 'left-4' : 'left-auto right-4'} text-white/20 hover:text-white/60 p-2 z-50 pointer-events-auto`}
-          title="Fullscreen"
-        >
-          <Maximize size={24} />
-        </button>
+        {/* Top Controls: iPhone Glassmorphism Island */}
+        <div className="absolute top-5 right-5 flex items-center gap-3 z-50 pointer-events-auto">
+          <button 
+            onClick={toggleFullscreen}
+            className="w-12 h-12 rounded-2xl bg-white/10 dark:bg-slate-900/50 hover:bg-white/20 active:scale-95 backdrop-blur-2xl border border-white/20 shadow-xl shadow-black/20 flex items-center justify-center text-white/80 hover:text-white transition-all duration-150 cursor-pointer"
+            title="Ecran complet"
+          >
+            <Maximize size={22} />
+          </button>
+          <button 
+            onClick={() => {
+              setShowHistoryModal(true);
+              setHistoryPin('');
+              setHistoryData(null);
+              setHistoryError(null);
+            }}
+            className="w-12 h-12 rounded-2xl bg-white/10 dark:bg-slate-900/50 hover:bg-white/20 active:scale-95 backdrop-blur-2xl border border-white/20 shadow-xl shadow-black/20 flex items-center justify-center text-white/80 hover:text-white transition-all duration-150 cursor-pointer"
+            title="Istoric Acces"
+          >
+            <User size={22} />
+          </button>
+        </div>
 
-        {/* History Button (Top Right) */}
-        <button 
-          onClick={() => setShowHistoryModal(true)}
-          className={`absolute top-4 ${kioskColors.show_logo_bg === false ? 'right-4' : 'right-16'} text-white/50 hover:text-white p-2 z-50 pointer-events-auto bg-slate-900/40 rounded-full border border-slate-700/50 backdrop-blur-sm transition-all`}
-          title="Istoric Acces"
-        >
-          <User size={24} />
-        </button>
-
-        {/* Istoric Modal */}
+        {/* Istoric Modal - Tastatură pe ecran ca la iPhone (Fără tastatură iPad) */}
         {showHistoryModal && (
-          <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] flex items-center justify-center pointer-events-auto p-4" onClick={() => { setShowHistoryModal(false); setHistoryData(null); setHistoryPin(''); }}>
-            <div className="bg-white w-full max-w-lg rounded-2xl p-6 shadow-2xl relative" onClick={e => e.stopPropagation()}>
+          <div 
+            className="fixed inset-0 bg-black/75 backdrop-blur-xl z-[100] flex items-center justify-center pointer-events-auto p-4 select-none" 
+            onClick={() => { setShowHistoryModal(false); setHistoryData(null); setHistoryPin(''); setHistoryError(null); }}
+          >
+            <div 
+              className="bg-slate-950/85 border border-white/15 text-white w-full max-w-sm sm:max-w-md rounded-[2.5rem] p-6 sm:p-8 shadow-2xl shadow-black/80 relative backdrop-blur-2xl flex flex-col items-center" 
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Buton Închidere */}
               <button 
-                onClick={() => { setShowHistoryModal(false); setHistoryData(null); setHistoryPin(''); }} 
-                className="absolute top-4 right-4 p-2 text-slate-400 hover:bg-slate-100 rounded-full transition-colors"
+                onClick={() => { setShowHistoryModal(false); setHistoryData(null); setHistoryPin(''); setHistoryError(null); }} 
+                className="absolute top-5 right-5 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 flex items-center justify-center text-white/70 hover:text-white transition-all cursor-pointer"
+                title="Închide"
               >
-                <XCircle size={24} />
+                <X size={18} />
               </button>
-              
-              <h2 className="text-2xl font-black text-slate-800 mb-6 flex items-center gap-2">
-                <User size={24} className="text-blue-600" />
-                Istoric Acces Astăzi
-              </h2>
 
               {!historyData ? (
-                <div className="space-y-4">
-                  <p className="text-slate-600 text-sm">Introduceți PIN-ul Kiosk-ului pentru a vizualiza istoricul (dacă este setat).</p>
-                  <div className="relative w-full">
-                    <input 
-                      id="history_pin_input"
-                      type="tel"
-                      inputMode="numeric"
-                      pattern="[0-9]*"
-                      maxLength="4"
-                      value={historyPin}
-                      onChange={(e) => setHistoryPin(e.target.value.replace(/\D/g, ''))}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-text z-10"
-                      onKeyDown={(e) => e.key === 'Enter' && fetchHistory()}
-                    />
-                    <div className="w-full px-4 py-3 bg-slate-100 border-0 rounded-xl text-lg font-bold text-slate-700 tracking-[0.5em] text-center pointer-events-none">
-                      {historyPin.split('').map(() => '•').join('')}
-                      {historyPin.length === 0 && <span className="text-slate-400 font-normal tracking-normal text-base">PIN Kiosk (sau gol)</span>}
-                    </div>
-                  </div>
-                  {historyError && <p className="text-red-500 font-bold text-sm text-center">{historyError}</p>}
-                  <button 
-                    onClick={fetchHistory}
-                    disabled={historyLoading}
-                    className="w-full py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 disabled:opacity-50"
-                  >
-                    {historyLoading ? 'Se verifică...' : 'Vezi Istoricul'}
-                  </button>
-                </div>
-              ) : (
-                <div className="max-h-[60vh] overflow-y-auto space-y-3 pr-2 custom-scrollbar">
-                  {historyData.length === 0 ? (
-                    <div className="text-center py-8 text-slate-500">
-                      <ScanLine size={40} className="mx-auto mb-3 opacity-20" />
-                      <p>Nu există nicio înregistrare astăzi.</p>
+                /* Tastatură Touch Screen iPhone (Passcode Pad) */
+                <div className="w-full flex flex-col items-center">
+                  {tenant?.logo_url ? (
+                    <div className="w-20 h-20 rounded-3xl bg-white/10 border border-white/20 p-3 flex items-center justify-center mb-3 shadow-2xl backdrop-blur-xl">
+                      <img 
+                        src={tenant.logo_url.startsWith('http') ? tenant.logo_url : `${(import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')).replace(/\/$/, '')}/${tenant.logo_url.replace(/^\//, '')}`}
+                        alt={tenant.name}
+                        className="w-full h-full object-contain filter drop-shadow-sm"
+                      />
                     </div>
                   ) : (
-                    historyData.map(scan => {
-                      const isEntry = scan.action_type === 'INTRARE' || scan.action_type === 'IN';
-                      return (
-                        <div key={scan.id} className="flex items-center gap-4 p-3 rounded-xl border border-slate-100 bg-slate-50 shadow-sm">
-                          <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${isEntry ? 'bg-green-100 text-green-600' : 'bg-orange-100 text-orange-600'}`}>
-                            {scan.avatar_path ? (
-                              <img src={scan.avatar_path.startsWith('http') ? scan.avatar_path : `${import.meta.env.VITE_API_URL || ''}${scan.avatar_path}`} alt="" className="w-full h-full rounded-full object-cover" />
-                            ) : (
-                              <User size={20} />
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-bold text-slate-800 truncate">{scan.first_name} {scan.last_name}</p>
-                            <p className="text-xs text-slate-500">
-                              {new Date(scan.created_at).toLocaleTimeString('ro-RO', {hour:'2-digit', minute:'2-digit', second:'2-digit'})}
-                            </p>
-                          </div>
-                          <div className={`px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${isEntry ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
-                            {isEntry ? 'Intrare' : 'Ieșire'}
-                          </div>
-                        </div>
-                      );
-                    })
+                    <div className="w-16 h-16 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white mb-3 shadow-inner">
+                      <Lock size={26} />
+                    </div>
                   )}
+                  <h2 className="text-xl sm:text-2xl font-semibold text-white tracking-tight">Introduceți codul PIN</h2>
+
+                  {/* 4 Puncte Indicator iPhone */}
+                  <div className={`flex items-center justify-center gap-4.5 my-6 ${historyPinShake ? 'animate-shake' : ''}`}>
+                    {[0, 1, 2, 3].map((i) => (
+                      <div
+                        key={i}
+                        className={`w-3.5 h-3.5 rounded-full transition-all duration-150 ${
+                          historyPin.length > i
+                            ? 'bg-white border-2 border-white scale-110 shadow-[0_0_12px_rgba(255,255,255,0.9)]'
+                            : 'border-2 border-white/40 bg-transparent'
+                        }`}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Mesaj eroare / încărcare */}
+                  <div className="h-6 text-xs font-semibold tracking-wide text-center">
+                    {historyLoading ? (
+                      <span className="text-white/70 flex items-center justify-center gap-1.5">
+                        <Loader2 size={14} className="animate-spin" /> Se verifică...
+                      </span>
+                    ) : historyError ? (
+                      <span className="text-rose-400">{historyError}</span>
+                    ) : null}
+                  </div>
+
+                  {/* Taste Numerice Rotunde iPhone */}
+                  <div className="grid grid-cols-3 gap-3.5 sm:gap-4 mt-2">
+                    {[
+                      { num: '1', letters: '' },
+                      { num: '2', letters: 'ABC' },
+                      { num: '3', letters: 'DEF' },
+                      { num: '4', letters: 'GHI' },
+                      { num: '5', letters: 'JKL' },
+                      { num: '6', letters: 'MNO' },
+                      { num: '7', letters: 'PQRS' },
+                      { num: '8', letters: 'TUV' },
+                      { num: '9', letters: 'WXYZ' },
+                      { special: 'cancel', label: 'Anulează' },
+                      { num: '0', letters: '+' },
+                      { special: 'delete' },
+                    ].map((key) => {
+                      if (key.special === 'cancel') {
+                        return (
+                          <button
+                            key="cancel"
+                            type="button"
+                            onClick={() => { setShowHistoryModal(false); setHistoryPin(''); setHistoryError(null); }}
+                            className="w-18 h-18 sm:w-20 sm:h-20 rounded-full flex items-center justify-center text-white/70 hover:text-white text-sm font-medium active:scale-90 transition-all duration-150 cursor-pointer"
+                          >
+                            Anulează
+                          </button>
+                        );
+                      }
+                      if (key.special === 'delete') {
+                        return (
+                          <button
+                            key="delete"
+                            type="button"
+                            onClick={() => { setHistoryPin(prev => prev.slice(0, -1)); setHistoryError(null); }}
+                            className="w-18 h-18 sm:w-20 sm:h-20 rounded-full flex items-center justify-center text-white/80 hover:text-white active:scale-90 transition-all duration-150 cursor-pointer"
+                            title="Șterge"
+                          >
+                            <Delete size={24} />
+                          </button>
+                        );
+                      }
+                      return (
+                        <button
+                          key={key.num}
+                          type="button"
+                          disabled={historyLoading || historyPin.length >= 4}
+                          onClick={() => {
+                            if (historyLoading || historyPin.length >= 4) return;
+                            const next = historyPin + key.num;
+                            setHistoryPin(next);
+                            setHistoryError(null);
+                            if (next.length === 4) {
+                              fetchHistory(next);
+                            }
+                          }}
+                          className="w-18 h-18 sm:w-20 sm:h-20 rounded-full bg-white/10 hover:bg-white/20 active:bg-white/35 active:scale-90 backdrop-blur-2xl border border-white/20 text-white flex flex-col items-center justify-center transition-all duration-150 shadow-lg shadow-black/20 select-none cursor-pointer disabled:opacity-50"
+                        >
+                          <span className="text-2xl sm:text-3xl font-light leading-none">{key.num}</span>
+                          {key.letters ? (
+                            <span className="text-[9px] tracking-widest text-white/60 font-semibold uppercase mt-0.5">{key.letters}</span>
+                          ) : (
+                            <span className="h-[9px] mt-0.5"></span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : (
+                /* Vizualizare Istoric Confirmat */
+                <div className="w-full">
+                  <div className="flex items-center justify-between mb-5 pr-8">
+                    <div className="flex items-center gap-2.5">
+                      {tenant?.logo_url ? (
+                        <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/20 p-1.5 flex items-center justify-center">
+                          <img 
+                            src={tenant.logo_url.startsWith('http') ? tenant.logo_url : `${(import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')).replace(/\/$/, '')}/${tenant.logo_url.replace(/^\//, '')}`}
+                            alt={tenant.name}
+                            className="w-full h-full object-contain"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-10 h-10 rounded-xl bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
+                          <ShieldCheck size={22} />
+                        </div>
+                      )}
+                      <div>
+                        <h2 className="text-lg font-bold text-white tracking-tight">Istoric Pontaje</h2>
+                        <p className="text-xs text-white/50">{historyData.length} înregistrări astăzi</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="max-h-[55vh] overflow-y-auto space-y-2.5 pr-1 custom-scrollbar">
+                    {historyData.length === 0 ? (
+                      <div className="text-center py-10 text-white/50">
+                        <ScanLine size={36} className="mx-auto mb-2.5 opacity-30" />
+                        <p className="text-sm font-medium">Nicio înregistrare astăzi.</p>
+                      </div>
+                    ) : (
+                      historyData.map(scan => {
+                        const isEntry = scan.action_type === 'INTRARE' || scan.action_type === 'IN';
+                        return (
+                          <div 
+                            key={scan.id} 
+                            className="flex items-center gap-3.5 p-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 backdrop-blur-md transition-all"
+                          >
+                            <div className="w-11 h-11 rounded-full overflow-hidden border border-white/20 flex-shrink-0 bg-slate-800 flex items-center justify-center">
+                              {scan.avatar_path ? (
+                                <img 
+                                  src={scan.avatar_path.startsWith('http') ? scan.avatar_path : `${import.meta.env.VITE_API_URL || ''}${scan.avatar_path}`} 
+                                  alt="" 
+                                  className="w-full h-full object-cover" 
+                                />
+                              ) : (
+                                <User size={20} className="text-white/60" />
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-white text-sm truncate">{scan.first_name} {scan.last_name}</p>
+                              <p className="text-xs text-white/50">
+                                {new Date(scan.created_at).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                              </p>
+                            </div>
+                            <div className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                              isEntry 
+                                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
+                                : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                            }`}>
+                              {isEntry ? 'Intrare' : 'Ieșire'}
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+
+                  <div className="mt-5 pt-4 border-t border-white/10 flex items-center gap-3">
+                    <button
+                      onClick={() => fetchHistory(historyPin)}
+                      disabled={historyLoading}
+                      className="flex-1 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-xs font-semibold text-white/90 border border-white/15 flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                    >
+                      <RefreshCw size={14} className={historyLoading ? 'animate-spin' : ''} /> Actualizează
+                    </button>
+                    <button
+                      onClick={() => { setShowHistoryModal(false); setHistoryData(null); setHistoryPin(''); }}
+                      className="flex-1 py-2.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 active:scale-95 text-xs font-semibold text-rose-300 border border-rose-500/30 transition-all cursor-pointer"
+                    >
+                      Blochează
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -710,60 +769,20 @@ export default function KioskDisplay() {
               {/* Pulsing glow behind */}
               <div className="absolute inset-0 rounded-[3rem] animate-pulse-slow opacity-20" style={{ backgroundColor: themeColor, filter: 'blur(30px)', zIndex: -1 }}></div>
               
-              {scanSuccess ? (() => {
-                // Normalizăm acțiunea: IN/INTRARE = intrare, OUT/IESIRE = ieșire
-                const isEntry = scanSuccess.action === 'INTRARE' || scanSuccess.action === 'IN' || scanSuccess.type === 'IN';
-                const actionLabel = isEntry ? 'INTRARE' : 'IEȘIRE';
-                return (
-                // SUCCESS SCREEN (HARDWARE)
-                <div className={`w-[320px] h-[320px] ${isVertical ? 'w-[280px] h-[280px]' : ''} flex flex-col items-center justify-center text-center animate-in fade-in zoom-in duration-300 relative z-10`}>
-                  <div className={`w-36 h-36 rounded-full mb-5 flex items-center justify-center border-[5px] ${isEntry ? 'border-green-500 bg-green-50' : 'border-orange-500 bg-orange-50'} shadow-xl overflow-hidden`}>
-                    {scanSuccess.employee?.avatar_path ? (
+              {effectiveQrMode === 'HARDWARE' ? (
+                // SCANNER IDLE (HARDWARE) - Cu logo-ul companiei
+                <div className={`w-[320px] h-[320px] ${isVertical ? 'w-[280px] h-[280px]' : ''} flex flex-col items-center justify-center relative z-10`}>
+                  <div className="w-32 h-32 rounded-full bg-slate-50 border-8 border-slate-100 flex items-center justify-center mb-6 shadow-inner relative overflow-hidden p-4">
+                    <div className="absolute inset-0 bg-blue-500/10 animate-pulse"></div>
+                    {tenant?.logo_url ? (
                       <img 
-                        src={scanSuccess.employee.avatar_path.startsWith('http') 
-                          ? scanSuccess.employee.avatar_path 
-                          : `${(import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')).endsWith('/') ? (import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')).slice(0, -1) : (import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001'))}/${scanSuccess.employee.avatar_path.startsWith('/') ? scanSuccess.employee.avatar_path.slice(1) : scanSuccess.employee.avatar_path}`
-                        } 
-                        alt="Avatar" 
-                        className="w-full h-full object-cover" 
+                        src={tenant.logo_url.startsWith('http') ? tenant.logo_url : `${(import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')).replace(/\/$/, '')}/${tenant.logo_url.replace(/^\//, '')}`}
+                        alt={tenant.name}
+                        className="w-full h-full object-contain relative z-10 filter drop-shadow-sm"
                       />
                     ) : (
-                      <User size={60} className={isEntry ? 'text-green-500' : 'text-orange-500'} />
+                      <ScanLine size={48} className="text-slate-400 relative z-10" />
                     )}
-                  </div>
-                  <p className={`text-base font-bold mb-1 ${isEntry ? 'text-green-600' : 'text-orange-600'}`}>
-                    {scanSuccess.duplicate ? '⚠️ Deja pontat!' : (isEntry ? '👋 Bine ai venit!' : '👋 La revedere!')}
-                  </p>
-                  <h3 className="text-2xl font-black text-slate-900 leading-tight">
-                    {scanSuccess.employee?.first_name} {scanSuccess.employee?.last_name}
-                  </h3>
-                  <p className="text-sm text-slate-500 mt-1 font-medium">
-                    {scanSuccess.duplicate 
-                      ? scanSuccess.message 
-                      : (isEntry ? 'Tura ta a început. Spor la muncă!' : 'Tura ta s-a terminat. Odihnă plăcută!')}
-                  </p>
-                  <div className={`mt-3 inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-bold uppercase tracking-wider ${isEntry ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
-                    <CheckCircle2 size={18} />
-                    {actionLabel} ÎNREGISTRATĂ
-                  </div>
-                </div>
-                );
-              })() : scanError ? (
-                // ERROR SCREEN (HARDWARE)
-                <div className={`w-[320px] h-[320px] ${isVertical ? 'w-[280px] h-[280px]' : ''} flex flex-col items-center justify-center text-center animate-in fade-in zoom-in duration-300 relative z-10`}>
-                  <div className="w-24 h-24 rounded-full mb-4 flex items-center justify-center border-4 border-red-500 bg-red-50 shadow-lg">
-                    <XCircle size={40} className="text-red-500" />
-                  </div>
-                  <h3 className="text-xl font-black text-slate-900 leading-tight px-4">
-                    {scanError}
-                  </h3>
-                </div>
-              ) : effectiveQrMode === 'HARDWARE' ? (
-                // SCANNER IDLE (HARDWARE)
-                <div className={`w-[320px] h-[320px] ${isVertical ? 'w-[280px] h-[280px]' : ''} flex flex-col items-center justify-center relative z-10`}>
-                  <div className="w-32 h-32 rounded-full bg-slate-50 border-8 border-slate-100 flex items-center justify-center mb-6 shadow-inner relative overflow-hidden">
-                    <div className="absolute inset-0 bg-blue-500/10 animate-pulse"></div>
-                    <ScanLine size={48} className="text-slate-400" />
                     <div className="absolute top-0 left-0 w-full h-1 bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.8)] animate-[scan-beam_2s_ease-in-out_infinite]" style={{ animation: 'scanBeam 2s ease-in-out infinite' }}></div>
                   </div>
                   <h3 className="text-xl font-black text-slate-800 text-center uppercase tracking-wider">Apropie Legitimația</h3>
@@ -778,16 +797,35 @@ export default function KioskDisplay() {
                   `}} />
                 </div>
               ) : (
-                // CLASSIC QR (STATIC / DYNAMIC)
+                // CLASSIC QR (STATIC / DYNAMIC) - Cu logo-ul companiei în mijlocul codului QR
                 qrPayload ? (
-                  <QRCodeSVG 
-                    value={qrPayload} 
-                    size={isVertical ? 280 : 320} 
-                    level="H"
-                    includeMargin={false}
-                    className="rounded-lg drop-shadow-sm relative z-10"
-                    fgColor="#0f172a" 
-                  />
+                  <div className="relative flex items-center justify-center">
+                    <QRCodeSVG 
+                      value={qrPayload} 
+                      size={isVertical ? 280 : 320} 
+                      level="H"
+                      includeMargin={false}
+                      className="rounded-lg drop-shadow-sm relative z-10"
+                      fgColor="#0f172a" 
+                      imageSettings={tenant?.logo_url ? {
+                        src: tenant.logo_url.startsWith('http') 
+                          ? tenant.logo_url 
+                          : `${(import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')).replace(/\/$/, '')}/${tenant.logo_url.replace(/^\//, '')}`,
+                        height: isVertical ? 54 : 64,
+                        width: isVertical ? 54 : 64,
+                        excavate: true,
+                      } : undefined}
+                    />
+                    {tenant?.logo_url && (
+                      <div className="absolute z-20 w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white p-2 shadow-xl border-2 border-slate-100 flex items-center justify-center pointer-events-none">
+                        <img 
+                          src={tenant.logo_url.startsWith('http') ? tenant.logo_url : `${(import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')).replace(/\/$/, '')}/${tenant.logo_url.replace(/^\//, '')}`}
+                          alt={tenant.name}
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+                    )}
+                  </div>
                 ) : (
                   <div className={`w-[320px] h-[320px] ${isVertical ? 'w-[280px] h-[280px]' : ''} bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center justify-center relative z-10`}>
                     <Loader2 className="w-10 h-10 animate-spin text-slate-300" />
@@ -809,6 +847,158 @@ export default function KioskDisplay() {
           
         </div>
       </div>
+
+      {/* POPUP CONFIRMARE PONTAJ: POZA ANGAJATULUI PE MIJLOC & MARE + URĂRI ZI DE NAȘTERE */}
+      {scanSuccess && (() => {
+        const isEntry = scanSuccess.action === 'INTRARE' || scanSuccess.action === 'IN' || scanSuccess.type === 'IN';
+        const actionLabel = isEntry ? 'INTRARE' : 'IEȘIRE';
+        const companyName = tenant?.name || 'Unda';
+        
+        // Verificare zi de naștere (din backend sau calculată din birth_date)
+        const isBirthday = Boolean(
+          scanSuccess.employee?.is_birthday || 
+          (() => {
+            if (!scanSuccess.employee?.birth_date) return false;
+            const b = new Date(scanSuccess.employee.birth_date);
+            const now = new Date();
+            return (b.getUTCMonth() === now.getUTCMonth() && b.getUTCDate() === now.getUTCDate()) ||
+                   (b.getMonth() === now.getMonth() && b.getDate() === now.getDate());
+          })()
+        );
+
+        const avatarSrc = scanSuccess.employee?.avatar_path ? (
+          scanSuccess.employee.avatar_path.startsWith('http') 
+            ? scanSuccess.employee.avatar_path 
+            : `${(import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')).replace(/\/$/, '')}/${scanSuccess.employee.avatar_path.replace(/^\//, '')}`
+        ) : null;
+
+        return (
+          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-2xl animate-in fade-in zoom-in-95 duration-300 pointer-events-none select-none">
+            <div 
+              className="w-full max-w-xl md:max-w-2xl bg-slate-950/95 border border-white/20 rounded-[3rem] p-8 md:p-12 flex flex-col items-center text-center shadow-2xl relative overflow-hidden"
+              style={{
+                boxShadow: isBirthday
+                  ? '0 0 120px rgba(251, 191, 36, 0.45), 0 25px 70px rgba(0,0,0,0.9)'
+                  : isEntry 
+                    ? '0 0 100px rgba(16, 185, 129, 0.35), 0 25px 70px rgba(0,0,0,0.85)' 
+                    : '0 0 100px rgba(245, 158, 11, 0.35), 0 25px 70px rgba(0,0,0,0.85)'
+              }}
+            >
+              {/* Soft ambient aura */}
+              <div 
+                className="absolute -top-24 w-96 h-96 rounded-full blur-3xl opacity-40 pointer-events-none"
+                style={{ backgroundColor: isBirthday ? '#f59e0b' : isEntry ? '#10b981' : '#f59e0b' }}
+              />
+
+              {/* Poza Angajatului: PE MIJLOC SI MULT MAI MARE */}
+              <div className="relative mb-6">
+                <div 
+                  className={`w-60 h-60 sm:w-72 sm:h-72 md:w-80 md:h-80 rounded-full p-2 border-[8px] shadow-2xl flex items-center justify-center overflow-hidden bg-slate-900 transition-all ${
+                    isBirthday
+                      ? 'border-amber-400 ring-8 ring-purple-500/40 shadow-[0_0_90px_rgba(251,191,36,0.6)]'
+                      : isEntry 
+                        ? 'border-emerald-500 shadow-[0_0_80px_rgba(16,185,129,0.45)]' 
+                        : 'border-amber-500 shadow-[0_0_80px_rgba(245,158,11,0.45)]'
+                  }`}
+                >
+                  {avatarSrc ? (
+                    <img 
+                      src={avatarSrc} 
+                      alt="Avatar Angajat" 
+                      className="w-full h-full object-cover rounded-full" 
+                    />
+                  ) : (
+                    <User size={130} className={isBirthday ? 'text-amber-300' : isEntry ? 'text-emerald-400' : 'text-amber-400'} />
+                  )}
+                </div>
+
+                {/* Badge icon pe poza */}
+                <div 
+                  className={`absolute bottom-2 right-2 w-16 h-16 sm:w-18 sm:h-18 rounded-full flex items-center justify-center shadow-2xl border-4 border-slate-950 text-2xl ${
+                    isBirthday
+                      ? 'bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 animate-bounce'
+                      : isEntry ? 'bg-emerald-500 text-white' : 'bg-amber-500 text-white'
+                  }`}
+                >
+                  {isBirthday ? '🎂' : <CheckCircle2 size={36} />}
+                </div>
+              </div>
+
+              {isBirthday ? (
+                /* Mesaj Aniversare Zi de Naștere */
+                <div className="flex flex-col items-center">
+                  <div className="inline-flex items-center gap-2 px-5 py-1.5 rounded-full bg-gradient-to-r from-amber-500/20 via-pink-500/20 to-purple-500/20 border border-amber-400/40 text-amber-300 font-extrabold text-sm sm:text-base uppercase tracking-wider mb-2 animate-pulse">
+                    <span>🎉</span>
+                    <span>ZIUA TA DE NAȘTERE</span>
+                    <span>🎈</span>
+                  </div>
+
+                  <h2 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight leading-tight mb-3 text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-rose-300 to-pink-400">
+                    La mulți ani, {scanSuccess.employee?.first_name}!
+                  </h2>
+
+                  <p className="text-lg sm:text-xl text-slate-100 font-semibold max-w-lg leading-relaxed mb-6">
+                    Felicitări și cele mai frumoase urări din partea echipei <span className="text-amber-300 font-black">{companyName}</span>! 🎂✨
+                  </p>
+
+                  <div className={`inline-flex items-center gap-2.5 px-6 py-2.5 rounded-full text-sm sm:text-base font-black tracking-wider uppercase shadow-lg ${
+                    isEntry 
+                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-emerald-500/10' 
+                      : 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-amber-500/10'
+                  }`}>
+                    <CheckCircle2 size={20} />
+                    {actionLabel} ÎNREGISTRATĂ
+                  </div>
+                </div>
+              ) : (
+                /* Mesaj Normal de Pontaj */
+                <div className="flex flex-col items-center">
+                  <p className={`text-lg sm:text-xl font-bold tracking-wide uppercase mb-1.5 ${isEntry ? 'text-emerald-400' : 'text-amber-400'}`}>
+                    {scanSuccess.duplicate ? '⚠️ Deja pontat!' : (isEntry ? '👋 Bine ai venit!' : '👋 La revedere!')}
+                  </p>
+
+                  <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight leading-tight mb-2">
+                    {scanSuccess.employee?.first_name} {scanSuccess.employee?.last_name}
+                  </h2>
+
+                  <p className="text-base sm:text-lg text-slate-300 font-medium max-w-md mb-6">
+                    {scanSuccess.duplicate 
+                      ? scanSuccess.message 
+                      : (isEntry ? 'Tura ta a început cu succes. Spor la muncă!' : 'Tura ta s-a încheiat cu succes. Odihnă plăcută!')}
+                  </p>
+
+                  <div className={`inline-flex items-center gap-2.5 px-6 py-2.5 rounded-full text-sm sm:text-base font-black tracking-wider uppercase shadow-lg ${
+                    isEntry 
+                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-emerald-500/10' 
+                      : 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-amber-500/10'
+                  }`}>
+                    <CheckCircle2 size={20} />
+                    {actionLabel} ÎNREGISTRATĂ
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* POPUP EROARE SCANARE */}
+      {scanError && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center p-4 sm:p-6 bg-black/70 backdrop-blur-2xl animate-in fade-in zoom-in-95 duration-300 pointer-events-none select-none">
+          <div className="w-full max-w-md bg-slate-950/90 border border-rose-500/30 rounded-[3rem] p-8 flex flex-col items-center text-center shadow-[0_0_80px_rgba(239,68,68,0.3)]">
+            <div className="w-24 h-24 rounded-full mb-5 flex items-center justify-center border-4 border-rose-500 bg-rose-500/10 text-rose-500 shadow-xl">
+              <XCircle size={48} />
+            </div>
+            <h3 className="text-2xl font-black text-white leading-tight mb-2">
+              Eroare Scanare
+            </h3>
+            <p className="text-base text-rose-300 font-medium">
+              {scanError}
+            </p>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

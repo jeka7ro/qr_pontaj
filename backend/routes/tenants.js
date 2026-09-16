@@ -1196,10 +1196,8 @@ router.post('/:id/kiosks/:kioskId/auth_kiosk', async (req, res) => {
       subtitle: result.rows[0].kiosk_subtitle || 'Deschide camera telefonului și scanează codul QR pentru a înregistra ora de venire sau plecare.'
     };
     
-    if (!dbPin) return res.json({ success: true, message: 'Fără PIN', orientation, locationId, colors, content });
-    
-    if (dbPin === pin) return res.json({ success: true, message: 'Autorizat', orientation, locationId, colors, content });
-    else return res.status(401).json({ error: 'PIN Incorect' });
+    // Kiosk display configuration is always returned so the live punch display never gets locked on reload
+    return res.json({ success: true, message: 'Autorizat', orientation, locationId, colors, content });
   } catch (error) {
     console.error('Error authenticating kiosk:', error);
     res.status(500).json({ error: 'Eroare la autentificare' });

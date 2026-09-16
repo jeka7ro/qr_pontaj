@@ -134,7 +134,7 @@ router.post('/', async (req, res) => {
   try {
     // 1. Gaseste angajatul
     const empResult = await pool.query(
-      'SELECT id, first_name, last_name, avatar_path, job_title FROM qrp_employees WHERE employee_code = $1 AND pin_code = $2 AND tenant_id = $3',
+      'SELECT id, first_name, last_name, avatar_path, job_title, birth_date FROM qrp_employees WHERE employee_code = $1 AND pin_code = $2 AND tenant_id = $3',
       [employee_code, pin_code, tenant_id]
     );
 
@@ -143,6 +143,17 @@ router.post('/', async (req, res) => {
     }
 
     const employee = empResult.rows[0];
+
+    // Verificăm dacă este ziua de naștere a angajatului
+    let isBirthday = false;
+    if (employee.birth_date) {
+      const bDate = new Date(employee.birth_date);
+      const now = new Date();
+      if ((bDate.getUTCMonth() === now.getUTCMonth() && bDate.getUTCDate() === now.getUTCDate()) ||
+          (bDate.getMonth() === now.getMonth() && bDate.getDate() === now.getDate())) {
+        isBirthday = true;
+      }
+    }
 
     // 2. Prevent consecutive duplicate actions + cooldown 60s
     const lastEntryRes = await pool.query(
@@ -223,7 +234,8 @@ router.post('/', async (req, res) => {
         first_name: employee.first_name,
         last_name: employee.last_name,
         avatar_path: employee.avatar_path,
-        showPhoto: showPhoto
+        showPhoto: showPhoto,
+        is_birthday: isBirthday
       }
     };
 
@@ -290,7 +302,8 @@ router.post('/', async (req, res) => {
         first_name: employee.first_name,
         last_name: employee.last_name,
         avatar_path: employee.avatar_path,
-        showPhoto
+        showPhoto,
+        is_birthday: isBirthday
       }
     });
   } catch (err) {

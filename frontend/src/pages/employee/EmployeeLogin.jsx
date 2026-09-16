@@ -232,9 +232,15 @@ export default function EmployeeLogin() {
                     type={showPin ? 'text' : 'password'}
                     inputMode="numeric"
                     pattern="[0-9]*"
-                    maxLength="6"
+                    maxLength="4"
                     value={pinCode}
-                    onChange={(e) => setPinCode(e.target.value.replace(/\D/g, ''))}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '');
+                      setPinCode(val);
+                      if (val.length === 4 && employeeCode) {
+                        executeLogin(employeeCode, val);
+                      }
+                    }}
                     autoComplete="current-password"
                     className="w-full pl-11 pr-12 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-primary-500 font-black text-slate-800 dark:text-white tracking-widest outline-none transition-shadow"
                     placeholder="••••"

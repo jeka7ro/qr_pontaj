@@ -36,7 +36,7 @@ router.post('/', async (req, res) => {
 
     // Găsim angajatul
     const empResult = await pool.query(
-      'SELECT id, first_name, last_name, avatar_path, job_title FROM qrp_employees WHERE id = $1 AND tenant_id = $2',
+      'SELECT id, first_name, last_name, avatar_path, job_title, birth_date FROM qrp_employees WHERE id = $1 AND tenant_id = $2',
       [employeeId, tenantId]
     );
 
@@ -45,6 +45,17 @@ router.post('/', async (req, res) => {
     }
     const employee = empResult.rows[0];
 
+    // Verificăm dacă este ziua de naștere a angajatului
+    let isBirthday = false;
+    if (employee.birth_date) {
+      const bDate = new Date(employee.birth_date);
+      const now = new Date();
+      if ((bDate.getUTCMonth() === now.getUTCMonth() && bDate.getUTCDate() === now.getUTCDate()) ||
+          (bDate.getMonth() === now.getMonth() && bDate.getDate() === now.getDate())) {
+        isBirthday = true;
+      }
+    }
+
     // Rezolvăm location_id din kiosk
     let location_id = null;
     let showPhoto = true;
@@ -52,7 +63,7 @@ router.post('/', async (req, res) => {
       const kioskRes = await pool.query('SELECT location_id, kiosk_show_photo FROM qrp_kiosks WHERE id = $1', [kiosk_id]);
       if (kioskRes.rows.length > 0) {
         location_id = kioskRes.rows[0].location_id;
-        showPhoto = kioskRes.rows[0].kiosk_show_photo;
+        showPhoto = kioskRes.rows[0].kiosk_show_photo !== false;
       }
     }
 
@@ -84,7 +95,8 @@ router.post('/', async (req, res) => {
           employee: {
             first_name: employee.first_name,
             last_name: employee.last_name,
-            avatar_path: showPhoto ? employee.avatar_path : null
+            avatar_path: showPhoto ? employee.avatar_path : null,
+            is_birthday: isBirthday
           }
         };
         if (typeof scanRouter.notifyAdmin === 'function') scanRouter.notifyAdmin(tenantId, duplicatePayload);
@@ -127,7 +139,8 @@ router.post('/', async (req, res) => {
         first_name: employee.first_name,
         last_name: employee.last_name,
         avatar_path: showPhoto ? employee.avatar_path : null,
-        job_title: employee.job_title || 'Angajat'
+        job_title: employee.job_title || 'Angajat',
+        is_birthday: isBirthday
       }
     };
     if (typeof scanRouter.notifyAdmin === 'function') scanRouter.notifyAdmin(tenantId, successPayload);
@@ -159,7 +172,16 @@ router.post('/history', async (req, res) => {
 
     const kiosk = kioskRes.rows[0];
 
-    if (kiosk.kiosk_pin && kiosk.kiosk_pin !== pin_code) {
+    // Verificare obligatorie PIN (minim 4 cifre, fără bypass)
+    if (!pin_code || typeof pin_code !== 'string' || pin_code.trim().length !== 4) {
+      return res.status(403).json({ error: 'Introduceți codul PIN de 4 cifre.' });
+    }
+
+    const cleanPin = pin_code.trim();
+    const kioskPin = kiosk.kiosk_pin ? kiosk.kiosk_pin.trim() : null;
+    const isMatch = kioskPin ? (cleanPin === kioskPin) : (cleanPin === '1234');
+
+    if (!isMatch) {
       return res.status(403).json({ error: 'PIN incorect.' });
     }
 

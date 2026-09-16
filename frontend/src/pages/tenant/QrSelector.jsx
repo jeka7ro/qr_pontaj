@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { TabletSmartphone, Plus, Edit2, Trash2, MapPin, Search, ChevronLeft, ChevronRight, X, AlertCircle, ExternalLink, Lock, Unlock, Monitor, Smartphone , ScanLine} from 'lucide-react';
 import ConfirmModal from '../../components/ConfirmModal';
+import IpadGuideModal from '../../components/IpadGuideModal';
 
 export default function QrSelector({ tenant, themeColor }) {
   const [kiosks, setKiosks] = useState([]);
@@ -12,6 +13,7 @@ export default function QrSelector({ tenant, themeColor }) {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+  const [showIpadGuide, setShowIpadGuide] = useState(false);
 
   // Table State
   const [search, setSearch] = useState('');
@@ -231,16 +233,26 @@ export default function QrSelector({ tenant, themeColor }) {
           </p>
         </div>
 
-        {!showAddForm && (
+        <div className="flex flex-wrap items-center gap-2.5">
           <button
-            onClick={() => { setShowAddForm(true); setFormData({ name: '', location_id: '', kiosk_pin: '', kiosk_show_photo: true, kiosk_orientation: 'horizontal', kiosk_timer_color: '', kiosk_timer_bg_color: '', kiosk_title: 'Pontaj Digital', kiosk_subtitle: 'Deschide camera telefonului și scanează codul QR pentru a înregistra ora de venire sau plecare.', kiosk_bg_color: '', kiosk_logo_bg: '', kiosk_show_logo_bg: true, kiosk_show_timer_bg: true, kiosk_logo_size: 1, kiosk_logo_position: 'top-left' }); }}
-            className="px-4 py-2.5 text-sm rounded-full text-white font-bold shadow-sm transition-all flex items-center gap-2"
-            style={{ backgroundColor: themeColor }}
+            onClick={() => setShowIpadGuide(true)}
+            className="px-4 py-2.5 text-sm rounded-full font-bold border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm transition-all flex items-center gap-2"
           >
-            <Plus size={18} />
-            Adaugă Kiosk
+            <TabletSmartphone size={18} className="text-blue-500" />
+            <span>Ghid iPad (Acces Ghidat)</span>
           </button>
-        )}
+
+          {!showAddForm && (
+            <button
+              onClick={() => { setShowAddForm(true); setFormData({ name: '', location_id: '', kiosk_pin: '', kiosk_show_photo: true, kiosk_orientation: 'horizontal', kiosk_timer_color: '', kiosk_timer_bg_color: '', kiosk_title: 'Pontaj Digital', kiosk_subtitle: 'Deschide camera telefonului și scanează codul QR pentru a înregistra ora de venire sau plecare.', kiosk_bg_color: '', kiosk_logo_bg: '', kiosk_show_logo_bg: true, kiosk_show_timer_bg: true, kiosk_logo_size: 1, kiosk_logo_position: 'top-left' }); }}
+              className="px-4 py-2.5 text-sm rounded-full text-white font-bold shadow-sm transition-all flex items-center gap-2"
+              style={{ backgroundColor: themeColor }}
+            >
+              <Plus size={18} />
+              Adaugă Kiosk
+            </button>
+          )}
+        </div>
       </div>
 
       {error && (
@@ -565,6 +577,34 @@ export default function QrSelector({ tenant, themeColor }) {
       {/* Tabel Kiosk-uri */}
       {!showAddForm && (
         <>
+          {/* Banner Recomandare iPad Guided Access */}
+          <div className="mb-6 bg-gradient-to-r from-blue-50 via-indigo-50/40 to-blue-50/20 dark:from-slate-800 dark:via-slate-800/80 dark:to-slate-800/50 border border-blue-100 dark:border-blue-900/30 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+            <div className="flex items-start gap-3.5">
+              <div className="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-blue-500/20 mt-0.5">
+                <TabletSmartphone size={22} />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                    Folosești un iPad sau tabletă la intrare?
+                  </h4>
+                  <span className="text-[10px] uppercase tracking-wider bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 px-2 py-0.5 rounded-full font-black">
+                    Recomandat
+                  </span>
+                </div>
+                <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
+                  Activează <strong className="text-slate-800 dark:text-slate-200">Guided Access (Acces Ghidat)</strong> pentru a bloca iPad-ul strict pe ecranul cu codul QR. Angajații nu pot ieși din pagină, iar ecranul rămâne mereu pornit.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowIpadGuide(true)}
+              className="px-4 py-2.5 text-xs rounded-full font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-all whitespace-nowrap self-stretch sm:self-auto text-center shrink-0"
+            >
+              Vezi Ghid în 3 Pași
+            </button>
+          </div>
+
           {/* SEARCH BAR */}
           <div className="mb-4">
             <div style={{ position: 'relative' }} className="w-full max-w-sm">
@@ -747,6 +787,12 @@ export default function QrSelector({ tenant, themeColor }) {
         onConfirm={confirmDelete}
         title="Ștergere Kiosk"
         message="Ești sigur că vrei să ștergi acest Kiosk?"
+      />
+
+      <IpadGuideModal 
+        isOpen={showIpadGuide}
+        onClose={() => setShowIpadGuide(false)}
+        themeColor={themeColor}
       />
     </div>
   );
