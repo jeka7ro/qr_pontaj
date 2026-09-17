@@ -24,28 +24,20 @@ export default function AdminLogin() {
   const navigate = useNavigate();
   const lockedTenant = getUrlTenant();
 
-  // Inițializare email: dacă suntem pe un tenant specific (?tenant=rollmaster), NU pre-populăm cu emailul altui tenant (ex: admin@unda.ro)!
+  // Inițializare email: DOAR dacă utilizatorul a bifat anterior "Ține-mă minte"
+  const isRemembered = localStorage.getItem('admin_remember_me') === 'true';
+  const [rememberMe, setRememberMe] = useState(isRemembered);
+
   const [email, setEmail] = useState(() => {
+    if (!isRemembered) return '';
     if (lockedTenant) {
-      const tenantSpecificEmail = localStorage.getItem(`saved_admin_email_${lockedTenant}`);
-      if (tenantSpecificEmail) return tenantSpecificEmail;
-      const globalEmail = localStorage.getItem('saved_admin_email');
-      if (globalEmail && globalEmail.toLowerCase().includes(lockedTenant)) {
-        return globalEmail;
-      }
-      return '';
+      return localStorage.getItem(`saved_admin_email_${lockedTenant}`) || '';
     }
     return localStorage.getItem('saved_admin_email') || '';
   });
 
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(() => {
-    if (lockedTenant) {
-      return !!localStorage.getItem(`saved_admin_email_${lockedTenant}`);
-    }
-    return !!localStorage.getItem('saved_admin_email');
-  });
 
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -98,13 +90,15 @@ export default function AdminLogin() {
       return;
     }
 
-    // Dacă nu avem tenant în URL, verificăm dacă avem un email salvat
-    const savedEmail = localStorage.getItem('saved_admin_email');
-    if (savedEmail && savedEmail.includes('@')) {
-      lastFetchedEmailRef.current = savedEmail.toLowerCase().trim();
-      fetchBranding({ email: savedEmail });
+    // Dacă nu avem tenant în URL și utilizatorul a salvat anterior emailul cu "Ține-mă minte"
+    if (isRemembered) {
+      const savedEmail = localStorage.getItem('saved_admin_email');
+      if (savedEmail && savedEmail.includes('@')) {
+        lastFetchedEmailRef.current = savedEmail.toLowerCase().trim();
+        fetchBranding({ email: savedEmail });
+      }
     }
-  }, [lockedTenant]);
+  }, [lockedTenant, isRemembered]);
 
   // 2. Schimbare dinamică a temei pe măsură ce utilizatorul tastează emailul (DOAR dacă pagina nu e fixată pe un tenant din URL)
   useEffect(() => {
@@ -177,11 +171,13 @@ export default function AdminLogin() {
     try {
       const currentSubdomain = tenantBranding?.subdomain || lockedTenant;
       if (rememberMe) {
+        localStorage.setItem('admin_remember_me', 'true');
         localStorage.setItem('saved_admin_email', email);
         if (currentSubdomain) {
           localStorage.setItem(`saved_admin_email_${currentSubdomain}`, email);
         }
       } else {
+        localStorage.removeItem('admin_remember_me');
         localStorage.removeItem('saved_admin_email');
         if (currentSubdomain) {
           localStorage.removeItem(`saved_admin_email_${currentSubdomain}`);
@@ -325,7 +321,7 @@ export default function AdminLogin() {
                   style={{
                     '--tw-ring-color': brandColor
                   }}
-                  placeholder={lockedTenant ? `admin@${lockedTenant}.ro` : "admin@companie.ro"}
+                  placeholder="email@domeniu.ro"
                 />
                 {isFetchingBranding && (
                   <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-400">
@@ -493,7 +489,7 @@ export default function AdminLogin() {
                       required
                       value={forgotEmail}
                       onChange={(e) => setForgotEmail(e.target.value)}
-                      placeholder="admin@companie.ro"
+                      placeholder="email@domeniu.ro"
                       className="block w-full pl-10 pr-4 h-11 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-white outline-none text-sm transition-all"
                       style={{
                         '--tw-ring-color': brandColor

@@ -429,7 +429,7 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
                       onChange={handleChange}
                       required
                       className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white dark:border-slate-700 outline-none transition-all shadow-sm" 
-                      placeholder="admin@locatie.ro" 
+                      placeholder="email@domeniu.ro" 
                     />
                   </div>
                   <div>

@@ -167,7 +167,7 @@ export default function TenantAdminsModal({ isOpen, onClose, tenant }) {
                       onChange={e => setNewAdmin({...newAdmin, email: e.target.value})}
                       required
                       className="w-full pl-10 pr-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white dark:border-slate-700 outline-none transition-all shadow-sm"
-                      placeholder="admin@companie.ro"
+                      placeholder="email@domeniu.ro"
                     />
                   </div>
                 </div>
