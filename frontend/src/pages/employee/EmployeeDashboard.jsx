@@ -624,7 +624,7 @@ export default function EmployeeDashboard() {
         ) : activeTab === 'qr' ? (
           <div className="flex flex-col items-center justify-center py-4">
             <div className="bg-white p-5 rounded-3xl shadow-xl border border-slate-100 mb-6 flex flex-col items-center w-full max-w-[340px]">
-              <div className="p-3 rounded-2xl border mb-6 bg-[var(--tc-50)] border-[var(--tc-100)]">
+              <div className="p-3 rounded-2xl border mb-6 bg-[var(--tc-50)] border-[var(--tc-100)] relative flex items-center justify-center">
                 <QRCodeSVG 
                   value={`QRP-EMP-${employee.tenant_id}-${employee.id}`}
                   size={260}
@@ -642,6 +642,18 @@ export default function EmployeeDashboard() {
                       : undefined
                   }
                 />
+                {employee.tenant_logo && (
+                  <div 
+                    className="absolute z-10 w-12 h-12 rounded-xl p-1.5 shadow-md border-2 border-white flex items-center justify-center pointer-events-none"
+                    style={{ backgroundColor: tc && tc !== '#ffffff' && tc !== '#000000' ? tc : '#0f172a' }}
+                  >
+                    <img 
+                      src={employee.tenant_logo.startsWith('http') ? employee.tenant_logo : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${employee.tenant_logo}`}
+                      alt="Logo"
+                      className="w-full h-full object-contain filter drop-shadow-xs"
+                    />
+                  </div>
+                )}
               </div>
               <h2 className="text-xl font-black text-slate-800 text-center uppercase tracking-tight">Ecuson Digital</h2>
               <p className="text-sm text-slate-500 text-center mt-2 max-w-[200px] leading-relaxed">

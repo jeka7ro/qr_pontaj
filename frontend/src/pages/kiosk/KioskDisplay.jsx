@@ -425,6 +425,35 @@ export default function KioskDisplay() {
   const customTimerColor = kioskColors.timer || themeColor;
   const customLogoBg = kioskColors.logo_bg || 'rgba(15, 23, 42, 0.5)'; // bg-slate-900/50 fallback
 
+  const isColorLight = (hexOrRgb) => {
+    if (!hexOrRgb || typeof hexOrRgb !== 'string') return false;
+    if (hexOrRgb.startsWith('#')) {
+      let hex = hexOrRgb.replace('#', '').trim();
+      if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+      if (hex.length === 6) {
+        const r = parseInt(hex.substring(0, 2), 16);
+        const g = parseInt(hex.substring(2, 4), 16);
+        const b = parseInt(hex.substring(4, 6), 16);
+        return (0.299 * r + 0.587 * g + 0.114 * b) > 190;
+      }
+    }
+    return false;
+  };
+
+  const logoFullUrl = tenant?.logo_url 
+    ? (tenant.logo_url.startsWith('http') 
+        ? tenant.logo_url 
+        : `${(import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')).replace(/\/$/, '')}/${tenant.logo_url.replace(/^\//, '')}`)
+    : null;
+
+  // Culoare fundal pentru badge-ul logo din centrul codului QR:
+  // Folosim culoarea aleasă în setările kiosk-ului (logo_bg), sau culoarea de fundal a kiosk-ului dacă nu e albă,
+  // sau culoarea temei, cu fallback la #0f172a (dark slate).
+  // Astfel logo-urile albe/transparente (precum UNDA) nu se mai pierd niciodată pe fundal alb!
+  const qrLogoBadgeBg = kioskColors.logo_bg 
+    || (customBgColor && !isColorLight(customBgColor) ? customBgColor : null)
+    || (themeColor && !isColorLight(themeColor) && themeColor !== '#000000' ? themeColor : '#0f172a');
+
 
 
   if (error) {
@@ -768,22 +797,24 @@ export default function KioskDisplay() {
             <div className={`bg-white p-6 md:p-8 rounded-[3rem] shadow-2xl relative ${isVertical ? 'w-full aspect-square flex items-center justify-center' : ''} transition-all duration-500 overflow-hidden`}>
               {/* Pulsing glow behind */}
               <div className="absolute inset-0 rounded-[3rem] animate-pulse-slow opacity-20" style={{ backgroundColor: themeColor, filter: 'blur(30px)', zIndex: -1 }}></div>
-              
               {effectiveQrMode === 'HARDWARE' ? (
                 // SCANNER IDLE (HARDWARE) - Cu logo-ul companiei
                 <div className={`w-[320px] h-[320px] ${isVertical ? 'w-[280px] h-[280px]' : ''} flex flex-col items-center justify-center relative z-10`}>
-                  <div className="w-32 h-32 rounded-full bg-slate-50 border-8 border-slate-100 flex items-center justify-center mb-6 shadow-inner relative overflow-hidden p-4">
-                    <div className="absolute inset-0 bg-blue-500/10 animate-pulse"></div>
-                    {tenant?.logo_url ? (
+                  <div 
+                    className="w-32 h-32 rounded-3xl border-4 border-white/80 flex items-center justify-center mb-6 shadow-xl relative overflow-hidden p-5 transition-all"
+                    style={{ backgroundColor: qrLogoBadgeBg }}
+                  >
+                    <div className="absolute inset-0 bg-white/10 animate-pulse"></div>
+                    {logoFullUrl ? (
                       <img 
-                        src={tenant.logo_url.startsWith('http') ? tenant.logo_url : `${(import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')).replace(/\/$/, '')}/${tenant.logo_url.replace(/^\//, '')}`}
-                        alt={tenant.name}
+                        src={logoFullUrl} 
+                        alt={tenant.name} 
                         className="w-full h-full object-contain relative z-10 filter drop-shadow-sm"
                       />
                     ) : (
-                      <ScanLine size={48} className="text-slate-400 relative z-10" />
+                      <ScanLine size={48} className="text-white relative z-10" />
                     )}
-                    <div className="absolute top-0 left-0 w-full h-1 bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.8)] animate-[scan-beam_2s_ease-in-out_infinite]" style={{ animation: 'scanBeam 2s ease-in-out infinite' }}></div>
+                    <div className="absolute top-0 left-0 w-full h-1 bg-white shadow-[0_0_10px_rgba(255,255,255,0.8)] animate-[scan-beam_2s_ease-in-out_infinite]" style={{ animation: 'scanBeam 2s ease-in-out infinite' }}></div>
                   </div>
                   <h3 className="text-xl font-black text-slate-800 text-center uppercase tracking-wider">Apropie Legitimația</h3>
                   <p className="text-slate-500 font-medium text-sm text-center mt-2 px-6">de cititorul optic conectat</p>
@@ -807,21 +838,22 @@ export default function KioskDisplay() {
                       includeMargin={false}
                       className="rounded-lg drop-shadow-sm relative z-10"
                       fgColor="#0f172a" 
-                      imageSettings={tenant?.logo_url ? {
-                        src: tenant.logo_url.startsWith('http') 
-                          ? tenant.logo_url 
-                          : `${(import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')).replace(/\/$/, '')}/${tenant.logo_url.replace(/^\//, '')}`,
+                      imageSettings={logoFullUrl ? {
+                        src: logoFullUrl,
                         height: isVertical ? 54 : 64,
                         width: isVertical ? 54 : 64,
                         excavate: true,
                       } : undefined}
                     />
-                    {tenant?.logo_url && (
-                      <div className="absolute z-20 w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white p-2 shadow-xl border-2 border-slate-100 flex items-center justify-center pointer-events-none">
+                    {logoFullUrl && (
+                      <div 
+                        className="absolute z-20 w-16 h-16 sm:w-20 sm:h-20 rounded-2xl p-2.5 shadow-xl border-2 border-white flex items-center justify-center pointer-events-none transition-all"
+                        style={{ backgroundColor: qrLogoBadgeBg }}
+                      >
                         <img 
-                          src={tenant.logo_url.startsWith('http') ? tenant.logo_url : `${(import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')).replace(/\/$/, '')}/${tenant.logo_url.replace(/^\//, '')}`}
-                          alt={tenant.name}
-                          className="w-full h-full object-contain"
+                          src={logoFullUrl}
+                          alt={tenant?.name || 'Logo'}
+                          className="w-full h-full object-contain filter drop-shadow-xs"
                         />
                       </div>
                     )}
