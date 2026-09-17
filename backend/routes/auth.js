@@ -7,18 +7,35 @@ const router = express.Router();
 
 const crypto = require('crypto');
 const emailService = require('../services/emailService');
+const { logLoginEvent } = require('../utils/loginLogger');
 
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
+    const ip_address = (req.headers['x-forwarded-for']?.split(',')[0] || req.socket?.remoteAddress || req.ip || '').replace(/^::ffff:/, '');
+    const user_agent = req.headers['user-agent'] || null;
 
     if (!email || !password) {
       return res.status(400).json({ error: 'Email și parola sunt obligatorii' });
     }
 
-    // Găsim user-ul în BD
-    const userResult = await pool.query('SELECT * FROM qrp_users WHERE LOWER(email) = LOWER($1)', [email.trim()]);
+    // Găsim user-ul în BD cu datele tenant-ului
+    const userResult = await pool.query(`
+      SELECT u.*, t.name as tenant_name 
+      FROM qrp_users u 
+      LEFT JOIN qrp_tenants t ON u.tenant_id = t.id 
+      WHERE LOWER(u.email) = LOWER($1)
+    `, [email.trim()]);
+
     if (userResult.rows.length === 0) {
+      await logLoginEvent({
+        email: email.trim(),
+        login_type: 'ADMIN',
+        ip_address,
+        user_agent,
+        status: 'FAILED',
+        failure_reason: 'Utilizatorul nu există'
+      });
       return res.status(401).json({ error: 'Credențiale incorecte' });
     }
 
@@ -27,12 +44,39 @@ router.post('/login', async (req, res) => {
     // Verificăm parola unică salvată în baza de date
     const isMatch = await bcrypt.compare(password, user.password_hash);
     if (!isMatch) {
+      await logLoginEvent({
+        tenant_id: user.tenant_id,
+        tenant_name: user.tenant_name,
+        user_id: user.id,
+        email: user.email,
+        user_name: user.name,
+        role: user.role,
+        login_type: user.role === 'SUPERADMIN' ? 'SUPERADMIN' : 'ADMIN',
+        ip_address,
+        user_agent,
+        status: 'FAILED',
+        failure_reason: 'Parolă incorectă'
+      });
       return res.status(401).json({ error: 'Credențiale incorecte' });
     }
 
+    // Înregistrăm log-ul de succes
+    await logLoginEvent({
+      tenant_id: user.tenant_id,
+      tenant_name: user.tenant_name,
+      user_id: user.id,
+      email: user.email,
+      user_name: user.name,
+      role: user.role,
+      login_type: user.role === 'SUPERADMIN' ? 'SUPERADMIN' : 'ADMIN',
+      ip_address,
+      user_agent,
+      status: 'SUCCESS'
+    });
+
     // Generăm token-ul
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role, tenant_id: user.tenant_id },
+      { id: user.id, email: user.email, role: user.role, tenant_id: user.tenant_id, name: user.name },
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );

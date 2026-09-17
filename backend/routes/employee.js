@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const db = require('../db');
+const { logLoginEvent } = require('../utils/loginLogger');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'secret';
 
@@ -9,13 +10,15 @@ const JWT_SECRET = process.env.JWT_SECRET || 'secret';
 router.post('/login', async (req, res) => {
   try {
     const { employee_code, pin_code } = req.body;
+    const ip_address = (req.headers['x-forwarded-for']?.split(',')[0] || req.socket?.remoteAddress || req.ip || '').replace(/^::ffff:/, '');
+    const user_agent = req.headers['user-agent'] || null;
     
     if (!employee_code || !pin_code) {
       return res.status(400).json({ error: 'Cod angajat și PIN obligatorii.' });
     }
 
     const result = await db.query(
-      `SELECT e.id, e.tenant_id, e.first_name, e.last_name, e.avatar_path, e.job_title, e.is_archived, t.theme_color as tenant_culoare, t.logo_url as tenant_logo, t.favicon_url as tenant_favicon, t.name as tenant_nume
+      `SELECT e.id, e.tenant_id, e.first_name, e.last_name, e.avatar_path, e.job_title, e.is_archived, e.email, t.theme_color as tenant_culoare, t.logo_url as tenant_logo, t.favicon_url as tenant_favicon, t.name as tenant_nume
        FROM qrp_employees e
        JOIN qrp_tenants t ON e.tenant_id = t.id
        WHERE e.employee_code = $1 AND e.pin_code = $2`,
@@ -23,13 +26,48 @@ router.post('/login', async (req, res) => {
     );
 
     if (result.rows.length === 0) {
+      await logLoginEvent({
+        email: employee_code,
+        login_type: 'EMPLOYEE',
+        ip_address,
+        user_agent,
+        status: 'FAILED',
+        failure_reason: 'Cod angajat sau PIN incorect'
+      });
       return res.status(401).json({ error: 'Cod angajat sau PIN incorect.' });
     }
 
     const emp = result.rows[0];
     if (emp.is_archived) {
+      await logLoginEvent({
+        tenant_id: emp.tenant_id,
+        tenant_name: emp.tenant_nume,
+        user_id: emp.id,
+        email: emp.email || employee_code,
+        user_name: `${emp.first_name} ${emp.last_name}`,
+        role: 'EMPLOYEE',
+        login_type: 'EMPLOYEE',
+        ip_address,
+        user_agent,
+        status: 'BLOCKED',
+        failure_reason: 'Cont angajat arhivat'
+      });
       return res.status(403).json({ error: 'Acest cont de angajat a fost arhivat. Contactează administratorul companiei.' });
     }
+
+    // Înregistrăm log-ul de succes pentru angajat
+    await logLoginEvent({
+      tenant_id: emp.tenant_id,
+      tenant_name: emp.tenant_nume,
+      user_id: emp.id,
+      email: emp.email || employee_code,
+      user_name: `${emp.first_name} ${emp.last_name}`,
+      role: 'EMPLOYEE',
+      login_type: 'EMPLOYEE',
+      ip_address,
+      user_agent,
+      status: 'SUCCESS'
+    });
     
     // Generate token
     const token = jwt.sign(

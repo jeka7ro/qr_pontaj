@@ -10,12 +10,14 @@ import {
   Pencil,
   Trash2,
   Sun,
-  Moon
+  Moon,
+  History
 } from 'lucide-react';
 import DataTable from '../../components/DataTable';
 import ProfileModal from '../../components/ProfileModal';
 import CreateTenantModal from '../../components/CreateTenantModal';
 import TenantAdminsModal from '../../components/TenantAdminsModal';
+import LoginLogs from './LoginLogs';
 import { resolveFaviconUrl } from '../../utils/favicon';
 
 export default function AdminDashboard() {
@@ -51,6 +53,7 @@ export default function AdminDashboard() {
   const navItems = [
     { name: 'Tenanți', path: '/admin/dashboard', icon: Building2 },
     { name: 'Utilizatori Admin', path: '/admin/users', icon: Users },
+    { name: 'Jurnal Autentificări', path: '/admin/logs', icon: History },
     { name: 'Setări Platformă', path: '/admin/settings', icon: Settings },
   ];
 
@@ -161,6 +164,7 @@ export default function AdminDashboard() {
           <Routes>
             <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
             <Route path="/dashboard" element={<TenantsList />} />
+            <Route path="/logs" element={<LoginLogs />} />
           </Routes>
         </main>
         <ProfileModal 
