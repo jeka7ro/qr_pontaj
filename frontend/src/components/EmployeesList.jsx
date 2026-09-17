@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, UserPlus, Search, Edit2, Edit, KeyRound, Trash2, Loader2, ScanLine, Plus, Check, X, ChevronLeft, ChevronRight, MapPin, QrCode, Printer, Smartphone, Copy, Calendar, AlertTriangle } from 'lucide-react';
+import { Users, UserPlus, Search, Edit2, Edit, KeyRound, Trash2, Loader2, ScanLine, Plus, Check, X, ChevronLeft, ChevronRight, MapPin, QrCode, Printer, Smartphone, Copy, Calendar, AlertTriangle, Square, CheckSquare, MinusSquare, Briefcase } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { extractTextFromImageOrPdf, cropFaceFromIdCard } from '../lib/pdfOcr';
 import { parseIdCardText, getBirthDateFromCnp } from '../lib/idParser';
@@ -40,6 +40,18 @@ export default function EmployeesList({ tenant, themeColor }) {
   const [qrEmployee, setQrEmployee] = useState(null);
   const [copiedLink, setCopiedLink] = useState(false);
   const [dynamicTs, setDynamicTs] = useState(Date.now());
+
+  // Bulk Actions State
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
+  const [showBulkEditModal, setShowBulkEditModal] = useState(false);
+  const [bulkJobTitle, setBulkJobTitle] = useState('');
+  const [bulkLocationId, setBulkLocationId] = useState('');
+  const [bulkUpdateJob, setBulkUpdateJob] = useState(false);
+  const [bulkUpdateLocation, setBulkUpdateLocation] = useState(false);
+  const [bulkSaving, setBulkSaving] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [bulkError, setBulkError] = useState(null);
 
   useEffect(() => {
     const interval = setInterval(() => setDynamicTs(Date.now()), 5000);
@@ -242,6 +254,117 @@ export default function EmployeesList({ tenant, themeColor }) {
     }
   };
 
+  const isAllCurrentSelected = currentRows.length > 0 && currentRows.every(emp => selectedIds.includes(emp.id));
+  const isSomeCurrentSelected = currentRows.some(emp => selectedIds.includes(emp.id)) && !isAllCurrentSelected;
+
+  const handleToggleSelect = (id) => {
+    setSelectedIds(prev =>
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAll = () => {
+    const currentRowIds = currentRows.map(e => e.id);
+    if (isAllCurrentSelected) {
+      setSelectedIds(prev => prev.filter(id => !currentRowIds.includes(id)));
+    } else {
+      setSelectedIds(prev => Array.from(new Set([...prev, ...currentRowIds])));
+    }
+  };
+
+  const handleSelectAllFiltered = () => {
+    setSelectedIds(filteredEmployees.map(e => e.id));
+  };
+
+  const openEditModal = (emp) => {
+    setFormData({
+      first_name: emp.first_name, last_name: emp.last_name, cnp: emp.cnp, id_card_series: emp.id_card_series || '',
+      birth_date: emp.birth_date ? emp.birth_date.split('T')[0] : '', address: emp.address || '',
+      phone: emp.phone || '', email: emp.email || '',
+      job_title: emp.job_title || '', pin_code: emp.pin_code || '', location_id: emp.location_id || '',
+      contract_start_date: emp.contract_start_date ? emp.contract_start_date.split('T')[0] : '',
+      contract_notes: emp.contract_notes || '', salary: emp.salary || '',
+      existing_avatar: emp.avatar_path, existing_id_card: emp.id_card_path,
+      eval_punctuality: emp.eval_punctuality || 0,
+      eval_attendance: emp.eval_attendance || 0,
+      eval_attitude: emp.eval_attitude || 0,
+      eval_performance: emp.eval_performance || 0,
+      eval_reliability: emp.eval_reliability || 0
+    });
+    setAvatarUrl(emp.avatar_path ? ( emp.avatar_path?.startsWith('http') ? emp.avatar_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${emp.avatar_path}` ) : null);
+    setIdCardBlob(null);
+    setEditingId(emp.id);
+    setSaveError(null);
+    setOcrError(null);
+    setShowAddModal(true);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    setBulkDeleting(true);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenants/${tenant.id}/employees/bulk-delete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: selectedIds })
+      });
+      if (res.ok) {
+        setSelectedIds([]);
+        setShowBulkDeleteModal(false);
+        fetchEmployees();
+      } else {
+        const data = await res.json();
+        setBulkError(data.error || 'Eroare la ștergerea în masă a angajaților.');
+      }
+    } catch (err) {
+      console.error('Error bulk deleting employees:', err);
+      setBulkError('Eroare la conexiunea cu serverul.');
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
+
+  const handleBulkUpdate = async (e) => {
+    e.preventDefault();
+    if (!bulkUpdateJob && !bulkUpdateLocation) {
+      setBulkError('Bifează cel puțin un câmp de modificat (Funcție sau Punct de Lucru).');
+      return;
+    }
+    setBulkSaving(true);
+    setBulkError(null);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenants/${tenant.id}/employees/bulk-update`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ids: selectedIds,
+          update_job_title: bulkUpdateJob,
+          job_title: bulkJobTitle,
+          update_location: bulkUpdateLocation,
+          location_id: bulkLocationId
+        })
+      });
+      if (res.ok) {
+        setSelectedIds([]);
+        setShowBulkEditModal(false);
+        setBulkUpdateJob(false);
+        setBulkUpdateLocation(false);
+        setBulkJobTitle('');
+        setBulkLocationId('');
+        fetchEmployees();
+      } else {
+        const data = await res.json();
+        setBulkError(data.error || 'Eroare la actualizarea în masă.');
+      }
+    } catch (err) {
+      console.error('Error bulk updating employees:', err);
+      setBulkError('Eroare de conexiune cu serverul.');
+    } finally {
+      setBulkSaving(false);
+    }
+  };
+
+
   return (
     <div className="w-full">
       <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -283,11 +406,114 @@ export default function EmployeesList({ tenant, themeColor }) {
             </div>
           </div>
 
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 dark:border-slate-700 overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
+          {/* BARĂ ACȚIUNI MULTIPLE (BULK ACTIONS) */}
+          {selectedIds.length > 0 && (
+            <div className="mb-4 bg-white dark:bg-slate-900 rounded-2xl shadow-lg border-2 border-primary-500/40 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-2 duration-150">
+              <div className="flex items-center gap-3">
+                <div 
+                  className="w-8 h-8 rounded-full text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0"
+                  style={{ backgroundColor: themeColor }}
+                >
+                  {selectedIds.length}
+                </div>
+                <div>
+                  <div className="font-bold text-slate-900 dark:text-white text-sm">
+                    {selectedIds.length} {selectedIds.length === 1 ? 'angajat selectat' : 'angajați selectați'}
+                  </div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400">
+                    Poți schimba funcția/locația în masă sau poți șterge înregistrările selectate.
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                {selectedIds.length === 1 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const emp = employees.find(e => e.id === selectedIds[0]);
+                      if (emp) openEditModal(emp);
+                    }}
+                    className="flex-1 sm:flex-initial h-10 px-4 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-colors flex items-center justify-center gap-1.5"
+                  >
+                    <Edit size={14} />
+                    Editează Date
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBulkJobTitle('');
+                    setBulkLocationId('');
+                    setBulkUpdateJob(false);
+                    setBulkUpdateLocation(false);
+                    setBulkError(null);
+                    setShowBulkEditModal(true);
+                  }}
+                  className="flex-1 sm:flex-initial h-10 px-5 rounded-full text-white text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-1.5"
+                  style={{ backgroundColor: themeColor }}
+                >
+                  <Edit2 size={14} />
+                  Modifică în Masă
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setShowBulkDeleteModal(true)}
+                  className="flex-1 sm:flex-initial h-10 px-4 rounded-full bg-red-50 hover:bg-red-100 dark:bg-red-950/30 dark:hover:bg-red-950/50 text-red-600 dark:text-red-400 text-xs font-bold border border-red-200 dark:border-red-900 transition-colors flex items-center justify-center gap-1.5"
+                >
+                  <Trash2 size={14} />
+                  Șterge ({selectedIds.length})
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleClearSelection}
+                  className="h-10 px-3.5 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-bold transition-colors"
+                >
+                  Anulează
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
+            {/* Notificare selecție pe toate paginile */}
+            {isAllCurrentSelected && total > currentRows.length && selectedIds.length < total && (
+              <div className="px-4 py-2.5 bg-slate-50 dark:bg-slate-800/80 text-center text-xs text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700">
+                Sunt selectați toți cei <strong>{currentRows.length}</strong> angajați de pe această pagină.&nbsp;
+                <button 
+                  type="button" 
+                  onClick={handleSelectAllFiltered} 
+                  className="font-bold underline hover:opacity-80 transition-opacity"
+                  style={{ color: themeColor }}
+                >
+                  Selectează toți cei {total} angajați din lista filtrată
+                </button>
+              </div>
+            )}
+
             <table className="w-full text-left border-collapse min-w-[750px]">
               <thead>
                 <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
-                  <th style={{ width: 50, textAlign: 'center' }} className="py-3 font-bold text-xs tracking-wider text-slate-500 dark:text-slate-400">Nr.</th>
+                  <th style={{ width: 44, textAlign: 'center' }} className="py-3 px-3">
+                    <button
+                      type="button"
+                      onClick={handleSelectAll}
+                      className="p-1 hover:opacity-80 transition-opacity text-slate-400 flex items-center justify-center mx-auto"
+                      title={isAllCurrentSelected ? 'Deselectează toate' : 'Selectează toate de pe pagină'}
+                    >
+                      {isAllCurrentSelected ? (
+                        <CheckSquare size={18} style={{ color: themeColor }} />
+                      ) : isSomeCurrentSelected ? (
+                        <MinusSquare size={18} style={{ color: themeColor }} />
+                      ) : (
+                        <Square size={18} />
+                      )}
+                    </button>
+                  </th>
+                  <th style={{ width: 44, textAlign: 'center' }} className="py-3 font-bold text-xs tracking-wider text-slate-500 dark:text-slate-400">Nr.</th>
                   <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Angajat</th>
                   <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Funcție</th>
                   <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Data Nașterii / Vârstă</th>
@@ -298,7 +524,7 @@ export default function EmployeesList({ tenant, themeColor }) {
               <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {currentRows.length === 0 ? (
                   <tr>
-                    <td colSpan="6" className="py-16 text-center">
+                    <td colSpan="7" className="py-16 text-center">
                       <div className="w-16 h-16 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center mx-auto mb-4 border border-slate-100 dark:border-slate-700">
                         <Users className="text-slate-300 dark:text-slate-500" size={32} />
                       </div>
@@ -311,8 +537,26 @@ export default function EmployeesList({ tenant, themeColor }) {
                     </td>
                   </tr>
                 ) : (
-                  currentRows.map((emp, index) => (
-                    <tr key={emp.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                  currentRows.map((emp, index) => {
+                    const isSelected = selectedIds.includes(emp.id);
+                    return (
+                    <tr 
+                      key={emp.id} 
+                      className={`hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors ${isSelected ? 'bg-primary-50/25 dark:bg-primary-950/20' : ''}`}
+                    >
+                      <td style={{ textAlign: 'center', width: 44 }} className="py-3 px-3">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleSelect(emp.id)}
+                          className="p-1 hover:opacity-80 transition-opacity text-slate-400 flex items-center justify-center mx-auto"
+                        >
+                          {isSelected ? (
+                            <CheckSquare size={18} style={{ color: themeColor }} />
+                          ) : (
+                            <Square size={18} />
+                          )}
+                        </button>
+                      </td>
                       <td style={{ textAlign: 'center', color: '#64748b', fontSize: 13 }}>
                         {(safePage - 1) * rowsPerPage + index + 1}
                       </td>
@@ -399,41 +643,23 @@ export default function EmployeesList({ tenant, themeColor }) {
                           <QrCode size={16} />
                         </button>
                         <button 
-                          onClick={() => {
-                            setFormData({
-                              first_name: emp.first_name, last_name: emp.last_name, cnp: emp.cnp, id_card_series: emp.id_card_series || '',
-                              birth_date: emp.birth_date ? emp.birth_date.split('T')[0] : '', address: emp.address || '',
-                              phone: emp.phone || '', email: emp.email || '',
-                              job_title: emp.job_title || '', pin_code: emp.pin_code || '', location_id: emp.location_id || '',
-                              contract_start_date: emp.contract_start_date ? emp.contract_start_date.split('T')[0] : '',
-                              contract_notes: emp.contract_notes || '', salary: emp.salary || '',
-                              existing_avatar: emp.avatar_path, existing_id_card: emp.id_card_path,
-                              eval_punctuality: emp.eval_punctuality || 0,
-                              eval_attendance: emp.eval_attendance || 0,
-                              eval_attitude: emp.eval_attitude || 0,
-                              eval_performance: emp.eval_performance || 0,
-                              eval_reliability: emp.eval_reliability || 0
-                            });
-                            setAvatarUrl(emp.avatar_path ? ( emp.avatar_path?.startsWith('http') ? emp.avatar_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${emp.avatar_path}` ) : null);
-                            setIdCardBlob(null);
-                            setEditingId(emp.id);
-                            setSaveError(null);
-                            setOcrError(null);
-                            setShowAddModal(true);
-                          }}
+                          onClick={() => openEditModal(emp)}
                           className="p-2 text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm hover:text-primary-600 hover:bg-primary-50 hover:border-primary-200 rounded-full transition-all"
+                          title="Editează Angajat"
                         >
                           <Edit size={16} />
                         </button>
                         <button 
                           onClick={() => setEmployeeToDelete(emp)}
                           className="p-2 text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm hover:text-red-600 hover:bg-red-50 hover:border-red-200 rounded-full transition-all"
+                          title="Șterge Angajat"
                         >
                           <Trash2 size={16} />
                         </button>
                       </td>
                     </tr>
-                  ))
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -472,6 +698,137 @@ export default function EmployeesList({ tenant, themeColor }) {
         message={`Ești sigur că vrei să ștergi angajatul ${employeeToDelete?.first_name} ${employeeToDelete?.last_name}? Această acțiune este ireversibilă.`}
         confirmText="Șterge"
       />
+
+      {/* Bulk Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showBulkDeleteModal}
+        onClose={() => setShowBulkDeleteModal(false)}
+        onConfirm={handleBulkDelete}
+        title="Ștergere Multiplă Angajați"
+        message={`Ești sigur că vrei să ștergi cei ${selectedIds.length} angajați selectați? Toate datele asociate (pontaje, istoric, documente, ture) vor fi șterse definitiv. Această acțiune este ireversibilă.`}
+        confirmText={bulkDeleting ? "Se șterge..." : `Șterge definitiv (${selectedIds.length})`}
+        isDanger={true}
+      />
+
+      {/* Bulk Edit Modal */}
+      {showBulkEditModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-lg shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+              <div>
+                <h3 className="font-bold text-lg text-slate-800 dark:text-white flex items-center gap-2">
+                  <Edit2 size={18} style={{ color: themeColor }} />
+                  Modificare în Masă Angajați
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Aplică modificări simultane pentru cei <strong>{selectedIds.length}</strong> angajați selectați
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowBulkEditModal(false)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleBulkUpdate} className="p-6 space-y-5">
+              {bulkError && (
+                <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-xl text-red-600 dark:text-red-400 text-xs font-semibold">
+                  {bulkError}
+                </div>
+              )}
+
+              {/* Câmp Funcție */}
+              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 space-y-3">
+                <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={bulkUpdateJob}
+                    onChange={(e) => setBulkUpdateJob(e.target.checked)}
+                    className="w-4 h-4 rounded text-primary-600 focus:ring-primary-500"
+                  />
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                    Modifică Funcția (Rolul)
+                  </span>
+                </label>
+
+                {bulkUpdateJob && (
+                  <div className="pt-1 pl-6">
+                    <select
+                      value={bulkJobTitle}
+                      onChange={(e) => setBulkJobTitle(e.target.value)}
+                      className="w-full h-10 px-4 text-sm rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-primary-500 shadow-sm transition-all"
+                    >
+                      <option value="">-- Fără funcție atribuită --</option>
+                      {jobTitles.map((jt, idx) => (
+                        <option key={idx} value={jt.name || jt}>{jt.name || jt}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+
+              {/* Câmp Punct de Lucru */}
+              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 space-y-3">
+                <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={bulkUpdateLocation}
+                    onChange={(e) => setBulkUpdateLocation(e.target.checked)}
+                    className="w-4 h-4 rounded text-primary-600 focus:ring-primary-500"
+                  />
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                    Modifică Punctul de Lucru (Locația)
+                  </span>
+                </label>
+
+                {bulkUpdateLocation && (
+                  <div className="pt-1 pl-6">
+                    <select
+                      value={bulkLocationId}
+                      onChange={(e) => setBulkLocationId(e.target.value)}
+                      className="w-full h-10 px-4 text-sm rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-primary-500 shadow-sm transition-all"
+                    >
+                      <option value="">-- Fără punct de lucru atribuit --</option>
+                      {locations.map((loc) => (
+                        <option key={loc.id} value={loc.id}>{loc.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-3 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowBulkEditModal(false)}
+                  className="flex-1 px-5 h-10 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-sm font-bold transition-colors"
+                >
+                  Anulează
+                </button>
+                <button
+                  type="submit"
+                  disabled={bulkSaving || (!bulkUpdateJob && !bulkUpdateLocation)}
+                  className="flex-1 px-5 h-10 rounded-full text-white text-sm font-bold shadow-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                  style={{ backgroundColor: themeColor }}
+                >
+                  {bulkSaving ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      Se aplică...
+                    </>
+                  ) : (
+                    `Aplică la ${selectedIds.length} ${selectedIds.length === 1 ? 'Angajat' : 'Angajați'}`
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
 
       {/* Reset PIN Modal */}
       <ConfirmModal

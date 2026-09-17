@@ -67,7 +67,7 @@ router.post('/forgot-password', async (req, res) => {
 
     const cleanEmail = email.trim().toLowerCase();
     const userResult = await pool.query(
-      'SELECT u.id, u.email, u.tenant_id, t.name as tenant_name FROM qrp_users u LEFT JOIN qrp_tenants t ON t.id = u.tenant_id WHERE LOWER(u.email) = $1',
+      'SELECT u.id, u.email, u.tenant_id, t.name as tenant_name, t.subdomain as tenant_subdomain, t.logo_url as tenant_logo, t.theme_color as tenant_theme_color FROM qrp_users u LEFT JOIN qrp_tenants t ON t.id = u.tenant_id WHERE LOWER(u.email) = $1',
       [cleanEmail]
     );
 
@@ -92,25 +92,25 @@ router.post('/forgot-password', async (req, res) => {
       [resetToken, resetTokenExpires, user.id]
     );
 
-    // Determinăm URL-ul frontend-ului din cerere
-    let clientOrigin = req.headers.origin;
-    if (!clientOrigin && req.headers.referer) {
-      try {
-        clientOrigin = new URL(req.headers.referer).origin;
-      } catch (e) {}
-    }
-    if (!clientOrigin) {
-      clientOrigin = process.env.FRONTEND_URL || 'http://localhost:5188';
-    }
+    // Determinăm URL-ul frontend-ului pentru email - OBLIGATORIU domeniu public de producție (NICIODATĂ localhost)
+    const baseDomain = process.env.BASE_DOMAIN || 'qr.pontaj.app';
+    const subdomain = user.tenant_subdomain;
+    const targetHost = subdomain 
+      ? `https://${subdomain}.${baseDomain}` 
+      : (process.env.FRONTEND_URL && !process.env.FRONTEND_URL.includes('localhost') ? process.env.FRONTEND_URL : `https://${baseDomain}`);
 
-    const resetUrl = `${clientOrigin}/reset-password?token=${resetToken}`;
+    const resetUrl = `${targetHost}/reset-password?token=${resetToken}`;
     const displayName = user.tenant_name || user.email.split('@')[0];
 
     // Trimitem emailul prin Brevo
     await emailService.sendPasswordResetEmail({
       to: user.email,
       resetUrl,
-      userName: displayName
+      userName: displayName,
+      companyName: user.tenant_name,
+      tenantLogo: user.tenant_logo,
+      themeColor: user.tenant_theme_color,
+      subdomain
     });
 
     res.json({

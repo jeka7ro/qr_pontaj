@@ -421,7 +421,7 @@ export default function KioskDisplay() {
   }
 
   const themeColor = tenant?.theme_color || '#3b82f6';
-  const customBgColor = kioskColors.bg || '';
+  const customBgColor = kioskColors.bg || tenant?.portal_bg_color || '';
   const customTimerColor = kioskColors.timer || themeColor;
   const customLogoBg = kioskColors.logo_bg || 'rgba(15, 23, 42, 0.5)'; // bg-slate-900/50 fallback
 
@@ -477,6 +477,20 @@ export default function KioskDisplay() {
     <div className="min-h-screen flex flex-col font-sans relative overflow-hidden" style={{ backgroundColor: customBgColor || '#020617', '--tenant-color': themeColor }}>
       {/* 100% full-screen transparent video layer (Ultimate Fix for WebOS Standby) */}
       <video src={blankVideoBase64} autoPlay loop muted playsInline className="absolute inset-0 w-full h-full opacity-[0.01] pointer-events-none z-0" />
+      
+      {/* Restaurant / HoReCa Atmospheric Background for Kiosk */}
+      {tenant?.portal_bg_image_url && (
+        <div 
+          className="absolute inset-0 w-full h-full bg-cover bg-center pointer-events-none z-0 transition-opacity duration-1000"
+          style={{ 
+            backgroundImage: `url(${tenant.portal_bg_image_url})`,
+            filter: 'brightness(0.35) saturate(1.15)' 
+          }}
+        />
+      )}
+      {tenant?.portal_bg_image_url && (
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/85 pointer-events-none z-0" />
+      )}
       
       <div className="absolute inset-0 pointer-events-none z-50 overflow-hidden">
         {tenant?.logo_url ? (

@@ -1,5 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
+const crypto = require('crypto');
+const emailService = require('../services/emailService');
 const router = express.Router();
 const db = require('../db');
 const pool = db; // mapăm pool la db direct ca să meargă în restul codului
@@ -109,6 +111,92 @@ router.post('/upload-branding', upload.single('file'), async (req, res) => {
   }
 });
 
+// GET /api/tenants/public-branding - Preluare branding public (logo, fundal, culori) pentru login și portal
+router.get('/public-branding', async (req, res) => {
+  try {
+    let { subdomain, email, tenantId } = req.query;
+
+    // Detectare din host header dacă nu este trimis explicit
+    if (!subdomain && !email && !tenantId) {
+      const host = req.headers['x-forwarded-host'] || req.headers.host || '';
+      const parts = host.split('.');
+      if (parts.length >= 3 && !['localhost', 'qr', 'scan', 'pontaj', 'up', 'www'].includes(parts[0])) {
+        subdomain = parts[0];
+      }
+    }
+
+    let tenant = null;
+
+    if (tenantId) {
+      const result = await pool.query(
+        'SELECT id, name, subdomain, logo_url, favicon_url, theme_color, portal_bg_color, portal_bg_image_url FROM qrp_tenants WHERE id = $1',
+        [tenantId]
+      );
+      if (result.rows.length > 0) tenant = result.rows[0];
+    }
+
+    if (!tenant && subdomain) {
+      const result = await pool.query(
+        'SELECT id, name, subdomain, logo_url, favicon_url, theme_color, portal_bg_color, portal_bg_image_url FROM qrp_tenants WHERE LOWER(subdomain) = LOWER($1)',
+        [subdomain.trim()]
+      );
+      if (result.rows.length > 0) tenant = result.rows[0];
+    }
+
+    if (!tenant && email && email.includes('@')) {
+      // Căutare tenant după utilizatorul înregistrat
+      const userRes = await pool.query(
+        'SELECT tenant_id FROM qrp_users WHERE LOWER(email) = LOWER($1)',
+        [email.trim()]
+      );
+      if (userRes.rows.length > 0 && userRes.rows[0].tenant_id) {
+        const result = await pool.query(
+          'SELECT id, name, subdomain, logo_url, favicon_url, theme_color, portal_bg_color, portal_bg_image_url FROM qrp_tenants WHERE id = $1',
+          [userRes.rows[0].tenant_id]
+        );
+        if (result.rows.length > 0) tenant = result.rows[0];
+      }
+      
+      if (!tenant) {
+        // Fallback: căutare după domeniul de email (ex: admin@unda.ro -> unda)
+        const domainMatch = email.trim().split('@')[1];
+        if (domainMatch) {
+          const rootName = domainMatch.split('.')[0];
+          const result = await pool.query(
+            'SELECT id, name, subdomain, logo_url, favicon_url, theme_color, portal_bg_color, portal_bg_image_url FROM qrp_tenants WHERE LOWER(subdomain) = LOWER($1) OR LOWER(name) ILIKE $2',
+            [rootName, `%${rootName}%`]
+          );
+          if (result.rows.length > 0) tenant = result.rows[0];
+        }
+      }
+    }
+
+    if (!tenant) {
+      return res.json({ found: false });
+    }
+
+    let logoUrl = tenant.logo_url;
+    if (logoUrl && logoUrl.includes('/webp-express/webp-images/') && logoUrl.endsWith('.webp')) {
+      logoUrl = logoUrl.replace('/webp-express/webp-images/', '/').replace(/\.webp$/, '');
+    }
+
+    res.json({
+      found: true,
+      id: tenant.id,
+      name: tenant.name,
+      subdomain: tenant.subdomain,
+      logo_url: logoUrl,
+      favicon_url: tenant.favicon_url,
+      theme_color: tenant.theme_color || '#2563EB',
+      portal_bg_color: tenant.portal_bg_color || null,
+      portal_bg_image_url: tenant.portal_bg_image_url || null
+    });
+  } catch (error) {
+    console.error('Error in public-branding:', error);
+    res.status(500).json({ error: 'Eroare la preluarea setărilor de branding.' });
+  }
+});
+
 // Mount sub-routers
 router.use('/:id/shifts', shiftsRouter);
 router.use('/:id/leaves', leavesRouter);
@@ -152,6 +240,7 @@ router.post('/', async (req, res) => {
   try {
     const { 
       nume_locatie, 
+      nume_admin,
       tip_modul, 
       culoare_tema, 
       logo_url, 
@@ -173,16 +262,16 @@ router.post('/', async (req, res) => {
     // 2. Inserare în qrp_tenants
     const subdomain = nume_locatie.toLowerCase().replace(/[^a-z0-9]/g, '');
     const tenantQuery = `
-      INSERT INTO qrp_tenants (name, subdomain, logo_url, favicon_url, theme_color, modules)
+      INSERT INTO qrp_tenants (name, logo_url, favicon_url, theme_color, subdomain, modules)
       VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING id
     `;
     const tenantResult = await client.query(tenantQuery, [
-      nume_locatie, 
-      subdomain,
-      logo_url || null, 
-      sanitizeFaviconUrl(favicon_url), 
+      nume_locatie,
+      logo_url || null,
+      sanitizeFaviconUrl(favicon_url),
       culoare_tema || '#2563EB',
+      subdomain,
       modules || {}
     ]);
     const tenantId = tenantResult.rows[0].id;
@@ -203,18 +292,45 @@ router.post('/', async (req, res) => {
     const saltRounds = 10;
     const passwordHash = await bcrypt.hash(parola_initiala, saltRounds);
     
+    // Generare token securizat pentru posibilitatea setării/schimbării parolei imediat (48 ore valabilitate)
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenExpires = new Date(Date.now() + 48 * 60 * 60 * 1000);
+
     const userQuery = `
-      INSERT INTO qrp_users (tenant_id, email, password_hash, role)
-      VALUES ($1, $2, $3, $4)
+      INSERT INTO qrp_users (tenant_id, email, password_hash, role, reset_token, reset_token_expires, name)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
     `;
     await client.query(userQuery, [
       tenantId,
       email_admin,
       passwordHash,
-      'TENANT_ADMIN'
+      'TENANT_ADMIN',
+      resetToken,
+      resetTokenExpires,
+      nume_admin || nume_locatie
     ]);
 
     await client.query('COMMIT'); // Commit transaction
+
+    // Determinare URL frontend pentru linkuri din email - OBLIGATORIU domeniu public de producție (NICIODATĂ localhost)
+    const baseDomain = process.env.BASE_DOMAIN || 'qr.pontaj.app';
+    const tenantDomain = subdomain ? `https://${subdomain}.${baseDomain}` : (process.env.FRONTEND_URL && !process.env.FRONTEND_URL.includes('localhost') ? process.env.FRONTEND_URL : `https://${baseDomain}`);
+
+    const resetPasswordUrl = `${tenantDomain}/reset-password?token=${resetToken}`;
+    const loginUrl = `${tenantDomain}/login`;
+
+    // Trimitem emailul de bun venit asincron (fara emoji, cu logo tenant si culori tenant)
+    emailService.sendWelcomeEmail({
+      to: email_admin,
+      userName: nume_admin || nume_locatie,
+      companyName: nume_locatie,
+      tenantLogo: logo_url || null,
+      themeColor: culoare_tema || '#2563EB',
+      loginUrl,
+      resetPasswordUrl,
+      initialPassword: parola_initiala,
+      subdomain
+    }).catch(err => console.error('[TenantCreate] Eroare trimitere welcome email:', err));
 
     res.status(201).json({ 
       message: 'Tenant creat cu succes',
@@ -309,7 +425,7 @@ router.put('/:id/portal-settings', async (req, res) => {
 router.get('/:id/admins', async (req, res) => {
   try {
     const query = `
-      SELECT id, email, created_at 
+      SELECT id, email, name, created_at 
       FROM qrp_users 
       WHERE tenant_id = $1 AND role = 'TENANT_ADMIN'
       ORDER BY created_at ASC
@@ -325,7 +441,7 @@ router.get('/:id/admins', async (req, res) => {
 // POST /api/tenants/:id/admins - Adaugă un nou admin pentru un tenant
 router.post('/:id/admins', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, name } = req.body;
     if (!email || !password) {
       return res.status(400).json({ error: 'Email și parola sunt obligatorii' });
     }
@@ -334,19 +450,50 @@ router.post('/:id/admins', async (req, res) => {
     const passwordHash = await bcrypt.hash(password, saltRounds);
 
     // Setăm și active_domain pe baza tenantului curent
-    const tenantRes = await pool.query('SELECT subdomain FROM qrp_tenants WHERE id = $1', [req.params.id]);
+    const tenantRes = await pool.query('SELECT name, subdomain, logo_url, theme_color FROM qrp_tenants WHERE id = $1', [req.params.id]);
     let activeDomain = null;
+    let tenantName = 'Companie';
+    let tenantLogo = null;
+    let themeColor = '#2563EB';
     if (tenantRes.rows.length > 0) {
+       tenantName = tenantRes.rows[0].name || 'Companie';
+       tenantLogo = tenantRes.rows[0].logo_url || null;
+       themeColor = tenantRes.rows[0].theme_color || '#2563EB';
        activeDomain = `${tenantRes.rows[0].subdomain}.qr.pontaj.app`;
     }
 
+    // Generare token securizat pentru posibilitatea setării/schimbării parolei imediat (48 ore)
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenExpires = new Date(Date.now() + 48 * 60 * 60 * 1000);
+
     const query = `
-      INSERT INTO qrp_users (tenant_id, email, password_hash, role, active_domain)
-      VALUES ($1, $2, $3, $4, $5)
-      RETURNING id, email, created_at
+      INSERT INTO qrp_users (tenant_id, email, password_hash, role, active_domain, reset_token, reset_token_expires, name)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING id, email, name, created_at
     `;
-    const result = await pool.query(query, [req.params.id, email, passwordHash, 'TENANT_ADMIN', activeDomain]);
+    const result = await pool.query(query, [req.params.id, email, passwordHash, 'TENANT_ADMIN', activeDomain, resetToken, resetTokenExpires, name || email.split('@')[0]]);
     
+    // Determinare URL frontend pentru linkuri din email - OBLIGATORIU domeniu public de producție (NICIODATĂ localhost)
+    const baseDomain = process.env.BASE_DOMAIN || 'qr.pontaj.app';
+    const subdomain = tenantRes.rows[0]?.subdomain;
+    const tenantDomain = subdomain ? `https://${subdomain}.${baseDomain}` : (process.env.FRONTEND_URL && !process.env.FRONTEND_URL.includes('localhost') ? process.env.FRONTEND_URL : `https://${baseDomain}`);
+
+    const resetPasswordUrl = `${tenantDomain}/reset-password?token=${resetToken}`;
+    const loginUrl = `${tenantDomain}/login`;
+
+    // Trimitem emailul de bun venit asincron (fara emoji, cu logo tenant si culori tenant)
+    emailService.sendWelcomeEmail({
+      to: email,
+      userName: name || email.split('@')[0],
+      companyName: tenantName,
+      tenantLogo: tenantLogo,
+      themeColor: themeColor,
+      loginUrl,
+      resetPasswordUrl,
+      initialPassword: password,
+      subdomain
+    }).catch(err => console.error('[TenantAdminCreate] Eroare trimitere welcome email:', err));
+
     res.status(201).json(result.rows[0]);
   } catch (error) {
     if (error.code === '23505') {
@@ -1083,6 +1230,64 @@ router.delete('/:id/employees/:empId', async (req, res) => {
     res.status(500).json({ error: 'Eroare la stergere' });
   }
 });
+
+// POST /api/tenants/:id/employees/bulk-delete
+router.post('/:id/employees/bulk-delete', async (req, res) => {
+  try {
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: 'Niciun angajat selectat' });
+    }
+    await pool.query(
+      'DELETE FROM qrp_employees WHERE tenant_id = $1 AND id = ANY($2::int[])',
+      [req.params.id, ids]
+    );
+    res.json({ success: true, count: ids.length });
+  } catch (error) {
+    console.error('Error in bulk delete employees:', error);
+    res.status(500).json({ error: 'Eroare la ștergerea în masă a angajaților' });
+  }
+});
+
+// POST /api/tenants/:id/employees/bulk-update
+router.post('/:id/employees/bulk-update', async (req, res) => {
+  try {
+    const { ids, job_title, location_id, update_job_title, update_location } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: 'Niciun angajat selectat' });
+    }
+
+    const updates = [];
+    const values = [req.params.id, ids];
+    let valIdx = 3;
+
+    if (update_job_title) {
+      updates.push(`job_title = $${valIdx++}`);
+      values.push(job_title || null);
+    }
+    if (update_location) {
+      updates.push(`location_id = $${valIdx++}`);
+      values.push(location_id ? parseInt(location_id, 10) : null);
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ error: 'Niciun câmp selectat pentru actualizare' });
+    }
+
+    const query = `
+      UPDATE qrp_employees 
+      SET ${updates.join(', ')} 
+      WHERE tenant_id = $1 AND id = ANY($2::int[])
+    `;
+    await pool.query(query, values);
+
+    res.json({ success: true, count: ids.length });
+  } catch (error) {
+    console.error('Error in bulk update employees:', error);
+    res.status(500).json({ error: 'Eroare la actualizarea în masă a angajaților' });
+  }
+});
+
 
 // ================= LOCATIONS =================
 router.get('/:id/locations', async (req, res) => {

@@ -5,6 +5,7 @@ import { resolveFaviconUrl } from '../utils/favicon';
 export default function CreateTenantModal({ onClose, onTenantCreated, editTenant = null }) {
   const [formData, setFormData] = useState({
     nume_locatie: '',
+    nume_admin: '',
     tip_modul: 'Restaurant / HORECA',
     logo_url: '',
     favicon_url: '',
@@ -407,7 +408,18 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
             {!editTenant && (
               <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-700/50 dark:border-slate-700/50">
                 <h4 className="text-sm font-semibold text-slate-800 dark:text-white uppercase tracking-wider">3. Cont Admin Local</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 dark:text-slate-400 mb-1">Nume Administrator</label>
+                    <input 
+                      type="text" 
+                      name="nume_admin"
+                      value={formData.nume_admin}
+                      onChange={handleChange}
+                      className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white dark:border-slate-700 outline-none transition-all shadow-sm" 
+                      placeholder="Ex: Eugeniu Cazmal" 
+                    />
+                  </div>
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 dark:text-slate-400 mb-1">Email Administrator *</label>
                     <input 

@@ -40,18 +40,26 @@ export default function EmployeeLogin() {
     // 3. Încarcă datele tenantului pentru branding
     const fetchTenant = async () => {
       try {
-        const hostname = window.location.hostname;
-        const parts = hostname.split('.');
-        const subdomain = parts[0];
-        if (subdomain === 'localhost' || /^[0-9]+$/.test(parts[0])) return;
+        const urlParams = new URLSearchParams(window.location.search);
+        let subdomain = urlParams.get('tenant') || urlParams.get('t');
+        if (!subdomain) {
+          const hostname = window.location.hostname;
+          const parts = hostname.split('.');
+          if (parts[0] !== 'localhost' && !/^[0-9]+$/.test(parts[0])) {
+            subdomain = parts[0];
+          }
+        }
+        if (!subdomain) return;
 
         const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
-        const res = await fetch(`${baseUrl}/api/tenants/subdomain/${subdomain}`);
+        const res = await fetch(`${baseUrl}/api/tenants/public-branding?subdomain=${encodeURIComponent(subdomain)}`);
         if (res.ok) {
           const data = await res.json();
-          setTenant(data);
-          if (data.favicon_url || data.logo_url) {
-            updatePageFavicon(data.favicon_url || data.logo_url, `${data.name || 'Portal'} - Autentificare`);
+          if (data && data.found) {
+            setTenant(data);
+            if (data.favicon_url || data.logo_url) {
+              updatePageFavicon(data.favicon_url || data.logo_url, `${data.name || 'Portal'} - Autentificare`);
+            }
           }
         }
       } catch (err) {
@@ -124,8 +132,28 @@ export default function EmployeeLogin() {
   const tc = tenant?.theme_color || '#2563eb';
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center p-4 transition-colors">
-      <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl shadow-xl overflow-hidden border border-slate-100 dark:border-slate-800">
+    <div className="min-h-screen relative flex items-center justify-center p-4 transition-colors select-none overflow-hidden">
+      {/* Fundal Restaurant / Tematică HoReCa */}
+      {tenant?.portal_bg_image_url ? (
+        <div 
+          className="fixed inset-0 bg-cover bg-center transition-all duration-1000 ease-out -z-10 scale-105"
+          style={{ backgroundImage: `url(${tenant.portal_bg_image_url})` }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/65 to-black/80 backdrop-blur-[1px]" />
+        </div>
+      ) : tenant?.portal_bg_color ? (
+        <div 
+          className="fixed inset-0 transition-all duration-700 -z-10"
+          style={{ 
+            backgroundColor: tenant.portal_bg_color,
+            backgroundImage: 'radial-gradient(ellipse at top, rgba(255,255,255,0.08) 0%, rgba(0,0,0,0.85) 100%)'
+          }}
+        />
+      ) : (
+        <div className="fixed inset-0 bg-slate-50 dark:bg-slate-900 -z-10" />
+      )}
+
+      <div className="w-full max-w-md bg-white/95 dark:bg-slate-900/90 backdrop-blur-2xl rounded-3xl shadow-2xl overflow-hidden border border-white/30 dark:border-slate-800 z-10">
         <div className="p-8 text-center text-white" style={{ backgroundColor: tc }}>
           <div className="w-[84px] h-[84px] bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4 backdrop-blur-sm overflow-hidden">
             {tenant?.logo_url ? (

@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { X, Users, UserPlus, Info, Mail, Lock, Plus, Trash2 } from 'lucide-react';
+import { X, Users, UserPlus, User, Info, Mail, Lock, Plus, Trash2 } from 'lucide-react';
 
 export default function TenantAdminsModal({ isOpen, onClose, tenant }) {
   const [admins, setAdmins] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newAdmin, setNewAdmin] = useState({ email: '', password: '' });
+  const [newAdmin, setNewAdmin] = useState({ name: '', email: '', password: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [resettingAdminId, setResettingAdminId] = useState(null);
@@ -43,7 +43,7 @@ export default function TenantAdminsModal({ isOpen, onClose, tenant }) {
       const res = await fetch(`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenants/${tenant.id}/admins`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: newAdmin.email, password: newAdmin.password })
+        body: JSON.stringify({ name: newAdmin.name, email: newAdmin.email, password: newAdmin.password })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'A apărut o eroare.');
@@ -51,7 +51,7 @@ export default function TenantAdminsModal({ isOpen, onClose, tenant }) {
       // Reset form and add new admin to list
       setAdmins([...admins, data]);
       setShowAddForm(false);
-      setNewAdmin({ email: '', password: '' });
+      setNewAdmin({ name: '', email: '', password: '' });
     } catch (err) {
       setError(err.message);
     } finally {
@@ -145,6 +145,19 @@ export default function TenantAdminsModal({ isOpen, onClose, tenant }) {
               <h4 className="text-sm font-bold text-slate-800 dark:text-white mb-4">Adaugă Administrator Nou</h4>
               <div className="space-y-4">
                 <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Nume Administrator</label>
+                  <div className="relative">
+                    <User size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input 
+                      type="text" 
+                      value={newAdmin.name}
+                      onChange={e => setNewAdmin({...newAdmin, name: e.target.value})}
+                      className="w-full pl-10 pr-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white dark:border-slate-700 outline-none transition-all shadow-sm"
+                      placeholder="Ex: Eugeniu Cazmal"
+                    />
+                  </div>
+                </div>
+                <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Adresă Email *</label>
                   <div className="relative">
                     <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -210,11 +223,12 @@ export default function TenantAdminsModal({ isOpen, onClose, tenant }) {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400 font-bold">
-                        {admin.email.substring(0, 2).toUpperCase()}
+                        {(admin.name || admin.email).substring(0, 2).toUpperCase()}
                       </div>
                       <div>
-                        <div className="text-sm font-bold text-slate-800 dark:text-white">{admin.email}</div>
-                        <div className="text-xs text-slate-400">Adăugat pe {new Date(admin.created_at).toLocaleDateString('ro-RO')}</div>
+                        {admin.name && <div className="text-sm font-bold text-slate-800 dark:text-white">{admin.name}</div>}
+                        <div className={`text-xs ${admin.name ? 'text-slate-500 dark:text-slate-400 font-medium' : 'text-sm font-bold text-slate-800 dark:text-white'}`}>{admin.email}</div>
+                        <div className="text-[11px] text-slate-400">Adăugat pe {new Date(admin.created_at).toLocaleDateString('ro-RO')}</div>
                       </div>
                     </div>
                     {/* Action Buttons */}
