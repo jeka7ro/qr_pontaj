@@ -36,7 +36,7 @@ router.post('/', async (req, res) => {
 
     // Găsim angajatul
     const empResult = await pool.query(
-      'SELECT id, first_name, last_name, avatar_path, job_title, birth_date FROM qrp_employees WHERE id = $1 AND tenant_id = $2',
+      'SELECT id, first_name, last_name, avatar_path, job_title, birth_date, is_archived FROM qrp_employees WHERE id = $1 AND tenant_id = $2',
       [employeeId, tenantId]
     );
 
@@ -44,6 +44,10 @@ router.post('/', async (req, res) => {
       return res.status(404).json({ error: 'Angajatul nu a fost găsit.' });
     }
     const employee = empResult.rows[0];
+
+    if (employee.is_archived) {
+      return res.status(403).json({ error: 'Contul acestui angajat a fost arhivat și nu poate efectua pontajul.' });
+    }
 
     // Verificăm dacă este ziua de naștere a angajatului
     let isBirthday = false;

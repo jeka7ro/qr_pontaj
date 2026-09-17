@@ -620,16 +620,34 @@ router.put('/:id/admins/:adminId/password', async (req, res) => {
 // ================= EMPLOYEES ======================
 
 // GET /api/tenants/:id/employees
-
-// GET /api/tenants/:id/employees
 router.get('/:id/employees', async (req, res) => {
   try {
+    const { status } = req.query;
+    let filter = 'WHERE tenant_id = $1';
+    if (status === 'archived') {
+      filter += ' AND is_archived = TRUE';
+    } else if (status !== 'all') {
+      filter += ' AND (is_archived IS FALSE OR is_archived IS NULL)';
+    }
+
     const query = `
       SELECT * FROM qrp_employees 
-      WHERE tenant_id = $1 
+      ${filter} 
       ORDER BY created_at DESC
     `;
     const result = await pool.query(query, [req.params.id]);
+
+    const countsRes = await pool.query(`
+      SELECT 
+        COUNT(*) FILTER (WHERE is_archived IS FALSE OR is_archived IS NULL) as active_count,
+        COUNT(*) FILTER (WHERE is_archived = TRUE) as archived_count
+      FROM qrp_employees
+      WHERE tenant_id = $1
+    `, [req.params.id]);
+
+    res.setHeader('Access-Control-Expose-Headers', 'X-Active-Count, X-Archived-Count');
+    res.setHeader('X-Active-Count', countsRes.rows[0]?.active_count || '0');
+    res.setHeader('X-Archived-Count', countsRes.rows[0]?.archived_count || '0');
     res.json(result.rows);
   } catch (error) {
     console.error('Error fetching employees:', error);
@@ -660,21 +678,31 @@ function getBirthDateFromCnp(cnp) {
   return `${yearPrefix}${yy}-${mm}-${dd}`;
 }
 
-// POST /api/tenants/:id/employees
-router.post('/:id/employees', upload.fields([{ name: 'avatar', maxCount: 1 }, { name: 'id_card', maxCount: 1 }]), async (req, res) => {
+// POST /api/tenants/:id/employees - Adăugare angajat
+router.post('/:id/employees', upload.fields([
+  { name: 'avatar', maxCount: 1 },
+  { name: 'id_card', maxCount: 1 }
+]), async (req, res) => {
   try {
-    const { first_name, last_name, cnp, id_card_series, birth_date, address, phone, email, job_title, pin_code, location_id, contract_start_date, work_schedule, contract_notes, salary } = req.body;
+    const { 
+      first_name, last_name, cnp, id_card_series, 
+      birth_date, address, phone, email, job_title, pin_code, location_id,
+      contract_start_date, work_schedule, contract_notes, salary
+    } = req.body;
     
-    if (!first_name || !last_name || !cnp) {
-      return res.status(400).json({ error: 'Nume, prenume și CNP sunt obligatorii.' });
+    if (!first_name || !last_name) {
+      return res.status(400).json({ error: 'Numele și prenumele sunt obligatorii' });
     }
 
-    // Generate PIN from CNP (last 4 digits) or random if no CNP provided
-    const finalPin = pin_code || (cnp && cnp.length >= 4 ? cnp.slice(-4) : Math.floor(1000 + Math.random() * 9000).toString());
-    const finalBirthDate = (birth_date && birth_date.trim()) || getBirthDateFromCnp(cnp);
-    
+    // Extrage data nașterii din CNP dacă nu este furnizată explicit
+    const finalBirthDate = birth_date || getBirthDateFromCnp(cnp);
+
+    // Daca nu a fost setat un PIN, se genereaza unul automat de 4 cifre
+    const finalPin = pin_code && pin_code.trim() ? pin_code.trim() : Math.floor(1000 + Math.random() * 9000).toString();
+
     let avatarPath = null;
     let idCardPath = null;
+    
     if (req.files) {
       if (req.files.avatar && req.files.avatar.length > 0) {
         avatarPath = await uploadToSupabase(req.files.avatar[0], 'avatars');
@@ -688,12 +716,22 @@ router.post('/:id/employees', upload.fields([{ name: 'avatar', maxCount: 1 }, { 
     try {
       await client.query('BEGIN');
       
-      // Auto-generate employee code with tenant prefix
+      // Generare cod unic secvențial, continuu (nu se refolosesc și nu se dublează codurile, inclusiv cele arhivate)
       const tenantRes = await client.query('SELECT name FROM qrp_tenants WHERE id = $1', [req.params.id]);
       const prefix = tenantRes.rows[0].name.substring(0, 3).toUpperCase();
       const countRes = await client.query('SELECT MAX(CAST(REGEXP_REPLACE(employee_code, \'[^0-9]\', \'\', \'g\') AS INTEGER)) FROM qrp_employees WHERE tenant_id = $1', [req.params.id]);
       const nextId = (parseInt(countRes.rows[0].max) || 0) + 1;
-      const employee_code = `${prefix}${nextId.toString().padStart(3, '0')}`;
+      let candidateNum = nextId;
+      let employee_code = `${prefix}${candidateNum.toString().padStart(3, '0')}`;
+      
+      // Asigurare garanție absolută de unicitate (atât printre activi cât și printre cei arhivați)
+      while (true) {
+        const codeCheck = await client.query('SELECT 1 FROM qrp_employees WHERE tenant_id = $1 AND employee_code = $2', [req.params.id, employee_code]);
+        if (codeCheck.rows.length === 0) break;
+        candidateNum++;
+        employee_code = `${prefix}${candidateNum.toString().padStart(3, '0')}`;
+      }
+
       const query = `
         INSERT INTO qrp_employees (
           tenant_id, first_name, last_name, cnp, id_card_series, 
@@ -1220,18 +1258,27 @@ router.put('/:id/employees/:empId', upload.fields([{ name: 'avatar', maxCount: 1
   }
 });
 
-// DELETE /api/tenants/:id/employees/:empId
+// DELETE /api/tenants/:id/employees/:empId (Arhivare angajat / Soft Delete)
 router.delete('/:id/employees/:empId', async (req, res) => {
   try {
-    await pool.query('DELETE FROM qrp_employees WHERE id=$1 AND tenant_id=$2', [req.params.empId, req.params.id]);
-    res.json({ success: true });
+    await pool.query(
+      'UPDATE qrp_employees SET is_archived = TRUE, archived_at = NOW() WHERE id = $1 AND tenant_id = $2',
+      [req.params.empId, req.params.id]
+    );
+
+    await pool.query(
+      'INSERT INTO qrp_employee_history (employee_id, change_type, new_value) VALUES ($1, $2, $3)',
+      [req.params.empId, 'ARHIVARE', 'Angajatul a fost mutat in arhiva.']
+    );
+
+    res.json({ success: true, message: 'Angajatul a fost arhivat cu succes.' });
   } catch (error) {
-    console.error('Error deleting employee:', error);
-    res.status(500).json({ error: 'Eroare la stergere' });
+    console.error('Error archiving employee:', error);
+    res.status(500).json({ error: 'Eroare la arhivarea angajatului' });
   }
 });
 
-// POST /api/tenants/:id/employees/bulk-delete
+// POST /api/tenants/:id/employees/bulk-delete (Arhivare în masă)
 router.post('/:id/employees/bulk-delete', async (req, res) => {
   try {
     const { ids } = req.body;
@@ -1239,13 +1286,67 @@ router.post('/:id/employees/bulk-delete', async (req, res) => {
       return res.status(400).json({ error: 'Niciun angajat selectat' });
     }
     await pool.query(
-      'DELETE FROM qrp_employees WHERE tenant_id = $1 AND id = ANY($2::int[])',
+      'UPDATE qrp_employees SET is_archived = TRUE, archived_at = NOW() WHERE tenant_id = $1 AND id = ANY($2::int[])',
       [req.params.id, ids]
     );
-    res.json({ success: true, count: ids.length });
+
+    for (const empId of ids) {
+      await pool.query(
+        'INSERT INTO qrp_employee_history (employee_id, change_type, new_value) VALUES ($1, $2, $3)',
+        [empId, 'ARHIVARE', 'Angajatul a fost mutat in arhiva (actiune colectiva).']
+      );
+    }
+
+    res.json({ success: true, count: ids.length, message: `${ids.length} angajați au fost arhivați.` });
   } catch (error) {
-    console.error('Error in bulk delete employees:', error);
-    res.status(500).json({ error: 'Eroare la ștergerea în masă a angajaților' });
+    console.error('Error in bulk archive employees:', error);
+    res.status(500).json({ error: 'Eroare la arhivarea în masă a angajaților' });
+  }
+});
+
+// POST /api/tenants/:id/employees/:empId/restore (Restaurare din arhivă)
+router.post('/:id/employees/:empId/restore', async (req, res) => {
+  try {
+    await pool.query(
+      'UPDATE qrp_employees SET is_archived = FALSE, archived_at = NULL WHERE id = $1 AND tenant_id = $2',
+      [req.params.empId, req.params.id]
+    );
+
+    await pool.query(
+      'INSERT INTO qrp_employee_history (employee_id, change_type, new_value) VALUES ($1, $2, $3)',
+      [req.params.empId, 'RESTAURARE', 'Angajatul a fost reactivat din arhiva.']
+    );
+
+    res.json({ success: true, message: 'Angajatul a fost reactivat cu succes.' });
+  } catch (error) {
+    console.error('Error restoring employee:', error);
+    res.status(500).json({ error: 'Eroare la restaurarea angajatului' });
+  }
+});
+
+// POST /api/tenants/:id/employees/bulk-restore (Restaurare în masă din arhivă)
+router.post('/:id/employees/bulk-restore', async (req, res) => {
+  try {
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: 'Niciun angajat selectat' });
+    }
+    await pool.query(
+      'UPDATE qrp_employees SET is_archived = FALSE, archived_at = NULL WHERE tenant_id = $1 AND id = ANY($2::int[])',
+      [req.params.id, ids]
+    );
+
+    for (const empId of ids) {
+      await pool.query(
+        'INSERT INTO qrp_employee_history (employee_id, change_type, new_value) VALUES ($1, $2, $3)',
+        [empId, 'RESTAURARE', 'Angajatul a fost reactivat din arhiva (actiune colectiva).']
+      );
+    }
+
+    res.json({ success: true, count: ids.length, message: `${ids.length} angajați au fost reactivați.` });
+  } catch (error) {
+    console.error('Error in bulk restore employees:', error);
+    res.status(500).json({ error: 'Eroare la reactivarea în masă a angajaților' });
   }
 });
 

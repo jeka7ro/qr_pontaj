@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, UserPlus, Search, Edit2, Edit, KeyRound, Trash2, Loader2, ScanLine, Plus, Check, X, ChevronLeft, ChevronRight, MapPin, QrCode, Printer, Smartphone, Copy, Calendar, AlertTriangle, Square, CheckSquare, MinusSquare, Briefcase } from 'lucide-react';
+import { Users, UserPlus, Search, Edit2, Edit, KeyRound, Trash2, Loader2, ScanLine, Plus, Check, X, ChevronLeft, ChevronRight, MapPin, QrCode, Printer, Smartphone, Copy, Calendar, AlertTriangle, Square, CheckSquare, MinusSquare, Briefcase, Archive, RotateCcw, UserCheck } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { extractTextFromImageOrPdf, cropFaceFromIdCard } from '../lib/pdfOcr';
 import { parseIdCardText, getBirthDateFromCnp } from '../lib/idParser';
@@ -15,6 +15,12 @@ export default function EmployeesList({ tenant, themeColor }) {
   const [showNewJobInput, setShowNewJobInput] = useState(false);
   const [newJobName, setNewJobName] = useState('');
   
+  // Archive filter state
+  const [employeeFilter, setEmployeeFilter] = useState('active'); // 'active' | 'archived'
+  const [activeCount, setActiveCount] = useState(0);
+  const [archivedCount, setArchivedCount] = useState(0);
+  const [employeeToRestore, setEmployeeToRestore] = useState(null);
+
   // Form state
   const [activeTab, setActiveTab] = useState('identificare'); // identificare, contract, evaluare
   const [formData, setFormData] = useState({
@@ -44,6 +50,7 @@ export default function EmployeesList({ tenant, themeColor }) {
   // Bulk Actions State
   const [selectedIds, setSelectedIds] = useState([]);
   const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
+  const [showBulkRestoreModal, setShowBulkRestoreModal] = useState(false);
   const [showBulkEditModal, setShowBulkEditModal] = useState(false);
   const [bulkJobTitle, setBulkJobTitle] = useState('');
   const [bulkLocationId, setBulkLocationId] = useState('');
@@ -51,6 +58,7 @@ export default function EmployeesList({ tenant, themeColor }) {
   const [bulkUpdateLocation, setBulkUpdateLocation] = useState(false);
   const [bulkSaving, setBulkSaving] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [bulkRestoring, setBulkRestoring] = useState(false);
   const [bulkError, setBulkError] = useState(null);
 
   useEffect(() => {
@@ -114,11 +122,16 @@ export default function EmployeesList({ tenant, themeColor }) {
     }
   };
 
-  const fetchEmployees = async () => {
+  const fetchEmployees = async (overrideStatus) => {
     setLoading(true);
+    const targetStatus = overrideStatus !== undefined ? overrideStatus : employeeFilter;
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenants/${tenant.id}/employees`);
+      const res = await fetch(`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenants/${tenant.id}/employees?status=${targetStatus}`);
       if (res.ok) {
+        const activeC = res.headers.get('X-Active-Count');
+        const archivedC = res.headers.get('X-Archived-Count');
+        if (activeC !== null) setActiveCount(parseInt(activeC, 10));
+        if (archivedC !== null) setArchivedCount(parseInt(archivedC, 10));
         const data = await res.json();
         setEmployees(data);
       }
@@ -254,6 +267,19 @@ export default function EmployeesList({ tenant, themeColor }) {
     }
   };
 
+  const handleRestore = async () => {
+    if (!employeeToRestore) return;
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenants/${tenant.id}/employees/${employeeToRestore.id}/restore`, { method: 'POST' });
+      if (res.ok) {
+        setEmployeeToRestore(null);
+        fetchEmployees();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const isAllCurrentSelected = currentRows.length > 0 && currentRows.every(emp => selectedIds.includes(emp.id));
   const isSomeCurrentSelected = currentRows.some(emp => selectedIds.includes(emp.id)) && !isAllCurrentSelected;
 
@@ -318,13 +344,38 @@ export default function EmployeesList({ tenant, themeColor }) {
         fetchEmployees();
       } else {
         const data = await res.json();
-        setBulkError(data.error || 'Eroare la ștergerea în masă a angajaților.');
+        setBulkError(data.error || 'Eroare la arhivarea în masă a angajaților.');
       }
     } catch (err) {
       console.error('Error bulk deleting employees:', err);
       setBulkError('Eroare la conexiunea cu serverul.');
     } finally {
       setBulkDeleting(false);
+    }
+  };
+
+  const handleBulkRestore = async () => {
+    if (selectedIds.length === 0) return;
+    setBulkRestoring(true);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenants/${tenant.id}/employees/bulk-restore`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: selectedIds })
+      });
+      if (res.ok) {
+        setSelectedIds([]);
+        setShowBulkRestoreModal(false);
+        fetchEmployees();
+      } else {
+        const data = await res.json();
+        setBulkError(data.error || 'Eroare la restaurarea în masă a angajaților.');
+      }
+    } catch (err) {
+      console.error('Error bulk restoring employees:', err);
+      setBulkError('Eroare la conexiunea cu serverul.');
+    } finally {
+      setBulkRestoring(false);
     }
   };
 
@@ -391,6 +442,57 @@ export default function EmployeesList({ tenant, themeColor }) {
         <div className="py-20 text-center text-slate-500 dark:text-slate-400">Se încarcă angajații...</div>
       ) : (
         <>
+          {/* TABS ACTIVI / ARHIVĂ */}
+          <div className="mb-4 flex items-center gap-2 border-b border-slate-200 dark:border-slate-700 pb-3">
+            <button
+              type="button"
+              onClick={() => {
+                setEmployeeFilter('active');
+                setSelectedIds([]);
+                setPage(1);
+                fetchEmployees('active');
+              }}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all ${
+                employeeFilter === 'active'
+                  ? 'text-white shadow-xs'
+                  : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300'
+              }`}
+              style={employeeFilter === 'active' ? { backgroundColor: themeColor } : {}}
+            >
+              <UserCheck size={15} />
+              <span>Activi</span>
+              <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                employeeFilter === 'active' ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
+              }`}>
+                {activeCount}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setEmployeeFilter('archived');
+                setSelectedIds([]);
+                setPage(1);
+                fetchEmployees('archived');
+              }}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all ${
+                employeeFilter === 'archived'
+                  ? 'text-white shadow-xs'
+                  : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300'
+              }`}
+              style={employeeFilter === 'archived' ? { backgroundColor: themeColor } : {}}
+            >
+              <Archive size={15} />
+              <span>Arhivă</span>
+              <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                employeeFilter === 'archived' ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
+              }`}>
+                {archivedCount}
+              </span>
+            </button>
+          </div>
+
           {/* SEARCH BAR */}
           <div className="mb-4">
             <div style={{ position: 'relative' }} className="w-full max-w-sm">
@@ -398,7 +500,7 @@ export default function EmployeesList({ tenant, themeColor }) {
               <input
                 className="w-full h-10 border border-slate-200 dark:border-slate-700 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white shadow-sm outline-none focus:ring-2 focus:ring-primary-500 transition-all text-sm font-medium"
                 style={{ paddingLeft: 36, paddingRight: search ? 80 : 16, borderRadius: 9999 }}
-                placeholder="Caută angajat..."
+                placeholder={employeeFilter === 'archived' ? "Caută în arhivă..." : "Caută angajat..."}
                 value={search}
                 onChange={e => setSearch(e.target.value)}
               />
@@ -425,51 +527,66 @@ export default function EmployeesList({ tenant, themeColor }) {
                     {selectedIds.length} {selectedIds.length === 1 ? 'angajat selectat' : 'angajați selectați'}
                   </div>
                   <div className="text-xs text-slate-500 dark:text-slate-400">
-                    Poți schimba funcția/locația în masă sau poți șterge înregistrările selectate.
+                    {employeeFilter === 'archived'
+                      ? 'Poți restaura angajații selectați în lista activă.'
+                      : 'Poți schimba funcția/locația în masă sau poți arhiva înregistrările selectate.'}
                   </div>
                 </div>
               </div>
 
               <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-                {selectedIds.length === 1 && (
+                {employeeFilter === 'archived' ? (
                   <button
                     type="button"
-                    onClick={() => {
-                      const emp = employees.find(e => e.id === selectedIds[0]);
-                      if (emp) openEditModal(emp);
-                    }}
-                    className="flex-1 sm:flex-initial h-10 px-4 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-colors flex items-center justify-center gap-1.5"
+                    onClick={() => setShowBulkRestoreModal(true)}
+                    className="flex-1 sm:flex-initial h-10 px-5 rounded-full bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/30 dark:hover:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 text-xs font-bold border border-emerald-200 dark:border-emerald-900 transition-colors flex items-center justify-center gap-1.5"
                   >
-                    <Edit size={14} />
-                    Editează Date
+                    <RotateCcw size={14} />
+                    Restaurează ({selectedIds.length})
                   </button>
+                ) : (
+                  <>
+                    {selectedIds.length === 1 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const emp = employees.find(e => e.id === selectedIds[0]);
+                          if (emp) openEditModal(emp);
+                        }}
+                        className="flex-1 sm:flex-initial h-10 px-4 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-colors flex items-center justify-center gap-1.5"
+                      >
+                        <Edit size={14} />
+                        Editează Date
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setBulkJobTitle('');
+                        setBulkLocationId('');
+                        setBulkUpdateJob(false);
+                        setBulkUpdateLocation(false);
+                        setBulkError(null);
+                        setShowBulkEditModal(true);
+                      }}
+                      className="flex-1 sm:flex-initial h-10 px-5 rounded-full text-white text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-1.5"
+                      style={{ backgroundColor: themeColor }}
+                    >
+                      <Edit2 size={14} />
+                      Modifică în Masă
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowBulkDeleteModal(true)}
+                      className="flex-1 sm:flex-initial h-10 px-4 rounded-full bg-red-50 hover:bg-red-100 dark:bg-red-950/30 dark:hover:bg-red-950/50 text-red-600 dark:text-red-400 text-xs font-bold border border-red-200 dark:border-red-900 transition-colors flex items-center justify-center gap-1.5"
+                    >
+                      <Archive size={14} />
+                      Arhivează ({selectedIds.length})
+                    </button>
+                  </>
                 )}
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setBulkJobTitle('');
-                    setBulkLocationId('');
-                    setBulkUpdateJob(false);
-                    setBulkUpdateLocation(false);
-                    setBulkError(null);
-                    setShowBulkEditModal(true);
-                  }}
-                  className="flex-1 sm:flex-initial h-10 px-5 rounded-full text-white text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-1.5"
-                  style={{ backgroundColor: themeColor }}
-                >
-                  <Edit2 size={14} />
-                  Modifică în Masă
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setShowBulkDeleteModal(true)}
-                  className="flex-1 sm:flex-initial h-10 px-4 rounded-full bg-red-50 hover:bg-red-100 dark:bg-red-950/30 dark:hover:bg-red-950/50 text-red-600 dark:text-red-400 text-xs font-bold border border-red-200 dark:border-red-900 transition-colors flex items-center justify-center gap-1.5"
-                >
-                  <Trash2 size={14} />
-                  Șterge ({selectedIds.length})
-                </button>
 
                 <button
                   type="button"
@@ -632,34 +749,47 @@ export default function EmployeesList({ tenant, themeColor }) {
                         </div>
                       </td>
                       <td className="px-6 py-4 text-right flex justify-end gap-1">
-                        <button
-                          onClick={() => setResetPinEmpId(emp.id)}
-                          className="p-2 text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm hover:text-amber-600 hover:bg-amber-50 rounded-full transition-all"
-                          title="Resetează PIN"
-                        >
-                          <KeyRound size={16} />
-                        </button>
-                        <button 
-                          onClick={() => setQrEmployee(emp)}
-                          className="p-2 text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm hover:text-slate-800 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800 rounded-full transition-all"
-                          title="Printează Legitimație (QR)"
-                        >
-                          <QrCode size={16} />
-                        </button>
-                        <button 
-                          onClick={() => openEditModal(emp)}
-                          className="p-2 text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm hover:text-primary-600 hover:bg-primary-50 hover:border-primary-200 rounded-full transition-all"
-                          title="Editează Angajat"
-                        >
-                          <Edit size={16} />
-                        </button>
-                        <button 
-                          onClick={() => setEmployeeToDelete(emp)}
-                          className="p-2 text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm hover:text-red-600 hover:bg-red-50 hover:border-red-200 rounded-full transition-all"
-                          title="Șterge Angajat"
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                        {employeeFilter === 'archived' ? (
+                          <button 
+                            onClick={() => setEmployeeToRestore(emp)}
+                            className="px-3 py-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 hover:bg-emerald-100 dark:hover:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900 rounded-full transition-all flex items-center gap-1.5"
+                            title="Restaurează din Arhivă"
+                          >
+                            <RotateCcw size={14} />
+                            <span>Restaurează</span>
+                          </button>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => setResetPinEmpId(emp.id)}
+                              className="p-2 text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm hover:text-amber-600 hover:bg-amber-50 rounded-full transition-all"
+                              title="Resetează PIN"
+                            >
+                              <KeyRound size={16} />
+                            </button>
+                            <button 
+                              onClick={() => setQrEmployee(emp)}
+                              className="p-2 text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm hover:text-slate-800 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800 rounded-full transition-all"
+                              title="Printează Legitimație (QR)"
+                            >
+                              <QrCode size={16} />
+                            </button>
+                            <button 
+                              onClick={() => openEditModal(emp)}
+                              className="p-2 text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm hover:text-primary-600 hover:bg-primary-50 hover:border-primary-200 rounded-full transition-all"
+                              title="Editează Angajat"
+                            >
+                              <Edit size={16} />
+                            </button>
+                            <button 
+                              onClick={() => setEmployeeToDelete(emp)}
+                              className="p-2 text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm hover:text-red-600 hover:bg-red-50 hover:border-red-200 rounded-full transition-all"
+                              title="Arhivează Angajat"
+                            >
+                              <Archive size={16} />
+                            </button>
+                          </>
+                        )}
                       </td>
                     </tr>
                     );
@@ -693,25 +823,47 @@ export default function EmployeesList({ tenant, themeColor }) {
         </>
       )}
 
-      {/* Delete Confirmation Modal */}
+      {/* Archive Single Confirmation Modal */}
       <ConfirmModal
         isOpen={!!employeeToDelete}
         onClose={() => setEmployeeToDelete(null)}
         onConfirm={handleDelete}
-        title="Șterge Angajat"
-        message={`Ești sigur că vrei să ștergi angajatul ${employeeToDelete?.first_name} ${employeeToDelete?.last_name}? Această acțiune este ireversibilă.`}
-        confirmText="Șterge"
+        title="Arhivare Angajat"
+        message={`Ești sigur că vrei să arhivezi angajatul ${employeeToDelete?.first_name} ${employeeToDelete?.last_name}? Acesta va fi mutat în arhivă, nu va mai putea efectua pontaje, iar codul său rămâne rezervat pentru a preveni orice conflict.`}
+        confirmText="Arhivează"
       />
 
-      {/* Bulk Delete Confirmation Modal */}
+      {/* Restore Single Confirmation Modal */}
+      <ConfirmModal
+        isOpen={!!employeeToRestore}
+        onClose={() => setEmployeeToRestore(null)}
+        onConfirm={handleRestore}
+        title="Restaurare Angajat"
+        message={`Sigur dorești să reactivezi angajatul ${employeeToRestore?.first_name} ${employeeToRestore?.last_name} din arhivă? Acesta va putea efectua din nou pontajul folosind același cod.`}
+        confirmText="Restaurează"
+        isDanger={false}
+      />
+
+      {/* Bulk Archive Confirmation Modal */}
       <ConfirmModal
         isOpen={showBulkDeleteModal}
         onClose={() => setShowBulkDeleteModal(false)}
         onConfirm={handleBulkDelete}
-        title="Ștergere Multiplă Angajați"
-        message={`Ești sigur că vrei să ștergi cei ${selectedIds.length} angajați selectați? Toate datele asociate (pontaje, istoric, documente, ture) vor fi șterse definitiv. Această acțiune este ireversibilă.`}
-        confirmText={bulkDeleting ? "Se șterge..." : `Șterge definitiv (${selectedIds.length})`}
+        title="Arhivare în Masă"
+        message={`Ești sigur că vrei să arhivezi cei ${selectedIds.length} angajați selectați? Aceștia vor fi mutați în arhivă, iar codurile lor vor rămâne rezervate.`}
+        confirmText={bulkDeleting ? "Se arhivează..." : `Arhivează (${selectedIds.length})`}
         isDanger={true}
+      />
+
+      {/* Bulk Restore Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showBulkRestoreModal}
+        onClose={() => setShowBulkRestoreModal(false)}
+        onConfirm={handleBulkRestore}
+        title="Restaurare în Masă"
+        message={`Sigur dorești să reactivezi cei ${selectedIds.length} angajați selectați din arhivă?`}
+        confirmText={bulkRestoring ? "Se restaurează..." : `Restaurează (${selectedIds.length})`}
+        isDanger={false}
       />
 
       {/* Bulk Edit Modal */}
@@ -1218,13 +1370,6 @@ export default function EmployeesList({ tenant, themeColor }) {
         </div>
       )}
       
-      <ConfirmModal 
-        isOpen={!!employeeToDelete}
-        onClose={() => setEmployeeToDelete(null)}
-        onConfirm={handleDelete}
-        title="Ștergere Angajat"
-        message="Ești sigur că vrei să ștergi acest angajat?"
-      />
 
       <ConfirmModal 
         isOpen={!!resetPinEmpId}

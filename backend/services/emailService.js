@@ -7,8 +7,24 @@ const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
 /**
  * Convertește URL-urile webp-express în PNG original pentru compatibilitate maximă în clienții de email (Gmail/Outlook)
  */
-function sanitizeEmailLogo(url) {
+function sanitizeEmailLogo(url, subdomain = null) {
+  const baseDomain = process.env.BASE_DOMAIN || 'qr.pontaj.app';
+
+  // Pentru chiriașii cunoscuți sau URL-uri care trimit către ei, folosim fișierele CDN garantate din platformă
+  if (subdomain === 'unda' || (url && url.includes('unda'))) {
+    return `https://${baseDomain}/logos/unda.png`;
+  }
+  if (subdomain === 'rollmaster' || (url && url.includes('roll-master'))) {
+    return `https://${baseDomain}/logos/rollmaster.png`;
+  }
+
   if (!url) return null;
+
+  if (url.startsWith('/uploads/') || url.startsWith('uploads/') || url.startsWith('/logos/') || url.startsWith('logos/')) {
+    const cleanPath = url.startsWith('/') ? url : `/${url}`;
+    return `https://${baseDomain}${cleanPath}`;
+  }
+
   if (url.includes('/webp-express/webp-images/') && url.endsWith('.webp')) {
     return url.replace('/webp-express/webp-images/', '/').replace(/\.webp$/, '');
   }
@@ -95,7 +111,7 @@ async function sendWelcomeEmail({ to, userName, companyName, loginUrl, resetPass
   const name = userName || 'Administrator';
   const company = companyName || 'Smart QR';
   const brandColor = (themeColor && themeColor.startsWith('#')) ? themeColor : '#0f172a';
-  const logoUrl = sanitizeEmailLogo(tenantLogo);
+  const logoUrl = sanitizeEmailLogo(tenantLogo, subdomain);
   const subject = `Bun venit in Smart QR - Cont de acces ${company}`;
   const senderName = `${company} | Smart QR`;
   const cleanResetUrl = ensurePublicUrl(resetPasswordUrl, subdomain);

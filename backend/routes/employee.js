@@ -15,7 +15,7 @@ router.post('/login', async (req, res) => {
     }
 
     const result = await db.query(
-      `SELECT e.id, e.tenant_id, e.first_name, e.last_name, e.avatar_path, e.job_title, t.theme_color as tenant_culoare, t.logo_url as tenant_logo, t.favicon_url as tenant_favicon, t.name as tenant_nume
+      `SELECT e.id, e.tenant_id, e.first_name, e.last_name, e.avatar_path, e.job_title, e.is_archived, t.theme_color as tenant_culoare, t.logo_url as tenant_logo, t.favicon_url as tenant_favicon, t.name as tenant_nume
        FROM qrp_employees e
        JOIN qrp_tenants t ON e.tenant_id = t.id
        WHERE e.employee_code = $1 AND e.pin_code = $2`,
@@ -27,6 +27,9 @@ router.post('/login', async (req, res) => {
     }
 
     const emp = result.rows[0];
+    if (emp.is_archived) {
+      return res.status(403).json({ error: 'Acest cont de angajat a fost arhivat. Contactează administratorul companiei.' });
+    }
     
     // Generate token
     const token = jwt.sign(

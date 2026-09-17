@@ -78,7 +78,7 @@ router.post('/status', async (req, res) => {
   const { employee_code, pin_code, tenant_id, kiosk_id } = req.body;
   try {
     const empResult = await pool.query(
-      'SELECT id, first_name, last_name, avatar_path FROM qrp_employees WHERE employee_code = $1 AND pin_code = $2 AND tenant_id = $3',
+      'SELECT id, first_name, last_name, avatar_path, is_archived FROM qrp_employees WHERE employee_code = $1 AND pin_code = $2 AND tenant_id = $3',
       [employee_code, pin_code, tenant_id]
     );
 
@@ -87,6 +87,10 @@ router.post('/status', async (req, res) => {
     }
 
     const employee = empResult.rows[0];
+
+    if (employee.is_archived) {
+      return res.status(403).json({ error: 'Contul acestui angajat a fost arhivat și nu poate efectua pontajul.' });
+    }
     const lastEntryRes = await pool.query(
       'SELECT action_type FROM qrp_timesheets WHERE employee_id = $1 ORDER BY created_at DESC LIMIT 1',
       [employee.id]
@@ -134,7 +138,7 @@ router.post('/', async (req, res) => {
   try {
     // 1. Gaseste angajatul
     const empResult = await pool.query(
-      'SELECT id, first_name, last_name, avatar_path, job_title, birth_date FROM qrp_employees WHERE employee_code = $1 AND pin_code = $2 AND tenant_id = $3',
+      'SELECT id, first_name, last_name, avatar_path, job_title, birth_date, is_archived FROM qrp_employees WHERE employee_code = $1 AND pin_code = $2 AND tenant_id = $3',
       [employee_code, pin_code, tenant_id]
     );
 
@@ -143,6 +147,10 @@ router.post('/', async (req, res) => {
     }
 
     const employee = empResult.rows[0];
+
+    if (employee.is_archived) {
+      return res.status(403).json({ error: 'Contul acestui angajat a fost arhivat și nu poate efectua pontajul.' });
+    }
 
     // Verificăm dacă este ziua de naștere a angajatului
     let isBirthday = false;
@@ -321,12 +329,12 @@ router.post('/reset-pin-request', async (req, res) => {
 
   try {
     const empResult = await pool.query(
-      'SELECT id FROM qrp_employees WHERE employee_code = $1 AND tenant_id = $2',
+      'SELECT id FROM qrp_employees WHERE employee_code = $1 AND tenant_id = $2 AND (is_archived IS FALSE OR is_archived IS NULL)',
       [employee_code, tenant_id]
     );
 
     if (empResult.rows.length === 0) {
-      return res.status(404).json({ error: 'Cod angajat invalid.' });
+      return res.status(404).json({ error: 'Cod angajat invalid sau contul a fost arhivat.' });
     }
 
     await pool.query(
