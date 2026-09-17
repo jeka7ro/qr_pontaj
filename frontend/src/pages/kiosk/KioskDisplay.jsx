@@ -467,7 +467,7 @@ export default function KioskDisplay() {
   }
 
   const isVertical = orientation === 'vertical';
-  const qrBadgeSize = isVertical ? 48 : 54;
+  const qrBadgeSize = isVertical ? 36 : 40;
 
   // Formatare data & timp pentru display urias
   const timeString = time.toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -848,7 +848,7 @@ export default function KioskDisplay() {
                     />
                     {logoFullUrl && (
                       <div 
-                        className="absolute z-20 rounded-xl p-1.5 shadow-md border-2 border-white flex items-center justify-center pointer-events-none transition-all"
+                        className="absolute z-20 rounded-full p-1 shadow-md border-2 border-white flex items-center justify-center pointer-events-none transition-all overflow-hidden"
                         style={{ 
                           width: `${qrBadgeSize}px`, 
                           height: `${qrBadgeSize}px`, 

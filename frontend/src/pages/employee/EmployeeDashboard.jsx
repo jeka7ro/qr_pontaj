@@ -644,7 +644,7 @@ export default function EmployeeDashboard() {
                 />
                 {employee.tenant_logo && (
                   <div 
-                    className="absolute z-10 w-12 h-12 rounded-xl p-1.5 shadow-md border-2 border-white flex items-center justify-center pointer-events-none"
+                    className="absolute z-10 w-9 h-9 rounded-full p-1 shadow-md border-2 border-white flex items-center justify-center pointer-events-none overflow-hidden"
                     style={{ backgroundColor: tc && tc !== '#ffffff' && tc !== '#000000' ? tc : '#0f172a' }}
                   >
                     <img 
