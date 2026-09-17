@@ -97,6 +97,10 @@ export default function DataTable({
     setSelectedRowIds(newSelected);
   };
 
+  const handleClearSelection = () => {
+    setSelectedRowIds(new Set());
+  };
+
   const toggleRowExpanded = (id) => {
     const newExpanded = new Set(expandedRowIds);
     if (newExpanded.has(id)) {

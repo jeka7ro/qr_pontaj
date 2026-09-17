@@ -276,6 +276,10 @@ export default function EmployeesList({ tenant, themeColor }) {
     setSelectedIds(filteredEmployees.map(e => e.id));
   };
 
+  const handleClearSelection = () => {
+    setSelectedIds([]);
+  };
+
   const openEditModal = (emp) => {
     setFormData({
       first_name: emp.first_name, last_name: emp.last_name, cnp: emp.cnp, id_card_series: emp.id_card_series || '',
