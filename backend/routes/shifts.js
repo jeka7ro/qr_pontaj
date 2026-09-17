@@ -9,7 +9,7 @@ router.get('/', async (req, res) => {
     const { start_date, end_date } = req.query; // optional filtering
     
     let query = `
-      SELECT s.*, (e.first_name || ' ' || e.last_name) as employee_name, e.cnp as employee_cnp 
+      SELECT s.*, (e.first_name || ' ' || e.last_name) as employee_name, e.cnp as employee_cnp, e.avatar_path, e.job_title
       FROM qrp_shifts s
       JOIN qrp_employees e ON s.employee_id = e.id
       WHERE s.tenant_id = $1

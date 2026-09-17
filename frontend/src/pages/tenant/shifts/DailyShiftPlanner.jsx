@@ -2,7 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Calendar, Clock, Check, ChevronLeft, ChevronRight, Search, 
   Filter, FileSpreadsheet, Edit3, Trash2, Sun, Moon, Eye, EyeOff, 
-  Users, CheckSquare, Square, X, AlertCircle, ArrowUpDown, ChevronDown
+  Users, CheckSquare, Square, X, AlertCircle, ArrowUpDown, ChevronDown,
+  Layers
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
@@ -348,7 +349,7 @@ export default function DailyShiftPlanner({ tenant, themeColor, onCalendarViewRe
       }
 
       const totalCreated = dateMode === 'multiple' ? selectedEmpIds.length * selectedDates.length : selectedEmpIds.length;
-      showToast(`✓ Tura (${bulkStartTime} - ${bulkEndTime}) a fost aplicată cu succes (${totalCreated} ture create)!`);
+      showToast(`Tura (${bulkStartTime} - ${bulkEndTime}) a fost aplicată cu succes (${totalCreated} ture create)!`);
       setSelectedEmpIds([]);
       await fetchDayData();
     } catch (err) {
@@ -387,7 +388,7 @@ export default function DailyShiftPlanner({ tenant, themeColor, onCalendarViewRe
         throw new Error(errData.error || 'Eroare la eliberarea turelor');
       }
 
-      showToast(`✓ Angajații selectați au fost marcați ca liberi.`);
+      showToast(`Angajații selectați au fost marcați ca liberi.`);
       setSelectedEmpIds([]);
       await fetchDayData();
     } catch (err) {
@@ -453,7 +454,7 @@ export default function DailyShiftPlanner({ tenant, themeColor, onCalendarViewRe
         throw new Error(errData.error || 'Eroare la salvarea turei');
       }
 
-      showToast(`✓ Tura pentru ${individualEmp.first_name} ${individualEmp.last_name} a fost actualizată (${indStartTime} - ${indEndTime})!`);
+      showToast(`Tura pentru ${individualEmp.first_name} ${individualEmp.last_name} a fost actualizată (${indStartTime} - ${indEndTime})!`);
       setIndividualModalOpen(false);
       await fetchDayData();
     } catch (err) {
@@ -480,7 +481,7 @@ export default function DailyShiftPlanner({ tenant, themeColor, onCalendarViewRe
         throw new Error(errData.error || 'Eroare la ștergerea turei');
       }
 
-      showToast(`✓ Tura a fost ștearsă. Angajatul este marcat ca liber.`);
+      showToast(`Tura a fost ștearsă. Angajatul este marcat ca liber.`);
       setIndividualModalOpen(false);
       await fetchDayData();
     } catch (err) {
@@ -541,37 +542,57 @@ export default function DailyShiftPlanner({ tenant, themeColor, onCalendarViewRe
 
       {/* 1. Selectorul de Dată: Mod O Singură Zi vs Mod Zile Multiple (Calendar) */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-4 sm:p-6 space-y-4">
-        {/* Antet Card Dată cu Switcher Mod */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
-          <div className="flex items-center gap-2">
-            <Calendar className="text-primary-600 dark:text-primary-400" size={20} />
-            <span className="font-black text-slate-800 dark:text-white text-base">
-              {dateMode === 'single' ? 'Planificare pe O Singură Zi' : 'Planificare pe Zile Multiple (Calendar)'}
-            </span>
+        {/* Antet Card Dată cu 2 Butoane Distincte de Planificare */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                Mod de lucru
+              </span>
+            </div>
+            <h3 className="text-lg font-black text-slate-900 dark:text-white mt-0.5">
+              {dateMode === 'single' ? 'Planificare pentru o singură zi' : 'Planificare tură multiplă (pe mai multe zile)'}
+            </h3>
           </div>
 
-          <div className="inline-flex p-1 bg-slate-100 dark:bg-slate-800 rounded-full border border-slate-200 dark:border-slate-700 shadow-inner">
+          {/* 2 Butoane Distincte */}
+          <div className="flex items-center gap-2.5 flex-wrap w-full sm:w-auto">
+            {/* Buton 1: Creează o zi */}
             <button
               type="button"
               onClick={() => setDateMode('single')}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all ${
+              className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all border shadow-xs ${
                 dateMode === 'single'
-                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
-                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                  ? 'bg-primary-600 text-white border-primary-600 shadow-md ring-2 ring-primary-500/20'
+                  : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750'
               }`}
             >
-              O Singură Zi
+              <Calendar size={18} className={dateMode === 'single' ? 'text-white' : 'text-primary-600 dark:text-primary-400'} />
+              <div className="flex flex-col text-left">
+                <span className="leading-tight">Creează o zi</span>
+                <span className={`text-[10px] font-semibold ${dateMode === 'single' ? 'text-white/80' : 'text-slate-400 dark:text-slate-500'}`}>
+                  O singură dată
+                </span>
+              </div>
             </button>
+
+            {/* Buton 2: Creează tură multiplă */}
             <button
               type="button"
               onClick={() => setDateMode('multiple')}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all ${
+              className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all border shadow-xs ${
                 dateMode === 'multiple'
-                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
-                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                  ? 'bg-primary-600 text-white border-primary-600 shadow-md ring-2 ring-primary-500/20'
+                  : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750'
               }`}
             >
-              Zile Multiple (Calendar)
+              <Layers size={18} className={dateMode === 'multiple' ? 'text-white' : 'text-primary-600 dark:text-primary-400'} />
+              <div className="flex flex-col text-left">
+                <span className="leading-tight">Creează tură multiplă</span>
+                <span className={`text-[10px] font-semibold ${dateMode === 'multiple' ? 'text-white/80' : 'text-slate-400 dark:text-slate-500'}`}>
+                  Zile multiple (calendar)
+                </span>
+              </div>
             </button>
           </div>
         </div>

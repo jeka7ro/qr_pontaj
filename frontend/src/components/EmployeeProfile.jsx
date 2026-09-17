@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useLocation } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
-import { ArrowLeft, User, MapPin, Briefcase, Calendar, Clock, Banknote, Shield, History, Activity, Image as ImageIcon, Camera, FileText, Upload, Trash2, Download, Loader2, X, ArrowRight, Eye, CalendarDays } from 'lucide-react';
+import { ArrowLeft, User, MapPin, Briefcase, Calendar, Clock, Banknote, Shield, History, Activity, Image as ImageIcon, Camera, FileText, Upload, Trash2, Download, Loader2, X, ArrowRight, Eye, CalendarDays, Hourglass, Printer, Copy, Check, Maximize2 } from 'lucide-react';
 import TimesheetReport from './TimesheetReport';
 import ConfirmModal from './ConfirmModal';
 
-const EmployeeProfile = ({ tenant, themeColor }) => {
+const EmployeeProfile = ({ tenant, themeColor, employeeId, onClose }) => {
   const location = useLocation();
   const initialTab = new URLSearchParams(location.search).get('tab') || 'details';
-  const { id } = useParams();
+  const { id: paramId } = useParams();
+  const id = employeeId || paramId;
   const [employee, setEmployee] = useState(null);
   const [history, setHistory] = useState([]);
   const [documents, setDocuments] = useState([]);
@@ -18,6 +19,8 @@ const EmployeeProfile = ({ tenant, themeColor }) => {
 
   const [activeTab, setActiveTab] = useState(initialTab);
   const [lightboxIndex, setLightboxIndex] = useState(null);
+  const [showQrModal, setShowQrModal] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
 
   const [evalPunctuality, setEvalPunctuality] = useState(10);
   const [evalAttendance, setEvalAttendance] = useState(10);
@@ -28,24 +31,67 @@ const EmployeeProfile = ({ tenant, themeColor }) => {
   const [notification, setNotification] = useState(null);
   const [docToDelete, setDocToDelete] = useState(null);
 
-  // Keyboard navigation for Lightbox
+  const calculateAge = (birthDateStr) => {
+    if (!birthDateStr) return null;
+    const birth = new Date(birthDateStr);
+    if (isNaN(birth.getTime())) return null;
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    const m = today.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+    return age >= 0 ? age : null;
+  };
+
+  const handleDownloadQr = () => {
+    const svg = document.getElementById('employee-large-qr-svg');
+    if (!svg) return;
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    img.onload = () => {
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0);
+      const pngFile = canvas.toDataURL('image/png');
+      const downloadLink = document.createElement('a');
+      downloadLink.download = `QR_${employee.first_name}_${employee.last_name}.png`;
+      downloadLink.href = pngFile;
+      downloadLink.click();
+    };
+    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+  };
+
+  // Keyboard navigation for Lightbox and Escape to close
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (lightboxIndex === null) return;
-      if (e.key === 'Escape') setLightboxIndex(null);
-      if (e.key === 'ArrowLeft') setLightboxIndex(prev => (prev > 0 ? prev - 1 : prev));
-      if (e.key === 'ArrowRight') setLightboxIndex(prev => (prev < documents.length - 1 ? prev + 1 : prev));
+      if (lightboxIndex !== null) {
+        if (e.key === 'Escape') setLightboxIndex(null);
+        if (e.key === 'ArrowLeft') setLightboxIndex(prev => (prev > 0 ? prev - 1 : prev));
+        if (e.key === 'ArrowRight') setLightboxIndex(prev => (prev < documents.length - 1 ? prev + 1 : prev));
+        return;
+      }
+      if (e.key === 'Escape' && !showQrModal && !docToDelete && onClose) {
+        onClose();
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [lightboxIndex, documents]);
+  }, [lightboxIndex, documents, showQrModal, docToDelete, onClose]);
 
   useEffect(() => {
-    fetchEmployeeData();
+    if (id) {
+      fetchEmployeeData();
+    }
   }, [id]);
 
   const fetchEmployeeData = async () => {
     try {
+      setLoading(true);
       const [empRes, histRes, docRes] = await Promise.all([
         fetch(`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenants/${tenant.id}/employees/${id}`),
         fetch(`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenants/${tenant.id}/employees/${id}/history`),
@@ -202,25 +248,56 @@ const EmployeeProfile = ({ tenant, themeColor }) => {
   return (
     <div className="w-full space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-4 mb-6">
-        <button 
-          onClick={() => {
-            if (window.history.length > 2) {
-              window.history.back();
-            } else {
-              window.location.href = '/admin/employees';
-            }
-          }}
-          className="p-2 rounded-full bg-white border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 transition-colors"
-        >
-          <ArrowLeft size={20} />
-        </button>
-        <div>
-          <h1 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight flex items-center gap-2">
-            Profil Angajat
-          </h1>
-          <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Dosar digital și istoric contract</p>
+      <div className="flex items-center justify-between gap-4 mb-6">
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={() => {
+              if (onClose) {
+                onClose();
+              } else if (window.history.length > 2) {
+                window.history.back();
+              } else {
+                window.location.href = '/admin/employees';
+              }
+            }}
+            className="p-2 rounded-full bg-white border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 transition-colors cursor-pointer"
+            title={onClose ? "Închide profilul" : "Înapoi"}
+          >
+            {onClose ? <X size={20} /> : <ArrowLeft size={20} />}
+          </button>
+          <div>
+            <h1 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight flex items-center gap-2 flex-wrap">
+              Profil Angajat
+              {employee && (
+                <span className="text-lg font-bold text-slate-500 dark:text-slate-400">
+                  — {employee.first_name} {employee.last_name}
+                </span>
+              )}
+            </h1>
+            <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Dosar digital și istoric contract</p>
+          </div>
         </div>
+
+        {onClose && (
+          <div className="flex items-center gap-2 shrink-0">
+            <Link
+              to={`/admin/employees/${id}?tab=details`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors shadow-2xs"
+            >
+              <Maximize2 size={13} />
+              <span>Deschide complet</span>
+            </Link>
+            <button
+              onClick={onClose}
+              className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
+              title="Închide fereastra"
+            >
+              <X size={18} />
+            </button>
+          </div>
+        )}
       </div>
       {notification && (
         <div className={`mb-6 p-4 rounded-lg border font-bold flex items-center justify-between ${notification.type === 'success' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
@@ -288,18 +365,35 @@ const EmployeeProfile = ({ tenant, themeColor }) => {
                 </label>
               </div>
               <h2 className="text-xl font-bold text-slate-800 dark:text-white">{employee.first_name} {employee.last_name}</h2>
-              <span className="inline-flex items-center px-3 py-1 mt-2 rounded-full text-xs font-bold bg-primary-50 text-primary-600">
-                <Briefcase size={12} className="mr-1" /> {employee.job_title || 'Fără funcție'}
-              </span>
-              <div className="mt-4 bg-white p-2 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 inline-block">
-                <QRCodeSVG 
-                  value={`QRP-EMP-${tenant.id}-${employee.id}`}
-                  size={96}
-                  level="M"
-                  includeMargin={true}
-                />
+              <div className="flex flex-wrap items-center justify-center gap-2 mt-2">
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-primary-50 dark:bg-primary-950/40 text-primary-600 dark:text-primary-400">
+                  <Briefcase size={12} className="mr-1.5" /> {employee.job_title || 'Fără funcție'}
+                </span>
+                {employee.birth_date && calculateAge(employee.birth_date) !== null && (
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                    <Hourglass size={12} className="mr-1.5 text-slate-400" /> {calculateAge(employee.birth_date)} ani
+                  </span>
+                )}
               </div>
-              <p className="text-[10px] text-slate-400 mt-2">Cod QR Legitimație</p>
+              <button
+                type="button"
+                onClick={() => setShowQrModal(true)}
+                className="mt-4 bg-white dark:bg-slate-800 p-2.5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 hover:border-primary-400 dark:hover:border-primary-500 hover:shadow-md transition-all group flex flex-col items-center cursor-pointer"
+                title="Apasă pentru a deschide codul QR mărit"
+              >
+                <div className="bg-white p-1.5 rounded-xl">
+                  <QRCodeSVG 
+                    value={`QRP-EMP-${tenant.id}-${employee.id}`}
+                    size={96}
+                    level="M"
+                    includeMargin={true}
+                    className="transition-transform group-hover:scale-105"
+                  />
+                </div>
+                <span className="flex items-center gap-1 text-[11px] text-primary-600 dark:text-primary-400 font-bold mt-2 group-hover:underline">
+                  <Maximize2 size={12} /> Mărește QR
+                </span>
+              </button>
             </div>
 
             <div className="mt-8 space-y-4">
@@ -314,6 +408,12 @@ const EmployeeProfile = ({ tenant, themeColor }) => {
               <div className="flex items-center justify-between text-sm">
                 <span className="text-slate-500 dark:text-slate-400 font-medium flex items-center"><Calendar size={16} className="mr-2" /> Data Nașterii</span>
                 <span className="font-bold text-slate-800 dark:text-white">{employee.birth_date ? new Date(employee.birth_date).toLocaleDateString('ro-RO') : '-'}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-slate-500 dark:text-slate-400 font-medium flex items-center"><Hourglass size={16} className="mr-2" /> Vârstă</span>
+                <span className="font-bold text-slate-800 dark:text-white">
+                  {employee.birth_date && calculateAge(employee.birth_date) !== null ? `${calculateAge(employee.birth_date)} ani` : '-'}
+                </span>
               </div>
             </div>
           </div>        </div>
@@ -355,19 +455,19 @@ const EmployeeProfile = ({ tenant, themeColor }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <div>
                 <span className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Telefon</span>
-                <span className="text-base font-bold text-slate-800 dark:text-white">
+                <span className="text-sm sm:text-base font-bold text-slate-800 dark:text-white block truncate">
                   {employee.phone || 'Nespecificat'}
                 </span>
               </div>
-              <div>
+              <div className="min-w-0">
                 <span className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Email</span>
-                <span className="text-base font-bold text-slate-800 dark:text-white">
+                <span className="text-sm sm:text-base font-bold text-slate-800 dark:text-white block truncate" title={employee.email}>
                   {employee.email || 'Nespecificat'}
                 </span>
               </div>
               <div>
                 <span className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Adresă (din C.I.)</span>
-                <span className="text-base font-bold text-slate-800 dark:text-white break-words">
+                <span className="text-sm sm:text-base font-bold text-slate-800 dark:text-white break-words">
                   {employee.address || 'Nespecificat'}
                 </span>
               </div>
@@ -586,7 +686,7 @@ const EmployeeProfile = ({ tenant, themeColor }) => {
 
       {/* Lightbox Modal */}
       {lightboxIndex !== null && documents[lightboxIndex] && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/95 backdrop-blur-sm p-4 md:p-8">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/95 backdrop-blur-sm p-4 md:p-8">
           <button 
             onClick={() => setLightboxIndex(null)}
             className="absolute top-4 right-4 md:top-8 md:right-8 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
@@ -651,6 +751,105 @@ const EmployeeProfile = ({ tenant, themeColor }) => {
         title="Ștergere Document"
         message="Ești sigur că vrei să ștergi acest document?"
       />
+
+      {/* Large QR Badge Modal */}
+      {showQrModal && (
+        <div 
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 select-none animate-in fade-in duration-200"
+          onClick={() => setShowQrModal(false)}
+        >
+          <div 
+            className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-sm sm:max-w-md shadow-2xl p-6 sm:p-8 text-center border border-slate-200 dark:border-slate-800 relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button 
+              type="button"
+              onClick={() => setShowQrModal(false)}
+              className="absolute top-5 right-5 w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+            >
+              <X size={18} />
+            </button>
+
+            {/* Header info */}
+            <div className="mb-6 flex flex-col items-center">
+              <div className="w-16 h-16 rounded-2xl overflow-hidden border-2 border-slate-200 dark:border-slate-700 shadow-sm mb-3">
+                <img src={avatarSrc} alt="Avatar" className="w-full h-full object-cover" />
+              </div>
+              <h3 className="text-2xl font-black text-slate-900 dark:text-white leading-tight">
+                {employee.first_name} {employee.last_name}
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider mt-1">
+                {employee.job_title || 'Angajat'} &bull; #{employee.employee_code || `ROL${String(employee.id).padStart(3, '0')}`}
+              </p>
+            </div>
+
+            {/* QR Card container */}
+            <div className="bg-slate-50 dark:bg-slate-800/60 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center mx-auto mb-6 w-full">
+              <div className="bg-white p-4 rounded-2xl shadow-md border border-slate-100">
+                <QRCodeSVG 
+                  id="employee-large-qr-svg"
+                  value={`QRP-EMP-${tenant.id}-${employee.id}`}
+                  size={220}
+                  level="H"
+                  includeMargin={true}
+                />
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-4">
+                Scanarea se face de către tableta kiosk-ului sau scannerul locației.
+              </p>
+            </div>
+
+            {/* Action buttons */}
+            <div className="space-y-2.5">
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={handleDownloadQr}
+                  className="h-11 rounded-full bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Download size={15} />
+                  <span>Descarcă PNG</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="h-11 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Printer size={15} />
+                  <span>Printează</span>
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const link = `${window.location.protocol}//${window.location.host}/login`;
+                  navigator.clipboard.writeText(link);
+                  setCopiedLink(true);
+                  setTimeout(() => setCopiedLink(false), 2000);
+                }}
+                className={`w-full h-11 rounded-full text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                  copiedLink
+                    ? 'bg-emerald-600 text-white shadow-sm'
+                    : 'bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 shadow-sm'
+                }`}
+              >
+                {copiedLink ? (
+                  <>
+                    <Check size={16} />
+                    <span>Link copiat în clipboard!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy size={16} />
+                    <span>Copiază Link Portal Angajat</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

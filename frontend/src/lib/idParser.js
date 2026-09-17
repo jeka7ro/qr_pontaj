@@ -45,12 +45,7 @@ export function parseIdCardText(text) {
   }
 
   if (result.cnp) {
-    const yearPrefix = ['1', '2'].includes(result.cnp[0]) ? '19' : (['5', '6'].includes(result.cnp[0]) ? '20' : '19');
-    const yy = result.cnp.substring(1, 3);
-    const mm = result.cnp.substring(3, 5);
-    const dd = result.cnp.substring(5, 7);
-    result.birth_date = `${yearPrefix}${yy}-${mm}-${dd}`;
-    
+    result.birth_date = getBirthDateFromCnp(result.cnp);
     if (['1', '5'].includes(result.cnp[0])) result.gender = 'M';
     if (['2', '6'].includes(result.cnp[0])) result.gender = 'F';
   }
@@ -166,4 +161,30 @@ export function parseIdCardText(text) {
   }
 
   return result;
+}
+
+/**
+ * Extrage data de nastere (format YYYY-MM-DD) dintr-un CNP romanesc
+ */
+export function getBirthDateFromCnp(cnp) {
+  if (!cnp || typeof cnp !== 'string') return null;
+  const clean = cnp.trim().replace(/\D/g, '');
+  if (clean.length < 7) return null;
+
+  const s = clean[0];
+  let yearPrefix = null;
+  if (['1', '2', '7', '8'].includes(s)) yearPrefix = '19';
+  else if (['5', '6'].includes(s)) yearPrefix = '20';
+  else if (['3', '4'].includes(s)) yearPrefix = '18';
+  else return null;
+
+  const yy = clean.substring(1, 3);
+  const mm = clean.substring(3, 5);
+  const dd = clean.substring(5, 7);
+
+  const m = parseInt(mm, 10);
+  const d = parseInt(dd, 10);
+  if (m < 1 || m > 12 || d < 1 || d > 31) return null;
+
+  return `${yearPrefix}${yy}-${mm}-${dd}`;
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Clock, Calendar as CalendarIcon, User } from 'lucide-react';
+import { X, Clock, Calendar as CalendarIcon, User, Check } from 'lucide-react';
 
 export default function CreateShiftModal({ onClose, onShiftCreated, tenantId, employees, selectedDate, themeColor, initialData, isEdit, pendingChangeRequest }) {
   const [formData, setFormData] = useState({
@@ -122,8 +122,10 @@ export default function CreateShiftModal({ onClose, onShiftCreated, tenantId, em
                   <span>Solicitare Modificare Tură de la Angajat:</span>
                 </div>
                 {targetDate && (
-                  <div className="mt-1 font-semibold text-amber-800 dark:text-amber-300 bg-amber-100/70 dark:bg-amber-800/40 px-3 py-1.5 rounded-lg border border-amber-300/60">
-                    📅 Angajatul dorește mutarea pe data de: <span className="font-black underline text-amber-950 dark:text-white">{new Date(targetDate + 'T00:00:00').toLocaleDateString('ro-RO', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                  <div className="mt-1 font-semibold text-amber-800 dark:text-amber-300 bg-amber-100/70 dark:bg-amber-800/40 px-3 py-1.5 rounded-lg border border-amber-300/60 flex items-center gap-1.5 flex-wrap">
+                    <CalendarIcon size={14} className="shrink-0" />
+                    <span>Angajatul dorește mutarea pe data de:</span>
+                    <span className="font-black underline text-amber-950 dark:text-white">{new Date(targetDate + 'T00:00:00').toLocaleDateString('ro-RO', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</span>
                   </div>
                 )}
                 {pendingChangeRequest.reason && (
@@ -143,7 +145,8 @@ export default function CreateShiftModal({ onClose, onShiftCreated, tenantId, em
                   }}
                   className="px-4 py-2 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white text-xs font-bold rounded-xl transition-all shadow flex items-center justify-center gap-1.5 disabled:opacity-50"
                 >
-                  ✓ Aprobă și mută tura {targetDate ? `pe ${new Date(targetDate + 'T00:00:00').toLocaleDateString('ro-RO', { day: 'numeric', month: 'short' })}` : ''}
+                  <Check size={14} className="shrink-0" />
+                  <span>Aprobă și mută tura {targetDate ? `pe ${new Date(targetDate + 'T00:00:00').toLocaleDateString('ro-RO', { day: 'numeric', month: 'short' })}` : ''}</span>
                 </button>
                 <button 
                   type="button"
@@ -166,9 +169,10 @@ export default function CreateShiftModal({ onClose, onShiftCreated, tenantId, em
                       setLoading(false);
                     }
                   }}
-                  className="px-4 py-2 bg-red-100 hover:bg-red-200 active:scale-95 text-red-700 text-xs font-bold rounded-xl transition-colors disabled:opacity-50"
+                  className="px-4 py-2 bg-red-100 hover:bg-red-200 active:scale-95 text-red-700 text-xs font-bold rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5"
                 >
-                  ✕ Respinge Cererea
+                  <X size={14} className="shrink-0" />
+                  <span>Respinge Cererea</span>
                 </button>
               </div>
             </div>

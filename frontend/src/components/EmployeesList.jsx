@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, UserPlus, Search, Edit2, Edit, KeyRound, Trash2, Loader2, ScanLine, Plus, Check, X, ChevronLeft, ChevronRight, MapPin, QrCode, Printer, Smartphone, Copy } from 'lucide-react';
+import { Users, UserPlus, Search, Edit2, Edit, KeyRound, Trash2, Loader2, ScanLine, Plus, Check, X, ChevronLeft, ChevronRight, MapPin, QrCode, Printer, Smartphone, Copy, Calendar, AlertTriangle } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { extractTextFromImageOrPdf, cropFaceFromIdCard } from '../lib/pdfOcr';
-import { parseIdCardText } from '../lib/idParser';
+import { parseIdCardText, getBirthDateFromCnp } from '../lib/idParser';
 import ConfirmModal from './ConfirmModal';
 
 export default function EmployeesList({ tenant, themeColor }) {
@@ -45,6 +45,19 @@ export default function EmployeesList({ tenant, themeColor }) {
     const interval = setInterval(() => setDynamicTs(Date.now()), 5000);
     return () => clearInterval(interval);
   }, []);
+
+  const calculateAge = (birthDateStr) => {
+    if (!birthDateStr) return null;
+    const birth = new Date(birthDateStr);
+    if (isNaN(birth.getTime())) return null;
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    const m = today.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+    return age >= 0 ? age : null;
+  };
 
   const filteredEmployees = employees.filter(emp => {
     const s = search.toLowerCase();
@@ -271,24 +284,25 @@ export default function EmployeesList({ tenant, themeColor }) {
           </div>
 
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 dark:border-slate-700 overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
-            <table className="w-full text-left border-collapse min-w-[650px]">
+            <table className="w-full text-left border-collapse min-w-[750px]">
               <thead>
-                <tr className="bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700 dark:border-slate-700">
-                  <th style={{ width: 50, textAlign: 'center' }} className="py-3 font-bold text-xs tracking-wider text-slate-500 dark:text-slate-400 dark:text-slate-400">Nr.</th>
-                  <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wider">Angajat</th>
-                  <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wider">Funcție</th>
-                  <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wider">PIN / Acces</th>
-                  <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wider text-right">Acțiuni</th>
+                <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
+                  <th style={{ width: 50, textAlign: 'center' }} className="py-3 font-bold text-xs tracking-wider text-slate-500 dark:text-slate-400">Nr.</th>
+                  <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Angajat</th>
+                  <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Funcție</th>
+                  <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Data Nașterii / Vârstă</th>
+                  <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">PIN / Acces</th>
+                  <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">Acțiuni</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {currentRows.length === 0 ? (
                   <tr>
-                    <td colSpan="5" className="py-16 text-center">
-                      <div className="w-16 h-16 rounded-full bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-800 flex items-center justify-center mx-auto mb-4 border border-slate-100 dark:border-slate-700/50 dark:border-slate-700">
+                    <td colSpan="6" className="py-16 text-center">
+                      <div className="w-16 h-16 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center mx-auto mb-4 border border-slate-100 dark:border-slate-700">
                         <Users className="text-slate-300 dark:text-slate-500" size={32} />
                       </div>
-                      <h3 className="text-lg font-bold text-slate-800 dark:text-white dark:text-white mb-2">Nu s-au găsit înregistrări.</h3>
+                      <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2">Nu s-au găsit înregistrări.</h3>
                       {!search && (
                         <button onClick={() => { setShowAddModal(true); setSaveError(null); setOcrError(null); }} className="text-sm font-bold text-primary-600 dark:text-primary-400 hover:underline">
                           Adaugă primul angajat
@@ -298,7 +312,7 @@ export default function EmployeesList({ tenant, themeColor }) {
                   </tr>
                 ) : (
                   currentRows.map((emp, index) => (
-                    <tr key={emp.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50/50 dark:hover:bg-slate-700/20 transition-colors">
+                    <tr key={emp.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                       <td style={{ textAlign: 'center', color: '#64748b', fontSize: 13 }}>
                         {(safePage - 1) * rowsPerPage + index + 1}
                       </td>
@@ -309,27 +323,27 @@ export default function EmployeesList({ tenant, themeColor }) {
                               <img 
                                 src={( emp.avatar_path?.startsWith('http') ? emp.avatar_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${emp.avatar_path}` )} 
                                 alt="Avatar" 
-                                className="w-10 h-10 rounded-xl object-cover border border-slate-200 dark:border-slate-700 dark:border-slate-700" 
+                                className="w-10 h-10 rounded-xl object-cover border border-slate-200 dark:border-slate-700" 
                                 onError={(e) => {
                                   e.target.style.display = 'none';
                                   if (e.target.nextElementSibling) e.target.nextElementSibling.style.display = 'flex';
                                 }}
                               />
-                              <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 dark:text-slate-300 font-bold" style={{ display: 'none' }}>
+                              <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 font-bold" style={{ display: 'none' }}>
                                 {emp.first_name?.[0] || '?'}{emp.last_name?.[0] || ''}
                               </div>
                             </>
                           ) : (
-                            <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 dark:text-slate-300 font-bold">
+                            <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 font-bold">
                               {emp.first_name?.[0] || '?'}{emp.last_name?.[0] || ''}
                             </div>
                           )}
                           <div>
                             <Link to={`/admin/employees/${emp.id}`} className="text-sm font-bold text-primary-600 dark:text-primary-400 hover:underline">{emp.first_name} {emp.last_name}</Link>
-                            <div className="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-400 font-medium mt-0.5">CNP: {emp.cnp || '-'}</div>
+                            <div className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">CNP: {emp.cnp || '-'}</div>
                             {emp.pin_reset_requested && (
-                              <div className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-lg bg-red-100 text-red-700 text-[10px] font-bold uppercase tracking-wider">
-                                ⚠️ Resetare PIN cerută
+                              <div className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-400 text-[10px] font-bold uppercase tracking-wider">
+                                <AlertTriangle size={10} /> Resetare PIN cerută
                               </div>
                             )}
                           </div>
@@ -342,6 +356,21 @@ export default function EmployeesList({ tenant, themeColor }) {
                             <MapPin size={12} className="mr-1 text-slate-400" />
                             {locations.find(l => l.id === emp.location_id)?.name || 'Punct lucru necunoscut'}
                           </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        {emp.birth_date ? (
+                          <div>
+                            <div className="font-bold text-sm text-slate-800 dark:text-white">
+                              {calculateAge(emp.birth_date) !== null ? `${calculateAge(emp.birth_date)} ani` : '-'}
+                            </div>
+                            <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mt-0.5 font-medium">
+                              <Calendar size={12} className="text-slate-400 shrink-0" />
+                              <span>{new Date(emp.birth_date).toLocaleDateString('ro-RO', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-slate-400 dark:text-slate-500">-</span>
                         )}
                       </td>
                       <td className="px-6 py-4">
@@ -529,8 +558,12 @@ export default function EmployeesList({ tenant, themeColor }) {
           <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-transparent dark:border-slate-700">
             <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-700/50 dark:border-slate-700 bg-white dark:bg-slate-800 flex justify-between items-center">
               <div>
-                <h2 className="text-lg font-bold text-slate-800 dark:text-white dark:text-white leading-tight">Adaugă Angajat Nou</h2>
-                <p className="text-sm text-slate-500 dark:text-slate-400 dark:text-slate-400 font-medium leading-tight">Profil pontaj și date identificare</p>
+                <h2 className="text-lg font-bold text-slate-800 dark:text-white dark:text-white leading-tight">
+                  {editingId ? 'Editează Angajat' : 'Adaugă Angajat Nou'}
+                </h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400 dark:text-slate-400 font-medium leading-tight">
+                  {editingId ? 'Actualizează datele angajatului' : 'Profil pontaj și date identificare'}
+                </p>
               </div>
               <button onClick={() => {
                 setShowAddModal(false);
@@ -634,8 +667,29 @@ export default function EmployeesList({ tenant, themeColor }) {
                     if (newCnp.length >= 4 && (!formData.pin_code || formData.pin_code === formData.cnp.slice(-4))) {
                       autoPin = newCnp.slice(-4);
                     }
-                    setFormData({...formData, cnp: newCnp, pin_code: autoPin});
+                    const autoBirthDate = getBirthDateFromCnp(newCnp);
+                    setFormData(prev => ({
+                      ...prev, 
+                      cnp: newCnp, 
+                      pin_code: autoPin,
+                      birth_date: autoBirthDate || prev.birth_date
+                    }));
                   }} className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase mb-1 ml-1 flex items-center justify-between">
+                    <span className="flex items-center gap-1">
+                      <Calendar size={13} className="text-primary-500" />
+                      Data Nașterii
+                    </span>
+                    <span className="text-[10px] text-primary-600 dark:text-primary-400 font-semibold normal-case">Extras din CNP / C.I.</span>
+                  </label>
+                  <input 
+                    type="date" 
+                    value={formData.birth_date || ''} 
+                    onChange={e => setFormData({...formData, birth_date: e.target.value})} 
+                    className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm cursor-pointer" 
+                  />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase mb-1 ml-1">Serie și Număr C.I.</label>

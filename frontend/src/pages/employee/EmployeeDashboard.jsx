@@ -59,6 +59,19 @@ export default function EmployeeDashboard() {
     } catch(e) { /* silent */ }
   };
 
+  const calculateAge = (birthDateStr) => {
+    if (!birthDateStr) return null;
+    const birth = new Date(birthDateStr);
+    if (isNaN(birth.getTime())) return null;
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    const m = today.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+    return age >= 0 ? age : null;
+  };
+
   const unreadLeaves = leaves.filter(l => (l.status === 'APPROVED' || l.status === 'REJECTED') && !dismissedNotifs.includes(l.id));
 
   // Cerere permisiune notificări browser
@@ -710,7 +723,12 @@ export default function EmployeeDashboard() {
                   <Calendar size={16} className="text-slate-400 shrink-0" />
                   <div>
                     <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Data Nașterii</p>
-                    <p className="text-sm font-bold text-slate-700">{new Date(employee.birth_date).toLocaleDateString('ro-RO')}</p>
+                    <p className="text-sm font-bold text-slate-700">
+                      {new Date(employee.birth_date).toLocaleDateString('ro-RO')}
+                      {calculateAge(employee.birth_date) !== null && (
+                        <span className="text-xs text-slate-400 font-semibold ml-1.5">({calculateAge(employee.birth_date)} ani)</span>
+                      )}
+                    </p>
                   </div>
                 </div>
               )}
@@ -897,8 +915,9 @@ export default function EmployeeDashboard() {
               {unreadLeaves[0].status === 'APPROVED' && unreadLeaves[0].leave_type === 'SHIFT_CHANGE' && unreadLeaves[0].end_date ? (
                 <div className="bg-emerald-50 dark:bg-emerald-950/40 p-3.5 rounded-2xl border border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200 text-xs text-left space-y-1">
                   <p className="font-medium text-slate-600 dark:text-slate-400">Noua ta tură a fost mutată pe:</p>
-                  <p className="text-base font-black text-emerald-700 dark:text-emerald-300 capitalize">
-                    📅 {new Date(unreadLeaves[0].end_date).toLocaleDateString('ro-RO', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                  <p className="text-base font-black text-emerald-700 dark:text-emerald-300 capitalize flex items-center gap-1.5">
+                    <Calendar size={16} className="shrink-0" />
+                    <span>{new Date(unreadLeaves[0].end_date).toLocaleDateString('ro-RO', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</span>
                   </p>
                 </div>
               ) : (
@@ -1001,8 +1020,18 @@ export default function EmployeeDashboard() {
                 placeholder="Descrie ce modificare dorești (ex: schimb tură cu colegul, interval diferit...)"
                 className="w-full px-3 py-2 bg-slate-50 border-0 rounded-xl text-sm font-medium text-slate-700 outline-none resize-none"
               />
-              {shiftChangeSuccess && <p className="text-xs text-green-600 font-bold bg-green-50 px-3 py-2 rounded-xl">✅ {shiftChangeSuccess}</p>}
-              {shiftChangeError && <p className="text-xs text-red-600 font-bold bg-red-50 px-3 py-2 rounded-xl">❌ {shiftChangeError}</p>}
+              {shiftChangeSuccess && (
+                <p className="text-xs text-green-600 font-bold bg-green-50 px-3 py-2 rounded-xl flex items-center gap-1.5">
+                  <CheckCircle2 size={14} className="shrink-0" />
+                  <span>{shiftChangeSuccess}</span>
+                </p>
+              )}
+              {shiftChangeError && (
+                <p className="text-xs text-red-600 font-bold bg-red-50 px-3 py-2 rounded-xl flex items-center gap-1.5">
+                  <XCircle size={14} className="shrink-0" />
+                  <span>{shiftChangeError}</span>
+                </p>
+              )}
               <button
                 disabled={shiftChangeSubmitting || (!shiftChangeReason.trim() && !shiftChangeDate)}
                 onClick={async () => {

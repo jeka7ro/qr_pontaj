@@ -251,16 +251,25 @@ export default function TenantDashboard() {
             )}
             <span className="font-bold text-slate-800 dark:text-white truncate" title={tenant.name}>{tenant.name}</span>
           </div>
-          <button 
-            onClick={() => setIsDarkMode(!isDarkMode)}
-            className="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors focus:outline-none hidden md:block"
-            title="Comută tema"
-          >
-            {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
-          </button>
-          <button className="md:hidden text-slate-400 hover:text-slate-600 dark:text-slate-300" onClick={() => setSidebarOpen(false)}>
-            <X size={20} />
-          </button>
+          <div className="flex items-center gap-1 shrink-0">
+            <button 
+              onClick={() => setIsDarkMode(!isDarkMode)}
+              className="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors focus:outline-none"
+              title="Comută tema"
+            >
+              {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
+            <button 
+              onClick={handleLogout}
+              className="p-1.5 rounded-full hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors focus:outline-none"
+              title="Deconectare"
+            >
+              <LogOut size={18} />
+            </button>
+            <button className="md:hidden text-slate-400 hover:text-slate-600 dark:text-slate-300 p-1" onClick={() => setSidebarOpen(false)}>
+              <X size={20} />
+            </button>
+          </div>
         </div>
 
         {/* Navigation */}
@@ -504,35 +513,35 @@ export default function TenantDashboard() {
             </Link>
           )}
         </nav>
-
-        {/* User / Footer */}
-        <div className="p-4 border-t border-slate-100 dark:border-slate-700/50">
-          <button 
-            onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-full border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors text-sm font-bold"
-          >
-            <LogOut size={16} /> Deconectare
-          </button>
-        </div>
       </div>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
         
         {/* Mobile Header */}
-        <header className="h-16 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 dark:border-slate-700 flex items-center justify-between px-4 shrink-0 md:hidden z-10 transition-colors">
+        <header className="h-16 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-4 shrink-0 md:hidden z-10 transition-colors">
           <div className="flex items-center gap-3">
-            <button className="p-2 -ml-2 text-slate-500 dark:text-slate-400 dark:text-slate-400" onClick={() => setSidebarOpen(true)}>
+            <button className="p-2 -ml-2 text-slate-500 dark:text-slate-400" onClick={() => setSidebarOpen(true)}>
               <Menu size={24} />
             </button>
-            <span className="font-bold text-slate-800 dark:text-white dark:text-white">{tenant.name}</span>
+            <span className="font-bold text-slate-800 dark:text-white">{tenant.name}</span>
           </div>
-          <button 
-            onClick={() => setIsDarkMode(!isDarkMode)}
-            className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 dark:text-slate-400 transition-colors focus:outline-none"
-          >
-            {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
-          </button>
+          <div className="flex items-center gap-1">
+            <button 
+              onClick={() => setIsDarkMode(!isDarkMode)}
+              className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors focus:outline-none"
+              title="Comută tema"
+            >
+              {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+            <button 
+              onClick={handleLogout}
+              className="p-2 rounded-full hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors focus:outline-none"
+              title="Deconectare"
+            >
+              <LogOut size={20} />
+            </button>
+          </div>
         </header>
 
         {/* Content Area */}
@@ -718,7 +727,7 @@ export default function TenantDashboard() {
         </main>
       </div>
 
-      {/* 🔔 Notificări Popup Live Activitate (Pontaj / Autentificare / Deconectare) */}
+      {/* Notificari Popup Live Activitate (Pontaj / Autentificare / Deconectare) */}
       <div className="fixed top-5 right-5 z-50 flex flex-col gap-3 pointer-events-none max-w-sm w-full sm:w-[360px]">
         {liveScans.map((scan) => {
           const emp = scan.employee || {};

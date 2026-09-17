@@ -8,6 +8,7 @@ import ScanScreen from './pages/scan/ScanScreen';
 import LandingPage from './pages/LandingPage';
 import EmployeeLogin from './pages/employee/EmployeeLogin';
 import EmployeeDashboard from './pages/employee/EmployeeDashboard';
+import ResetPassword from './pages/admin/ResetPassword';
 
 const getIsSubdomain = () => {
   const hostname = window.location.hostname;
@@ -51,6 +52,9 @@ function App() {
         
         {/* Rută universală pentru scanare (funcționează și pe IP local) */}
         <Route path="/scan" element={<ScanScreen />} />
+
+        {/* Rută resetare parolă cont administrator */}
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         {/* Portal angajați - disponibil doar pe subdomeniu */}
         {isSubdomain && (

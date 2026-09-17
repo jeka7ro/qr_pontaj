@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
-import { Loader2, AlertCircle, Maximize, Smartphone, WifiOff, ScanLine, CheckCircle2, User, Lock, Delete, ShieldCheck, RefreshCw, X } from 'lucide-react';
+import { Loader2, AlertCircle, Maximize, Smartphone, WifiOff, ScanLine, CheckCircle2, User, Lock, Delete, ShieldCheck, RefreshCw, X, Sparkles } from 'lucide-react';
 import { updatePageFavicon } from '../../utils/favicon';
 
 export default function KioskDisplay() {
@@ -920,7 +920,7 @@ export default function KioskDisplay() {
                       : isEntry ? 'bg-emerald-500 text-white' : 'bg-amber-500 text-white'
                   }`}
                 >
-                  {isBirthday ? '🎂' : <CheckCircle2 size={36} />}
+                  {isBirthday ? <Sparkles size={36} /> : <CheckCircle2 size={36} />}
                 </div>
               </div>
 
@@ -928,9 +928,9 @@ export default function KioskDisplay() {
                 /* Mesaj Aniversare Zi de Naștere */
                 <div className="flex flex-col items-center">
                   <div className="inline-flex items-center gap-2 px-5 py-1.5 rounded-full bg-gradient-to-r from-amber-500/20 via-pink-500/20 to-purple-500/20 border border-amber-400/40 text-amber-300 font-extrabold text-sm sm:text-base uppercase tracking-wider mb-2 animate-pulse">
-                    <span>🎉</span>
+                    <Sparkles size={16} />
                     <span>ZIUA TA DE NAȘTERE</span>
-                    <span>🎈</span>
+                    <Sparkles size={16} />
                   </div>
 
                   <h2 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight leading-tight mb-3 text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-rose-300 to-pink-400">
@@ -938,7 +938,7 @@ export default function KioskDisplay() {
                   </h2>
 
                   <p className="text-lg sm:text-xl text-slate-100 font-semibold max-w-lg leading-relaxed mb-6">
-                    Felicitări și cele mai frumoase urări din partea echipei <span className="text-amber-300 font-black">{companyName}</span>! 🎂✨
+                    Felicitări și cele mai frumoase urări din partea echipei <span className="text-amber-300 font-black">{companyName}</span>!
                   </p>
 
                   <div className={`inline-flex items-center gap-2.5 px-6 py-2.5 rounded-full text-sm sm:text-base font-black tracking-wider uppercase shadow-lg ${
@@ -954,7 +954,7 @@ export default function KioskDisplay() {
                 /* Mesaj Normal de Pontaj */
                 <div className="flex flex-col items-center">
                   <p className={`text-lg sm:text-xl font-bold tracking-wide uppercase mb-1.5 ${isEntry ? 'text-emerald-400' : 'text-amber-400'}`}>
-                    {scanSuccess.duplicate ? '⚠️ Deja pontat!' : (isEntry ? '👋 Bine ai venit!' : '👋 La revedere!')}
+                    {scanSuccess.duplicate ? 'Deja pontat!' : (isEntry ? 'Bine ai venit!' : 'La revedere!')}
                   </p>
 
                   <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight leading-tight mb-2">

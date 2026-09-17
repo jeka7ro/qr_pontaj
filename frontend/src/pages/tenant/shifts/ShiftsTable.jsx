@@ -292,7 +292,7 @@ export default function ShiftsTable({ tenant, themeColor }) {
         if (!updateResponse.ok) throw new Error('Eroare la actualizarea turei.');
       }
 
-      showToast('✓ Tura a fost salvată cu succes!');
+      showToast('Tura a fost salvată cu succes!');
       setEditingGroup(null);
       await fetchShiftsAndEmployees();
     } catch (err) {
@@ -331,7 +331,7 @@ export default function ShiftsTable({ tenant, themeColor }) {
         throw new Error(data.error || 'Eroare la actualizarea turelor în masă');
       }
 
-      showToast(`✓ ${shiftIdsToUpdate.length} ture individuale (din ${selectedGroupIds.length} grupuri) au fost actualizate!`);
+      showToast(`${shiftIdsToUpdate.length} ture individuale (din ${selectedGroupIds.length} grupuri) au fost actualizate!`);
       setBulkEditModalOpen(false);
       setSelectedGroupIds([]);
       await fetchShiftsAndEmployees();
@@ -370,7 +370,7 @@ export default function ShiftsTable({ tenant, themeColor }) {
         throw new Error(data.error || 'Eroare la duplicarea turelor');
       }
 
-      showToast(`✓ Tura a fost duplicată pe ${duplicateDate} pentru ${employee_ids.length} angajați.`);
+      showToast(`Tura a fost duplicată pe ${duplicateDate} pentru ${employee_ids.length} angajați.`);
       setDuplicateGroup(null);
       setDuplicateDate('');
       await fetchShiftsAndEmployees();
@@ -408,7 +408,7 @@ export default function ShiftsTable({ tenant, themeColor }) {
         throw new Error(data.error || 'Eroare la ștergerea turelor');
       }
 
-      showToast(`✓ ${shiftIdsToDelete.length} ture individuale au fost șterse cu succes.`);
+      showToast(`${shiftIdsToDelete.length} ture individuale au fost șterse cu succes.`);
       
       if (groupToDelete === 'BULK') {
         setSelectedGroupIds([]);

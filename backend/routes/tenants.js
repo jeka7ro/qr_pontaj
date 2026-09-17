@@ -490,6 +490,29 @@ router.get('/:id/employees', async (req, res) => {
   }
 });
 
+function getBirthDateFromCnp(cnp) {
+  if (!cnp || typeof cnp !== 'string') return null;
+  const clean = cnp.trim().replace(/\D/g, '');
+  if (clean.length < 7) return null;
+
+  const s = clean[0];
+  let yearPrefix = null;
+  if (['1', '2', '7', '8'].includes(s)) yearPrefix = '19';
+  else if (['5', '6'].includes(s)) yearPrefix = '20';
+  else if (['3', '4'].includes(s)) yearPrefix = '18';
+  else return null;
+
+  const yy = clean.substring(1, 3);
+  const mm = clean.substring(3, 5);
+  const dd = clean.substring(5, 7);
+
+  const m = parseInt(mm, 10);
+  const d = parseInt(dd, 10);
+  if (m < 1 || m > 12 || d < 1 || d > 31) return null;
+
+  return `${yearPrefix}${yy}-${mm}-${dd}`;
+}
+
 // POST /api/tenants/:id/employees
 router.post('/:id/employees', upload.fields([{ name: 'avatar', maxCount: 1 }, { name: 'id_card', maxCount: 1 }]), async (req, res) => {
   try {
@@ -501,6 +524,7 @@ router.post('/:id/employees', upload.fields([{ name: 'avatar', maxCount: 1 }, { 
 
     // Generate PIN from CNP (last 4 digits) or random if no CNP provided
     const finalPin = pin_code || (cnp && cnp.length >= 4 ? cnp.slice(-4) : Math.floor(1000 + Math.random() * 9000).toString());
+    const finalBirthDate = (birth_date && birth_date.trim()) || getBirthDateFromCnp(cnp);
     
     let avatarPath = null;
     let idCardPath = null;
@@ -533,7 +557,7 @@ router.post('/:id/employees', upload.fields([{ name: 'avatar', maxCount: 1 }, { 
       `;
       const values = [
         req.params.id, first_name, last_name, cnp, id_card_series || null, 
-        birth_date || null, address || null, phone || null, email || null, job_title || null, finalPin, avatarPath,
+        finalBirthDate || null, address || null, phone || null, email || null, job_title || null, finalPin, avatarPath,
         location_id ? parseInt(location_id) : null, idCardPath,
         contract_start_date || null, work_schedule || null, contract_notes || null, salary || null, employee_code
       ];
@@ -967,6 +991,8 @@ router.put('/:id/employees/:empId', upload.fields([{ name: 'avatar', maxCount: 1
       }
     }
 
+    const finalBirthDate = (birth_date && birth_date.trim()) || getBirthDateFromCnp(cnp);
+
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
@@ -995,7 +1021,7 @@ router.put('/:id/employees/:empId', upload.fields([{ name: 'avatar', maxCount: 1
       `;
       const values = [
         first_name, last_name, cnp, id_card_series || null, 
-        birth_date || null, address || null, phone || null, email || null, job_title || null, pin_code, avatarPath,
+        finalBirthDate || null, address || null, phone || null, email || null, job_title || null, pin_code, avatarPath,
         location_id ? parseInt(location_id) : null, idCardPath,
         contract_start_date || null, work_schedule || null, contract_notes || null, salary || null,
         eval_punctuality ? parseInt(eval_punctuality) : null, 

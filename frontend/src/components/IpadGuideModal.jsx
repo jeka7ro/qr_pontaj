@@ -45,7 +45,7 @@ Pasul 3: Blochează ecranul pe aplicația de Pontaj
 2. Apasă de 3 ori foarte rapid pe butonul de Power (butonul de pornire de sus).
 3. Îți va apărea un meniu pe ecran. Apasă pe Start în colțul din dreapta sus.
 
-Gata! 🚀 Acum iPad-ul este complet "înghețat" pe acea pagină. Angajații pot doar să scaneze codul QR. Dacă încearcă să gliseze în sus sau să apese pe butonul de power ca să iasă pe ecranul principal, iPad-ul va cere codul tău PIN.
+Gata! Acum iPad-ul este complet "înghețat" pe acea pagină. Angajații pot doar să scaneze codul QR. Dacă încearcă să gliseze în sus sau să apese pe butonul de power ca să iasă pe ecranul principal, iPad-ul va cere codul tău PIN.
 
 Cum ieși din acest mod:
 Apasă iar de 3 ori rapid pe butonul de Power, introdu codul PIN stabilit și dă "End" (Terminare) în stânga sus.`;
@@ -155,7 +155,7 @@ Apasă iar de 3 ori rapid pe butonul de Power, introdu codul PIN stabilit și d�
                 <div className="flex items-start gap-2">
                   <span className="font-bold text-slate-400 dark:text-slate-500">4.</span>
                   <span>
-                    Tot acolo, apasă pe <strong className="text-slate-900 dark:text-white">Passcode Settings (Setări cod de acces)</strong> ➔ <strong className="text-slate-900 dark:text-white">Set Guided Access Passcode (Setați codul)</strong> și alege un cod PIN din 4 cifre (ex: <code className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 font-bold text-blue-600 dark:text-blue-400">1234</code>).
+                    Tot acolo, apasă pe <strong className="text-slate-900 dark:text-white">Passcode Settings (Setări cod de acces)</strong> → <strong className="text-slate-900 dark:text-white">Set Guided Access Passcode (Setați codul)</strong> și alege un cod PIN din 4 cifre (ex: <code className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 font-bold text-blue-600 dark:text-blue-400">1234</code>).
                   </span>
                 </div>
                 <div className="p-2.5 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 rounded-xl text-amber-800 dark:text-amber-300 text-xs flex items-center gap-2 mt-1">
@@ -234,7 +234,7 @@ Apasă iar de 3 ori rapid pe butonul de Power, introdu codul PIN stabilit și d�
               <CheckCircle2 size={18} />
             </div>
             <div>
-              <h5 className="font-black text-emerald-900 dark:text-emerald-100 text-sm">Gata! 🚀 iPad-ul este securizat</h5>
+              <h5 className="font-black text-emerald-900 dark:text-emerald-100 text-sm">Gata! iPad-ul este securizat</h5>
               <p className="text-xs text-emerald-800 dark:text-emerald-300 mt-1 leading-relaxed">
                 Acum iPad-ul este complet "înghețat" pe acea pagină. Angajații pot doar să scaneze codul QR. Dacă încearcă să gliseze în sus sau să apese pe butonul de power ca să iasă pe ecranul principal, iPad-ul va cere codul tău PIN.
               </p>
