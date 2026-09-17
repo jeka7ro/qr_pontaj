@@ -467,6 +467,7 @@ export default function KioskDisplay() {
   }
 
   const isVertical = orientation === 'vertical';
+  const qrBadgeSize = isVertical ? 48 : 54;
 
   // Formatare data & timp pentru display urias
   const timeString = time.toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -840,15 +841,19 @@ export default function KioskDisplay() {
                       fgColor="#0f172a" 
                       imageSettings={logoFullUrl ? {
                         src: logoFullUrl,
-                        height: isVertical ? 54 : 64,
-                        width: isVertical ? 54 : 64,
+                        height: qrBadgeSize,
+                        width: qrBadgeSize,
                         excavate: true,
                       } : undefined}
                     />
                     {logoFullUrl && (
                       <div 
-                        className="absolute z-20 w-16 h-16 sm:w-20 sm:h-20 rounded-2xl p-2.5 shadow-xl border-2 border-white flex items-center justify-center pointer-events-none transition-all"
-                        style={{ backgroundColor: qrLogoBadgeBg }}
+                        className="absolute z-20 rounded-xl p-1.5 shadow-md border-2 border-white flex items-center justify-center pointer-events-none transition-all"
+                        style={{ 
+                          width: `${qrBadgeSize}px`, 
+                          height: `${qrBadgeSize}px`, 
+                          backgroundColor: qrLogoBadgeBg 
+                        }}
                       >
                         <img 
                           src={logoFullUrl}
