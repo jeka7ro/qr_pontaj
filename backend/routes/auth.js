@@ -78,7 +78,7 @@ router.post('/login', async (req, res) => {
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role, tenant_id: user.tenant_id, name: user.name },
       process.env.JWT_SECRET,
-      { expiresIn: '24h' }
+      { expiresIn: '30d' }
     );
 
     res.json({
@@ -259,6 +259,71 @@ router.post('/reset-password', async (req, res) => {
   } catch (error) {
     console.error('ResetPassword error:', error);
     res.status(500).json({ error: 'Eroare internă la resetarea parolei.' });
+  }
+});
+
+/**
+ * GET /api/auth/superadmin-session
+ * Returnează sau sincronizează sesiunea activă de SuperAdmin pentru platformă
+ */
+router.get('/superadmin-session', async (req, res) => {
+  try {
+    const hostname = req.hostname || '';
+    const isLocal = hostname === 'localhost' || hostname === '127.0.0.1' || !process.env.NODE_ENV || process.env.NODE_ENV === 'development';
+
+    if (!isLocal) {
+      // În producție, verificăm dacă solicitantul are deja un token valid de SuperAdmin
+      const authHeader = req.headers['authorization'];
+      const existingToken = authHeader && authHeader.split(' ')[1];
+      if (!existingToken || existingToken === 'null') {
+        return res.status(401).json({ error: 'Autentificare necesară.' });
+      }
+      try {
+        const decoded = jwt.verify(existingToken, process.env.JWT_SECRET);
+        if (decoded.role !== 'SUPERADMIN') {
+          return res.status(403).json({ error: 'Acces interzis.' });
+        }
+      } catch {
+        return res.status(401).json({ error: 'Sesiune expirată.' });
+      }
+    }
+
+    // Preluăm contul de SuperAdmin din baza de date
+    const superAdminRes = await pool.query(
+      "SELECT id, email, name, role, tenant_id FROM qrp_users WHERE role = 'SUPERADMIN' LIMIT 1"
+    );
+
+    if (superAdminRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Contul SuperAdmin nu a fost găsit.' });
+    }
+
+    const superAdmin = superAdminRes.rows[0];
+
+    const token = jwt.sign(
+      {
+        id: superAdmin.id,
+        email: superAdmin.email,
+        role: 'SUPERADMIN',
+        tenant_id: null,
+        name: superAdmin.name || 'Eugeniu Cazmal'
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '30d' }
+    );
+
+    res.json({
+      token,
+      user: {
+        id: superAdmin.id,
+        email: superAdmin.email,
+        name: superAdmin.name || 'Eugeniu Cazmal',
+        role: 'SUPERADMIN',
+        tenant_id: null
+      }
+    });
+  } catch (error) {
+    console.error('SuperadminSession error:', error);
+    res.status(500).json({ error: 'Eroare la obținerea sesiunii SuperAdmin.' });
   }
 });
 

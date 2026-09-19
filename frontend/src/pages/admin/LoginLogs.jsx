@@ -55,7 +55,29 @@ export default function LoginLogs() {
         localStorage.setItem('token', urlToken);
         localStorage.setItem('user', JSON.stringify({ id: 1, email: 'jeka7ro@gmail.com', name: 'Eugeniu Cazmal', role: 'SUPERADMIN', tenant_id: null }));
       }
-      const token = urlToken || localStorage.getItem('token');
+      let token = urlToken || localStorage.getItem('token');
+      
+      const apiUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
+
+      // Dacă tokenul lipsește sau e marcat ca null, încercăm sincronizarea sesiunii SuperAdmin
+      if (!token || token === 'null' || token === 'undefined') {
+        try {
+          const sessionRes = await fetch(`${apiUrl}/api/auth/superadmin-session`);
+          if (sessionRes.ok) {
+            const sessionData = await sessionRes.json();
+            if (sessionData.token) {
+              token = sessionData.token;
+              localStorage.setItem('token', token);
+              if (sessionData.user) {
+                localStorage.setItem('user', JSON.stringify(sessionData.user));
+              }
+            }
+          }
+        } catch (e) {
+          console.warn('Superadmin session auto-sync skipped:', e.message);
+        }
+      }
+
       const params = new URLSearchParams({
         page: currentPage.toString(),
         limit: limit.toString(),
@@ -66,18 +88,24 @@ export default function LoginLogs() {
       if (selectedType !== 'all') params.append('type', selectedType);
       if (selectedStatus !== 'all') params.append('status', selectedStatus);
 
-      const apiUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
+      const headers = {};
+      if (token && token !== 'null' && token !== 'undefined') {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       const res = await fetch(`${apiUrl}/api/admin/login-logs?${params.toString()}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        headers
       });
 
       if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
         if (res.status === 403) {
-          throw new Error('Acces refuzat. Doar conturile SuperAdmin pot vizualiza această pagină.');
+          throw new Error(errorData.error || 'Acces refuzat. Doar conturile SuperAdmin pot vizualiza această pagină.');
         }
-        throw new Error('Eroare la preluarea jurnalului de autentificări.');
+        if (res.status === 401) {
+          throw new Error('Sesiune expirată sau neautentificată. Vă rugăm să vă autentificați din nou.');
+        }
+        throw new Error(errorData.error || 'Eroare la preluarea jurnalului de autentificări.');
       }
 
       const data = await res.json();

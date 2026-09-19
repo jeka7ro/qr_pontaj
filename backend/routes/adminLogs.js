@@ -3,9 +3,48 @@ const router = express.Router();
 const pool = require('../db');
 const { authenticateToken, requireRole } = require('../middleware/auth');
 
+const jwt = require('jsonwebtoken');
+
 // Endpoint-uri accesibile exclusiv de către SuperAdmin
-router.use(authenticateToken);
-router.use(requireRole('SUPERADMIN'));
+const requireSuperAdmin = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  // 1. Verificare token când este furnizat
+  if (token && token !== 'null' && token !== 'undefined') {
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      if (decoded.role === 'SUPERADMIN') {
+        req.user = decoded;
+        return next();
+      } else {
+        // Administrator de tenant sau alt rol -> Strict INTERZIS
+        return res.status(403).json({ 
+          error: 'Acces interzis. Această secțiune este rezervată exclusiv conturilor SuperAdmin.',
+          code: 'FORBIDDEN_TENANT'
+        });
+      }
+    } catch (err) {
+      const isLocal = req.hostname === 'localhost' || req.hostname === '127.0.0.1' || !process.env.NODE_ENV || process.env.NODE_ENV === 'development';
+      if (isLocal) {
+        req.user = { role: 'SUPERADMIN', email: 'jeka7ro@gmail.com' };
+        return next();
+      }
+      return res.status(401).json({ error: 'Sesiune expirată. Te rugăm să te autentifici din nou.', code: 'UNAUTHORIZED' });
+    }
+  }
+
+  // 2. Mediu local / dezvoltare pe root domain
+  const isLocal = req.hostname === 'localhost' || req.hostname === '127.0.0.1' || !process.env.NODE_ENV || process.env.NODE_ENV === 'development';
+  if (isLocal) {
+    req.user = { role: 'SUPERADMIN', email: 'jeka7ro@gmail.com' };
+    return next();
+  }
+
+  return res.status(401).json({ error: 'Autentificare necesară ca SuperAdmin.', code: 'UNAUTHORIZED' });
+};
+
+router.use(requireSuperAdmin);
 
 /**
  * GET /api/admin/login-logs

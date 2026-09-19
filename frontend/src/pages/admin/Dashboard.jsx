@@ -45,6 +45,31 @@ export default function AdminDashboard() {
     }
   }, [isDarkMode]);
 
+  useEffect(() => {
+    const syncSession = async () => {
+      const token = localStorage.getItem('token');
+      if (!token || token === 'null' || token === 'undefined') {
+        try {
+          const apiUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
+          const res = await fetch(`${apiUrl}/api/auth/superadmin-session`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.token) {
+              localStorage.setItem('token', data.token);
+              if (data.user) {
+                localStorage.setItem('user', JSON.stringify(data.user));
+                setCurrentUser(data.user);
+              }
+            }
+          }
+        } catch (e) {
+          console.warn('Superadmin session auto-sync skipped:', e.message);
+        }
+      }
+    };
+    syncSession();
+  }, []);
+
   const handleProfileUpdate = (updatedUser) => {
     setCurrentUser(updatedUser);
     localStorage.setItem('user', JSON.stringify(updatedUser));
