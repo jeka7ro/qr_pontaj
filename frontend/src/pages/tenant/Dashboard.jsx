@@ -4,7 +4,7 @@ import {
   QrCode, Users, LogOut, Menu, X, Info, MapPin, Sun, Moon, CreditCard, 
   CalendarDays, FileSpreadsheet, Globe, Map, BookOpenCheck, Calculator, 
   CalendarClock, ScanFace, MessageSquare, Wrench, Table, ChevronDown,
-  Bell, LogIn, Briefcase, Clock, User
+  Bell, LogIn, Briefcase, Clock, User, PanelLeftClose, PanelLeftOpen
 } from 'lucide-react';
 
 const getAvatarUrl = (avatarPath, firstName, lastName) => {
@@ -44,6 +44,17 @@ export default function TenantDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    return localStorage.getItem('tenant_sidebar_collapsed') === 'true';
+  });
+
+  const toggleSidebarCollapsed = () => {
+    setSidebarCollapsed(prev => {
+      const next = !prev;
+      localStorage.setItem('tenant_sidebar_collapsed', String(next));
+      return next;
+    });
+  };
   const [pendingNotifs, setPendingNotifs] = useState([]);
   const [dismissedNotifs, setDismissedNotifs] = useState(new Set());
   const [shiftsExpanded, setShiftsExpanded] = useState(() => location.pathname.startsWith('/admin/shifts'));
@@ -234,25 +245,27 @@ export default function TenantDashboard() {
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 md:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
-      <div className={`fixed inset-y-0 left-0 w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col z-50 transform transition-transform duration-300 ease-in-out md:translate-x-0 md:static ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <div className={`fixed inset-y-0 left-0 ${sidebarCollapsed ? 'md:w-20' : 'md:w-64'} w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col z-50 transform transition-all duration-300 ease-in-out md:translate-x-0 md:static ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         
-        <div className="h-16 flex items-center px-6 border-b border-slate-100 dark:border-slate-700/50 bg-white dark:bg-slate-800 justify-between">
+        <div className={`h-16 flex items-center border-b border-slate-100 dark:border-slate-700/50 bg-white dark:bg-slate-800 transition-all duration-300 ${sidebarCollapsed ? 'px-3 justify-center md:justify-between' : 'px-6 justify-between'}`}>
           <div className="flex items-center gap-3 overflow-hidden">
             {tenant.logo_url ? (
-              <div className="h-10 w-10 shrink-0 bg-slate-800 dark:bg-transparent rounded-lg flex items-center justify-center p-1 shadow-sm border border-slate-700/50">
+              <div className="h-10 w-10 shrink-0 bg-slate-800 dark:bg-transparent rounded-lg flex items-center justify-center p-1 shadow-sm border border-slate-700/50" title={tenant.name}>
                 <img src={tenant.logo_url} alt={tenant.name} className="max-h-full max-w-full object-contain drop-shadow-sm" />
               </div>
             ) : (
               <div 
-                className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold shrink-0"
+                className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold shrink-0 text-xs"
                 style={{ backgroundColor: themeColor }}
+                title={tenant.name}
               >
                 {tenant.name.substring(0, 2).toUpperCase()}
               </div>
             )}
-            <span className="font-bold text-slate-800 dark:text-white truncate" title={tenant.name}>{tenant.name}</span>
+            <span className={`font-bold text-slate-800 dark:text-white truncate ${sidebarCollapsed ? 'md:hidden' : ''}`} title={tenant.name}>{tenant.name}</span>
           </div>
-          <div className="flex items-center gap-1 shrink-0">
+
+          <div className={`flex items-center gap-1 shrink-0 ${sidebarCollapsed ? 'md:hidden' : ''}`}>
             <button 
               onClick={() => setIsDarkMode(!isDarkMode)}
               className="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors focus:outline-none"
@@ -267,95 +280,134 @@ export default function TenantDashboard() {
             >
               <LogOut size={18} />
             </button>
+            <button 
+              onClick={toggleSidebarCollapsed}
+              className="hidden md:flex p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors focus:outline-none"
+              title="Micșorează meniul"
+            >
+              <PanelLeftClose size={18} />
+            </button>
             <button className="md:hidden text-slate-400 hover:text-slate-600 dark:text-slate-300 p-1" onClick={() => setSidebarOpen(false)}>
               <X size={20} />
             </button>
           </div>
+
+          {sidebarCollapsed && (
+            <button 
+              onClick={toggleSidebarCollapsed}
+              className="hidden md:flex p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors focus:outline-none shrink-0"
+              title="Extinde meniul"
+            >
+              <PanelLeftOpen size={18} />
+            </button>
+          )}
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+        <nav className={`flex-1 ${sidebarCollapsed ? 'md:px-2 px-4' : 'px-4'} py-6 space-y-2 overflow-y-auto overflow-x-hidden`}>
           <Link 
             to="/admin/dashboard"
             onClick={() => setSidebarOpen(false)}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-full transition-colors font-medium text-sm
+            title="Dashboard & Rapoarte"
+            className={`w-full flex items-center ${sidebarCollapsed ? 'md:justify-center md:px-0 gap-3 px-4' : 'gap-3 px-4'} py-3 rounded-full transition-all font-medium text-sm
               ${location.pathname === '/admin/dashboard' ? 'font-bold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/40 hover:text-slate-800 dark:hover:text-white'}`}
             style={getNavStyle(location.pathname === '/admin/dashboard')}
           >
-            <div className="w-5 h-5 flex items-center justify-center">
+            <div className="w-5 h-5 flex items-center justify-center shrink-0">
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
             </div>
-            Dashboard & Rapoarte
+            <span className={`${sidebarCollapsed ? 'md:hidden' : ''} truncate`}>Dashboard & Rapoarte</span>
           </Link>
           
           <Link 
             to="/admin/timesheets"
             onClick={() => setSidebarOpen(false)}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-full transition-colors font-medium text-sm
+            title="Rapoarte Pontaje"
+            className={`w-full flex items-center ${sidebarCollapsed ? 'md:justify-center md:px-0 gap-3 px-4' : 'gap-3 px-4'} py-3 rounded-full transition-all font-medium text-sm
               ${location.pathname === '/admin/timesheets' ? 'font-bold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/40 hover:text-slate-800 dark:hover:text-white'}`}
             style={getNavStyle(location.pathname === '/admin/timesheets')}
           >
-            <div className="w-5 h-5 flex items-center justify-center">
+            <div className="w-5 h-5 flex items-center justify-center shrink-0">
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
             </div>
-            Rapoarte Pontaje
+            <span className={`${sidebarCollapsed ? 'md:hidden' : ''} truncate`}>Rapoarte Pontaje</span>
           </Link>
           
           <Link 
             to="/admin/employees"
             onClick={() => setSidebarOpen(false)}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-full transition-colors font-medium text-sm
+            title="Modul HR (Angajați)"
+            className={`w-full flex items-center ${sidebarCollapsed ? 'md:justify-center md:px-0 gap-3 px-4' : 'gap-3 px-4'} py-3 rounded-full transition-all font-medium text-sm
               ${location.pathname.startsWith('/admin/employees') ? 'font-bold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/40 hover:text-slate-800 dark:hover:text-white'}`}
             style={getNavStyle(location.pathname.startsWith('/admin/employees'))}
           >
-            <Users size={18} /> Modul HR (Angajați)
+            <div className="w-5 h-5 flex items-center justify-center shrink-0">
+              <Users size={18} />
+            </div>
+            <span className={`${sidebarCollapsed ? 'md:hidden' : ''} truncate`}>Modul HR (Angajați)</span>
           </Link>
 
           <Link 
             to="/admin/locations"
             onClick={() => setSidebarOpen(false)}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-full transition-colors font-medium text-sm
+            title="Puncte de Lucru"
+            className={`w-full flex items-center ${sidebarCollapsed ? 'md:justify-center md:px-0 gap-3 px-4' : 'gap-3 px-4'} py-3 rounded-full transition-all font-medium text-sm
               ${location.pathname === '/admin/locations' ? 'font-bold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/40 hover:text-slate-800 dark:hover:text-white'}`}
             style={getNavStyle(location.pathname === '/admin/locations')}
           >
-            <MapPin size={18} /> Puncte de Lucru
+            <div className="w-5 h-5 flex items-center justify-center shrink-0">
+              <MapPin size={18} />
+            </div>
+            <span className={`${sidebarCollapsed ? 'md:hidden' : ''} truncate`}>Puncte de Lucru</span>
           </Link>
 
           <Link 
             to="/admin/qr"
             onClick={() => setSidebarOpen(false)}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-full transition-colors font-medium text-sm
+            title="Kiosk-uri QR"
+            className={`w-full flex items-center ${sidebarCollapsed ? 'md:justify-center md:px-0 gap-3 px-4' : 'gap-3 px-4'} py-3 rounded-full transition-all font-medium text-sm
               ${location.pathname === '/admin/qr' ? 'font-bold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/40 hover:text-slate-800 dark:hover:text-white'}`}
             style={getNavStyle(location.pathname === '/admin/qr')}
           >
-            <QrCode size={18} /> Kiosk-uri QR
+            <div className="w-5 h-5 flex items-center justify-center shrink-0">
+              <QrCode size={18} />
+            </div>
+            <span className={`${sidebarCollapsed ? 'md:hidden' : ''} truncate`}>Kiosk-uri QR</span>
           </Link>
 
           {tenant.modules?.shifts && (
             <div className="space-y-1">
               <button
                 type="button"
+                title="Planificator Ture"
                 onClick={() => {
-                  if (!location.pathname.startsWith('/admin/shifts')) {
+                  if (sidebarCollapsed) {
                     navigate('/admin/shifts');
+                    setSidebarOpen(false);
+                  } else {
+                    if (!location.pathname.startsWith('/admin/shifts')) {
+                      navigate('/admin/shifts');
+                    }
+                    setShiftsExpanded(!shiftsExpanded);
                   }
-                  setShiftsExpanded(!shiftsExpanded);
                 }}
-                className={`w-full flex items-center justify-between px-4 py-3 rounded-full transition-colors font-medium text-sm text-left
+                className={`w-full flex items-center ${sidebarCollapsed ? 'md:justify-center md:px-0 gap-3 px-4 justify-between' : 'justify-between px-4'} py-3 rounded-full transition-all font-medium text-sm text-left
                   ${location.pathname.startsWith('/admin/shifts') ? 'font-bold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/40 hover:text-slate-800 dark:hover:text-white'}`}
                 style={location.pathname.startsWith('/admin/shifts') ? getNavStyle(true) : {}}
               >
-                <div className="flex items-center gap-3">
-                  <CalendarClock size={18} />
-                  <span>Planificator Ture</span>
+                <div className={`flex items-center ${sidebarCollapsed ? 'md:justify-center gap-3' : 'gap-3'}`}>
+                  <div className="w-5 h-5 flex items-center justify-center shrink-0">
+                    <CalendarClock size={18} />
+                  </div>
+                  <span className={`${sidebarCollapsed ? 'md:hidden' : ''} truncate`}>Planificator Ture</span>
                 </div>
                 <ChevronDown 
                   size={16} 
-                  className={`transition-transform duration-200 ${shiftsExpanded ? 'rotate-180' : ''}`}
+                  className={`${sidebarCollapsed ? 'md:hidden' : ''} transition-transform duration-200 ${shiftsExpanded ? 'rotate-180' : ''}`}
                 />
               </button>
 
-              {shiftsExpanded && (
+              {shiftsExpanded && !sidebarCollapsed && (
                 <div className="pl-4 pr-1 py-1 space-y-1">
                   <Link 
                     to="/admin/shifts/planner"
@@ -398,11 +450,16 @@ export default function TenantDashboard() {
             <Link 
               to="/admin/leaves"
               onClick={() => setSidebarOpen(false)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-full transition-colors font-medium text-sm
+              title="Zile Libere (CO/CM)"
+              className={`w-full flex items-center ${sidebarCollapsed ? 'md:justify-center md:px-0 gap-3 px-4' : 'gap-3 px-4'} py-3 rounded-full transition-all font-medium text-sm
                 ${location.pathname === '/admin/leaves' ? 'font-bold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/40 hover:text-slate-800 dark:hover:text-white'}`}
               style={getNavStyle(location.pathname === '/admin/leaves')}
             >
-              <CalendarDays size={18} /> <span className="flex-1 text-left">Zile Libere (CO/CM)</span> <span className="text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide" style={{ backgroundColor: themeColor }}>PRO</span>
+              <div className="w-5 h-5 flex items-center justify-center shrink-0">
+                <CalendarDays size={18} />
+              </div>
+              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} flex-1 text-left truncate`}>Zile Libere (CO/CM)</span>
+              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide shrink-0`} style={{ backgroundColor: themeColor }}>PRO</span>
             </Link>
           )}
 
@@ -410,11 +467,16 @@ export default function TenantDashboard() {
             <Link 
               to="/admin/export"
               onClick={() => setSidebarOpen(false)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-full transition-colors font-medium text-sm
+              title="Export Conta (SAGA)"
+              className={`w-full flex items-center ${sidebarCollapsed ? 'md:justify-center md:px-0 gap-3 px-4' : 'gap-3 px-4'} py-3 rounded-full transition-all font-medium text-sm
                 ${location.pathname === '/admin/export' ? 'font-bold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/40 hover:text-slate-800 dark:hover:text-white'}`}
               style={getNavStyle(location.pathname === '/admin/export')}
             >
-              <FileSpreadsheet size={18} /> <span className="flex-1 text-left">Export Conta (SAGA)</span> <span className="text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide" style={{ backgroundColor: themeColor }}>PRO</span>
+              <div className="w-5 h-5 flex items-center justify-center shrink-0">
+                <FileSpreadsheet size={18} />
+              </div>
+              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} flex-1 text-left truncate`}>Export Conta (SAGA)</span>
+              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide shrink-0`} style={{ backgroundColor: themeColor }}>PRO</span>
             </Link>
           )}
 
@@ -422,11 +484,16 @@ export default function TenantDashboard() {
             <Link 
               to="/admin/geofence"
               onClick={() => setSidebarOpen(false)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-full transition-colors font-medium text-sm
+              title="Hartă Geofence"
+              className={`w-full flex items-center ${sidebarCollapsed ? 'md:justify-center md:px-0 gap-3 px-4' : 'gap-3 px-4'} py-3 rounded-full transition-all font-medium text-sm
                 ${location.pathname === '/admin/geofence' ? 'font-bold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/40 hover:text-slate-800 dark:hover:text-white'}`}
               style={getNavStyle(location.pathname === '/admin/geofence')}
             >
-              <Map size={18} /> <span className="flex-1 text-left">Hartă Geofence</span> <span className="text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide" style={{ backgroundColor: themeColor }}>PRO</span>
+              <div className="w-5 h-5 flex items-center justify-center shrink-0">
+                <Map size={18} />
+              </div>
+              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} flex-1 text-left truncate`}>Hartă Geofence</span>
+              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide shrink-0`} style={{ backgroundColor: themeColor }}>PRO</span>
             </Link>
           )}
           
@@ -434,11 +501,16 @@ export default function TenantDashboard() {
             <Link 
               to="/admin/offline"
               onClick={() => setSidebarOpen(false)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-full transition-colors font-medium text-sm
+              title="Mod Offline"
+              className={`w-full flex items-center ${sidebarCollapsed ? 'md:justify-center md:px-0 gap-3 px-4' : 'gap-3 px-4'} py-3 rounded-full transition-all font-medium text-sm
                 ${location.pathname === '/admin/offline' ? 'font-bold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/40 hover:text-slate-800 dark:hover:text-white'}`}
               style={getNavStyle(location.pathname === '/admin/offline')}
             >
-              <Globe size={18} /> <span className="flex-1 text-left">Mod Offline</span> <span className="text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide" style={{ backgroundColor: themeColor }}>PRO</span>
+              <div className="w-5 h-5 flex items-center justify-center shrink-0">
+                <Globe size={18} />
+              </div>
+              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} flex-1 text-left truncate`}>Mod Offline</span>
+              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide shrink-0`} style={{ backgroundColor: themeColor }}>PRO</span>
             </Link>
           )}
 
@@ -446,11 +518,16 @@ export default function TenantDashboard() {
             <Link 
               to="/admin/billing"
               onClick={() => setSidebarOpen(false)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-full transition-colors font-medium text-sm
+              title="Abonament & Facturi"
+              className={`w-full flex items-center ${sidebarCollapsed ? 'md:justify-center md:px-0 gap-3 px-4' : 'gap-3 px-4'} py-3 rounded-full transition-all font-medium text-sm
                 ${location.pathname === '/admin/billing' ? 'font-bold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/40 hover:text-slate-800 dark:hover:text-white'}`}
               style={getNavStyle(location.pathname === '/admin/billing')}
             >
-              <CreditCard size={18} /> <span className="flex-1 text-left">Abonament & Facturi</span> <span className="text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide" style={{ backgroundColor: themeColor }}>PRO</span>
+              <div className="w-5 h-5 flex items-center justify-center shrink-0">
+                <CreditCard size={18} />
+              </div>
+              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} flex-1 text-left truncate`}>Abonament & Facturi</span>
+              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide shrink-0`} style={{ backgroundColor: themeColor }}>PRO</span>
             </Link>
           )}
 
@@ -458,11 +535,16 @@ export default function TenantDashboard() {
             <Link 
               to="/admin/revisal"
               onClick={() => setSidebarOpen(false)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-full transition-colors font-medium text-sm
+              title="Integrare REVISAL"
+              className={`w-full flex items-center ${sidebarCollapsed ? 'md:justify-center md:px-0 gap-3 px-4' : 'gap-3 px-4'} py-3 rounded-full transition-all font-medium text-sm
                 ${location.pathname === '/admin/revisal' ? 'font-bold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/40 hover:text-slate-800 dark:hover:text-white'}`}
               style={getNavStyle(location.pathname === '/admin/revisal')}
             >
-              <BookOpenCheck size={18} /> <span className="flex-1 text-left">Integrare REVISAL</span> <span className="text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide" style={{ backgroundColor: themeColor }}>PRO</span>
+              <div className="w-5 h-5 flex items-center justify-center shrink-0">
+                <BookOpenCheck size={18} />
+              </div>
+              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} flex-1 text-left truncate`}>Integrare REVISAL</span>
+              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide shrink-0`} style={{ backgroundColor: themeColor }}>PRO</span>
             </Link>
           )}
 
@@ -470,11 +552,16 @@ export default function TenantDashboard() {
             <Link 
               to="/admin/erp"
               onClick={() => setSidebarOpen(false)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-full transition-colors font-medium text-sm
+              title="Gestiune & ERP"
+              className={`w-full flex items-center ${sidebarCollapsed ? 'md:justify-center md:px-0 gap-3 px-4' : 'gap-3 px-4'} py-3 rounded-full transition-all font-medium text-sm
                 ${location.pathname === '/admin/erp' ? 'font-bold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/40 hover:text-slate-800 dark:hover:text-white'}`}
               style={getNavStyle(location.pathname === '/admin/erp')}
             >
-              <Calculator size={18} /> <span className="flex-1 text-left">Gestiune & ERP</span> <span className="text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide" style={{ backgroundColor: themeColor }}>PRO</span>
+              <div className="w-5 h-5 flex items-center justify-center shrink-0">
+                <Calculator size={18} />
+              </div>
+              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} flex-1 text-left truncate`}>Gestiune & ERP</span>
+              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide shrink-0`} style={{ backgroundColor: themeColor }}>PRO</span>
             </Link>
           )}
 
@@ -482,11 +569,16 @@ export default function TenantDashboard() {
             <Link 
               to="/admin/face"
               onClick={() => setSidebarOpen(false)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-full transition-colors font-medium text-sm
+              title="Recunoaștere Facială"
+              className={`w-full flex items-center ${sidebarCollapsed ? 'md:justify-center md:px-0 gap-3 px-4' : 'gap-3 px-4'} py-3 rounded-full transition-all font-medium text-sm
                 ${location.pathname === '/admin/face' ? 'font-bold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/40 hover:text-slate-800 dark:hover:text-white'}`}
               style={getNavStyle(location.pathname === '/admin/face')}
             >
-              <ScanFace size={18} /> <span className="flex-1 text-left">Recunoaștere Facială</span> <span className="text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide" style={{ backgroundColor: themeColor }}>PRO</span>
+              <div className="w-5 h-5 flex items-center justify-center shrink-0">
+                <ScanFace size={18} />
+              </div>
+              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} flex-1 text-left truncate`}>Recunoaștere Facială</span>
+              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide shrink-0`} style={{ backgroundColor: themeColor }}>PRO</span>
             </Link>
           )}
 
@@ -494,11 +586,16 @@ export default function TenantDashboard() {
             <Link 
               to="/admin/whatsapp"
               onClick={() => setSidebarOpen(false)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-full transition-colors font-medium text-sm
+              title="Alerte WhatsApp"
+              className={`w-full flex items-center ${sidebarCollapsed ? 'md:justify-center md:px-0 gap-3 px-4' : 'gap-3 px-4'} py-3 rounded-full transition-all font-medium text-sm
                 ${location.pathname === '/admin/whatsapp' ? 'font-bold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/40 hover:text-slate-800 dark:hover:text-white'}`}
               style={getNavStyle(location.pathname === '/admin/whatsapp')}
             >
-              <MessageSquare size={18} /> <span className="flex-1 text-left">Alerte WhatsApp</span> <span className="text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide" style={{ backgroundColor: themeColor }}>PRO</span>
+              <div className="w-5 h-5 flex items-center justify-center shrink-0">
+                <MessageSquare size={18} />
+              </div>
+              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} flex-1 text-left truncate`}>Alerte WhatsApp</span>
+              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide shrink-0`} style={{ backgroundColor: themeColor }}>PRO</span>
             </Link>
           )}
 
@@ -506,14 +603,62 @@ export default function TenantDashboard() {
             <Link 
               to="/admin/assets"
               onClick={() => setSidebarOpen(false)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-full transition-colors font-medium text-sm
+              title="Gestiune Echipamente"
+              className={`w-full flex items-center ${sidebarCollapsed ? 'md:justify-center md:px-0 gap-3 px-4' : 'gap-3 px-4'} py-3 rounded-full transition-all font-medium text-sm
                 ${location.pathname === '/admin/assets' ? 'font-bold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/40 hover:text-slate-800 dark:hover:text-white'}`}
               style={getNavStyle(location.pathname === '/admin/assets')}
             >
-              <Wrench size={18} /> <span className="flex-1 text-left">Gestiune Echipamente</span> <span className="text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide" style={{ backgroundColor: themeColor }}>PRO</span>
+              <div className="w-5 h-5 flex items-center justify-center shrink-0">
+                <Wrench size={18} />
+              </div>
+              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} flex-1 text-left truncate`}>Gestiune Echipamente</span>
+              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide shrink-0`} style={{ backgroundColor: themeColor }}>PRO</span>
             </Link>
           )}
         </nav>
+
+        {/* Sidebar Footer Toggle Controls */}
+        <div className="border-t border-slate-100 dark:border-slate-700/50 hidden md:block">
+          {sidebarCollapsed ? (
+            <div className="p-2 flex flex-col items-center gap-1.5">
+              <button 
+                onClick={() => setIsDarkMode(!isDarkMode)}
+                className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors focus:outline-none"
+                title="Comută tema"
+              >
+                {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+              </button>
+              <button 
+                onClick={handleLogout}
+                className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors focus:outline-none"
+                title="Deconectare"
+              >
+                <LogOut size={18} />
+              </button>
+              <button
+                onClick={toggleSidebarCollapsed}
+                className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors focus:outline-none"
+                title="Extinde meniul"
+              >
+                <PanelLeftOpen size={18} />
+              </button>
+            </div>
+          ) : (
+            <div className="p-3">
+              <button
+                onClick={toggleSidebarCollapsed}
+                className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700/50 hover:text-slate-800 dark:hover:text-white transition-colors"
+                title="Micșorează meniul"
+              >
+                <span className="flex items-center gap-2">
+                  <PanelLeftClose size={16} />
+                  <span>Restrânge meniul</span>
+                </span>
+                <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">w-20</span>
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Main Content */}
