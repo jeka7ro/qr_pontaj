@@ -83,8 +83,27 @@ export default function AdminLogin() {
     return false;
   };
 
-  // 1. Verificare inițială la montare: dacă există tenant în URL (?tenant=rollmaster), acesta are prioritate absolută!
+  // 1. Verificare sesiune activă (Persistent Login): dacă există deja un token valid, intrăm direct în Dashboard
+  // Astfel Chrome nu mai încearcă să completeze parola și nu mai declanșează promptul de Touch ID / macOS
   useEffect(() => {
+    const token = localStorage.getItem('token');
+    const userStr = localStorage.getItem('user');
+    if (token && userStr) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        if (payload.exp && payload.exp * 1000 > Date.now()) {
+          navigate('/admin/dashboard', { replace: true });
+          return;
+        } else {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+        }
+      } catch (e) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      }
+    }
+
     if (lockedTenant) {
       fetchBranding({ subdomain: lockedTenant });
       return;
@@ -98,7 +117,7 @@ export default function AdminLogin() {
         fetchBranding({ email: savedEmail });
       }
     }
-  }, [lockedTenant, isRemembered]);
+  }, [lockedTenant, isRemembered, navigate]);
 
   // 2. Schimbare dinamică a temei pe măsură ce utilizatorul tastează emailul (DOAR dacă pagina nu e fixată pe un tenant din URL)
   useEffect(() => {

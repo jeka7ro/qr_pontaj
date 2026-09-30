@@ -957,9 +957,62 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
     XLSX.writeFile(wb, fileName);
   };
 
+  // 4. Export Condică de Prezență / Raport Oficial ITM (Art. 119 Codul Muncii)
+  const handleExportItm = ({ search } = {}) => {
+    let rowsToExport = crossFilteredGroupedTimesheets;
+    if (search) {
+      const q = search.toLowerCase();
+      rowsToExport = crossFilteredGroupedTimesheets.filter(r => 
+        (r.first_name && r.first_name.toLowerCase().includes(q)) ||
+        (r.last_name && r.last_name.toLowerCase().includes(q)) ||
+        (r.employee_code && r.employee_code.toLowerCase().includes(q))
+      );
+    }
+
+    const itmRows = rowsToExport.map((row, idx) => ({
+      "Nr. Crt.": idx + 1,
+      "Nume și Prenume Salariat": `${row.first_name || ''} ${row.last_name || ''}`.trim(),
+      "Cod Angajat": row.employee_code || '-',
+      "Funcție / Post": row.job_title || 'Salariat',
+      "Data": new Date(row.date).toLocaleDateString('ro-RO'),
+      "Ora Începere Program (Intrare)": row.first_in ? new Date(row.first_in.timestamp).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '-',
+      "Ora Sfârșit Program (Ieșire)": row.last_out ? new Date(row.last_out.timestamp).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '-',
+      "Total Ore Lucrate": row.total_time_str,
+      "Temei Legal": "Art. 119 Legea 53/2003",
+      "Certificare": "Pontaj Electronic Certificat QR Pontaj",
+      "Semnătură Salariat": ""
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(itmRows);
+    ws['!cols'] = [
+      { wch: 8 },
+      { wch: 28 },
+      { wch: 14 },
+      { wch: 20 },
+      { wch: 14 },
+      { wch: 28 },
+      { wch: 28 },
+      { wch: 18 },
+      { wch: 22 },
+      { wch: 36 },
+      { wch: 20 }
+    ];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Condica ITM Art.119");
+    const fileName = `Condica_Prezenta_ITM_Art119_${startDate}_${endDate}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+  };
+
   const exportOptions = useMemo(() => {
     if (employeeId) return null;
     return [
+      {
+        id: 'itm',
+        label: 'Condică ITM (Format Oficial Art. 119)',
+        description: 'Evidență oficială ITM cu ore exacte intrare/ieșire & certificare',
+        onClick: handleExportItm
+      },
       {
         id: 'summary',
         label: 'Centralizator (Total per Angajat)',

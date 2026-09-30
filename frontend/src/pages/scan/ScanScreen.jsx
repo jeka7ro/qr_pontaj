@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { ShieldAlert, Loader2, LogIn, LogOut, CheckCircle2, Eye, EyeOff, X } from 'lucide-react';
+import { ShieldAlert, Loader2, LogIn, LogOut, CheckCircle2, Eye, EyeOff, X, ShieldCheck, MapPin, Clock, Calendar } from 'lucide-react';
 
 export default function ScanScreen() {
   const [searchParams] = useSearchParams();
@@ -34,11 +34,15 @@ export default function ScanScreen() {
   
   const [submitting, setSubmitting] = useState(false);
   const [successMsg, setSuccessMsg] = useState(null);
+  const [scanDetails, setScanDetails] = useState(null);
   const [employeeInfo, setEmployeeInfo] = useState(null);
   
   // Dynamic status state
   const [employeeStatus, setEmployeeStatus] = useState(null); // { lastAction: 'IN' | 'OUT', showPhoto: boolean }
   const [checkingStatus, setCheckingStatus] = useState(false);
+
+  // GDPR & Legal Modal State
+  const [showGdprModal, setShowGdprModal] = useState(false);
 
   // Forgot PIN Modal State
   const [showForgotModal, setShowForgotModal] = useState(false);
@@ -121,6 +125,12 @@ export default function ScanScreen() {
       }
 
       setEmployeeInfo(data.employee);
+      setScanDetails({
+        actionType,
+        timestamp: data.timestamp || new Date().toISOString(),
+        timesheetId: data.timesheet_id,
+        locationName: data.location_name || employeeStatus?.locationName || tenant?.name || 'Punct de lucru alocat'
+      });
       setSuccessMsg(`Pontaj înregistrat: ${actionType === 'IN' ? 'INTRARE' : 'IEȘIRE'}`);
 
     } catch (err) {
@@ -152,7 +162,8 @@ export default function ScanScreen() {
           if (res.ok) {
             setEmployeeStatus({
               lastAction: data.lastAction,
-              showPhoto: data.showPhoto
+              showPhoto: data.showPhoto,
+              locationName: data.location_name
             });
           }
         } catch (e) {
@@ -218,33 +229,114 @@ export default function ScanScreen() {
 
   const themeColor = tenant?.theme_color || '#3b82f6';
 
-  if (successMsg) {
+  if (successMsg && scanDetails) {
+    const isEntry = scanDetails.actionType === 'IN';
+    const scanDate = new Date(scanDetails.timestamp);
+    const dateFormatted = scanDate.toLocaleDateString('ro-RO', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+    const timeFormatted = scanDate.toLocaleTimeString('ro-RO', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+
     return (
-      <div className="min-h-screen flex items-center justify-center p-6" style={{ backgroundColor: `${themeColor}10` }}>
-        <div className="bg-white dark:bg-slate-900 p-8 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 dark:border-slate-800 max-w-sm w-full text-center animate-in fade-in zoom-in duration-300">
-          <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle2 size={40} />
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center p-4 sm:p-6" style={{ backgroundColor: `${themeColor}10` }}>
+        <div className="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 max-w-sm w-full text-center animate-in fade-in zoom-in-95 duration-300">
+          <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
+            <CheckCircle2 size={36} />
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white dark:text-white mb-2">Succes!</h1>
-          <p className="text-slate-600 dark:text-slate-300 dark:text-slate-400 font-medium mb-6">{successMsg}</p>
+          
+          <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mb-1">
+            Pontaj Înregistrat!
+          </h1>
+          
+          <div 
+            className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-black uppercase tracking-wider my-3"
+            style={{
+              backgroundColor: isEntry ? '#dcfce7' : '#f1f5f9',
+              color: isEntry ? '#166534' : '#334155'
+            }}
+          >
+            {isEntry ? <LogIn size={14} /> : <LogOut size={14} />}
+            <span>{isEntry ? 'INTRARE ÎN TURĂ' : 'IEȘIRE DIN TURĂ'}</span>
+          </div>
+
+          {/* Legal ITM & Timestamp Details */}
+          <div className="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-3.5 text-left space-y-2.5 my-4 border border-slate-100 dark:border-slate-700/50">
+            <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+              <span className="flex items-center gap-1.5 font-medium">
+                <Clock size={14} className="text-slate-400 shrink-0" /> Ora exactă:
+              </span>
+              <strong className="text-slate-900 dark:text-white font-mono text-sm font-black">{timeFormatted}</strong>
+            </div>
+
+            <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+              <span className="flex items-center gap-1.5 font-medium">
+                <Calendar size={14} className="text-slate-400 shrink-0" /> Data:
+              </span>
+              <strong className="text-slate-800 dark:text-slate-200 capitalize text-right text-xs font-bold">{dateFormatted}</strong>
+            </div>
+
+            <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+              <span className="flex items-center gap-1.5 font-medium">
+                <MapPin size={14} className="text-slate-400 shrink-0" /> Punct de lucru:
+              </span>
+              <strong className="text-slate-800 dark:text-slate-200 truncate max-w-[150px] text-right text-xs font-bold" title={scanDetails.locationName}>
+                {scanDetails.locationName}
+              </strong>
+            </div>
+
+            {scanDetails.timesheetId && (
+              <div className="pt-2 border-t border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between text-[11px] text-slate-400">
+                <span>Certificare electronică:</span>
+                <span className="font-mono font-bold text-slate-600 dark:text-slate-300">#PNT-{scanDetails.timesheetId}</span>
+              </div>
+            )}
+          </div>
 
           {employeeInfo && employeeInfo.showPhoto !== false && (
-            <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4 flex items-center gap-4 text-left">
+            <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3.5 flex items-center gap-3 text-left border border-slate-100 dark:border-slate-800 mb-5">
               {employeeInfo.avatar_path ? (
-                <img src={( employeeInfo.avatar_path?.startsWith('http') ? employeeInfo.avatar_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${employeeInfo.avatar_path}` )} alt="Avatar" className="w-12 h-12 rounded-full object-cover border border-slate-200 dark:border-slate-700" />
+                <img 
+                  src={(employeeInfo.avatar_path?.startsWith('http') ? employeeInfo.avatar_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${employeeInfo.avatar_path}`)} 
+                  alt="Avatar" 
+                  className="w-11 h-11 rounded-full object-cover border border-slate-200 dark:border-slate-700" 
+                />
               ) : (
-                <div className="w-12 h-12 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 font-bold border border-slate-300 dark:border-slate-600">
-                  {employeeInfo.first_name[0]}{employeeInfo.last_name[0]}
+                <div className="w-11 h-11 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 font-bold border border-slate-300 dark:border-slate-600 text-sm">
+                  {employeeInfo.first_name?.[0]}{employeeInfo.last_name?.[0]}
                 </div>
               )}
-              <div>
-                <p className="font-bold text-slate-900 dark:text-white">{employeeInfo.first_name} {employeeInfo.last_name}</p>
+              <div className="overflow-hidden">
+                <p className="font-bold text-sm text-slate-900 dark:text-white truncate">
+                  {employeeInfo.first_name} {employeeInfo.last_name}
+                </p>
                 <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                  {successMsg.includes('INTRARE') ? 'Bună dimineața / ziua!' : 'La revedere, o zi faină!'}
+                  {isEntry ? 'Bună dimineața / spor la lucru!' : 'La revedere, o zi bună!'}
                 </p>
               </div>
             </div>
           )}
+
+          <div className="text-[11px] text-slate-400 mb-5 flex items-center justify-center gap-1.5 font-medium">
+            <ShieldCheck size={14} className="text-emerald-500 shrink-0" />
+            <span>Evidență conformă cu Art. 119 Codul Muncii</span>
+          </div>
+
+          <button
+            onClick={() => {
+              setSuccessMsg(null);
+              setScanDetails(null);
+            }}
+            className="w-full h-10 px-5 text-sm rounded-full bg-slate-900 hover:bg-slate-800 text-white font-bold transition-all shadow-sm"
+          >
+            Efectuează alt pontaj
+          </button>
         </div>
       </div>
     );
@@ -380,11 +472,23 @@ export default function ScanScreen() {
               </p>
             )}
 
+            {/* Link discret Notă de informare GDPR & Temei Legal */}
+            <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 text-center">
+              <button
+                type="button"
+                onClick={() => setShowGdprModal(true)}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors py-1 px-3 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800/60"
+              >
+                <ShieldCheck size={14} className="text-primary-500" />
+                <span>Notă de informare GDPR & Temei Legal</span>
+              </button>
+            </div>
+
           </div>
         </div>
 
         <p className="text-center text-xs font-medium text-slate-400 mt-8">
-          Sistem protejat QR Pontaj © {new Date().getFullYear()}
+          Sistem protejat QR Pontaj © {new Date().getFullYear()} • Conform Art. 119 Codul Muncii
         </p>
       </div>
 
@@ -428,6 +532,95 @@ export default function ScanScreen() {
                 className="w-full h-10 rounded-full bg-slate-900 text-white font-bold text-sm hover:bg-slate-800 disabled:opacity-50 flex items-center justify-center transition-colors"
               >
                 {forgotStatus === 'loading' ? <Loader2 size={16} className="animate-spin" /> : 'Trimite Solicitare'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* GDPR Modal */}
+      {showGdprModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200 dark:border-slate-800 flex flex-col max-h-[90vh]">
+            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-primary-50 dark:bg-primary-950/40 text-primary-600 dark:text-primary-400 flex items-center justify-center shrink-0">
+                  <ShieldCheck size={18} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm sm:text-base text-slate-900 dark:text-white">
+                    Notă de Informare — Prelucrarea Datelor la Pontaj
+                  </h3>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Regulamentul (UE) 2016/679 (RGPD) & Legea nr. 53/2003 (Codul Muncii)
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowGdprModal(false)}
+                className="text-slate-400 hover:text-slate-600 dark:text-slate-200 transition-colors rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 p-1.5"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto text-xs sm:text-sm text-slate-600 dark:text-slate-300 space-y-4 leading-relaxed">
+              <div>
+                <h4 className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[11px] mb-1">
+                  1. Operatorul de date
+                </h4>
+                <p>
+                  Datele dumneavoastră sunt prelucrate de către angajator: <strong>{tenant?.name || 'Compania angajatoare'}</strong>, în calitate de Operator, prin intermediul platformei securizate QR Pontaj.
+                </p>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[11px] mb-1">
+                  2. Scopul prelucrării și temeiul legal
+                </h4>
+                <p className="mb-2">
+                  • <strong>Obligație legală (Art. 6 alin. 1 lit. c din RGPD):</strong> Evidența orelor de muncă prestate zilnic de către fiecare salariat, cu evidențierea exactă a orei de începere și a orei de sfârșit ale programului de lucru, conform <strong>Art. 119 din Codul Muncii (Legea nr. 53/2003 republicată)</strong>, pentru întocmirea pontajului lunar și supunerea acestuia controlului Inspecției Muncii (ITM).
+                </p>
+                <p>
+                  • <strong>Interes legitim (Art. 6 alin. 1 lit. f din RGPD & Art. 5 din Legea 190/2018):</strong> Asigurarea exactității pontajului electronic, securitatea punctului de lucru și prevenirea pontajului fraudulos între colegi.
+                </p>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[11px] mb-1">
+                  3. Categoriile de date colectate
+                </h4>
+                <p>
+                  La momentul scanării se înregistrează: numele și prenumele, codul intern de angajat, tipul pontajului (intrare/ieșire), data și ora exactă (la nivel de secundă), punctul de lucru/locația fizică, adresa IP și identificatorul dispozitivului/kiosk-ului.
+                </p>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[11px] mb-1">
+                  4. Perioada de stocare a datelor
+                </h4>
+                <p>
+                  Evidențele de pontaj se păstrează pe durata prevăzută de legislația muncii și financiar-contabilă aplicabilă documentelor justificative de personal. Logurile temporare de conectare sunt reținute pentru o perioadă proporțională (maximum 30 de zile, conform recomandărilor ANSPDCP).
+                </p>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[11px] mb-1">
+                  5. Drepturile dumneavoastră conform RGPD
+                </h4>
+                <p>
+                  Beneficiați de dreptul de acces la propriile înregistrări de pontaj (Art. 15), dreptul de rectificare a eventualelor erori de pontaj prin sesizarea conducerii/HR (Art. 16), dreptul la restricționarea prelucrării și dreptul de a depune o plângere la <strong>Autoritatea Națională de Supraveghere a Prelucrării Datelor cu Caracter Personal (ANSPDCP)</strong> — sediu: B-dul G-ral. Gheorghe Magheru 28-30, București, website: www.dataprotection.ro.
+                </p>
+              </div>
+            </div>
+
+            <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/30 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowGdprModal(false)}
+                className="px-6 h-10 rounded-full bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm transition-colors shadow-sm"
+              >
+                Am înțeles
               </button>
             </div>
           </div>

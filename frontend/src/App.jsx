@@ -9,6 +9,7 @@ import LandingPage from './pages/LandingPage';
 import EmployeeLogin from './pages/employee/EmployeeLogin';
 import EmployeeDashboard from './pages/employee/EmployeeDashboard';
 import ResetPassword from './pages/admin/ResetPassword';
+import GdprConsentBanner from './components/GdprConsentBanner';
 
 const getIsSubdomain = () => {
   const hostname = window.location.hostname;
@@ -82,6 +83,7 @@ function App() {
         {/* Redirect fallback */}
         <Route path="*" element={<Navigate to={isSubdomain ? "/login" : "/admin/login"} replace />} />
       </Routes>
+      <GdprConsentBanner />
     </Router>
   );
 }

@@ -948,21 +948,24 @@ export default function DashboardCharts({ tenant, themeColor }) {
 
         return (
           <div className="mt-8 bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden flex flex-col">
-            <div className="p-4 sm:p-6 border-b border-slate-100 dark:border-slate-700 flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div>
-                <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
-                  <span className="relative flex h-3 w-3">
+            <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-700 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+              <div className="shrink-0 min-w-fit">
+                <h3 className="text-base sm:text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2 whitespace-nowrap">
+                  <span className="relative flex h-2.5 w-2.5 shrink-0">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
                   </span>
-                  Situație Live Angajați (Tura Curentă)
+                  <span>Situație Live Angajați</span>
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+                    Tura Curentă
+                  </span>
                 </h3>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+                <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 whitespace-nowrap">
                   <strong className="text-emerald-600 dark:text-emerald-400">{inCount} prezenți acum</strong> din {liveShifts.length} angajați.
                 </p>
               </div>
 
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full md:w-auto">
+              <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 sm:gap-3 w-full xl:w-auto">
                 {/* Live Search */}
                 <div className="relative w-full sm:w-auto">
                   <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 z-10" />

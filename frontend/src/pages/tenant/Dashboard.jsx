@@ -166,7 +166,8 @@ export default function TenantDashboard() {
   };
 
   const handleLogout = () => {
-    localStorage.clear();
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
     navigate('/admin/login');
   };
 

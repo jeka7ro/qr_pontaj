@@ -107,12 +107,20 @@ router.post('/status', async (req, res) => {
       }
     }
     
-    // Obține setarea kiosk_show_photo
+    // Obține setarea kiosk_show_photo și denumirea locației
     let showPhoto = true;
+    let location_name = null;
     if (kiosk_id) {
-      const kioskRes = await pool.query('SELECT kiosk_show_photo FROM qrp_kiosks WHERE id = $1', [kiosk_id]);
+      const kioskRes = await pool.query(
+        `SELECT k.location_id, k.kiosk_show_photo, l.name as location_name 
+         FROM qrp_kiosks k 
+         LEFT JOIN qrp_locations l ON k.location_id = l.id 
+         WHERE k.id = $1`,
+        [kiosk_id]
+      );
       if (kioskRes.rows.length > 0) {
         showPhoto = kioskRes.rows[0].kiosk_show_photo;
+        location_name = kioskRes.rows[0].location_name;
       }
     }
 
@@ -123,7 +131,8 @@ router.post('/status', async (req, res) => {
         avatar_path: employee.avatar_path
       },
       lastAction,
-      showPhoto
+      showPhoto,
+      location_name
     });
   } catch (error) {
     console.error('Error checking status:', error);
@@ -190,12 +199,20 @@ router.post('/', async (req, res) => {
 
     // 2.5 Resolve location_id and show_photo from kiosk_id
     let location_id = null;
+    let location_name = null;
     let showPhoto = true;
     if (kiosk_id) {
-      const kioskRes = await pool.query('SELECT location_id, kiosk_show_photo FROM qrp_kiosks WHERE id = $1', [kiosk_id]);
+      const kioskRes = await pool.query(
+        `SELECT k.location_id, k.kiosk_show_photo, l.name as location_name 
+         FROM qrp_kiosks k 
+         LEFT JOIN qrp_locations l ON k.location_id = l.id 
+         WHERE k.id = $1`,
+        [kiosk_id]
+      );
       if (kioskRes.rows.length > 0) {
         location_id = kioskRes.rows[0].location_id;
         showPhoto = kioskRes.rows[0].kiosk_show_photo;
+        location_name = kioskRes.rows[0].location_name;
       }
     }
 
@@ -304,8 +321,11 @@ router.post('/', async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: 'Pontaj inregistrat cu succes',
+      message: 'Pontaj înregistrat cu succes',
       timesheet_id: newTimesheet.id,
+      timestamp: newTimesheet.created_at || new Date().toISOString(),
+      location_name: location_name || 'Punct de lucru alocat',
+      action_type: type,
       employee: {
         first_name: employee.first_name,
         last_name: employee.last_name,
