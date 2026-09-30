@@ -61,15 +61,15 @@ router.get('/live', async (req, res) => {
     const tenantId = req.user.tenant_id;
     const query = `
       SELECT e.id, e.first_name, e.last_name, e.avatar_path, e.employee_code, e.job_title,
-             COALESCE((SELECT action_type FROM qrp_timesheets WHERE employee_id = e.id ORDER BY created_at DESC LIMIT 1), 'OUT') as current_status,
-             (SELECT is_manual FROM qrp_timesheets WHERE employee_id = e.id ORDER BY created_at DESC LIMIT 1) as current_is_manual,
-             (SELECT created_at FROM qrp_timesheets WHERE employee_id = e.id AND action_type = 'IN' ORDER BY created_at DESC LIMIT 1) as last_in_time,
-             (SELECT created_at FROM qrp_timesheets WHERE employee_id = e.id AND action_type = 'OUT' ORDER BY created_at DESC LIMIT 1) as last_out_time,
-             (SELECT MAX(created_at) FROM qrp_timesheets WHERE employee_id = e.id AND action_type = 'OUT' AND (created_at AT TIME ZONE 'Europe/Bucharest')::date = (CURRENT_TIMESTAMP AT TIME ZONE 'Europe/Bucharest')::date) as last_scan_time,
-             (SELECT MAX(created_at) FROM qrp_timesheets WHERE employee_id = e.id) as absolute_last_scan,
+             COALESCE((SELECT action_type FROM qrp_timesheets WHERE employee_id = e.id AND created_at <= (CURRENT_TIMESTAMP + INTERVAL '1 minute') ORDER BY created_at DESC LIMIT 1), 'OUT') as current_status,
+             (SELECT is_manual FROM qrp_timesheets WHERE employee_id = e.id AND created_at <= (CURRENT_TIMESTAMP + INTERVAL '1 minute') ORDER BY created_at DESC LIMIT 1) as current_is_manual,
+             (SELECT created_at FROM qrp_timesheets WHERE employee_id = e.id AND action_type = 'IN' AND created_at <= (CURRENT_TIMESTAMP + INTERVAL '1 minute') ORDER BY created_at DESC LIMIT 1) as last_in_time,
+             (SELECT created_at FROM qrp_timesheets WHERE employee_id = e.id AND action_type = 'OUT' AND created_at <= (CURRENT_TIMESTAMP + INTERVAL '1 minute') ORDER BY created_at DESC LIMIT 1) as last_out_time,
+             (SELECT MAX(created_at) FROM qrp_timesheets WHERE employee_id = e.id AND action_type = 'OUT' AND created_at <= (CURRENT_TIMESTAMP + INTERVAL '1 minute') AND (created_at AT TIME ZONE 'Europe/Bucharest')::date = (CURRENT_TIMESTAMP AT TIME ZONE 'Europe/Bucharest')::date) as last_scan_time,
+             (SELECT MAX(created_at) FROM qrp_timesheets WHERE employee_id = e.id AND created_at <= (CURRENT_TIMESTAMP + INTERVAL '1 minute')) as absolute_last_scan,
              COALESCE(
-               (SELECT l.name FROM qrp_locations l JOIN qrp_timesheets t ON t.site_id = l.id WHERE t.employee_id = e.id AND t.action_type = 'IN' ORDER BY t.created_at DESC LIMIT 1),
-               (SELECT s.name FROM qrp_sites s JOIN qrp_timesheets t ON t.site_id = s.id WHERE t.employee_id = e.id AND t.action_type = 'IN' ORDER BY t.created_at DESC LIMIT 1),
+               (SELECT l.name FROM qrp_locations l JOIN qrp_timesheets t ON t.site_id = l.id WHERE t.employee_id = e.id AND t.action_type = 'IN' AND t.created_at <= (CURRENT_TIMESTAMP + INTERVAL '1 minute') ORDER BY t.created_at DESC LIMIT 1),
+               (SELECT s.name FROM qrp_sites s JOIN qrp_timesheets t ON t.site_id = s.id WHERE t.employee_id = e.id AND t.action_type = 'IN' AND t.created_at <= (CURRENT_TIMESTAMP + INTERVAL '1 minute') ORDER BY t.created_at DESC LIMIT 1),
                (SELECT l.name FROM qrp_locations l WHERE l.tenant_id = e.tenant_id ORDER BY l.id ASC LIMIT 1),
                (SELECT s.name FROM qrp_sites s WHERE s.tenant_id = e.tenant_id ORDER BY s.id ASC LIMIT 1)
              ) as site_name,
@@ -79,7 +79,7 @@ router.get('/live', async (req, res) => {
       FROM qrp_employees e
       WHERE e.tenant_id = $1
       ORDER BY 
-        CASE WHEN COALESCE((SELECT action_type FROM qrp_timesheets WHERE employee_id = e.id ORDER BY created_at DESC LIMIT 1), 'OUT') = 'IN' THEN 1 
+        CASE WHEN COALESCE((SELECT action_type FROM qrp_timesheets WHERE employee_id = e.id AND created_at <= (CURRENT_TIMESTAMP + INTERVAL '1 minute') ORDER BY created_at DESC LIMIT 1), 'OUT') = 'IN' THEN 1 
              ELSE 2 END, 
         e.first_name ASC
     `;
@@ -104,7 +104,7 @@ router.get('/stats', async (req, res) => {
     const presentRes = await pool.query(`
       SELECT COUNT(*) as count FROM qrp_employees e
       WHERE e.tenant_id = $1 
-      AND COALESCE((SELECT action_type FROM qrp_timesheets WHERE employee_id = e.id ORDER BY created_at DESC LIMIT 1), 'OUT') = 'IN'
+      AND COALESCE((SELECT action_type FROM qrp_timesheets WHERE employee_id = e.id AND created_at <= (CURRENT_TIMESTAMP + INTERVAL '1 minute') ORDER BY created_at DESC LIMIT 1), 'OUT') = 'IN'
     `, [tenantId]);
     const presentNow = parseInt(presentRes.rows[0].count);
     
@@ -113,6 +113,7 @@ router.get('/stats', async (req, res) => {
       FROM qrp_timesheets 
       WHERE tenant_id = $1 
       AND action_type = $2 
+      AND created_at <= (CURRENT_TIMESTAMP + INTERVAL '1 minute')
       AND (created_at AT TIME ZONE 'Europe/Bucharest')::date = (CURRENT_TIMESTAMP AT TIME ZONE 'Europe/Bucharest')::date
     `, [tenantId, 'IN']);
     const todayCheckins = parseInt(checkinsRes.rows[0].count);
@@ -125,11 +126,12 @@ router.get('/stats', async (req, res) => {
         SELECT DISTINCT ON (employee_id) employee_id, site_id 
         FROM qrp_timesheets 
         WHERE action_type = 'IN' 
+          AND created_at <= (CURRENT_TIMESTAMP + INTERVAL '1 minute')
         ORDER BY employee_id, created_at DESC
       ) t ON t.employee_id = e.id
       LEFT JOIN qrp_sites s ON s.id = t.site_id
       WHERE e.tenant_id = $1 
-      AND COALESCE((SELECT action_type FROM qrp_timesheets WHERE employee_id = e.id ORDER BY created_at DESC LIMIT 1), 'OUT') = 'IN'
+      AND COALESCE((SELECT action_type FROM qrp_timesheets WHERE employee_id = e.id AND created_at <= (CURRENT_TIMESTAMP + INTERVAL '1 minute') ORDER BY created_at DESC LIMIT 1), 'OUT') = 'IN'
       GROUP BY s.id, s.name
     `, [tenantId]);
     
@@ -326,10 +328,10 @@ router.post('/close-all-shifts', async (req, res) => {
     // Găsim toți angajații activi ai tenant-ului care au ultimul status 'IN'
     const activeQuery = `
       SELECT e.id, e.first_name, e.last_name, e.location_id,
-             (SELECT site_id FROM qrp_timesheets WHERE employee_id = e.id AND action_type = 'IN' ORDER BY created_at DESC LIMIT 1) as last_site_id
+             (SELECT site_id FROM qrp_timesheets WHERE employee_id = e.id AND action_type = 'IN' AND created_at <= (CURRENT_TIMESTAMP + INTERVAL '1 minute') ORDER BY created_at DESC LIMIT 1) as last_site_id
       FROM qrp_employees e
       WHERE e.tenant_id = $1
-        AND COALESCE((SELECT action_type FROM qrp_timesheets WHERE employee_id = e.id ORDER BY created_at DESC LIMIT 1), 'OUT') = 'IN'
+        AND COALESCE((SELECT action_type FROM qrp_timesheets WHERE employee_id = e.id AND created_at <= (CURRENT_TIMESTAMP + INTERVAL '1 minute') ORDER BY created_at DESC LIMIT 1), 'OUT') = 'IN'
     `;
     const activeEmployeesRes = await client.query(activeQuery, [tenantId]);
     const activeEmployees = activeEmployeesRes.rows;

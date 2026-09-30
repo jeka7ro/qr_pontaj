@@ -886,6 +886,11 @@ router.post('/:id/employees/:employeeId/start-shift', async (req, res) => {
       }
     }
 
+    const checkDate = new Date(finalTimestamp);
+    if (!isNaN(checkDate.getTime()) && checkDate.getTime() > Date.now() + 5 * 60 * 1000) {
+      return res.status(400).json({ error: 'Ora pontajului nu poate fi în viitor.' });
+    }
+
     // Validate employee belongs to tenant & fetch details
     const empResult = await pool.query(
       'SELECT id, location_id, first_name, last_name FROM qrp_employees WHERE id = $1 AND tenant_id = $2',
@@ -934,6 +939,11 @@ router.post('/:id/employees/:employeeId/close-shift', async (req, res) => {
       } else {
         finalTimestamp = new Date().toISOString();
       }
+    }
+
+    const checkDate = new Date(finalTimestamp);
+    if (!isNaN(checkDate.getTime()) && checkDate.getTime() > Date.now() + 5 * 60 * 1000) {
+      return res.status(400).json({ error: 'Ora pontajului nu poate fi în viitor.' });
     }
 
     // Validate employee belongs to tenant & fetch details
@@ -985,6 +995,11 @@ router.post('/:id/close-all-shifts', async (req, res) => {
       } else {
         finalTimestamp = new Date().toISOString();
       }
+    }
+
+    const checkDate = new Date(finalTimestamp);
+    if (!isNaN(checkDate.getTime()) && checkDate.getTime() > Date.now() + 5 * 60 * 1000) {
+      return res.status(400).json({ error: 'Ora pontajului nu poate fi în viitor.' });
     }
 
     await client.query('BEGIN');

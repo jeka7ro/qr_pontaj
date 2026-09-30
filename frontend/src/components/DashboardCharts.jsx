@@ -131,6 +131,11 @@ export default function DashboardCharts({ tenant, themeColor }) {
       const dateVal = shiftModal.date;      
       const localDateTime = new Date(`${dateVal}T${shiftModal.time}:00`);
 
+      if (localDateTime.getTime() > Date.now() + 5 * 60 * 1000) {
+        alert('Ora selectată nu poate fi în viitor! Vă rugăm să alegeți o oră validă.');
+        return;
+      }
+
       const endpoint = shiftModal.type === 'START'
         ? `${apiUrl}/api/tenants/${tenant.id}/employees/${shiftModal.rowData.id}/start-shift`
         : `${apiUrl}/api/tenants/${tenant.id}/employees/${shiftModal.rowData.id}/close-shift`;
@@ -163,13 +168,13 @@ export default function DashboardCharts({ tenant, themeColor }) {
     const now = new Date();
     const currentHours = now.getHours().toString().padStart(2, '0');
     const currentMinutes = now.getMinutes().toString().padStart(2, '0');
-    const initialTime = emp.scheduled_start_time ? emp.scheduled_start_time.substring(0, 5) : `${currentHours}:${currentMinutes}`;
+    const currentTime = `${currentHours}:${currentMinutes}`;
     setShiftModal({
       isOpen: true,
       type: 'START',
       rowData: emp,
       date: todayStr,
-      time: initialTime
+      time: currentTime
     });
   };
 
@@ -179,13 +184,13 @@ export default function DashboardCharts({ tenant, themeColor }) {
     const now = new Date();
     const currentHours = now.getHours().toString().padStart(2, '0');
     const currentMinutes = now.getMinutes().toString().padStart(2, '0');
-    const initialTime = emp.scheduled_end_time ? emp.scheduled_end_time.substring(0, 5) : `${currentHours}:${currentMinutes}`;
+    const currentTime = `${currentHours}:${currentMinutes}`;
     setShiftModal({
       isOpen: true,
       type: 'CLOSE',
       rowData: emp,
       date: initialDate,
-      time: initialTime
+      time: currentTime
     });
   };
 
@@ -235,11 +240,15 @@ export default function DashboardCharts({ tenant, themeColor }) {
 
   const handleConfirmCloseAll = async () => {
     if (!closeAllModal.date || !closeAllModal.time) return;
+    const localDateTime = new Date(`${closeAllModal.date}T${closeAllModal.time}:00`);
+    if (localDateTime.getTime() > Date.now() + 5 * 60 * 1000) {
+      alert('Ora selectată nu poate fi în viitor! Vă rugăm să alegeți o oră validă.');
+      return;
+    }
     setClosingAllLoading(true);
     try {
       const token = localStorage.getItem('token');
       const apiUrl = `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}`;
-      const localDateTime = new Date(`${closeAllModal.date}T${closeAllModal.time}:00`);
 
       const res = await fetch(`${apiUrl}/api/tenant/dashboard/close-all-shifts`, {
         method: 'POST',
