@@ -1044,18 +1044,23 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
           to={`/admin/employees/${row.employee_id}?tab=details`} 
           className="flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 p-1 -m-1 rounded-lg transition-colors cursor-pointer group min-w-[170px]"
         >
-          {row.avatar_path ? (
+          {row.avatar_path && !row.avatar_path.includes('default-avatar') ? (
             <img 
               src={row.avatar_path.startsWith('http') ? row.avatar_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${row.avatar_path}`} 
-              alt="Avatar" 
+              alt="" 
               className="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-slate-700 group-hover:border-primary-300 transition-colors shrink-0" 
-              onError={(e) => { e.target.src = '/default-avatar.svg'; }}
+              onError={(e) => { 
+                e.target.style.display = 'none'; 
+                if (e.target.nextElementSibling) e.target.nextElementSibling.style.display = 'flex';
+              }}
             />
-          ) : (
-            <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 font-bold group-hover:bg-primary-50 group-hover:text-primary-600 transition-colors shrink-0">
-              {(row.first_name?.[0] || '')}{(row.last_name?.[0] || '')}
-            </div>
-          )}
+          ) : null}
+          <div 
+            className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-300 font-bold group-hover:bg-primary-50 group-hover:text-primary-600 transition-colors shrink-0"
+            style={row.avatar_path && !row.avatar_path.includes('default-avatar') ? { display: 'none' } : {}}
+          >
+            {(row.first_name?.[0] || '?')}{(row.last_name?.[0] || '')}
+          </div>
           <div className="min-w-0">
             <div className="text-sm font-bold text-slate-800 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors truncate">
               {row.first_name} {row.last_name}
@@ -1192,13 +1197,23 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
       exportRender: (row) => `${row.first_name} ${row.last_name} (${row.employee_code || '-'})`,
       render: (row) => (
         <Link to={`/admin/employees/${row.employee_id}?tab=details`} className="flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 p-1 -m-1 rounded-lg transition-colors cursor-pointer group min-w-[170px]">
-          {row.avatar_path ? (
-            <img src={( row.avatar_path?.startsWith('http') ? row.avatar_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${row.avatar_path}` )} alt="Avatar" className="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-slate-700 group-hover:border-primary-300 transition-colors shrink-0" onError={(e) => { e.target.src = '/default-avatar.svg'; }} />
-          ) : (
-            <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 font-bold group-hover:bg-primary-50 group-hover:text-primary-600 transition-colors shrink-0">
-              {row.first_name[0]}{row.last_name[0]}
-            </div>
-          )}
+          {row.avatar_path && !row.avatar_path.includes('default-avatar') ? (
+            <img 
+              src={( row.avatar_path?.startsWith('http') ? row.avatar_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${row.avatar_path}` )} 
+              alt="" 
+              className="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-slate-700 group-hover:border-primary-300 transition-colors shrink-0" 
+              onError={(e) => { 
+                e.target.style.display = 'none'; 
+                if (e.target.nextElementSibling) e.target.nextElementSibling.style.display = 'flex';
+              }} 
+            />
+          ) : null}
+          <div 
+            className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-300 font-bold group-hover:bg-primary-50 group-hover:text-primary-600 transition-colors shrink-0"
+            style={row.avatar_path && !row.avatar_path.includes('default-avatar') ? { display: 'none' } : {}}
+          >
+            {(row.first_name?.[0] || '?')}{(row.last_name?.[0] || '')}
+          </div>
           <div className="min-w-0">
             <div className="text-sm font-bold text-slate-800 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors truncate">{row.first_name} {row.last_name}</div>
             <div className="text-xs text-slate-500 dark:text-slate-400 font-medium truncate">Cod: {row.employee_code || '-'}</div>

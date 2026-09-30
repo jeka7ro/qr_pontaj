@@ -410,18 +410,23 @@ export default function ScanScreen() {
 
           {employeeInfo && employeeInfo.showPhoto !== false && (
             <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3.5 flex items-center gap-3 text-left border border-slate-100 dark:border-slate-800 mb-5">
-              {employeeInfo.avatar_path ? (
+              {employeeInfo.avatar_path && !employeeInfo.avatar_path.includes('default-avatar') ? (
                 <img 
                   src={(employeeInfo.avatar_path?.startsWith('http') ? employeeInfo.avatar_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${employeeInfo.avatar_path}`)} 
-                  alt="Avatar" 
+                  alt="" 
                   className="w-11 h-11 rounded-full object-cover border border-slate-200 dark:border-slate-700" 
-                  onError={(e) => { e.target.src = '/default-avatar.svg'; }}
+                  onError={(e) => { 
+                    e.target.style.display = 'none'; 
+                    if (e.target.nextElementSibling) e.target.nextElementSibling.style.display = 'flex';
+                  }}
                 />
-              ) : (
-                <div className="w-11 h-11 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 font-bold border border-slate-300 dark:border-slate-600 text-sm">
-                  {employeeInfo.first_name?.[0]}{employeeInfo.last_name?.[0]}
-                </div>
-              )}
+              ) : null}
+              <div 
+                className="w-11 h-11 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-300 font-bold border border-slate-200 dark:border-slate-700 text-sm"
+                style={employeeInfo.avatar_path && !employeeInfo.avatar_path.includes('default-avatar') ? { display: 'none' } : {}}
+              >
+                {employeeInfo.first_name?.[0] || '?'}{employeeInfo.last_name?.[0] || ''}
+              </div>
               <div className="overflow-hidden">
                 <p className="font-bold text-sm text-slate-900 dark:text-white truncate">
                   {employeeInfo.first_name} {employeeInfo.last_name}

@@ -361,7 +361,7 @@ export default function ShiftsModule({ tenant, themeColor }) {
   }, [employees]);
 
   const getAvatarSrc = (avatarPath) => {
-    if (!avatarPath) return '/default-avatar.svg';
+    if (!avatarPath || avatarPath.includes('default-avatar')) return null;
     if (avatarPath.startsWith('http')) return avatarPath;
     const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
     return `${baseUrl.replace(/\/$/, '')}/${avatarPath.replace(/^\//, '')}`;
@@ -555,11 +555,13 @@ export default function ShiftsModule({ tenant, themeColor }) {
                     src={avatarSrc} 
                     alt="" 
                     className="w-full h-full object-cover" 
-                    onError={(e) => { e.target.style.display = 'none'; }}
+                    onError={(e) => { 
+                      e.target.style.display = 'none'; 
+                      if (e.target.nextElementSibling) e.target.nextElementSibling.style.display = 'inline';
+                    }}
                   />
-                ) : (
-                  <span>{initials}</span>
-                )}
+                ) : null}
+                <span style={avatarSrc ? { display: 'none' } : {}}>{initials}</span>
               </div>
             );
           })}
@@ -948,11 +950,13 @@ export default function ShiftsModule({ tenant, themeColor }) {
                                       src={avatarSrc} 
                                       alt="" 
                                       className="w-full h-full object-cover" 
-                                      onError={(e) => { e.target.style.display = 'none'; }}
+                                      onError={(e) => { 
+                                        e.target.style.display = 'none'; 
+                                        if (e.target.nextElementSibling) e.target.nextElementSibling.style.display = 'inline';
+                                      }}
                                     />
-                                  ) : (
-                                    <span>{initials}</span>
-                                  )}
+                                  ) : null}
+                                  <span style={avatarSrc ? { display: 'none' } : {}}>{initials}</span>
                                 </div>
 
                                 <div className="min-w-0 flex-1">
@@ -1444,11 +1448,13 @@ export default function ShiftsModule({ tenant, themeColor }) {
                               src={avatarSrc} 
                               alt="" 
                               className="w-full h-full object-cover" 
-                              onError={(e) => { e.target.style.display = 'none'; }}
+                              onError={(e) => { 
+                                e.target.style.display = 'none'; 
+                                if (e.target.nextElementSibling) e.target.nextElementSibling.style.display = 'inline';
+                              }}
                             />
-                          ) : (
-                            <span>{initials}</span>
-                          )}
+                          ) : null}
+                          <span style={avatarSrc ? { display: 'none' } : {}}>{initials}</span>
                         </div>
 
                         <div className="min-w-0 flex-1">

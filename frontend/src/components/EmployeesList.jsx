@@ -875,30 +875,26 @@ export default function EmployeesList({ tenant, themeColor }) {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3 relative">
-                          {emp.avatar_path ? (
-                            <img 
-                              src={( emp.avatar_path?.startsWith('http') ? emp.avatar_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${emp.avatar_path}` )} 
-                              alt="Avatar" 
-                              className="w-10 h-10 rounded-xl object-cover border border-slate-200 dark:border-slate-700" 
-                              onError={(e) => {
-                                if (!e.target.src.endsWith('/default-avatar.svg')) {
-                                  e.target.src = '/default-avatar.svg';
-                                } else {
+                          {emp.avatar_path && !emp.avatar_path.includes('default-avatar') ? (
+                            <>
+                              <img 
+                                src={( emp.avatar_path?.startsWith('http') ? emp.avatar_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${emp.avatar_path}` )} 
+                                alt="" 
+                                className="w-10 h-10 rounded-xl object-cover border border-slate-200 dark:border-slate-700" 
+                                onError={(e) => {
                                   e.target.style.display = 'none';
                                   if (e.target.nextElementSibling) e.target.nextElementSibling.style.display = 'flex';
-                                }
-                              }}
-                            />
+                                }}
+                              />
+                              <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-300 font-bold" style={{ display: 'none' }}>
+                                {emp.first_name?.[0] || '?'}{emp.last_name?.[0] || ''}
+                              </div>
+                            </>
                           ) : (
-                            <img 
-                              src="/default-avatar.svg" 
-                              alt="Avatar" 
-                              className="w-10 h-10 rounded-xl object-cover border border-slate-200 dark:border-slate-700" 
-                            />
+                            <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-300 font-bold">
+                              {emp.first_name?.[0] || '?'}{emp.last_name?.[0] || ''}
+                            </div>
                           )}
-                          <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 font-bold" style={{ display: 'none' }}>
-                            {emp.first_name?.[0] || '?'}{emp.last_name?.[0] || ''}
-                          </div>
                           <div>
                             <Link to={`/admin/employees/${emp.id}`} className="text-sm font-bold text-primary-600 dark:text-primary-400 hover:underline">{emp.first_name} {emp.last_name}</Link>
                             <div className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">CNP: {emp.cnp || '-'}</div>

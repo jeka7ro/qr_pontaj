@@ -8,12 +8,12 @@ import {
 } from 'lucide-react';
 
 const getAvatarUrl = (avatarPath, firstName, lastName) => {
-  if (avatarPath) {
+  if (avatarPath && !avatarPath.includes('default-avatar')) {
     if (avatarPath.startsWith('http')) return avatarPath;
     const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
     return `${baseUrl}${avatarPath}`;
   }
-  return '/default-avatar.svg';
+  return null;
 };
 import EmployeesList from '../../components/EmployeesList';
 import TimesheetReport from '../../components/TimesheetReport';
@@ -766,15 +766,23 @@ export default function TenantDashboard() {
             >
               {/* Avatar cu badge de acțiune */}
               <div className="relative shrink-0">
-                <img 
-                  src={avatarSrc} 
-                  alt="" 
-                  className="w-12 h-12 rounded-full object-cover border border-slate-200 dark:border-slate-700 shadow-xs"
-                  onError={(e) => {
-                    e.target.onerror = null;
-                    e.target.src = '/default-avatar.svg';
-                  }}
-                />
+                {avatarSrc ? (
+                  <img 
+                    src={avatarSrc} 
+                    alt="" 
+                    className="w-12 h-12 rounded-full object-cover border border-slate-200 dark:border-slate-700 shadow-xs"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      if (e.target.nextElementSibling) e.target.nextElementSibling.style.display = 'flex';
+                    }}
+                  />
+                ) : null}
+                <div 
+                  className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-200 font-bold text-sm shadow-xs"
+                  style={avatarSrc ? { display: 'none' } : {}}
+                >
+                  {emp.first_name?.[0] || '?'}{emp.last_name?.[0] || ''}
+                </div>
                 <span className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full text-white flex items-center justify-center shadow-xs border-2 border-white dark:border-slate-900 ${badgeBg}`}>
                   {isEntry ? <LogIn size={10} /> : <LogOut size={10} />}
                 </span>

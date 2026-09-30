@@ -717,17 +717,24 @@ export default function KioskDisplay() {
                             key={scan.id} 
                             className="flex items-center gap-3.5 p-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 backdrop-blur-md transition-all"
                           >
-                            <div className="w-11 h-11 rounded-full overflow-hidden border border-white/20 flex-shrink-0 bg-slate-800 flex items-center justify-center">
-                              {scan.avatar_path ? (
+                            <div className="w-11 h-11 rounded-full overflow-hidden border border-white/20 flex-shrink-0 bg-slate-800 flex items-center justify-center font-bold text-xs text-white">
+                              {scan.avatar_path && !scan.avatar_path.includes('default-avatar') ? (
                                 <img 
                                   src={scan.avatar_path.startsWith('http') ? scan.avatar_path : `${import.meta.env.VITE_API_URL || ''}${scan.avatar_path}`} 
                                   alt="" 
                                   className="w-full h-full object-cover" 
-                                  onError={(e) => { e.target.src = '/default-avatar.svg'; }}
+                                  onError={(e) => { 
+                                    e.target.style.display = 'none'; 
+                                    if (e.target.nextElementSibling) e.target.nextElementSibling.style.display = 'flex';
+                                  }}
                                 />
-                              ) : (
-                                <User size={20} className="text-white/60" />
-                              )}
+                              ) : null}
+                              <div 
+                                className="w-full h-full flex items-center justify-center font-bold text-xs text-white/90 bg-slate-800"
+                                style={scan.avatar_path && !scan.avatar_path.includes('default-avatar') ? { display: 'none' } : {}}
+                              >
+                                {scan.first_name?.[0] || '?'}{scan.last_name?.[0] || ''}
+                              </div>
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="font-semibold text-white text-sm truncate">{scan.first_name} {scan.last_name}</p>
@@ -918,7 +925,7 @@ export default function KioskDisplay() {
           })()
         );
 
-        const avatarSrc = scanSuccess.employee?.avatar_path ? (
+        const avatarSrc = scanSuccess.employee?.avatar_path && !scanSuccess.employee.avatar_path.includes('default-avatar') ? (
           scanSuccess.employee.avatar_path.startsWith('http') 
             ? scanSuccess.employee.avatar_path 
             : `${(import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')).replace(/\/$/, '')}/${scanSuccess.employee.avatar_path.replace(/^\//, '')}`
@@ -956,12 +963,22 @@ export default function KioskDisplay() {
                   {avatarSrc ? (
                     <img 
                       src={avatarSrc} 
-                      alt="Avatar Angajat" 
+                      alt="" 
                       className="w-full h-full object-cover rounded-full" 
+                      onError={(e) => { 
+                        e.target.style.display = 'none'; 
+                        if (e.target.nextElementSibling) e.target.nextElementSibling.style.display = 'flex';
+                      }}
                     />
-                  ) : (
-                    <User size={130} className={isBirthday ? 'text-amber-300' : isEntry ? 'text-emerald-400' : 'text-amber-400'} />
-                  )}
+                  ) : null}
+                  <div 
+                    className={`w-full h-full flex items-center justify-center font-black text-6xl sm:text-7xl select-none ${
+                      isBirthday ? 'text-amber-300' : isEntry ? 'text-emerald-400' : 'text-amber-400'
+                    }`}
+                    style={avatarSrc ? { display: 'none' } : {}}
+                  >
+                    {scanSuccess.employee?.first_name?.[0] || '?'}{scanSuccess.employee?.last_name?.[0] || ''}
+                  </div>
                 </div>
 
                 {/* Badge icon pe poza */}

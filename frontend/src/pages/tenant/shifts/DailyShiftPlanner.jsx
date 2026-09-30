@@ -1099,16 +1099,20 @@ export default function DailyShiftPlanner({ tenant, themeColor, onCalendarViewRe
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-xs font-black text-slate-600 dark:text-slate-300 shrink-0 overflow-hidden">
-                            {emp.avatar_path ? (
+                            {emp.avatar_path && !emp.avatar_path.includes('default-avatar') ? (
                               <img 
                                 src={emp.avatar_path.startsWith('http') ? emp.avatar_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${emp.avatar_path}`} 
-                                alt={`${emp.first_name} ${emp.last_name}`} 
+                                alt="" 
                                 className="w-full h-full object-cover" 
-                                onError={(e) => { e.target.src = '/default-avatar.svg'; }}
+                                onError={(e) => { 
+                                  e.target.style.display = 'none'; 
+                                  if (e.target.nextElementSibling) e.target.nextElementSibling.style.display = 'inline';
+                                }}
                               />
-                            ) : (
-                              `${emp.first_name?.[0] || ''}${emp.last_name?.[0] || ''}`.toUpperCase()
-                            )}
+                            ) : null}
+                            <span style={emp.avatar_path && !emp.avatar_path.includes('default-avatar') ? { display: 'none' } : {}}>
+                              {`${emp.first_name?.[0] || '?'}${emp.last_name?.[0] || ''}`.toUpperCase()}
+                            </span>
                           </div>
                           <div>
                             <div className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
@@ -1250,16 +1254,20 @@ export default function DailyShiftPlanner({ tenant, themeColor, onCalendarViewRe
             <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-sm font-black text-slate-700 dark:text-slate-200 overflow-hidden shrink-0">
-                  {individualEmp.avatar_path ? (
+                  {individualEmp.avatar_path && !individualEmp.avatar_path.includes('default-avatar') ? (
                     <img 
                       src={individualEmp.avatar_path.startsWith('http') ? individualEmp.avatar_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${individualEmp.avatar_path}`} 
                       alt="" 
                       className="w-full h-full object-cover" 
-                      onError={(e) => { e.target.src = '/default-avatar.svg'; }}
+                      onError={(e) => { 
+                        e.target.style.display = 'none'; 
+                        if (e.target.nextElementSibling) e.target.nextElementSibling.style.display = 'inline';
+                      }}
                     />
-                  ) : (
-                    `${individualEmp.first_name?.[0] || ''}${individualEmp.last_name?.[0] || ''}`.toUpperCase()
-                  )}
+                  ) : null}
+                  <span style={individualEmp.avatar_path && !individualEmp.avatar_path.includes('default-avatar') ? { display: 'none' } : {}}>
+                    {`${individualEmp.first_name?.[0] || '?'}${individualEmp.last_name?.[0] || ''}`.toUpperCase()}
+                  </span>
                 </div>
                 <div>
                   <h3 className="font-bold text-base text-slate-900 dark:text-white">

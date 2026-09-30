@@ -242,7 +242,7 @@ const EmployeeProfile = ({ tenant, themeColor, employeeId, onClose }) => {
     return <div className="p-8 text-center text-slate-500 dark:text-slate-400 font-medium">Angajatul nu a fost găsit.</div>;
   }
 
-  const avatarSrc = employee.avatar_path ? ( employee.avatar_path?.startsWith('http') ? employee.avatar_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${employee.avatar_path}` ) : '/default-avatar.svg';
+  const avatarSrc = employee.avatar_path ? ( employee.avatar_path?.startsWith('http') ? employee.avatar_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${employee.avatar_path}` ) : null;
   const idCardSrc = employee.id_card_path ? ( employee.id_card_path?.startsWith('http') ? employee.id_card_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${employee.id_card_path}` ) : null;
 
   return (
@@ -356,7 +356,23 @@ const EmployeeProfile = ({ tenant, themeColor, employeeId, onClose }) => {
                     <Loader2 className="w-6 h-6 text-white animate-spin" />
                   </div>
                 )}
-                <img src={avatarSrc} alt="Avatar" className="w-full h-full object-cover" onError={(e) => { e.target.src = '/default-avatar.svg'; }} />
+                {avatarSrc ? (
+                  <img 
+                    src={avatarSrc} 
+                    alt="Avatar" 
+                    className="w-full h-full object-cover" 
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      if (e.target.nextElementSibling) e.target.nextElementSibling.style.display = 'flex';
+                    }} 
+                  />
+                ) : null}
+                <div 
+                  className="w-full h-full flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-black text-2xl"
+                  style={avatarSrc ? { display: 'none' } : {}}
+                >
+                  {employee.first_name?.[0] || '?'}{employee.last_name?.[0] || ''}
+                </div>
                 
                 {/* Hover overlay for changing avatar */}
                 <label className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer z-10">

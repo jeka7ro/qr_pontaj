@@ -1213,17 +1213,23 @@ export default function DashboardCharts({ tenant, themeColor }) {
                     {shiftModal.type === 'START' ? 'Pornește Tura Manual' : 'Închide Tura Manual'}
                   </h3>
                   <div className="flex items-center gap-2 mt-1">
-                    {shiftModal.rowData?.avatar_path ? (
+                    {shiftModal.rowData?.avatar_path && !shiftModal.rowData.avatar_path.includes('default-avatar') ? (
                       <img 
                         src={shiftModal.rowData.avatar_path.startsWith('http') ? shiftModal.rowData.avatar_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${shiftModal.rowData.avatar_path}`} 
-                        alt="avatar" 
+                        alt="" 
                         className="w-6 h-6 rounded-full object-cover border border-slate-200 dark:border-slate-700 shadow-xs shrink-0" 
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          if (e.target.nextElementSibling) e.target.nextElementSibling.style.display = 'flex';
+                        }}
                       />
-                    ) : (
-                      <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-[10px] text-slate-600 dark:text-slate-200 font-bold shrink-0">
-                        {shiftModal.rowData?.first_name?.[0]}{shiftModal.rowData?.last_name?.[0]}
-                      </div>
-                    )}
+                    ) : null}
+                    <div 
+                      className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-[10px] text-slate-700 dark:text-slate-200 font-bold shrink-0"
+                      style={shiftModal.rowData?.avatar_path && !shiftModal.rowData.avatar_path.includes('default-avatar') ? { display: 'none' } : {}}
+                    >
+                      {shiftModal.rowData?.first_name?.[0] || '?'}{shiftModal.rowData?.last_name?.[0] || ''}
+                    </div>
                     <span className="text-xs text-slate-600 dark:text-slate-300 font-bold truncate">
                       {shiftModal.rowData?.first_name} {shiftModal.rowData?.last_name}
                     </span>
@@ -1649,17 +1655,23 @@ function LiveShiftRow({ indexNumber, emp, isPresent, isOut, hasHistory, onOpenSt
           title={`Deschide fișa angajatului: ${emp.first_name} ${emp.last_name}`}
         >
           <div className="relative shrink-0">
-            {emp.avatar_path ? (
+            {emp.avatar_path && !emp.avatar_path.includes('default-avatar') ? (
               <img 
                 src={emp.avatar_path.startsWith('http') ? emp.avatar_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${emp.avatar_path}`} 
-                alt="avatar" 
+                alt="" 
                 className="w-8 h-8 rounded-full object-cover border border-slate-200 dark:border-slate-700 group-hover:border-primary-500 transition-colors shadow-2xs" 
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  if (e.target.nextElementSibling) e.target.nextElementSibling.style.display = 'flex';
+                }}
               />
-            ) : (
-              <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-[11px] text-slate-600 dark:text-slate-200 font-bold group-hover:ring-2 group-hover:ring-primary-500 transition-all shrink-0">
-                {emp.first_name?.[0]}{emp.last_name?.[0]}
-              </div>
-            )}
+            ) : null}
+            <div 
+              className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-[11px] text-slate-700 dark:text-slate-200 font-bold group-hover:ring-2 group-hover:ring-primary-500 transition-all shrink-0"
+              style={emp.avatar_path && !emp.avatar_path.includes('default-avatar') ? { display: 'none' } : {}}
+            >
+              {emp.first_name?.[0] || '?'}{emp.last_name?.[0] || ''}
+            </div>
           </div>
           <div className="min-w-0">
             <div className="font-bold text-slate-900 dark:text-white text-xs leading-tight group-hover:text-primary-600 dark:group-hover:text-primary-400 group-hover:underline transition-colors truncate max-w-[180px]">

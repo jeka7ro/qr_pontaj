@@ -742,7 +742,7 @@ router.post('/:id/employees', upload.fields([
       `;
       const values = [
         req.params.id, first_name, last_name, cnp, id_card_series || null, 
-        finalBirthDate || null, address || null, phone || null, email || null, job_title || null, finalPin, avatarPath || '/uploads/avatars/default-avatar.svg',
+        finalBirthDate || null, address || null, phone || null, email || null, job_title || null, finalPin, avatarPath || null,
         location_id ? parseInt(location_id) : null, idCardPath,
         contract_start_date || null, work_schedule || null, contract_notes || null, salary || null, employee_code
       ];

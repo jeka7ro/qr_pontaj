@@ -320,7 +320,7 @@ export default function EmployeeDashboard() {
 
         {/* Layout centrat: Poză → Nume */}
         <div className="relative flex flex-col items-center gap-3 mt-4">
-          {employee.avatar_path && !avatarError ? (
+          {employee.avatar_path && !employee.avatar_path.includes('default-avatar') && !avatarError ? (
             <img 
               src={( employee.avatar_path?.startsWith('http') ? employee.avatar_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${employee.avatar_path}` )} 
               alt="Avatar" 
@@ -705,16 +705,18 @@ export default function EmployeeDashboard() {
           <div className="flex flex-col items-center gap-6">
             {/* Poza Card */}
             <div className="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden w-full max-w-[320px]">
-              {employee.avatar_path && !avatarError ? (
+              {employee.avatar_path && !employee.avatar_path.includes('default-avatar') && !avatarError ? (
                 <img 
                   src={( employee.avatar_path?.startsWith('http') ? employee.avatar_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${employee.avatar_path}` )} 
-                  alt="Poza Profil" 
+                  alt="" 
                   className="w-full aspect-[3/4] object-cover"
                   onError={() => setAvatarError(true)}
                 />
               ) : (
-                <div className="w-full aspect-[3/4] bg-slate-100 flex items-center justify-center">
-                  <User size={80} className="text-slate-300" />
+                <div className="w-full aspect-[3/4] bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                  <div className="w-24 h-24 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-3xl font-black text-slate-600 dark:text-slate-200 shadow-xs">
+                    {employee.first_name?.[0] || '?'}{employee.last_name?.[0] || ''}
+                  </div>
                 </div>
               )}
               <div className="p-4 text-center">

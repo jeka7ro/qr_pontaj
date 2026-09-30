@@ -796,16 +796,20 @@ export default function ShiftsTable({ tenant, themeColor }) {
                            <div className="flex -space-x-2">
                               {group.employees.slice(0, 3).map((e, i) => (
                                  <div key={i} className="w-8 h-8 rounded-full border-2 border-white dark:border-slate-900 bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-[9px] font-black overflow-hidden">
-                                   {e.emp.avatar_path ? (
+                                   {e.emp.avatar_path && !e.emp.avatar_path.includes('default-avatar') ? (
                                      <img 
                                       src={e.emp.avatar_path.startsWith('http') ? e.emp.avatar_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${e.emp.avatar_path}`} 
                                       alt="" 
                                       className="w-full h-full object-cover" 
-                                      onError={(evt) => { evt.target.src = '/default-avatar.svg'; }}
+                                      onError={(evt) => { 
+                                        evt.target.style.display = 'none'; 
+                                        if (evt.target.nextElementSibling) evt.target.nextElementSibling.style.display = 'inline';
+                                      }}
                                      />
-                                   ) : (
-                                     `${e.emp.first_name?.[0] || ''}${e.emp.last_name?.[0] || ''}`.toUpperCase()
-                                   )}
+                                   ) : null}
+                                   <span style={e.emp.avatar_path && !e.emp.avatar_path.includes('default-avatar') ? { display: 'none' } : {}}>
+                                     {`${e.emp.first_name?.[0] || '?'}${e.emp.last_name?.[0] || ''}`.toUpperCase()}
+                                   </span>
                                  </div>
                               ))}
                               {group.employees.length > 3 && (
