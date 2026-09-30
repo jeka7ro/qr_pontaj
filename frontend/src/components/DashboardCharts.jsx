@@ -957,33 +957,37 @@ export default function DashboardCharts({ tenant, themeColor }) {
 
         return (
           <div className="mt-8 bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden flex flex-col">
-            <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-700 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
-              <div className="shrink-0 min-w-fit">
-                <h3 className="text-base sm:text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2 whitespace-nowrap">
-                  <span className="relative flex h-2.5 w-2.5 shrink-0">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
-                  </span>
-                  <span>Situație Live Angajați</span>
-                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
-                    Tura Curentă
-                  </span>
-                </h3>
-                <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 whitespace-nowrap">
-                  <strong className="text-emerald-600 dark:text-emerald-400">{inCount} prezenți acum</strong> din {liveShifts.length} angajați.
-                </p>
+            <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-700 space-y-3.5">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5 sm:gap-3 flex-nowrap">
+                  <h3 className="text-base sm:text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2 whitespace-nowrap">
+                    <span className="relative flex h-2.5 w-2.5 shrink-0">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+                    </span>
+                    <span>Situație Live Angajați</span>
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+                      Tura Curentă
+                    </span>
+                  </h3>
+                  <span className="text-slate-300 dark:text-slate-600 font-light select-none">•</span>
+                  <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                    <strong className="text-emerald-600 dark:text-emerald-400">{inCount} prezenți acum</strong> din {liveShifts.length} angajați.
+                  </p>
+                </div>
               </div>
 
-              <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 sm:gap-3 w-full xl:w-auto">
+              {/* Bara cu unelte (Căutare, Filtre, Buton Închidere) coborâtă dedesubt pentru spațiu generos */}
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pt-0.5">
                 {/* Live Search */}
-                <div className="relative w-full sm:w-auto">
-                  <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 z-10" />
+                <div className="relative w-full md:w-72 lg:w-80">
+                  <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 z-10" />
                   <input
                     type="text"
                     placeholder="Caută după nume, cod, funcție..."
                     value={liveSearch}
                     onChange={(e) => { setLiveSearch(e.target.value); setLivePage(1); }}
-                    className={`pl-9 ${liveSearch ? 'pr-24' : 'pr-4'} h-9 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 w-full sm:w-64 transition-all`}
+                    className={`w-full pl-9.5 ${liveSearch ? 'pr-24' : 'pr-4'} h-[34px] rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all shadow-2xs`}
                   />
                   {liveSearch && (
                     <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5 z-10">
@@ -1005,56 +1009,59 @@ export default function DashboardCharts({ tenant, themeColor }) {
                   )}
                 </div>
 
-                {/* Filter Tabs */}
-                <div className="flex overflow-x-auto max-w-full pb-1 sm:pb-0 bg-slate-100 dark:bg-slate-900 p-1 rounded-full border border-slate-200/60 dark:border-slate-700/60 text-xs font-bold shrink-0">
+                {/* Filter Tabs & Buton Închidere Tură */}
+                <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
+                  {/* Filter Tabs */}
+                  <div className="flex items-center overflow-x-auto max-w-full bg-slate-100 dark:bg-slate-900 p-1 rounded-full border border-slate-200/60 dark:border-slate-700/60 text-xs font-bold shrink-0 h-[34px]">
+                    <button
+                      onClick={() => { setLiveFilter('ALL'); setLivePage(1); }}
+                      className={`h-6 px-3 rounded-full shrink-0 whitespace-nowrap transition-all flex items-center justify-center ${liveFilter === 'ALL' ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'}`}
+                    >
+                      Toți ({liveShifts.length})
+                    </button>
+                    <button
+                      onClick={() => { setLiveFilter('IN'); setLivePage(1); }}
+                      className={`h-6 px-3 rounded-full shrink-0 whitespace-nowrap transition-all flex items-center gap-1.5 ${liveFilter === 'IN' ? 'bg-white dark:bg-slate-800 shadow-sm' : 'text-slate-500 dark:text-slate-400'}`}
+                      style={liveFilter === 'IN' ? { color: themeColor } : {}}
+                    >
+                      <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                      Prezenți ({inCount})
+                    </button>
+                    <button
+                      onClick={() => { setLiveFilter('OUT'); setLivePage(1); }}
+                      className={`h-6 px-3 rounded-full shrink-0 whitespace-nowrap transition-all flex items-center justify-center ${liveFilter === 'OUT' ? 'bg-white dark:bg-slate-800 text-slate-800 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'}`}
+                    >
+                      Plecați ({outCount})
+                    </button>
+                    <button
+                      onClick={() => { setLiveFilter('ABSENT'); setLivePage(1); }}
+                      className={`h-6 px-3 rounded-full shrink-0 whitespace-nowrap transition-all flex items-center justify-center ${liveFilter === 'ABSENT' ? 'bg-white dark:bg-slate-800 text-amber-600 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-amber-600'}`}
+                    >
+                      Absenți ({absentCount})
+                    </button>
+                  </div>
+
+                  {/* Buton Închidere Tură pentru Toți */}
                   <button
-                    onClick={() => { setLiveFilter('ALL'); setLivePage(1); }}
-                    className={`px-3 py-1 rounded-full shrink-0 whitespace-nowrap transition-all ${liveFilter === 'ALL' ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'}`}
+                    type="button"
+                    onClick={handleOpenCloseAllModal}
+                    disabled={inCount === 0 || closingAllLoading}
+                    className={`h-[34px] px-3.5 rounded-full font-bold text-xs flex items-center gap-1.5 transition-all whitespace-nowrap shrink-0 shadow-xs cursor-pointer select-none ${
+                      inCount > 0 
+                        ? 'bg-rose-600 hover:bg-rose-700 active:scale-95 text-white shadow-rose-200 dark:shadow-none hover:shadow-md' 
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed border border-slate-200/60 dark:border-slate-700/60'
+                    }`}
+                    title={inCount > 0 ? `Închide manual tura pentru toți cei ${inCount} angajați prezenți` : 'Niciun angajat prezent în tură'}
                   >
-                    Toți ({liveShifts.length})
-                  </button>
-                  <button
-                    onClick={() => { setLiveFilter('IN'); setLivePage(1); }}
-                    className={`px-3 py-1 rounded-full shrink-0 whitespace-nowrap transition-all flex items-center gap-1.5 ${liveFilter === 'IN' ? 'bg-white dark:bg-slate-800 shadow-sm' : 'text-slate-500 dark:text-slate-400'}`}
-                    style={liveFilter === 'IN' ? { color: themeColor } : {}}
-                  >
-                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                    Prezenți ({inCount})
-                  </button>
-                  <button
-                    onClick={() => { setLiveFilter('OUT'); setLivePage(1); }}
-                    className={`px-3 py-1 rounded-full shrink-0 whitespace-nowrap transition-all ${liveFilter === 'OUT' ? 'bg-white dark:bg-slate-800 text-slate-800 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'}`}
-                  >
-                    Plecați ({outCount})
-                  </button>
-                  <button
-                    onClick={() => { setLiveFilter('ABSENT'); setLivePage(1); }}
-                    className={`px-3 py-1 rounded-full shrink-0 whitespace-nowrap transition-all ${liveFilter === 'ABSENT' ? 'bg-white dark:bg-slate-800 text-amber-600 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-amber-600'}`}
-                  >
-                    Absenți ({absentCount})
+                    <LogOut size={13} className="shrink-0" />
+                    <span>Închide Tura la Toți</span>
+                    {inCount > 0 && (
+                      <span className="bg-white/20 text-white px-1.5 py-0.5 rounded-full text-[10px] font-black">
+                        {inCount}
+                      </span>
+                    )}
                   </button>
                 </div>
-
-                {/* Buton Închidere Tură pentru Toți (Aliniat spre dreapta ultimul) */}
-                <button
-                  type="button"
-                  onClick={handleOpenCloseAllModal}
-                  disabled={inCount === 0 || closingAllLoading}
-                  className={`h-9 px-4 rounded-full font-bold text-xs flex items-center gap-2 transition-all whitespace-nowrap shrink-0 shadow-xs cursor-pointer select-none ${
-                    inCount > 0 
-                      ? 'bg-rose-600 hover:bg-rose-700 active:scale-95 text-white shadow-rose-200 dark:shadow-none hover:shadow-md' 
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed border border-slate-200/60 dark:border-slate-700/60'
-                  }`}
-                  title={inCount > 0 ? `Închide manual tura pentru toți cei ${inCount} angajați prezenți` : 'Niciun angajat prezent în tură'}
-                >
-                  <LogOut size={14} className="shrink-0" />
-                  <span>Închide Tura la Toți</span>
-                  {inCount > 0 && (
-                    <span className="bg-white/20 text-white px-1.5 py-0.5 rounded-full text-[10px] font-black">
-                      {inCount}
-                    </span>
-                  )}
-                </button>
               </div>
             </div>
             
@@ -1470,6 +1477,9 @@ function LiveShiftRow({ indexNumber, emp, isPresent, isOut, hasHistory, onOpenSt
   let hasWorked = false;
   let punctualityNode = null;
   let scheduleNode = <span className="text-slate-400">-</span>;
+  let isOvertime = false;
+  let overtimeMs = 0;
+  let overtimeStr = '';
 
   if (emp.scheduled_start_time && emp.scheduled_end_time) {
     scheduleNode = (
@@ -1538,6 +1548,39 @@ function LiveShiftRow({ indexNumber, emp, isPresent, isOut, hasHistory, onOpenSt
         );
       }
     }
+
+    // Calcul Peste Program (Overtime)
+    if (emp.scheduled_end_time) {
+      const [endH, endM] = emp.scheduled_end_time.split(':').map(Number);
+      const [startH, startM] = (emp.scheduled_start_time || '00:00').split(':').map(Number);
+      const scheduledEndDate = new Date(inTime);
+      scheduledEndDate.setHours(endH, endM, 0, 0);
+
+      if (endH < startH || (endH === startH && endM < startM)) {
+        scheduledEndDate.setDate(scheduledEndDate.getDate() + 1);
+      }
+
+      const activeEndTime = isPresent ? now : (isOut && isToday && (emp.last_scan_time || emp.last_out_time) ? new Date(emp.last_scan_time || emp.last_out_time) : null);
+
+      if (activeEndTime && activeEndTime.getTime() > scheduledEndDate.getTime() + 60000) {
+        isOvertime = true;
+        overtimeMs = activeEndTime.getTime() - scheduledEndDate.getTime();
+      }
+    } else if (hasWorked && diffMs > 8 * 3600000 + 60000) {
+      isOvertime = true;
+      overtimeMs = diffMs - 8 * 3600000;
+    }
+
+    if (isOvertime && overtimeMs > 0) {
+      const otTotalMinutes = Math.floor(overtimeMs / 60000);
+      const otH = Math.floor(otTotalMinutes / 60);
+      const otM = otTotalMinutes % 60;
+      if (otH > 0) {
+        overtimeStr = `+${otH}h ${otM > 0 ? `${otM}m` : ''}`.trim();
+      } else {
+        overtimeStr = `+${otM}m`;
+      }
+    }
   }
 
   const hhStr = String(diffHrs).padStart(2, '0');
@@ -1599,38 +1642,75 @@ function LiveShiftRow({ indexNumber, emp, isPresent, isOut, hasHistory, onOpenSt
       <span className="whitespace-nowrap">Închide manual</span>
     </button>
   ) : isPresent ? (
-    <span 
-      className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60 whitespace-nowrap shrink-0 shadow-2xs font-mono tabular-nums"
-      title={`În tură (pontat azi la ${presenceDate ? presenceDate.toLocaleTimeString('ro-RO', {hour: '2-digit', minute:'2-digit'}) : ''})`}
-    >
-      <span className="relative flex h-2 w-2 shrink-0 items-center justify-center">
-        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500 animate-live-blink" />
-      </span>
-      <span className="whitespace-nowrap tracking-wide flex items-center">
-        <span>{hhStr}</span>
-        <span className="animate-colon-blink font-bold inline-block mx-[1px] select-none text-emerald-600 dark:text-emerald-400">:</span>
-        <span>{mmStr}</span>
-        <span className="animate-colon-blink font-bold inline-block mx-[1px] select-none text-emerald-600 dark:text-emerald-400">:</span>
-        <span>{ssStr}</span>
-      </span>
-    </span>
+    isOvertime ? (
+      /* Peste Program */
+      <div 
+        className="flex items-center gap-1.5 text-xs font-bold leading-tight whitespace-nowrap"
+        title={`În tură - Peste program (${overtimeStr})`}
+      >
+        <span className="relative flex h-2 w-2 shrink-0 items-center justify-center">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-500 animate-live-blink" />
+        </span>
+        <span className="whitespace-nowrap flex items-center text-slate-800 dark:text-white">
+          <span>{hhStr}</span>
+          <span className="animate-colon-blink font-bold text-amber-600 dark:text-amber-400">:</span>
+          <span>{mmStr}</span>
+          <span className="animate-colon-blink font-bold text-amber-600 dark:text-amber-400">:</span>
+          <span>{ssStr}</span>
+        </span>
+        <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400">
+          ({overtimeStr})
+        </span>
+      </div>
+    ) : (
+      /* În Program */
+      <div 
+        className="flex items-center gap-1.5 text-xs font-bold leading-tight whitespace-nowrap"
+        title={`În tură (pontat azi la ${presenceDate ? presenceDate.toLocaleTimeString('ro-RO', {hour: '2-digit', minute:'2-digit'}) : ''})`}
+      >
+        <span className="relative flex h-2 w-2 shrink-0 items-center justify-center">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500 animate-live-blink" />
+        </span>
+        <span className="whitespace-nowrap flex items-center text-slate-800 dark:text-white">
+          <span>{hhStr}</span>
+          <span className="animate-colon-blink font-bold text-emerald-600 dark:text-emerald-400">:</span>
+          <span>{mmStr}</span>
+          <span className="animate-colon-blink font-bold text-emerald-600 dark:text-emerald-400">:</span>
+          <span>{ssStr}</span>
+        </span>
+      </div>
+    )
   ) : isOut && hasWorked ? (
-    <span 
-      className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700 whitespace-nowrap shrink-0 font-mono tabular-nums"
-      title={`Tură finalizată (total: ${hhStr}:${mmStr}:${ssStr})`}
-    >
-      <span className="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0" />
-      <span className="whitespace-nowrap tracking-wide">{hhStr}:{mmStr}:{ssStr}</span>
-    </span>
+    isOvertime ? (
+      <div 
+        className="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 leading-tight whitespace-nowrap"
+        title={`Tură finalizată peste program (total: ${hhStr}:${mmStr}:${ssStr}, depășire: ${overtimeStr})`}
+      >
+        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+        <span className="whitespace-nowrap">{hhStr}:{mmStr}:{ssStr}</span>
+        <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400">
+          ({overtimeStr})
+        </span>
+      </div>
+    ) : (
+      <div 
+        className="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 leading-tight whitespace-nowrap"
+        title={`Tură finalizată (total: ${hhStr}:${mmStr}:${ssStr})`}
+      >
+        <span className="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0" />
+        <span className="whitespace-nowrap">{hhStr}:{mmStr}:{ssStr}</span>
+      </div>
+    )
   ) : (
-    <span 
-      className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200/60 dark:border-rose-800/60 whitespace-nowrap shrink-0 font-mono tabular-nums"
+    <div 
+      className="flex items-center gap-1.5 text-xs font-bold text-slate-400 dark:text-slate-500 leading-tight whitespace-nowrap"
       title="Fără pontaj înregistrat azi"
     >
-      <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
-      <span className="whitespace-nowrap tracking-wide">00:00:00</span>
-    </span>
+      <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-600 shrink-0" />
+      <span className="whitespace-nowrap">00:00:00</span>
+    </div>
   );
 
   const isNightShift = (() => {
@@ -1653,15 +1733,19 @@ function LiveShiftRow({ indexNumber, emp, isPresent, isOut, hasHistory, onOpenSt
     return false;
   })();
 
-  const shiftTypeNode = isNightShift ? (
-    <div className="flex items-center gap-1 text-[11px] font-medium text-slate-800 dark:text-slate-200 mt-0.5 leading-tight whitespace-nowrap">
-      <Moon size={11} className="shrink-0 text-indigo-500" />
-      <span className="whitespace-nowrap">Tură de noapte</span>
-    </div>
-  ) : (
-    <div className="flex items-center gap-1 text-[11px] font-medium text-slate-800 dark:text-slate-200 mt-0.5 leading-tight whitespace-nowrap">
-      <Sun size={11} className="shrink-0 text-amber-500" />
-      <span className="whitespace-nowrap">Tură de zi</span>
+  const shiftTypeNode = (
+    <div className="flex items-center gap-1 text-[11px] font-medium text-slate-700 dark:text-slate-300 mt-0.5 leading-tight whitespace-nowrap">
+      {isNightShift ? (
+        <>
+          <Moon size={11} className="shrink-0 text-indigo-500" />
+          <span className="whitespace-nowrap">Tură de noapte</span>
+        </>
+      ) : (
+        <>
+          <Sun size={11} className="shrink-0 text-amber-500" />
+          <span className="whitespace-nowrap">Tură de zi</span>
+        </>
+      )}
     </div>
   );
 

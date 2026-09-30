@@ -381,7 +381,7 @@ export default function ScanScreen() {
               <span className="flex items-center gap-1.5 font-medium">
                 <Clock size={14} className="text-slate-400 shrink-0" /> Ora exactă:
               </span>
-              <strong className="text-slate-900 dark:text-white font-mono text-sm font-black">{timeFormatted}</strong>
+              <strong className="text-slate-900 dark:text-white text-sm font-bold tabular-nums tracking-tight">{timeFormatted}</strong>
             </div>
 
             <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
@@ -403,7 +403,7 @@ export default function ScanScreen() {
             {scanDetails.timesheetId && (
               <div className="pt-2 border-t border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between text-[11px] text-slate-400">
                 <span>Certificare electronică:</span>
-                <span className="font-mono font-bold text-slate-600 dark:text-slate-300">#PNT-{scanDetails.timesheetId}</span>
+                <span className="font-bold text-slate-600 dark:text-slate-300 tabular-nums">#PNT-{scanDetails.timesheetId}</span>
               </div>
             )}
           </div>

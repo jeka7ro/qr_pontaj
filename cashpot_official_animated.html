@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CASHPOT - Animație Oficială de Lux</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: radial-gradient(circle at center, #11091f 0%, #06030c 60%, #020104 100%);
+      color: #fff;
+      font-family: 'Montserrat', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow-x: hidden;
+      padding: 20px;
+    }
+
+    /* Iluminare ambientală profundă în spate */
+    .ambient-light {
+      position: absolute;
+      width: 800px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(230, 165, 40, 0.16) 0%, rgba(200, 120, 10, 0.05) 50%, transparent 75%);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      filter: blur(50px);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .container {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      max-width: 1000px;
+    }
+
+    /* Scena în care plutește logo-ul */
+    .logo-stage {
+      width: 100%;
+      max-width: 900px;
+      background: rgba(18, 12, 28, 0.55);
+      border: 1px solid rgba(230, 165, 40, 0.22);
+      border-radius: 28px;
+      padding: 80px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 30px 90px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(20px);
+      margin-bottom: 30px;
+      position: relative;
+    }
+
+    /* --- SISTEMUL DE ANIMAȚIE DE LUX PENTRU LOGO-UL TĂU --- */
+    .cashpot-anim-container {
+      position: relative;
+      display: inline-block;
+      animation: cashpotFloat 6s ease-in-out infinite;
+    }
+
+    /* Imaginea originală cu drop-shadow cald animat */
+    .cashpot-logo-img {
+      display: block;
+      width: 100%;
+      max-width: 620px;
+      height: auto;
+      filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.8)) 
+              drop-shadow(0 0 25px rgba(224, 158, 36, 0.35));
+      animation: auraPulse 4s ease-in-out infinite alternate;
+      user-select: none;
+    }
+
+    /* Stratul de strălucire (Shimmer) decupat EXACT pe conturul literelor logo-ului */
+    .shimmer-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      /* Masca CSS taie fasciculul exact pe forma literelor tale! */
+      -webkit-mask-image: url('cashpot_real_logo.png');
+      -webkit-mask-size: contain;
+      -webkit-mask-repeat: no-repeat;
+      -webkit-mask-position: center;
+      mask-image: url('cashpot_real_logo.png');
+      mask-size: contain;
+      mask-repeat: no-repeat;
+      mask-position: center;
+      overflow: hidden;
+    }
+
+    /* Fasciculul de lumină fin care alunecă lent */
+    .shimmer-beam {
+      position: absolute;
+      top: -20%;
+      left: -120%;
+      width: 60%;
+      height: 140%;
+      background: linear-gradient(
+        105deg,
+        transparent 20%,
+        rgba(255, 255, 255, 0.1) 40%,
+        rgba(255, 255, 255, 0.85) 50%,
+        rgba(255, 255, 255, 0.1) 60%,
+        transparent 80%
+      );
+      transform: skewX(-20deg);
+      animation: shimmerGlide 5s infinite cubic-bezier(0.4, 0, 0.2, 1);
+      mix-blend-mode: overlay;
+    }
+
+    /* Steluță discretă de sclipire pe inima neagră / pica din litera O */
+    .sparkle-star {
+      position: absolute;
+      top: 42%;
+      left: 70.5%; /* Poziția exactă a simbolului pică din litera O */
+      width: 18px;
+      height: 18px;
+      pointer-events: none;
+      transform: translate(-50%, -50%);
+      animation: starTwinkle 5s infinite ease-in-out;
+    }
+
+    .sparkle-star::before,
+    .sparkle-star::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #ffffff;
+      box-shadow: 0 0 12px #ffe066, 0 0 25px #ffb300;
+      border-radius: 50%;
+    }
+
+    .sparkle-star::before {
+      width: 100%;
+      height: 2px;
+    }
+
+    .sparkle-star::after {
+      width: 2px;
+      height: 100%;
+    }
+
+    /* --- KEYFRAMES --- */
+
+    /* 1. Plutire fină, lentă */
+    @keyframes cashpotFloat {
+      0%, 100% {
+        transform: translateY(0px) rotate(0deg);
+      }
+      50% {
+        transform: translateY(-8px) rotate(0.4deg);
+      }
+    }
+
+    /* 2. Respirația aurei aurii din spatele logo-ului */
+    @keyframes auraPulse {
+      0% {
+        filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.8)) 
+                drop-shadow(0 0 15px rgba(224, 158, 36, 0.25));
+      }
+      100% {
+        filter: drop-shadow(0 12px 25px rgba(0, 0, 0, 0.9)) 
+                drop-shadow(0 0 35px rgba(255, 191, 54, 0.65));
+      }
+    }
+
+    /* 3. Trecerea fasciculului de lumină */
+    @keyframes shimmerGlide {
+      0%, 25% {
+        left: -120%;
+        opacity: 0;
+      }
+      30% {
+        opacity: 1;
+      }
+      55%, 100% {
+        left: 180%;
+        opacity: 0;
+      }
+    }
+
+    /* 4. Sclipirea discretă a simbolului pică */
+    @keyframes starTwinkle {
+      0%, 45% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.2) rotate(0deg);
+      }
+      52% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.3) rotate(90deg);
+      }
+      60%, 100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.2) rotate(180deg);
+      }
+    }
+
+    /* --- BUTOANE DE PREVIZUALIZARE --- */
+    .controls {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 12px 24px;
+      border-radius: 50px;
+    }
+
+    .btn-bg {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .btn-bg:hover {
+      transform: scale(1.15);
+      border-color: #ffd700;
+    }
+
+    .bg-1 { background: #06030c; }
+    .bg-2 { background: #080f1d; }
+    .bg-3 { background: #02120b; }
+    .bg-4 { background: #14081c; }
+
+    .code-box {
+      margin-top: 30px;
+      width: 100%;
+      max-width: 900px;
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 20px;
+      font-family: monospace;
+      font-size: 0.85rem;
+      color: #ffd700;
+      white-space: pre-wrap;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="ambient-light"></div>
+
+  <div class="container">
+    
+    <div class="logo-stage">
+      
+      <!-- LOGO-UL TĂU ORIGINAL CU ANIMAȚIE DE LUX -->
+      <div class="cashpot-anim-container">
+        <!-- 1. Logo-ul tău fizic, fără nicio modificare la grafică -->
+        <img src="cashpot_real_logo.png" alt="CASHPOT" class="cashpot-logo-img" />
+
+        <!-- 2. Mască CSS pentru fasciculul de lumină pe forma exactă a literelor -->
+        <div class="shimmer-layer">
+          <div class="shimmer-beam"></div>
+        </div>
+
+        <!-- 3. Steluță de sclipire pe inima neagră/pica din litera O -->
+        <div class="sparkle-star"></div>
+      </div>
+
+    </div>
+
+    <div class="controls">
+      <span style="font-size: 0.85rem; color: #888;">Schimbă tema fundalului:</span>
+      <button class="btn-bg bg-1" title="Obsidian Negru" onclick="document.body.style.background = '#06030c'"></button>
+      <button class="btn-bg bg-2" title="Bleumarin Casino" onclick="document.body.style.background = '#080f1d'"></button>
+      <button class="btn-bg bg-3" title="Smarald VIP" onclick="document.body.style.background = '#02120b'"></button>
+      <button class="btn-bg bg-4" title="Dark Velvet" onclick="document.body.style.background = '#14081c'"></button>
+    </div>
+
+  </div>
+
+</body>
+</html>

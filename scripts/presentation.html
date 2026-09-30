@@ -1,0 +1,1326 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <title>Prezentare Comercială - QR Pontaj Digital</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    @page {
+      size: A4 portrait;
+      margin: 0;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: #1e293b;
+      background: #f1f5f9;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .page {
+      width: 210mm;
+      height: 297mm;
+      position: relative;
+      background: #ffffff;
+      padding: 18mm 20mm;
+      page-break-after: always;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .page:last-child {
+      page-break-after: avoid;
+    }
+
+    /* Page Header */
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 4mm;
+      border-bottom: 1.5px solid #e2e8f0;
+      margin-bottom: 5mm;
+    }
+
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .logo-badge {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #0f172a, #1e293b);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #10b981;
+      font-weight: 800;
+      font-size: 13px;
+    }
+
+    .brand-text {
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: -0.2px;
+      color: #0f172a;
+    }
+
+    .brand-text span {
+      color: #059669;
+    }
+
+    .header-tag {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #64748b;
+      background: #f8fafc;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      border: 1px solid #e2e8f0;
+    }
+
+    /* Page Footer */
+    .page-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 4mm;
+      border-top: 1px solid #e2e8f0;
+      font-size: 10px;
+      color: #94a3b8;
+      font-weight: 500;
+    }
+
+    .page-footer a {
+      color: #059669;
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    /* Common Typography */
+    h1, h2, h3, h4 {
+      letter-spacing: -0.5px;
+      color: #0f172a;
+    }
+
+    .section-eyebrow {
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: #059669;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .section-title {
+      font-size: 24px;
+      font-weight: 800;
+      line-height: 1.2;
+      color: #0f172a;
+      margin-bottom: 6px;
+    }
+
+    .section-desc {
+      font-size: 12.5px;
+      color: #64748b;
+      line-height: 1.5;
+      margin-bottom: 6mm;
+    }
+
+    /* COVER PAGE */
+    .cover-page {
+      background: linear-gradient(150deg, #090e17 0%, #0f172a 45%, #1e293b 100%);
+      color: #ffffff;
+      padding: 22mm 22mm 18mm 22mm;
+    }
+
+    .cover-page .page-header {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .cover-page .brand-text {
+      color: #ffffff;
+    }
+
+    .cover-page .header-tag {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.15);
+      color: #34d399;
+    }
+
+    .cover-badge-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .pill-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      padding: 5px 12px;
+      border-radius: 9999px;
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .pill-badge.neutral {
+      background: rgba(255, 255, 255, 0.08);
+      color: #cbd5e1;
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .cover-hero-title {
+      font-size: 38px;
+      font-weight: 800;
+      line-height: 1.12;
+      color: #ffffff;
+      margin-bottom: 14px;
+      letter-spacing: -1px;
+    }
+
+    .cover-hero-title span {
+      background: linear-gradient(120deg, #34d399, #10b981);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .cover-lead {
+      font-size: 14.5px;
+      color: #94a3b8;
+      line-height: 1.6;
+      max-width: 580px;
+      margin-bottom: 8mm;
+    }
+
+    .cover-client-card {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 14px;
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8mm;
+      backdrop-filter: blur(10px);
+    }
+
+    .client-info h4 {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #64748b;
+      margin-bottom: 4px;
+    }
+
+    .client-info p {
+      font-size: 16px;
+      font-weight: 800;
+      color: #f8fafc;
+    }
+
+    .client-meta {
+      text-align: right;
+      font-size: 11px;
+      color: #94a3b8;
+    }
+
+    .cover-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 8mm;
+    }
+
+    .cover-stat-box {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 14px;
+      text-align: center;
+    }
+
+    .stat-val {
+      font-size: 24px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 4px;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+
+    .stat-val.accent {
+      color: #34d399;
+    }
+
+    .stat-lbl {
+      font-size: 10.5px;
+      color: #94a3b8;
+      font-weight: 600;
+      line-height: 1.3;
+    }
+
+    /* COMPARISON CARDS (Page 2) */
+    .comparison-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 6mm;
+    }
+
+    .compare-card {
+      border-radius: 14px;
+      padding: 16px;
+      height: 100%;
+      border: 1.5px solid;
+    }
+
+    .compare-card.problem {
+      background: #fff1f2;
+      border-color: #fecdd3;
+    }
+
+    .compare-card.solution {
+      background: #ecfdf5;
+      border-color: #a7f3d0;
+    }
+
+    .card-header-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 12px;
+      padding: 4px 10px;
+      border-radius: 8px;
+    }
+
+    .compare-card.problem .card-header-badge {
+      background: #ffe4e6;
+      color: #e11d48;
+    }
+
+    .compare-card.solution .card-header-badge {
+      background: #d1fae5;
+      color: #059669;
+    }
+
+    .compare-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 11px;
+    }
+
+    .compare-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 9px;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .compare-card.problem .compare-item {
+      color: #881337;
+    }
+
+    .compare-card.solution .compare-item {
+      color: #064e3b;
+    }
+
+    .compare-item .icon {
+      font-weight: 800;
+      font-size: 13px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    /* THREE MODES (Page 3) */
+    .modes-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-bottom: 6mm;
+    }
+
+    .mode-card {
+      background: #ffffff;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .mode-card-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .mode-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: #f1f5f9;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 14px;
+    }
+
+    .mode-icon.emerald {
+      background: #ecfdf5;
+      color: #059669;
+    }
+
+    .mode-icon.blue {
+      background: #eff6ff;
+      color: #2563eb;
+    }
+
+    .mode-icon.amber {
+      background: #fffbeb;
+      color: #d97706;
+    }
+
+    .mode-title {
+      font-size: 13px;
+      font-weight: 800;
+      color: #0f172a;
+      line-height: 1.25;
+    }
+
+    .mode-body {
+      font-size: 11.5px;
+      color: #475569;
+      line-height: 1.5;
+      margin-bottom: 12px;
+    }
+
+    .mode-badge {
+      display: inline-block;
+      font-size: 9.5px;
+      font-weight: 700;
+      color: #64748b;
+      background: #f8fafc;
+      padding: 3px 8px;
+      border-radius: 6px;
+      border: 1px solid #e2e8f0;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* MOCKUP CONTAINER */
+    .mockup-frame {
+      background: #f8fafc;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 14px;
+      padding: 14px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+      margin-bottom: 5mm;
+    }
+
+    .mockup-header-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #e2e8f0;
+      margin-bottom: 12px;
+    }
+
+    .dots-row {
+      display: flex;
+      gap: 5px;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #cbd5e1;
+    }
+
+    .dot.red { background: #fca5a5; }
+    .dot.yellow { background: #fde047; }
+    .dot.green { background: #86efac; }
+
+    .mockup-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: #64748b;
+    }
+
+    /* TABLE IN MOCKUP */
+    .mock-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+    }
+
+    .mock-table th {
+      text-align: left;
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #64748b;
+      padding: 6px 10px;
+      border-bottom: 1.5px solid #e2e8f0;
+      background: #ffffff;
+    }
+
+    .mock-table td {
+      padding: 8px 10px;
+      border-bottom: 1px solid #f1f5f9;
+      color: #1e293b;
+      vertical-align: middle;
+      background: #ffffff;
+    }
+
+    .status-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 7px;
+      border-radius: 9999px;
+      font-size: 10px;
+      font-weight: 800;
+    }
+
+    .status-tag.in {
+      background: #ecfdf5;
+      color: #059669;
+    }
+
+    .status-tag.out {
+      background: #fff1f2;
+      color: #e11d48;
+    }
+
+    .tag-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    /* 4 KEY PILLARS (Page 5) */
+    .pillars-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 6mm;
+    }
+
+    .pillar-box {
+      border: 1.5px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 15px;
+      background: #ffffff;
+    }
+
+    .pillar-box h4 {
+      font-size: 13px;
+      font-weight: 800;
+      color: #0f172a;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .pillar-box p {
+      font-size: 11.5px;
+      color: #64748b;
+      line-height: 1.5;
+    }
+
+    /* HIGHLIGHT BANNER */
+    .highlight-banner {
+      background: linear-gradient(135deg, #047857 0%, #065f46 100%);
+      color: #ffffff;
+      padding: 16px 20px;
+      border-radius: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 5mm;
+    }
+
+    .highlight-banner h3 {
+      color: #ffffff;
+      font-size: 15px;
+      font-weight: 800;
+      margin-bottom: 3px;
+    }
+
+    .highlight-banner p {
+      color: #a7f3d0;
+      font-size: 11.5px;
+      line-height: 1.4;
+    }
+
+    .highlight-btn {
+      background: #ffffff;
+      color: #065f46;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 8px 16px;
+      border-radius: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+
+    /* PRICING & TIERS (Page 6) */
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 6mm;
+    }
+
+    .pricing-card {
+      border: 1.5px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 16px;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+    }
+
+    .pricing-card.featured {
+      border-color: #10b981;
+      background: #f0fdf4;
+      box-shadow: 0 8px 20px rgba(16, 185, 129, 0.1);
+    }
+
+    .featured-ribbon {
+      position: absolute;
+      top: -10px;
+      right: 14px;
+      background: #059669;
+      color: #ffffff;
+      font-size: 9px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      padding: 3px 10px;
+      border-radius: 9999px;
+    }
+
+    .tier-name {
+      font-size: 14px;
+      font-weight: 800;
+      color: #0f172a;
+      margin-bottom: 4px;
+    }
+
+    .tier-desc {
+      font-size: 10.5px;
+      color: #64748b;
+      margin-bottom: 10px;
+      line-height: 1.35;
+    }
+
+    .tier-price {
+      font-size: 22px;
+      font-weight: 800;
+      color: #0f172a;
+      font-family: 'Space Grotesk', sans-serif;
+      margin-bottom: 12px;
+    }
+
+    .tier-price span {
+      font-size: 11px;
+      font-weight: 600;
+      color: #64748b;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    .tier-features {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      font-size: 11px;
+      color: #334155;
+      padding-top: 10px;
+      border-top: 1px solid #e2e8f0;
+    }
+
+    .tier-features li {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .check-icon {
+      color: #059669;
+      font-weight: 800;
+      font-size: 12px;
+    }
+
+    /* FINAL CONTACT / STEPS */
+    .steps-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 6mm;
+    }
+
+    .step-box {
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 14px;
+      background: #f8fafc;
+      position: relative;
+    }
+
+    .step-num {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #0f172a;
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 8px;
+    }
+
+    .step-box h4 {
+      font-size: 12px;
+      font-weight: 800;
+      color: #0f172a;
+      margin-bottom: 4px;
+    }
+
+    .step-box p {
+      font-size: 10.5px;
+      color: #64748b;
+      line-height: 1.4;
+    }
+
+    .contact-box {
+      background: #0f172a;
+      color: #ffffff;
+      border-radius: 14px;
+      padding: 18px 22px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .contact-left h3 {
+      color: #ffffff;
+      font-size: 16px;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .contact-left p {
+      font-size: 11.5px;
+      color: #94a3b8;
+    }
+
+    .contact-right {
+      text-align: right;
+      font-size: 12px;
+      color: #cbd5e1;
+      line-height: 1.6;
+    }
+
+    .contact-right strong {
+      color: #34d399;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==================== PAGINA 1: COPERTĂ ==================== -->
+  <div class="page cover-page">
+    <div class="page-header">
+      <div class="brand-logo">
+        <div class="logo-badge" style="background: #10b981; color: #0f172a;">QR</div>
+        <div class="brand-text">PONTAJ<span>DIGITAL</span></div>
+      </div>
+      <div class="header-tag">EDIȚIE COMERCIALĂ 2026</div>
+    </div>
+
+    <div style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
+      <div class="cover-badge-row">
+        <span class="pill-badge">Conformitate Codul Muncii (Art. 119)</span>
+        <span class="pill-badge neutral">GDPR Compliant</span>
+        <span class="pill-badge neutral">Compatibil SAGA</span>
+      </div>
+
+      <h1 class="cover-hero-title">
+        Evidența Orelor de Muncă.<br>
+        <span>100% Digitală, Rapidă și Sigură.</span>
+      </h1>
+
+      <p class="cover-lead">
+        Platforma SaaS modernă pentru companii din România care elimină condica pe hârtie, reduce frauda de prezență și automatizează calculul de salarii pentru 5 până la 5.000 de angajați.
+      </p>
+
+      <div class="cover-client-card">
+        <div class="client-info">
+          <h4>Propunere Tehnică & Comercială Pregătită Pentru</h4>
+          <p>NEXUS BUSINESS GROUP S.R.L.</p>
+        </div>
+        <div class="client-meta">
+          <div>Valabilitate Ofertă: 30 Zile</div>
+          <div style="color: #34d399; font-weight: 700; margin-top: 2px;">Trial Gratuit 14 Zile Inclus</div>
+        </div>
+      </div>
+
+      <div class="cover-stats-grid">
+        <div class="cover-stat-box">
+          <div class="stat-val accent">&lt; 2s</div>
+          <div class="stat-lbl">Timp mediu de scanare per angajat</div>
+        </div>
+        <div class="cover-stat-box">
+          <div class="stat-val">100%</div>
+          <div class="stat-lbl">Conformitate cerințe legale ITM</div>
+        </div>
+        <div class="cover-stat-box">
+          <div class="stat-val accent">-85%</div>
+          <div class="stat-lbl">Timp economisit la calculul salariilor</div>
+        </div>
+        <div class="cover-stat-box">
+          <div class="stat-val">0 Lei</div>
+          <div class="stat-lbl">Costuri cu echipamente scumpe dedicate</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-footer" style="border-color: rgba(255,255,255,0.1); color: #64748b;">
+      <div>Platformă Cloud Multi-Tenant | Securitate Bancară SSL</div>
+      <div>Pagina 1 / 6</div>
+    </div>
+  </div>
+
+
+  <!-- ==================== PAGINA 2: DE CE QR PONTAJ? ==================== -->
+  <div class="page">
+    <div class="page-header">
+      <div class="brand-logo">
+        <div class="logo-badge">QR</div>
+        <div class="brand-text">PONTAJ<span>DIGITAL</span></div>
+      </div>
+      <div class="header-tag">01. PROVOCĂRI VS SOLUȚII</div>
+    </div>
+
+    <div>
+      <div class="section-eyebrow">Digitalizare Fără Complicații</div>
+      <h2 class="section-title">De ce sistemele clasice eșuează?</h2>
+      <p class="section-desc">
+        Condica de prezență pe hârtie și cartelele magnetice provoacă pierderi financiare ascunse, erori de calcul și riscuri uriașe de amenzi în fața inspectorilor ITM.
+      </p>
+
+      <div class="comparison-grid">
+        <!-- Probleme -->
+        <div class="compare-card problem">
+          <div class="card-header-badge">Sistemele Tradiționale (Hârtie / Cartele)</div>
+          <ul class="compare-list">
+            <li class="compare-item">
+              <span class="icon">&#10005;</span>
+              <span><strong>Pontaj retroactiv fictiv:</strong> Angajații semnează condica la grămadă la sfârșitul lunii, fără ore reale de sosire sau plecare.</span>
+            </li>
+            <li class="compare-item">
+              <span class="icon">&#10005;</span>
+              <span><strong>Frauda cartelelor („Buddy Punching”):</strong> Un angajat poate ponta cu cartela altui coleg fără ca nimeni să observe.</span>
+            </li>
+            <li class="compare-item">
+              <span class="icon">&#10005;</span>
+              <span><strong>Risc major de amenzi ITM:</strong> Art. 119 din Codul Muncii sancționează aspru neevidențierea orelor exacte de sosire și plecare.</span>
+            </li>
+            <li class="compare-item">
+              <span class="icon">&#10005;</span>
+              <span><strong>Ore pierdute de contabilitate:</strong> Adunarea manuală a orelor suplimentare, de noapte și de weekend consumă zile întregi lunar.</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Soluția Noastră -->
+        <div class="compare-card solution">
+          <div class="card-header-badge">Soluția QR Pontaj Digital</div>
+          <ul class="compare-list">
+            <li class="compare-item">
+              <span class="icon">&#10003;</span>
+              <span><strong>Timestamp criptat în timp real:</strong> Fiecare scanare înregistrează secunda exactă prin server de timp sincronizat.</span>
+            </li>
+            <li class="compare-item">
+              <span class="icon">&#10003;</span>
+              <span><strong>Cod QR Dinamic & PIN securizat:</strong> Codul QR afișat se regenerează periodic, făcând imposibilă trimiterea pozelor între colegi.</span>
+            </li>
+            <li class="compare-item">
+              <span class="icon">&#10003;</span>
+              <span><strong>Jurnal de audit și rapoarte conforme ITM:</strong> Orice modificare manuală a administratorului este înregistrată cu motiv și autor.</span>
+            </li>
+            <li class="compare-item">
+              <span class="icon">&#10003;</span>
+              <span><strong>Export instant 1-Click:</strong> Fișiere gata structurate pentru import direct în SAGA, Excel sau PDF de semnat.</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="highlight-banner">
+        <div>
+          <h3>Codul Muncii (Art. 119) impune evidența strictă a orelor!</h3>
+          <p>„Angajatorul are obligația de a ține la locul de muncă evidența orelor de muncă prestate zilnic de fiecare salariat, cu evidențierea orelor de începere și de sfârșit ale programului de lucru.”</p>
+        </div>
+        <div class="highlight-btn">100% Conform</div>
+      </div>
+    </div>
+
+    <div class="page-footer">
+      <div>Prezentare Comercială | QR Pontaj Digital</div>
+      <div>Pagina 2 / 6</div>
+    </div>
+  </div>
+
+
+  <!-- ==================== PAGINA 3: CUM FUNCȚIONEAZĂ? ==================== -->
+  <div class="page">
+    <div class="page-header">
+      <div class="brand-logo">
+        <div class="logo-badge">QR</div>
+        <div class="brand-text">PONTAJ<span>DIGITAL</span></div>
+      </div>
+      <div class="header-tag">02. MODALITĂȚI DE SCANARE</div>
+    </div>
+
+    <div>
+      <div class="section-eyebrow">Flexibilitate Totală de Hardware</div>
+      <h2 class="section-title">3 Moduri de Pontare pentru Orice Punct de Lucru</h2>
+      <p class="section-desc">
+        Nu aveți nevoie de dispozitive biometrice scumpe. Aplicația rulează pe orice tabletă comercială (iPad sau Android), telefon inteligent sau PC de recepție.
+      </p>
+
+      <div class="modes-grid">
+        <!-- Modul 1 -->
+        <div class="mode-card">
+          <div>
+            <div class="mode-card-header">
+              <div class="mode-icon emerald">1</div>
+              <div class="mode-title">Kiosk la Intrare<br>(Scan cu Telefonul)</div>
+            </div>
+            <p class="mode-body">
+              Tableta montată pe perete la intrare generează un <strong>cod QR dinamic</strong> la fiecare câteva secunde. Angajatul deschide camera telefonului personal și este pontat instant.
+            </p>
+          </div>
+          <div>
+            <span class="mode-badge">Cel mai popular</span>
+          </div>
+        </div>
+
+        <!-- Modul 2 -->
+        <div class="mode-card">
+          <div>
+            <div class="mode-card-header">
+              <div class="mode-icon blue">2</div>
+              <div class="mode-title">Kiosk cu Cameră<br>(Ecuson sau PIN)</div>
+            </div>
+            <p class="mode-body">
+              Angajatul își apropie ecusonul cu QR la camera tabletei, sau tastează <strong>Codul de Angajat și PIN-ul de 4 cifre</strong> direct pe ecranul tactil.
+            </p>
+          </div>
+          <div>
+            <span class="mode-badge">Fără telefon personal</span>
+          </div>
+        </div>
+
+        <!-- Modul 3 -->
+        <div class="mode-card">
+          <div>
+            <div class="mode-card-header">
+              <div class="mode-icon amber">3</div>
+              <div class="mode-title">Portal Mobil &<br>Pontaj GPS Teren</div>
+            </div>
+            <p class="mode-body">
+              Pentru agenți comerciali, curieri sau șantiere: pontajul se realizează direct din telefonul angajatului, cu <strong>verificare de rază GPS (Geofence)</strong>.
+            </p>
+          </div>
+          <div>
+            <span class="mode-badge">Pentru echipe mobile</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mockup Kiosk Screen -->
+      <div class="mockup-frame">
+        <div class="mockup-header-bar">
+          <div class="dots-row">
+            <div class="dot red"></div>
+            <div class="dot yellow"></div>
+            <div class="dot green"></div>
+          </div>
+          <div class="mockup-title">Interfață Kiosk Tabletă - Punct de Lucru: Showroom & Birouri Nord</div>
+          <div style="font-size: 10px; font-weight: 700; color: #059669;">LIVE SSE STREAMING</div>
+        </div>
+
+        <div style="display: flex; gap: 20px; align-items: center; padding: 10px 14px; background: #ffffff; border-radius: 10px;">
+          <div style="width: 100px; height: 100px; background: #f8fafc; border: 1.5px dashed #cbd5e1; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+            <div style="font-size: 28px; font-weight: 800; color: #0f172a;">[QR]</div>
+            <div style="font-size: 9px; color: #64748b; font-weight: 700; margin-top: 2px;">Token Dinamic</div>
+          </div>
+          <div style="flex: 1;">
+            <div style="font-size: 13px; font-weight: 800; color: #0f172a; margin-bottom: 3px;">Bun venit la NEXUS BUSINESS GROUP</div>
+            <div style="font-size: 11px; color: #64748b; line-height: 1.4; margin-bottom: 8px;">Apropiați telefonul sau ecusonul pentru înregistrarea sosirii sau plecării. Confirmare audio-vizuală în 0.8 secunde.</div>
+            <div style="display: flex; gap: 8px;">
+              <span style="font-size: 9.5px; background: #ecfdf5; color: #059669; font-weight: 700; padding: 3px 8px; border-radius: 6px;">Protectie anti-dublu scan (60s)</span>
+              <span style="font-size: 9.5px; background: #eff6ff; color: #2563eb; font-weight: 700; padding: 3px 8px; border-radius: 6px;">Offline Resilience</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-footer">
+      <div>Prezentare Comercială | QR Pontaj Digital</div>
+      <div>Pagina 3 / 6</div>
+    </div>
+  </div>
+
+
+  <!-- ==================== PAGINA 4: PANOU ADMIN LIVE ==================== -->
+  <div class="page">
+    <div class="page-header">
+      <div class="brand-logo">
+        <div class="logo-badge">QR</div>
+        <div class="brand-text">PONTAJ<span>DIGITAL</span></div>
+      </div>
+      <div class="header-tag">03. PANOU DE CONTROL LIVE</div>
+    </div>
+
+    <div>
+      <div class="section-eyebrow">Control Total în Timp Real</div>
+      <h2 class="section-title">Panoul de Administrare: Cine e prezent chiar acum?</h2>
+      <p class="section-desc">
+        Managerii și administratorii au acces instantaneu de pe orice dispozitiv la situația tuturor punctelor de lucru: prezenți, absenți, întârzieri și totalul orelor lucrate.
+      </p>
+
+      <!-- Mockup Dashboard -->
+      <div class="mockup-frame">
+        <div class="mockup-header-bar">
+          <div class="dots-row">
+            <div class="dot red"></div>
+            <div class="dot yellow"></div>
+            <div class="dot green"></div>
+          </div>
+          <div class="mockup-title">Panou Administrator - NEXUS BUSINESS GROUP (Situație Live Angajați)</div>
+          <div style="font-size: 10px; font-weight: 700; color: #10b981;">AUTO-REFRESH 3s</div>
+        </div>
+
+        <!-- Metric mini-cards -->
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 12px;">
+          <div style="background: #ffffff; padding: 10px 12px; border-radius: 8px; border: 1px solid #e2e8f0;">
+            <div style="font-size: 9.5px; color: #64748b; font-weight: 700;">TOTAL ANGAJAȚI</div>
+            <div style="font-size: 18px; font-weight: 800; color: #0f172a; margin-top: 2px;">50</div>
+          </div>
+          <div style="background: #ecfdf5; padding: 10px 12px; border-radius: 8px; border: 1px solid #a7f3d0;">
+            <div style="font-size: 9.5px; color: #059669; font-weight: 700;">PREZENȚI ACUM</div>
+            <div style="font-size: 18px; font-weight: 800; color: #059669; margin-top: 2px;">46</div>
+          </div>
+          <div style="background: #ffffff; padding: 10px 12px; border-radius: 8px; border: 1px solid #e2e8f0;">
+            <div style="font-size: 9.5px; color: #64748b; font-weight: 700;">INTRĂRI ASTĂZI</div>
+            <div style="font-size: 18px; font-weight: 800; color: #0f172a; margin-top: 2px;">46</div>
+          </div>
+          <div style="background: #fff1f2; padding: 10px 12px; border-radius: 8px; border: 1px solid #fecdd3;">
+            <div style="font-size: 9.5px; color: #e11d48; font-weight: 700;">ABSENȚI / CONCEDII</div>
+            <div style="font-size: 18px; font-weight: 800; color: #e11d48; margin-top: 2px;">4</div>
+          </div>
+        </div>
+
+        <!-- Mini Live Table -->
+        <table class="mock-table">
+          <thead>
+            <tr>
+              <th>Angajat & Cod</th>
+              <th>Punct Lucru</th>
+              <th>Ora Intrării</th>
+              <th>Program</th>
+              <th>Timp Lucrat</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>ANDREI DANIEL S.</strong> <span style="font-size: 9px; color: #64748b;">#NEX001</span></td>
+              <td>Sediu Central</td>
+              <td>Azi, 08:55</td>
+              <td>09:00 - 17:00</td>
+              <td><strong>6h 15m</strong></td>
+              <td><span class="status-tag in"><span class="tag-dot"></span> Prezent</span></td>
+            </tr>
+            <tr>
+              <td><strong>IOANA-ANDREEA G.</strong> <span style="font-size: 9px; color: #64748b;">#NEX002</span></td>
+              <td>Showroom Nord</td>
+              <td>Azi, 09:02</td>
+              <td>09:00 - 17:00</td>
+              <td><strong>6h 08m</strong></td>
+              <td><span class="status-tag in"><span class="tag-dot"></span> Prezent</span></td>
+            </tr>
+            <tr>
+              <td><strong>MIHAI ALEXANDRU P.</strong> <span style="font-size: 9px; color: #64748b;">#NEX003</span></td>
+              <td>Depozit Vest</td>
+              <td>Azi, 08:30</td>
+              <td>08:30 - 16:30</td>
+              <td><strong>6h 40m</strong></td>
+              <td><span class="status-tag in"><span class="tag-dot"></span> Prezent</span></td>
+            </tr>
+            <tr>
+              <td><strong>ELENA CRISTINA M.</strong> <span style="font-size: 9px; color: #64748b;">#NEX004</span></td>
+              <td>Sediu Central</td>
+              <td>-</td>
+              <td>09:00 - 17:00</td>
+              <td>0h 00m</td>
+              <td><span class="status-tag out"><span class="tag-dot"></span> Concediu Odihnă</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="pillars-grid">
+        <div class="pillar-box">
+          <h4>Alertare Inteligentă Întârzieri</h4>
+          <p>Sistemul compară automat ora scanării cu programul de lucru alocat și semnalează întârzierile sau părăsirea timpurie a locului de muncă.</p>
+        </div>
+        <div class="pillar-box">
+          <h4>Închidere Colectivă la Final de Zi</h4>
+          <p>Un singur buton permite administratorului să închidă tura tuturor angajaților prezenți la o oră fixă, dacă aceștia au uitat să ponteze la plecare.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-footer">
+      <div>Prezentare Comercială | QR Pontaj Digital</div>
+      <div>Pagina 4 / 6</div>
+    </div>
+  </div>
+
+
+  <!-- ==================== PAGINA 5: PLANIFICARE TURE & RAPOARTE ==================== -->
+  <div class="page">
+    <div class="page-header">
+      <div class="brand-logo">
+        <div class="logo-badge">QR</div>
+        <div class="brand-text">PONTAJ<span>DIGITAL</span></div>
+      </div>
+      <div class="header-tag">04. PLANIFICARE & SALARIZARE</div>
+    </div>
+
+    <div>
+      <div class="section-eyebrow">Eficiență Operațională Maximă</div>
+      <h2 class="section-title">Planificare Ture, Ore Suplimentare & Export SAGA</h2>
+      <p class="section-desc">
+        Treceți de la calcule haotice în foi volante de calcul tabelar la un flux complet integrat: planificați schimburile și exportați datele direct în softul de salarii.
+      </p>
+
+      <div class="pillars-grid">
+        <div class="pillar-box">
+          <h4>Planificator de Ture Săptămânal / Lunar</h4>
+          <p>Creați grafice de lucru pentru echipe, ture de zi (09-17), ture de noapte sau schimburi în ture 12/24. Angajații își văd programul direct din portalul mobil.</p>
+        </div>
+        <div class="pillar-box">
+          <h4>Calcul Automat Sporuri & Suplimentare</h4>
+          <p>Totalizare automată a orelor lucrate în weekend, sărbători legale sau pe timp de noapte. Zero calcule manuale pentru departamentul de resurse umane.</p>
+        </div>
+        <div class="pillar-box">
+          <h4>Export 1-Click în SAGA Software</h4>
+          <p>Generați fișierul standard de import pentru modulul Salarii din SAGA. Economisiți până la 85% din timpul alocat închiderii lunare de pontaj.</p>
+        </div>
+        <div class="pillar-box">
+          <h4>Fișă Colectivă de Prezență (PDF/Excel)</h4>
+          <p>Generare instantanee a pontajului lunar tipizat, conform legislației ITM în vigoare, gata de semnat de către conducere și salariați.</p>
+        </div>
+      </div>
+
+      <!-- Feature Highlight Card -->
+      <div style="background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 14px; padding: 18px; margin-bottom: 5mm;">
+        <div style="font-size: 13px; font-weight: 800; color: #0f172a; margin-bottom: 8px;">Portalul Angajatului (Self-Service)</div>
+        <div style="font-size: 11.5px; color: #475569; line-height: 1.5; margin-bottom: 12px;">
+          Fiecare salariat are acces securizat la propriul cont pe bază de CNP sau Cod Angajat și PIN:
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+          <div style="background: #ffffff; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 11px; font-weight: 600; color: #1e293b;">
+            Verificare istoric propriu de sosiri / plecări
+          </div>
+          <div style="background: #ffffff; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 11px; font-weight: 600; color: #1e293b;">
+            Vizualizare grafic de ture alocate
+          </div>
+          <div style="background: #ffffff; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 11px; font-weight: 600; color: #1e293b;">
+            Notificare transparentă GDPR & drepturi salariat
+          </div>
+        </div>
+      </div>
+
+      <div class="highlight-banner" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);">
+        <div>
+          <h3>Securitate și Confidențialitate Garantate (GDPR)</h3>
+          <p>Datele companiei sunt stocate pe servere securizate din Uniunea Europeană, cu criptare end-to-end și copii de siguranță automate la fiecare 24 de ore.</p>
+        </div>
+        <div class="highlight-btn" style="background: #10b981; color: #ffffff;">EU Cloud</div>
+      </div>
+    </div>
+
+    <div class="page-footer">
+      <div>Prezentare Comercială | QR Pontaj Digital</div>
+      <div>Pagina 5 / 6</div>
+    </div>
+  </div>
+
+
+  <!-- ==================== PAGINA 6: PACHETE & IMPLEMENTARE ==================== -->
+  <div class="page">
+    <div class="page-header">
+      <div class="brand-logo">
+        <div class="logo-badge">QR</div>
+        <div class="brand-text">PONTAJ<span>DIGITAL</span></div>
+      </div>
+      <div class="header-tag">05. IMPLEMENTARE & OFERTĂ</div>
+    </div>
+
+    <div>
+      <div class="section-eyebrow">Pornire Rapidă</div>
+      <h2 class="section-title">Pachete Comerciale & Implementare în 24h</h2>
+      <p class="section-desc">
+        Alegeți planul adaptat dimensiunii echipei dumneavoastră. Fără contracte pe perioadă fixă, fără costuri ascunse de instalare.
+      </p>
+
+      <div class="pricing-grid">
+        <!-- Starter -->
+        <div class="pricing-card">
+          <div>
+            <div class="tier-name">START</div>
+            <div class="tier-desc">Pentru firme mici și birouri până la 20 de angajați</div>
+            <div class="tier-price">29 € <span>/ lună</span></div>
+            <ul class="tier-features">
+              <li><span class="check-icon">&#10003;</span> Până la 20 angajați</li>
+              <li><span class="check-icon">&#10003;</span> 1 Punct de lucru (Kiosk)</li>
+              <li><span class="check-icon">&#10003;</span> Pontaj QR Dinamic & PIN</li>
+              <li><span class="check-icon">&#10003;</span> Export Excel & PDF Pontaj</li>
+              <li><span class="check-icon">&#10003;</span> Suport tehnic pe email</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Pro / Recomandat -->
+        <div class="pricing-card featured">
+          <div class="featured-ribbon">Cel mai ales</div>
+          <div>
+            <div class="tier-name">BUSINESS PRO</div>
+            <div class="tier-desc">Pentru restaurante, magazine, depozite (20 - 100 angajați)</div>
+            <div class="tier-price">69 € <span>/ lună</span></div>
+            <ul class="tier-features">
+              <li><span class="check-icon">&#10003;</span> Până la 100 angajați</li>
+              <li><span class="check-icon">&#10003;</span> Puncte de lucru nelimitate</li>
+              <li><span class="check-icon">&#10003;</span> Modul Planificare Ture (Shifts)</li>
+              <li><span class="check-icon">&#10003;</span> Export compatibil SAGA</li>
+              <li><span class="check-icon">&#10003;</span> Portal dedicat angajați</li>
+              <li><span class="check-icon">&#10003;</span> Suport prioritar WhatsApp & Tel</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Enterprise -->
+        <div class="pricing-card">
+          <div>
+            <div class="tier-name">ENTERPRISE</div>
+            <div class="tier-desc">Pentru rețele comerciale, lanțuri HoReCa și fabrici</div>
+            <div class="tier-price">Personalizat</div>
+            <ul class="tier-features">
+              <li><span class="check-icon">&#10003;</span> Peste 100 angajați</li>
+              <li><span class="check-icon">&#10003;</span> Integrare API personalizată ERP</li>
+              <li><span class="check-icon">&#10003;</span> Geofencing avansat pe șantiere</li>
+              <li><span class="check-icon">&#10003;</span> Manager dedicat de cont</li>
+              <li><span class="check-icon">&#10003;</span> SLA 99.9% garantat contractual</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pași de Implementare -->
+      <div style="font-size: 13px; font-weight: 800; color: #0f172a; margin-bottom: 8px;">3 Pași Simpli pentru Pornirea Sistemului:</div>
+      <div class="steps-row">
+        <div class="step-box">
+          <div class="step-num">1</div>
+          <h4>Creare Cont & Puncte</h4>
+          <p>Configurăm instanța companiei și denumirile locațiilor (restaurant, depozit, birouri).</p>
+        </div>
+        <div class="step-box">
+          <div class="step-num">2</div>
+          <h4>Import Angajați</h4>
+          <p>Încărcăm lista de personal dintr-un simplu fișier Excel sau direct din registrul REVISAL/Saga.</p>
+        </div>
+        <div class="step-box">
+          <div class="step-num">3</div>
+          <h4>Activare Kiosk & Start</h4>
+          <p>Deschideți link-ul Kiosk-ului pe tabletă și personalul începe pontajul imediat.</p>
+        </div>
+      </div>
+
+      <!-- Box Contact & Ofertă -->
+      <div class="contact-box">
+        <div class="contact-left">
+          <h3>Sunteți gata să eliminați condica de hârtie?</h3>
+          <p>Activați acum perioada de probă gratuită de 14 zile, fără niciun angajament financiar.</p>
+        </div>
+        <div class="contact-right">
+          <div>Telefon: <strong>+40 700 000 000</strong></div>
+          <div>Email: <strong>contact@qr.pontaj.app</strong></div>
+          <div>Web: <strong>https://qr.pontaj.app</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-footer">
+      <div>Prezentare Comercială | QR Pontaj Digital | Toate drepturile rezervate © 2026</div>
+      <div>Pagina 6 / 6</div>
+    </div>
+  </div>
+
+</body>
+</html>

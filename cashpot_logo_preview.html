@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CASHPOT - Animated Luxury SVG Logo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@800;900&family=Montserrat:wght@400;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #06040a;
+      color: #e5e5e5;
+      font-family: 'Montserrat', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow-x: hidden;
+      transition: background 0.5s ease;
+    }
+
+    /* Pânză de lumină ambientală profundă */
+    .ambient-glow {
+      position: absolute;
+      width: 750px;
+      height: 420px;
+      background: radial-gradient(circle, rgba(223, 163, 43, 0.14) 0%, rgba(138, 92, 11, 0.05) 45%, transparent 70%);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      filter: blur(40px);
+      z-index: 1;
+    }
+
+    .container {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      max-width: 1100px;
+      padding: 20px;
+    }
+
+    /* Cardul în care stă logo-ul */
+    .logo-stage {
+      width: 100%;
+      max-width: 960px;
+      background: rgba(14, 11, 20, 0.65);
+      border: 1px solid rgba(223, 163, 43, 0.22);
+      border-radius: 28px;
+      padding: 50px 30px;
+      box-shadow: 0 30px 90px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(25px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 30px;
+    }
+
+    .logo-stage svg {
+      width: 100%;
+      max-width: 850px;
+      height: auto;
+      filter: drop-shadow(0 15px 30px rgba(0,0,0,0.6));
+    }
+
+    /* Bara cu comenzi și opțiuni de fundal */
+    .toolbar {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 12px 24px;
+      border-radius: 50px;
+    }
+
+    .toolbar span {
+      font-size: 0.85rem;
+      color: #aaa;
+      font-weight: 600;
+    }
+
+    .btn-color {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      cursor: pointer;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+
+    .btn-color:hover {
+      transform: scale(1.15);
+      border-color: #ffd700;
+    }
+
+    .c-black { background: #06040a; }
+    .c-navy { background: #070e1b; }
+    .c-emerald { background: #03130d; }
+    .c-card { background: #130f1d; }
+
+    .btn-action {
+      background: linear-gradient(90deg, #dfa32b, #f7d570);
+      color: #120b02;
+      font-weight: 800;
+      font-size: 0.85rem;
+      border: none;
+      padding: 10px 22px;
+      border-radius: 50px;
+      cursor: pointer;
+      margin-left: 10px;
+      transition: opacity 0.2s, transform 0.2s;
+    }
+
+    .btn-action:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+
+    .info-badge {
+      margin-top: 20px;
+      font-size: 0.8rem;
+      letter-spacing: 2px;
+      color: #a89466;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="ambient-glow"></div>
+
+  <div class="container">
+    
+    <div class="logo-stage" id="stage">
+      <!-- SVG INLINE PENTRU RENDER IMEDIAT LA REFRESH -->
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 950 260" width="100%" height="100%" style="background: transparent;">
+        <defs>
+          <filter id="luxury-glow" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur stdDeviation="6" result="blur1" />
+            <feGaussianBlur stdDeviation="14" result="blur2" />
+            <feMerge>
+              <feMergeNode in="blur2" />
+              <feMergeNode in="blur1" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+
+          <filter id="aura-glow" x="-40%" y="-40%" width="180%" height="180%">
+            <feGaussianBlur stdDeviation="22" result="blur" />
+            <feColorMatrix type="matrix" values="1 0 0 0 0.95  0 0.8 0 0 0.7  0 0 0 0.2 0 0.2  0 0 0 0.45 0" />
+            <feMerge>
+              <feMergeNode />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+
+          <linearGradient id="liquid-gold" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#fff4c2">
+              <animate attributeName="stop-color" values="#fff4c2; #dfa32b; #f7d570; #fff4c2" dur="7s" repeatCount="indefinite" />
+            </stop>
+            <stop offset="30%" stop-color="#dfa32b">
+              <animate attributeName="stop-color" values="#dfa32b; #fff4c2; #9c6c13; #dfa32b" dur="7s" repeatCount="indefinite" />
+            </stop>
+            <stop offset="65%" stop-color="#8a5c0b">
+              <animate attributeName="stop-color" values="#8a5c0b; #dfa32b; #fff4c2; #8a5c0b" dur="7s" repeatCount="indefinite" />
+            </stop>
+            <stop offset="100%" stop-color="#fced9d">
+              <animate attributeName="stop-color" values="#fced9d; #8a5c0b; #dfa32b; #fced9d" dur="7s" repeatCount="indefinite" />
+            </stop>
+          </linearGradient>
+
+          <linearGradient id="shimmer-sweep" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#ffffff" stop-opacity="0" />
+            <stop offset="45%" stop-color="#ffffff" stop-opacity="0" />
+            <stop offset="50%" stop-color="#ffffff" stop-opacity="0.9" />
+            <stop offset="55%" stop-color="#ffffff" stop-opacity="0" />
+            <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
+            <animateTransform 
+              attributeName="gradientTransform" 
+              type="translate" 
+              from="-600, 0" 
+              to="900, 0" 
+              dur="4.5s" 
+              repeatCount="indefinite" 
+            />
+          </linearGradient>
+
+          <linearGradient id="contour-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#ffea75" />
+            <stop offset="50%" stop-color="#e09c24" />
+            <stop offset="100%" stop-color="#ff7b00" />
+          </linearGradient>
+        </defs>
+
+        <style type="text/css">
+          .emblem-group {
+            transform-origin: 130px 130px;
+            animation: gentleFloat 6s ease-in-out infinite;
+          }
+
+          @keyframes gentleFloat {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-4px) rotate(1deg); }
+          }
+
+          .outer-halo {
+            transform-origin: 130px 130px;
+            animation: slowRotate 24s linear infinite;
+          }
+
+          @keyframes slowRotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+
+          .stroke-laser {
+            stroke-dasharray: 120 280;
+            stroke-dashoffset: 0;
+            animation: laserFlow 5s linear infinite;
+          }
+
+          @keyframes laserFlow {
+            0% { stroke-dashoffset: 400; }
+            100% { stroke-dashoffset: 0; }
+          }
+
+          .core-pulse {
+            animation: coreBreathe 3.5s ease-in-out infinite alternate;
+            transform-origin: 130px 130px;
+          }
+
+          @keyframes coreBreathe {
+            0% { opacity: 0.35; transform: scale(0.94); }
+            100% { opacity: 0.85; transform: scale(1.06); }
+          }
+
+          .brand-title {
+            font-family: 'Cinzel', serif;
+            font-size: 86px;
+            font-weight: 900;
+            letter-spacing: 12px;
+          }
+
+          .brand-sub {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: 14px;
+            fill: #cbb479;
+            opacity: 0.85;
+            text-transform: uppercase;
+          }
+
+          .shimmer-text {
+            mix-blend-mode: overlay;
+          }
+        </style>
+
+        <!-- 1. EMBLEMA FAȚETATĂ -->
+        <g class="emblem-group">
+          <circle cx="130" cy="130" r="75" fill="#f5b82e" class="core-pulse" filter="url(#aura-glow)" />
+
+          <g class="outer-halo" opacity="0.35">
+            <circle cx="130" cy="130" r="92" fill="none" stroke="url(#contour-grad)" stroke-width="1.5" stroke-dasharray="6 14" />
+            <circle cx="130" cy="38" r="3" fill="#ffdf73" />
+            <circle cx="130" cy="222" r="3" fill="#ffdf73" />
+            <circle cx="38" cy="130" r="3" fill="#ffdf73" />
+            <circle cx="222" cy="130" r="3" fill="#ffdf73" />
+          </g>
+
+          <polygon points="130,48 202,90 202,170 130,212 58,170 58,90" 
+                   fill="#0b0713" 
+                   stroke="url(#liquid-gold)" 
+                   stroke-width="3" 
+                   stroke-linejoin="round"
+                   filter="url(#luxury-glow)" />
+
+          <polygon points="130,48 202,90 202,170 130,212 58,170 58,90" 
+                   fill="none" 
+                   stroke="#ffffff" 
+                   stroke-width="2.5" 
+                   stroke-linejoin="round"
+                   class="stroke-laser" />
+
+          <path d="M 130 48 L 130 212 M 58 90 L 202 170 M 58 170 L 202 90" 
+                stroke="url(#liquid-gold)" 
+                stroke-width="1" 
+                opacity="0.35" />
+
+          <path d="M 96 112 L 130 92 L 164 112 L 152 154 C 146 166 114 166 108 154 Z" 
+                fill="url(#liquid-gold)" 
+                filter="url(#luxury-glow)" />
+
+          <polygon points="130,120 142,135 130,150 118,135" fill="#ffffff" opacity="0.95">
+            <animate attributeName="opacity" values="0.7;1;0.7" dur="2.5s" repeatCount="indefinite" />
+          </polygon>
+
+          <g transform="translate(130, 48)">
+            <circle cx="0" cy="0" r="2.5" fill="#fff" filter="url(#luxury-glow)" />
+            <line x1="-8" y1="0" x2="8" y2="0" stroke="#fff" stroke-width="1" opacity="0.8" />
+            <line x1="0" y1="-8" x2="0" y2="8" stroke="#fff" stroke-width="1" opacity="0.8" />
+          </g>
+        </g>
+
+        <!-- 2. TITLUL CASHPOT -->
+        <g transform="translate(255, 0)">
+          <text x="0" y="146" class="brand-title" fill="#000000" opacity="0.6" filter="url(#luxury-glow)">CASHPOT</text>
+          <text x="2" y="144" class="brand-title" fill="#3a2202" opacity="0.8">CASHPOT</text>
+          <text x="0" y="142" class="brand-title" fill="url(#liquid-gold)" filter="url(#luxury-glow)">CASHPOT</text>
+          <text x="0" y="142" class="brand-title shimmer-text" fill="url(#shimmer-sweep)">CASHPOT</text>
+
+          <line x1="4" y1="166" x2="520" y2="166" stroke="url(#liquid-gold)" stroke-width="1.5" opacity="0.4" />
+          <circle cx="262" cy="166" r="3.5" fill="#ffd868" filter="url(#luxury-glow)" />
+
+          <text x="6" y="196" class="brand-sub">JACKPOT SYSTEM</text>
+        </g>
+      </svg>
+    </div>
+
+    <div class="toolbar">
+      <span>Schimbă Fundal:</span>
+      <button class="btn-color c-black" title="Obsidian Negru" onclick="setBg('#06040a')"></button>
+      <button class="btn-color c-navy" title="Bleumarin Casino" onclick="setBg('#070e1b')"></button>
+      <button class="btn-color c-emerald" title="Verde Smarald VIP" onclick="setBg('#03130d')"></button>
+      <button class="btn-color c-card" title="Velvet Violet" onclick="setBg('#130f1d')"></button>
+    </div>
+
+    <div class="info-badge">
+      ✦ Vector SVG 100% Scalabil • 60 FPS • Animație Lentă & Elegantă ✦
+    </div>
+
+  </div>
+
+  <script>
+    function setBg(color) {
+      document.body.style.background = color;
+    }
+  </script>
+</body>
+</html>

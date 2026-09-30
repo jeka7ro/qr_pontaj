@@ -495,25 +495,29 @@ export default function KioskDisplay() {
       <div className="absolute inset-0 pointer-events-none z-50 overflow-hidden">
         {tenant?.logo_url ? (
           <div 
-            className={`p-3 rounded-lg pointer-events-auto absolute ${kioskColors.show_logo_bg !== false ? 'border border-slate-800 shadow-sm backdrop-blur-sm' : ''}`} 
+            className={`px-5 py-2.5 rounded-2xl pointer-events-auto absolute transition-all flex items-center justify-center ${
+              kioskColors.show_logo_bg !== false 
+                ? 'shadow-2xl shadow-black/40 border border-white/20 backdrop-blur-md' 
+                : ''
+            }`} 
             style={{
               left: `${kioskColors.logo_x ?? 5}%`,
               top: `${kioskColors.logo_y ?? 5}%`,
               transform: `translate(-${kioskColors.logo_x ?? 5}%, -${kioskColors.logo_y ?? 5}%)`,
-              backgroundColor: kioskColors.show_logo_bg !== false ? customLogoBg : 'transparent',
+              backgroundColor: kioskColors.show_logo_bg !== false ? (customLogoBg || '#ffffff') : 'transparent',
               zIndex: 10
             }}
           >
             <img 
               src={tenant.logo_url?.startsWith('http') ? tenant.logo_url : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${tenant.logo_url}`} 
               alt={tenant.name} 
-              className="object-contain transition-all"
-              style={{ height: `${(kioskColors.logo_size || 1) * 1.5 + 2}rem` }}
+              className="object-contain transition-all max-w-[360px]"
+              style={{ height: `${Math.min(Math.max((kioskColors.logo_size || 1) * 1.25 + 2.5, 3.5), 7.5)}rem` }}
             />
           </div>
         ) : (
           <div 
-            className={`text-xl md:text-2xl font-black text-white px-5 h-10 text-sm flex items-center justify-center rounded-lg pointer-events-auto absolute ${kioskColors.show_logo_bg !== false ? 'bg-slate-900/50 border border-slate-800' : ''}`} 
+            className={`text-xl md:text-2xl font-black text-white px-6 h-12 text-sm flex items-center justify-center rounded-2xl pointer-events-auto absolute ${kioskColors.show_logo_bg !== false ? 'bg-slate-900/60 border border-white/15 backdrop-blur-xl shadow-2xl' : ''}`} 
             style={{
               left: `${kioskColors.logo_x ?? 5}%`,
               top: `${kioskColors.logo_y ?? 5}%`,
@@ -785,11 +789,11 @@ export default function KioskDisplay() {
 
       {/* Continut Principal */}
       <div 
-        className="flex-1 flex items-center justify-center p-6 pb-12 overflow-y-auto transition-all"
+        className="flex-1 flex items-center justify-center p-6 pb-12 overflow-y-auto transition-all relative z-10"
         style={{
-          paddingTop: tenant?.logo_url && (kioskColors.logo_y ?? 5) < 40 
-            ? `${((kioskColors.logo_size || 1) * 1.5 + 2) + ((kioskColors.logo_y ?? 5) / 5) + 4}rem` 
-            : '1.5rem'
+          paddingTop: tenant?.logo_url && (kioskColors.logo_x ?? 5) > 25 && (kioskColors.logo_x ?? 5) < 75 && (kioskColors.logo_y ?? 5) < 30
+            ? '6.5rem'
+            : '2rem'
         }}
       >
         <div className={`w-full max-w-6xl flex ${isVertical ? 'flex-col gap-10' : 'flex-col lg:flex-row'} items-center justify-between gap-8 lg:gap-16`}>

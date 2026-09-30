@@ -4,7 +4,7 @@ import {
   QrCode, Users, LogOut, Menu, X, Info, MapPin, Sun, Moon, CreditCard, 
   CalendarDays, FileSpreadsheet, Globe, Map, BookOpenCheck, Calculator, 
   CalendarClock, ScanFace, MessageSquare, Wrench, Table, ChevronDown,
-  Bell, LogIn, Briefcase, Clock, User, PanelLeftClose, PanelLeftOpen
+  Bell, LogIn, Briefcase, Clock, User, PanelLeftClose, PanelLeftOpen, ChevronRight
 } from 'lucide-react';
 
 const getAvatarUrl = (avatarPath, firstName, lastName) => {
@@ -247,59 +247,84 @@ export default function TenantDashboard() {
 
       <div className={`fixed inset-y-0 left-0 ${sidebarCollapsed ? 'md:w-20' : 'md:w-64'} w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col z-50 transform transition-all duration-300 ease-in-out md:translate-x-0 md:static ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         
-        <div className={`h-16 flex items-center border-b border-slate-100 dark:border-slate-700/50 bg-white dark:bg-slate-800 transition-all duration-300 ${sidebarCollapsed ? 'px-3 justify-center md:justify-between' : 'px-6 justify-between'}`}>
-          <div className="flex items-center gap-3 overflow-hidden">
-            {tenant.logo_url ? (
-              <div className="h-10 w-10 shrink-0 bg-slate-800 dark:bg-transparent rounded-lg flex items-center justify-center p-1 shadow-sm border border-slate-700/50" title={tenant.name}>
-                <img src={tenant.logo_url} alt={tenant.name} className="max-h-full max-w-full object-contain drop-shadow-sm" />
-              </div>
-            ) : (
-              <div 
-                className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold shrink-0 text-xs"
-                style={{ backgroundColor: themeColor }}
-                title={tenant.name}
+        <div className={`h-16 flex items-center border-b border-slate-100 dark:border-slate-700/50 bg-white dark:bg-slate-800 transition-all duration-300 relative ${sidebarCollapsed ? 'justify-center px-2' : 'justify-between px-5'}`}>
+          {sidebarCollapsed ? (
+            /* Collapsed State: Logo 100% centrat, fără nicio tăiere */
+            <div className="flex items-center justify-center w-full relative">
+              {tenant.logo_url ? (
+                <div 
+                  onClick={toggleSidebarCollapsed}
+                  className="h-10 w-10 shrink-0 bg-slate-800 dark:bg-transparent rounded-lg flex items-center justify-center p-1 shadow-sm border border-slate-700/50 cursor-pointer hover:ring-2 hover:ring-primary-500 transition-all" 
+                  title={`${tenant.name} — Apasă pentru a extinde meniul`}
+                >
+                  <img src={tenant.logo_url} alt={tenant.name} className="max-h-full max-w-full object-contain drop-shadow-sm" />
+                </div>
+              ) : (
+                <div 
+                  onClick={toggleSidebarCollapsed}
+                  className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold shrink-0 text-xs cursor-pointer hover:ring-2 hover:ring-primary-500 transition-all shadow-sm"
+                  style={{ backgroundColor: themeColor }}
+                  title={`${tenant.name} — Apasă pentru a extinde meniul`}
+                >
+                  {tenant.name.substring(0, 2).toUpperCase()}
+                </div>
+              )}
+              {/* Buton discret plutitor pe marginea sidebar-ului */}
+              <button 
+                onClick={toggleSidebarCollapsed}
+                className="hidden md:flex absolute -right-5 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-md items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-white transition-all z-50 cursor-pointer hover:scale-110"
+                title="Extinde meniul"
               >
-                {tenant.name.substring(0, 2).toUpperCase()}
+                <ChevronRight size={13} />
+              </button>
+            </div>
+          ) : (
+            /* Expanded State: Logo complet + Nume stânga, Butoane acțiuni dreapta */
+            <>
+              <div className="flex items-center gap-3 overflow-hidden min-w-0">
+                {tenant.logo_url ? (
+                  <div className="h-10 w-10 shrink-0 bg-slate-800 dark:bg-transparent rounded-lg flex items-center justify-center p-1 shadow-sm border border-slate-700/50" title={tenant.name}>
+                    <img src={tenant.logo_url} alt={tenant.name} className="max-h-full max-w-full object-contain drop-shadow-sm" />
+                  </div>
+                ) : (
+                  <div 
+                    className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold shrink-0 text-xs shadow-sm"
+                    style={{ backgroundColor: themeColor }}
+                    title={tenant.name}
+                  >
+                    {tenant.name.substring(0, 2).toUpperCase()}
+                  </div>
+                )}
+                <span className="font-bold text-slate-800 dark:text-white truncate" title={tenant.name}>{tenant.name}</span>
               </div>
-            )}
-            <span className={`font-bold text-slate-800 dark:text-white truncate ${sidebarCollapsed ? 'md:hidden' : ''}`} title={tenant.name}>{tenant.name}</span>
-          </div>
 
-          <div className={`flex items-center gap-1 shrink-0 ${sidebarCollapsed ? 'md:hidden' : ''}`}>
-            <button 
-              onClick={() => setIsDarkMode(!isDarkMode)}
-              className="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors focus:outline-none"
-              title="Comută tema"
-            >
-              {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
-            </button>
-            <button 
-              onClick={handleLogout}
-              className="p-1.5 rounded-full hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors focus:outline-none"
-              title="Deconectare"
-            >
-              <LogOut size={18} />
-            </button>
-            <button 
-              onClick={toggleSidebarCollapsed}
-              className="hidden md:flex p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors focus:outline-none"
-              title="Micșorează meniul"
-            >
-              <PanelLeftClose size={18} />
-            </button>
-            <button className="md:hidden text-slate-400 hover:text-slate-600 dark:text-slate-300 p-1" onClick={() => setSidebarOpen(false)}>
-              <X size={20} />
-            </button>
-          </div>
-
-          {sidebarCollapsed && (
-            <button 
-              onClick={toggleSidebarCollapsed}
-              className="hidden md:flex p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors focus:outline-none shrink-0"
-              title="Extinde meniul"
-            >
-              <PanelLeftOpen size={18} />
-            </button>
+              <div className="flex items-center gap-1 shrink-0">
+                <button 
+                  onClick={() => setIsDarkMode(!isDarkMode)}
+                  className="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors focus:outline-none"
+                  title="Comută tema"
+                >
+                  {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+                </button>
+                <button 
+                  onClick={handleLogout}
+                  className="p-1.5 rounded-full hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors focus:outline-none"
+                  title="Deconectare"
+                >
+                  <LogOut size={18} />
+                </button>
+                <button 
+                  onClick={toggleSidebarCollapsed}
+                  className="hidden md:flex p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors focus:outline-none"
+                  title="Micșorează meniul"
+                >
+                  <PanelLeftClose size={18} />
+                </button>
+                <button className="md:hidden text-slate-400 hover:text-slate-600 dark:text-slate-300 p-1" onClick={() => setSidebarOpen(false)}>
+                  <X size={20} />
+                </button>
+              </div>
+            </>
           )}
         </div>
 
@@ -654,7 +679,6 @@ export default function TenantDashboard() {
                   <PanelLeftClose size={16} />
                   <span>Restrânge meniul</span>
                 </span>
-                <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">w-20</span>
               </button>
             </div>
           )}

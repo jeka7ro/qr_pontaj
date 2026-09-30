@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CASHPOT - Epic Win Animation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Montserrat:wght@400;700;900&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      user-select: none;
+    }
+
+    body {
+      background: radial-gradient(circle at center, #1b0d2a 0%, #0c0515 50%, #030107 100%);
+      color: #fff;
+      font-family: 'Montserrat', sans-serif;
+      min-height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      perspective: 1000px;
+    }
+
+    /* Canvas pentru ploaia de monede și scântei */
+    #fx-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    /* Raze rotative de fundal */
+    .sunburst {
+      position: absolute;
+      width: 150vmax;
+      height: 150vmax;
+      background: repeating-conic-gradient(
+        from 0deg,
+        rgba(255, 185, 0, 0.08) 0deg 10deg,
+        transparent 10deg 20deg
+      );
+      animation: rotateSunburst 40s linear infinite;
+      z-index: 1;
+      pointer-events: none;
+      opacity: 0.6;
+    }
+
+    .sunburst.active {
+      opacity: 1;
+      animation: rotateSunburst 10s linear infinite;
+      background: repeating-conic-gradient(
+        from 0deg,
+        rgba(255, 215, 0, 0.22) 0deg 10deg,
+        rgba(255, 60, 0, 0.05) 10deg 20deg
+      );
+    }
+
+    @keyframes rotateSunburst {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Containerul central */
+    .cashpot-stage {
+      position: relative;
+      z-index: 5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 40px;
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    /* Vignetă și șoc */
+    .shockwave {
+      position: absolute;
+      border-radius: 50%;
+      border: 4px solid #ffd700;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 4;
+    }
+
+    /* Badge Must-Drop */
+    .hot-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 22px;
+      background: linear-gradient(90deg, #ff1744, #ff9100);
+      border-radius: 50px;
+      font-size: 0.85rem;
+      font-weight: 800;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      box-shadow: 0 0 25px rgba(255, 23, 68, 0.6), inset 0 1px 0 rgba(255,255,255,0.4);
+      margin-bottom: 20px;
+      animation: pulseBadge 1.5s infinite alternate ease-in-out;
+    }
+
+    @keyframes pulseBadge {
+      0% { transform: scale(0.98); box-shadow: 0 0 15px rgba(255, 23, 68, 0.5); }
+      100% { transform: scale(1.05); box-shadow: 0 0 35px rgba(255, 145, 0, 0.9); }
+    }
+
+    /* Logo CASHPOT 3D cu Aur și Reflexii */
+    .cashpot-title {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(3.5rem, 8vw, 7.5rem);
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 6px;
+      position: relative;
+      background: linear-gradient(180deg, #fff7bd 0%, #ffd700 35%, #b8860b 60%, #fff 70%, #d4af37 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 0 35px rgba(255, 215, 0, 0.6)) drop-shadow(0 15px 30px rgba(0, 0, 0, 0.9));
+      transform: translateZ(30px);
+      margin-bottom: 10px;
+      transition: all 0.3s ease;
+    }
+
+    /* Lumina care alunecă peste litere */
+    .cashpot-title::after {
+      content: 'CASHPOT';
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(
+        110deg,
+        transparent 35%,
+        rgba(255, 255, 255, 0.85) 50%,
+        transparent 65%
+      );
+      background-size: 250% 100%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: shimmerSweep 3.5s infinite;
+      pointer-events: none;
+    }
+
+    @keyframes shimmerSweep {
+      0% { background-position: 250% 0; }
+      100% { background-position: -150% 0; }
+    }
+
+    /* Cutia cu cifrele Jackpot-ului */
+    .counter-card {
+      background: linear-gradient(180deg, rgba(35, 15, 55, 0.85) 0%, rgba(12, 4, 22, 0.95) 100%);
+      border: 2px solid rgba(255, 215, 0, 0.4);
+      box-shadow: 0 0 50px rgba(255, 180, 0, 0.25), inset 0 0 30px rgba(255, 215, 0, 0.1);
+      border-radius: 24px;
+      padding: 24px 50px;
+      backdrop-filter: blur(15px);
+      position: relative;
+      margin-top: 10px;
+      transform: translateZ(50px);
+    }
+
+    .counter-card::before {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: 26px;
+      background: linear-gradient(45deg, #ffd700, transparent 40%, #ff3d00, #ffea00);
+      z-index: -1;
+      opacity: 0.5;
+    }
+
+    .amount-display {
+      font-family: 'Orbitron', monospace;
+      font-size: clamp(2.5rem, 6vw, 5.2rem);
+      font-weight: 900;
+      color: #fff;
+      text-shadow: 0 0 20px #ffd700, 0 0 45px #ff6a00;
+      letter-spacing: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+    }
+
+    .currency {
+      color: #ffd700;
+      font-size: 0.6em;
+      vertical-align: super;
+    }
+
+    /* Subtitlu Câștigător */
+    .winner-announcement {
+      margin-top: 25px;
+      font-size: 1.4rem;
+      font-weight: 800;
+      letter-spacing: 4px;
+      color: #00f2fe;
+      text-transform: uppercase;
+      text-shadow: 0 0 15px #00f2fe;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.5s ease;
+    }
+
+    .winner-announcement.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Bara de butoane de control */
+    .controls {
+      position: relative;
+      z-index: 20;
+      margin-top: 40px;
+      display: flex;
+      gap: 20px;
+    }
+
+    .btn-epic {
+      padding: 18px 45px;
+      font-size: 1.15rem;
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #120320;
+      background: linear-gradient(90deg, #ffe066 0%, #ffb700 50%, #ffa500 100%);
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 10px 30px rgba(255, 183, 0, 0.5), inset 0 2px 0 rgba(255,255,255,0.7);
+      transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .btn-epic:hover {
+      transform: translateY(-4px) scale(1.05);
+      box-shadow: 0 15px 45px rgba(255, 183, 0, 0.8);
+      filter: brightness(1.15);
+    }
+
+    .btn-epic:active {
+      transform: translateY(2px) scale(0.98);
+    }
+
+    .btn-secondary {
+      padding: 18px 30px;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #fff;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 50px;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      transition: all 0.2s ease;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.18);
+    }
+
+    /* Screen Shake Animation */
+    .shake {
+      animation: screenShake 0.6s cubic-bezier(.36,.07,.19,.97) both;
+    }
+
+    @keyframes screenShake {
+      10%, 90% { transform: translate3d(-4px, 2px, 0) rotate(-1deg); }
+      20%, 80% { transform: translate3d(6px, -4px, 0) rotate(1.5deg); }
+      30%, 50%, 70% { transform: translate3d(-8px, 6px, 0) rotate(-2deg); }
+      40%, 60% { transform: translate3d(8px, -6px, 0) rotate(2deg); }
+    }
+
+    /* Big Win Pulse */
+    .jackpot-hit .cashpot-title {
+      animation: explodeTitle 1s cubic-bezier(0.175, 0.885, 0.32, 1.275) infinite alternate;
+    }
+
+    @keyframes explodeTitle {
+      0% { transform: scale(1); filter: drop-shadow(0 0 35px #ffd700); }
+      100% { transform: scale(1.12); filter: drop-shadow(0 0 80px #ff3d00); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Fundal raze rotative -->
+  <div class="sunburst" id="sunburst"></div>
+
+  <!-- Canvas pentru particule, confetti și monede 3D -->
+  <canvas id="fx-canvas"></canvas>
+
+  <!-- Scena Principală CASHPOT -->
+  <div class="cashpot-stage" id="stage">
+    
+    <div class="hot-badge">
+      <span>🔥</span>
+      <span>MUST DROP HOURLY</span>
+    </div>
+
+    <h1 class="cashpot-title">CASHPOT</h1>
+
+    <div class="counter-card" id="counterCard">
+      <div class="amount-display">
+        <span id="amountVal">128,450.00</span>
+        <span class="currency">RON</span>
+      </div>
+    </div>
+
+    <div class="winner-announcement" id="winnerBox">
+      🎉 MEGA CÂȘTIGĂTOR: <span style="color:#ffd700">USER_777</span> 🎉
+    </div>
+
+  </div>
+
+  <!-- Butoane Interactive -->
+  <div class="controls">
+    <button class="btn-epic" id="btnTrigger" onclick="triggerCashpot()">🎰 DECLANȘEAZĂ CASHPOT</button>
+    <button class="btn-secondary" onclick="resetPot()">🔄 Reset</button>
+    <button class="btn-secondary" id="soundBtn" onclick="toggleSound()">🔊 Sunet: ON</button>
+  </div>
+
+  <script>
+    // --- CANVAS PARTICLES & 3D TUMBLING COINS ---
+    const canvas = document.getElementById('fx-canvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+    let particles = [];
+    let isExploding = false;
+    let soundEnabled = true;
+
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // Clasă Monedă Aurie cu rotație 3D
+    class GoldCoin {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.radius = 16 + Math.random() * 12;
+        this.vx = (Math.random() - 0.5) * 22;
+        this.vy = -(12 + Math.random() * 16);
+        this.gravity = 0.55;
+        this.rotation = Math.random() * Math.PI * 2;
+        this.rotSpeed = 0.1 + Math.random() * 0.2;
+        this.bounce = 0.6;
+        this.alpha = 1;
+        this.type = Math.random() > 0.3 ? 'coin' : 'sparkle';
+        this.color = Math.random() > 0.5 ? '#ffd700' : '#ffae00';
+      }
+
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy += this.gravity;
+        this.rotation += this.rotSpeed;
+
+        // Bouncing off bottom
+        if (this.y + this.radius > height) {
+          this.y = height - this.radius;
+          this.vy = -this.vy * this.bounce;
+          this.vx *= 0.8;
+        }
+
+        if (this.y > height - 10 && Math.abs(this.vy) < 1) {
+          this.alpha -= 0.015;
+        }
+      }
+
+      draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.globalAlpha = Math.max(0, this.alpha);
+
+        if (this.type === 'coin') {
+          // 3D rotation ellipse effect
+          const scaleY = Math.cos(this.rotation);
+          ctx.scale(1, Math.abs(scaleY));
+
+          // Moneda exterioară
+          ctx.beginPath();
+          ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+          ctx.fillStyle = this.color;
+          ctx.shadowColor = '#ffe066';
+          ctx.shadowBlur = 15;
+          ctx.fill();
+
+          // Detaliu interior
+          ctx.beginPath();
+          ctx.arc(0, 0, this.radius * 0.75, 0, Math.PI * 2);
+          ctx.strokeStyle = '#fff5a6';
+          ctx.lineWidth = 2.5;
+          ctx.stroke();
+
+          // Semn de monedă
+          ctx.fillStyle = '#996500';
+          ctx.font = `bold ${this.radius * 0.8}px Montserrat`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('$', 0, 1);
+        } else {
+          // Stea / Scânteie
+          ctx.rotate(this.rotation);
+          ctx.fillStyle = '#fff';
+          ctx.shadowColor = '#00f2fe';
+          ctx.shadowBlur = 20;
+          ctx.beginPath();
+          for (let i = 0; i < 4; i++) {
+            ctx.lineTo(Math.cos((i * Math.PI) / 2) * this.radius, Math.sin((i * Math.PI) / 2) * this.radius);
+            ctx.lineTo(Math.cos((i * Math.PI) / 2 + Math.PI / 4) * (this.radius / 3), Math.sin((i * Math.PI) / 2 + Math.PI / 4) * (this.radius / 3));
+          }
+          ctx.closePath();
+          ctx.fill();
+        }
+
+        ctx.restore();
+      }
+    }
+
+    function loop() {
+      ctx.clearRect(0, 0, width, height);
+
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.update();
+        p.draw();
+        if (p.alpha <= 0) {
+          particles.splice(i, 1);
+        }
+      }
+
+      requestAnimationFrame(loop);
+    }
+    loop();
+
+    // --- WEB AUDIO API: GENERARE SUNETE CASINO REALE (FĂRĂ FIȘIERE EXTERNE) ---
+    let audioCtx = null;
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+
+    function playTone(freq, type, duration, delay = 0, gainLevel = 0.15) {
+      if (!soundEnabled) return;
+      initAudio();
+      setTimeout(() => {
+        try {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+          gain.gain.setValueAtTime(gainLevel, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start();
+          osc.stop(audioCtx.currentTime + duration);
+        } catch(e) {}
+      }, delay);
+    }
+
+    function playJackpotSound() {
+      // Sunet Sirenă Câștig
+      const arpeggio = [523.25, 659.25, 783.99, 1046.50, 1318.51, 1567.98, 2093.00];
+      arpeggio.forEach((note, idx) => {
+        playTone(note, 'triangle', 0.25, idx * 80, 0.25);
+      });
+
+      // Clinghet continuu de monede
+      for (let i = 0; i < 35; i++) {
+        const coinFreq = 2500 + Math.random() * 2000;
+        playTone(coinFreq, 'sine', 0.12, 600 + i * 75, 0.1);
+      }
+    }
+
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      document.getElementById('soundBtn').innerText = soundEnabled ? '🔊 Sunet: ON' : '🔇 Sunet: OFF';
+    }
+
+    // --- DECLANȘARE ANIMAȚIE MARE CASHPOT ---
+    function triggerCashpot() {
+      const stage = document.getElementById('stage');
+      const sunburst = document.getElementById('sunburst');
+      const winnerBox = document.getElementById('winnerBox');
+      const amountVal = document.getElementById('amountVal');
+
+      // 1. Screen Shake
+      document.body.classList.remove('shake');
+      void document.body.offsetWidth;
+      document.body.classList.add('shake');
+
+      // 2. Activează sunburst intens
+      sunburst.classList.add('active');
+      stage.classList.add('jackpot-hit');
+
+      // 3. Sunet Casino
+      playJackpotSound();
+
+      // 4. Numărătoare animată (Odometer Effect)
+      animateCounter(128450, 250000, 2800);
+
+      // 5. Explozie Masivă de Monede din Centru
+      const rect = stage.getBoundingClientRect();
+      const originX = rect.left + rect.width / 2;
+      const originY = rect.top + rect.height / 2;
+
+      for (let burst = 0; burst < 4; burst++) {
+        setTimeout(() => {
+          for (let i = 0; i < 50; i++) {
+            particles.push(new GoldCoin(originX + (Math.random() - 0.5) * 150, originY));
+          }
+        }, burst * 350);
+      }
+
+      // 6. Afișare Câștigător
+      setTimeout(() => {
+        winnerBox.classList.add('show');
+      }, 1200);
+    }
+
+    function animateCounter(start, end, duration) {
+      const obj = document.getElementById('amountVal');
+      const startTime = performance.now();
+
+      function update(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        // Easing out cubic
+        const ease = 1 - Math.pow(1 - progress, 3);
+        const current = start + (end - start) * ease;
+
+        obj.innerText = current.toLocaleString('ro-RO', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
+
+        if (progress < 1) {
+          requestAnimationFrame(update);
+        }
+      }
+      requestAnimationFrame(update);
+    }
+
+    function resetPot() {
+      const sunburst = document.getElementById('sunburst');
+      const stage = document.getElementById('stage');
+      const winnerBox = document.getElementById('winnerBox');
+      const amountVal = document.getElementById('amountVal');
+
+      sunburst.classList.remove('active');
+      stage.classList.remove('jackpot-hit');
+      winnerBox.classList.remove('show');
+      amountVal.innerText = '128,450.00';
+      particles = [];
+    }
+  </script>
+</body>
+</html>

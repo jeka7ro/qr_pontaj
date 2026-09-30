@@ -1109,7 +1109,7 @@ export default function DailyShiftPlanner({ tenant, themeColor, onCalendarViewRe
                               {emp.first_name} {emp.last_name}
                             </div>
                             {emp.cnp && (
-                              <div className="text-[11px] font-medium text-slate-400 dark:text-slate-500 font-mono mt-0.5">
+                              <div className="text-[11px] font-medium text-slate-400 dark:text-slate-500 tabular-nums mt-0.5">
                                 CNP: {emp.cnp}
                               </div>
                             )}

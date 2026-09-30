@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tester Animație Logo Casino (Universal CSS)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800;900&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: radial-gradient(circle at center, #0f0b18 0%, #06040a 100%);
+      color: #fff;
+      font-family: 'Montserrat', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 30px 20px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .header h1 {
+      font-size: 1.8rem;
+      font-weight: 900;
+      letter-spacing: 2px;
+      color: #ffd700;
+      margin-bottom: 8px;
+    }
+
+    .header p {
+      color: #888;
+      font-size: 0.95rem;
+    }
+
+    /* --- CUTIA DE PREVIZUALIZARE --- */
+    .stage {
+      position: relative;
+      width: 100%;
+      max-width: 800px;
+      height: 340px;
+      background: rgba(20, 15, 30, 0.6);
+      border: 1px solid rgba(255, 215, 0, 0.2);
+      border-radius: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(15px);
+      overflow: hidden;
+      margin-bottom: 25px;
+    }
+
+    /* --- ANIMAȚIA UNIVERSALĂ PENTRU LOGO --- */
+    .animated-logo-wrapper {
+      position: relative;
+      display: inline-block;
+      animation: logoFloat var(--float-speed, 6s) ease-in-out infinite;
+      cursor: pointer;
+    }
+
+    /* 1. Aura de neon din spate (breathe) */
+    .animated-logo-wrapper::before {
+      content: '';
+      position: absolute;
+      inset: -25px;
+      background: radial-gradient(circle, var(--glow-color, rgba(255, 215, 0, 0.45)) 0%, transparent 70%);
+      filter: blur(var(--blur-amount, 30px));
+      z-index: -1;
+      border-radius: 50%;
+      animation: logoAura 3.8s ease-in-out infinite alternate;
+      pointer-events: none;
+    }
+
+    /* 2. Reflexia fină de lumină (Shimmer sweep) */
+    .animated-logo-wrapper::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -150%;
+      width: 70%;
+      height: 100%;
+      background: linear-gradient(
+        105deg,
+        transparent 25%,
+        rgba(255, 255, 255, 0.65) 50%,
+        transparent 75%
+      );
+      transform: skewX(-25deg);
+      animation: shimmerPass var(--shimmer-speed, 4.5s) infinite cubic-bezier(0.4, 0, 0.2, 1);
+      pointer-events: none;
+      mix-blend-mode: overlay;
+    }
+
+    /* Keyframes */
+    @keyframes logoFloat {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-7px); }
+    }
+
+    @keyframes logoAura {
+      0% { opacity: 0.35; transform: scale(0.92); }
+      100% { opacity: 0.95; transform: scale(1.12); }
+    }
+
+    @keyframes shimmerPass {
+      0%, 35% { left: -150%; opacity: 0; }
+      40% { opacity: 1; }
+      65%, 100% { left: 220%; opacity: 0; }
+    }
+
+    /* Logo afișat în interior */
+    #targetLogo {
+      max-width: 420px;
+      max-height: 160px;
+      display: block;
+      user-select: none;
+      pointer-events: none;
+    }
+
+    /* Text demo dacă nu a încărcat încă fișier */
+    .placeholder-text {
+      font-size: 3.5rem;
+      font-weight: 900;
+      letter-spacing: 8px;
+      color: #ffd700;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+    }
+
+    /* --- CONTROALE --- */
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 16px 26px;
+      border-radius: 50px;
+      margin-bottom: 20px;
+    }
+
+    .btn-upload {
+      background: linear-gradient(90deg, #ffd700, #ff9100);
+      color: #12051f;
+      font-weight: 800;
+      font-size: 0.9rem;
+      padding: 12px 24px;
+      border-radius: 50px;
+      cursor: pointer;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .btn-upload:hover {
+      transform: scale(1.05);
+      filter: brightness(1.1);
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    .color-picker-group {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .color-btn {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .color-btn:hover {
+      transform: scale(1.2);
+    }
+
+    .c-gold { background: #ffd700; }
+    .c-red { background: #ff1744; }
+    .c-blue { background: #00e5ff; }
+    .c-purple { background: #d500f9; }
+
+    .speed-select {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 20px;
+      padding: 8px 14px;
+      font-family: inherit;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .info-footer {
+      font-size: 0.85rem;
+      color: #777;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>TESTER ANIMAȚIE LOGO CASINO</h1>
+    <p>Încarcă fișierul tău cu logo-ul CASHPOT (SVG sau PNG) și vezi animația aplicată live</p>
+  </div>
+
+  <!-- CUTIA CU LOGO-UL ANIMAT -->
+  <div class="stage" id="dropArea">
+    <div class="animated-logo-wrapper" id="logoWrapper">
+      <!-- Implicit arată textul sau imaginea încărcată -->
+      <div id="targetContainer">
+        <span class="placeholder-text">CASHPOT</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- BUTOANE ȘI SETĂRI -->
+  <div class="controls">
+    <label class="btn-upload">
+      📁 Alege Logo-ul Tău (SVG / PNG)
+      <input type="file" id="fileInput" accept=".svg,.png,.jpg,.webp">
+    </label>
+
+    <div class="color-picker-group">
+      <span style="font-size: 0.85rem; color: #aaa;">Culoare Aură:</span>
+      <button class="color-btn c-gold" title="Aur" onclick="setGlow('rgba(255, 215, 0, 0.55)')"></button>
+      <button class="color-btn c-red" title="Roșu Casino" onclick="setGlow('rgba(255, 23, 68, 0.55)')"></button>
+      <button class="color-btn c-blue" title="Cyan Electric" onclick="setGlow('rgba(0, 229, 255, 0.55)')"></button>
+      <button class="color-btn c-purple" title="Violet VIP" onclick="setGlow('rgba(213, 0, 249, 0.55)')"></button>
+    </div>
+
+    <div>
+      <span style="font-size: 0.85rem; color: #aaa;">Viteză:</span>
+      <select class="speed-select" onchange="setSpeed(this.value)">
+        <option value="6s, 5s">Lent & Elegant (Recomandat)</option>
+        <option value="9s, 7s">Foarte lent (Subtil)</option>
+        <option value="3.5s, 2.5s">Mod Dinamic</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="info-footer">
+    Trage direct fișierul peste cutia de mai sus (Drag & Drop) pentru a-l testa instant.
+  </div>
+
+  <script>
+    const fileInput = document.getElementById('fileInput');
+    const targetContainer = document.getElementById('targetContainer');
+    const logoWrapper = document.getElementById('logoWrapper');
+    const dropArea = document.getElementById('dropArea');
+
+    // Încărcare din fișier
+    fileInput.addEventListener('change', function(e) {
+      if (this.files && this.files[0]) {
+        loadLogo(this.files[0]);
+      }
+    });
+
+    // Drag & Drop
+    dropArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropArea.style.borderColor = '#ffd700';
+    });
+
+    dropArea.addEventListener('dragleave', () => {
+      dropArea.style.borderColor = 'rgba(255, 215, 0, 0.2)';
+    });
+
+    dropArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropArea.style.borderColor = 'rgba(255, 215, 0, 0.2)';
+      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+        loadLogo(e.dataTransfer.files[0]);
+      }
+    });
+
+    function loadLogo(file) {
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        targetContainer.innerHTML = `<img src="${event.target.result}" id="targetLogo" alt="Logo">`;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function setGlow(color) {
+      logoWrapper.style.setProperty('--glow-color', color);
+    }
+
+    function setSpeed(value) {
+      const [floatSpd, shimmerSpd] = value.split(', ');
+      logoWrapper.style.setProperty('--float-speed', floatSpd);
+      logoWrapper.style.setProperty('--shimmer-speed', shimmerSpd);
+    }
+  </script>
+</body>
+</html>
