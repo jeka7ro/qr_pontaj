@@ -1,10 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, UserPlus, Search, Edit2, Edit, KeyRound, Trash2, Loader2, ScanLine, Plus, Check, X, ChevronLeft, ChevronRight, MapPin, QrCode, Printer, Smartphone, Copy, Calendar, AlertTriangle, Square, CheckSquare, MinusSquare, Briefcase, Archive, RotateCcw, UserCheck } from 'lucide-react';
+import { Users, UserPlus, Search, Edit2, Edit, KeyRound, Trash2, Loader2, ScanLine, Plus, Check, X, ChevronLeft, ChevronRight, MapPin, QrCode, Printer, Smartphone, Copy, Calendar, AlertTriangle, Square, CheckSquare, MinusSquare, Briefcase, Archive, RotateCcw, UserCheck, Download, FileSpreadsheet, FileText } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { QRCodeSVG } from 'qrcode.react';
 import { extractTextFromImageOrPdf, cropFaceFromIdCard } from '../lib/pdfOcr';
 import { parseIdCardText, getBirthDateFromCnp } from '../lib/idParser';
 import ConfirmModal from './ConfirmModal';
+
+const EXPORT_COLUMNS = [
+  { id: 'full_name', label: 'Nume și Prenume' },
+  { id: 'employee_code', label: 'Cod Angajat' },
+  { id: 'pin_code', label: 'Cod PIN Pontaj' },
+  { id: 'job_title', label: 'Funcție / Rol COR' },
+  { id: 'cnp', label: 'CNP' },
+  { id: 'birth_date', label: 'Data Nașterii' },
+  { id: 'phone', label: 'Număr Telefon' },
+  { id: 'email', label: 'Email' },
+  { id: 'address', label: 'Adresă Domiciliu' },
+  { id: 'location_name', label: 'Punct de Lucru / Locație' },
+  { id: 'work_schedule', label: 'Normă Lucru' },
+  { id: 'salary', label: 'Salariu' },
+  { id: 'contract_start_date', label: 'Data Început Contract' },
+  { id: 'id_card_series', label: 'Serie & Număr CI' },
+  { id: 'status', label: 'Status (Activ / Arhivat)' }
+];
 
 export default function EmployeesList({ tenant, themeColor }) {
   const [employees, setEmployees] = useState([]);
@@ -60,6 +79,155 @@ export default function EmployeesList({ tenant, themeColor }) {
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [bulkRestoring, setBulkRestoring] = useState(false);
   const [bulkError, setBulkError] = useState(null);
+
+  // Export Modal State
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportScope, setExportScope] = useState('all'); // 'all' | 'selected'
+  const [exportFormat, setExportFormat] = useState('xlsx'); // 'xlsx' | 'csv'
+  const [selectedExportCols, setSelectedExportCols] = useState({
+    full_name: true,
+    employee_code: true,
+    pin_code: true,
+    job_title: true,
+    cnp: false,
+    birth_date: false,
+    phone: false,
+    email: false,
+    address: false,
+    location_name: false,
+    work_schedule: false,
+    salary: false,
+    contract_start_date: false,
+    id_card_series: false,
+    status: false
+  });
+
+  const handleSelectOnlyNameCodePin = () => {
+    const next = {};
+    EXPORT_COLUMNS.forEach(c => {
+      next[c.id] = (c.id === 'full_name' || c.id === 'employee_code' || c.id === 'pin_code');
+    });
+    setSelectedExportCols(next);
+  };
+
+  const handleSelectAllCols = () => {
+    const next = {};
+    EXPORT_COLUMNS.forEach(c => { next[c.id] = true; });
+    setSelectedExportCols(next);
+  };
+
+  const handleDeselectAllCols = () => {
+    const next = {};
+    EXPORT_COLUMNS.forEach(c => { next[c.id] = false; });
+    setSelectedExportCols(next);
+  };
+
+  const handleExecuteExport = () => {
+    let sourceEmployees = [];
+    if (exportScope === 'selected' && selectedIds.length > 0) {
+      sourceEmployees = employees.filter(e => selectedIds.includes(e.id));
+    } else {
+      sourceEmployees = filteredEmployees.length > 0 ? filteredEmployees : employees;
+    }
+
+    if (sourceEmployees.length === 0) {
+      alert('Nu există angajați de exportat.');
+      return;
+    }
+
+    const activeCols = EXPORT_COLUMNS.filter(c => selectedExportCols[c.id]);
+    if (activeCols.length === 0) {
+      alert('Vă rugăm să selectați cel puțin o coloană pentru export.');
+      return;
+    }
+
+    const exportRows = sourceEmployees.map(emp => {
+      const row = {};
+      activeCols.forEach(col => {
+        switch (col.id) {
+          case 'full_name':
+            row[col.label] = `${emp.first_name || ''} ${emp.last_name || ''}`.trim() || '-';
+            break;
+          case 'employee_code':
+            row[col.label] = emp.employee_code || '-';
+            break;
+          case 'pin_code':
+            row[col.label] = emp.pin_code || '-';
+            break;
+          case 'job_title':
+            row[col.label] = emp.job_title || '-';
+            break;
+          case 'cnp':
+            row[col.label] = emp.cnp || '-';
+            break;
+          case 'birth_date':
+            row[col.label] = emp.birth_date ? String(emp.birth_date).substring(0, 10) : '-';
+            break;
+          case 'phone':
+            row[col.label] = emp.phone || '-';
+            break;
+          case 'email':
+            row[col.label] = emp.email || '-';
+            break;
+          case 'address':
+            row[col.label] = emp.address || '-';
+            break;
+          case 'location_name': {
+            const loc = locations.find(l => l.id === emp.location_id);
+            row[col.label] = loc ? loc.name : '-';
+            break;
+          }
+          case 'work_schedule':
+            row[col.label] = emp.work_schedule || '-';
+            break;
+          case 'salary':
+            row[col.label] = emp.salary || '-';
+            break;
+          case 'contract_start_date':
+            row[col.label] = emp.contract_start_date ? String(emp.contract_start_date).substring(0, 10) : '-';
+            break;
+          case 'id_card_series':
+            row[col.label] = emp.id_card_series || '-';
+            break;
+          case 'status':
+            row[col.label] = emp.is_archived ? 'Arhivat' : 'Activ';
+            break;
+          default:
+            row[col.label] = emp[col.id] || '-';
+        }
+      });
+      return row;
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(exportRows);
+
+    if (exportRows.length > 0) {
+      const colWidths = Object.keys(exportRows[0]).map((key) => {
+        let maxLen = key.length;
+        exportRows.forEach((row) => {
+          const valStr = row[key] !== null && row[key] !== undefined ? String(row[key]) : "";
+          if (valStr.length > maxLen) maxLen = valStr.length;
+        });
+        return { wch: Math.max(maxLen + 4, 12) };
+      });
+      worksheet["!cols"] = colWidths;
+    }
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Angajați");
+
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const tenantSlug = (tenant.name || 'Companie').replace(/[^a-zA-Z0-9]/g, '_');
+    const fileName = `Angajati_${tenantSlug}_${todayStr}.${exportFormat}`;
+
+    if (exportFormat === 'csv') {
+      XLSX.writeFile(workbook, fileName, { bookType: 'csv' });
+    } else {
+      XLSX.writeFile(workbook, fileName);
+    }
+
+    setShowExportModal(false);
+  };
 
   useEffect(() => {
     const interval = setInterval(() => setDynamicTs(Date.now()), 5000);
@@ -428,13 +596,25 @@ export default function EmployeesList({ tenant, themeColor }) {
           <p className="text-slate-500 dark:text-slate-400 dark:text-slate-400 mt-1">Gestionează personalul care are acces să scaneze la această locație.</p>
         </div>
         {!showAddModal && (
-          <button 
-            onClick={() => { setShowAddModal(true); setSaveError(null); setOcrError(null); }}
-            className="px-4 py-2.5 text-sm rounded-full text-white font-bold shadow-sm transition-all flex items-center gap-2 shrink-0"
-            style={{ backgroundColor: themeColor }}
-          >
-            <UserPlus size={18} /> Adaugă Angajat
-          </button>
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <button 
+              type="button"
+              onClick={() => {
+                setExportScope(selectedIds.length > 0 ? 'selected' : 'all');
+                setShowExportModal(true);
+              }}
+              className="px-4 py-2.5 text-sm rounded-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 font-bold hover:bg-slate-50 dark:hover:bg-slate-750 shadow-xs transition-all flex items-center gap-2 shrink-0 cursor-pointer"
+            >
+              <Download size={17} /> Exportă Date
+            </button>
+            <button 
+              onClick={() => { setShowAddModal(true); setSaveError(null); setOcrError(null); }}
+              className="px-4 py-2.5 text-sm rounded-full text-white font-bold shadow-sm transition-all flex items-center gap-2 shrink-0 cursor-pointer"
+              style={{ backgroundColor: themeColor }}
+            >
+              <UserPlus size={18} /> Adaugă Angajat
+            </button>
+          </div>
         )}
       </div>
 
@@ -535,6 +715,18 @@ export default function EmployeesList({ tenant, themeColor }) {
               </div>
 
               <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setExportScope('selected');
+                    setShowExportModal(true);
+                  }}
+                  className="flex-1 sm:flex-initial h-10 px-4 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <Download size={14} />
+                  Exportă ({selectedIds.length})
+                </button>
+
                 {employeeFilter === 'archived' ? (
                   <button
                     type="button"
@@ -684,25 +876,29 @@ export default function EmployeesList({ tenant, themeColor }) {
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3 relative">
                           {emp.avatar_path ? (
-                            <>
-                              <img 
-                                src={( emp.avatar_path?.startsWith('http') ? emp.avatar_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${emp.avatar_path}` )} 
-                                alt="Avatar" 
-                                className="w-10 h-10 rounded-xl object-cover border border-slate-200 dark:border-slate-700" 
-                                onError={(e) => {
+                            <img 
+                              src={( emp.avatar_path?.startsWith('http') ? emp.avatar_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${emp.avatar_path}` )} 
+                              alt="Avatar" 
+                              className="w-10 h-10 rounded-xl object-cover border border-slate-200 dark:border-slate-700" 
+                              onError={(e) => {
+                                if (!e.target.src.endsWith('/default-avatar.svg')) {
+                                  e.target.src = '/default-avatar.svg';
+                                } else {
                                   e.target.style.display = 'none';
                                   if (e.target.nextElementSibling) e.target.nextElementSibling.style.display = 'flex';
-                                }}
-                              />
-                              <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 font-bold" style={{ display: 'none' }}>
-                                {emp.first_name?.[0] || '?'}{emp.last_name?.[0] || ''}
-                              </div>
-                            </>
+                                }
+                              }}
+                            />
                           ) : (
-                            <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 font-bold">
-                              {emp.first_name?.[0] || '?'}{emp.last_name?.[0] || ''}
-                            </div>
+                            <img 
+                              src="/default-avatar.svg" 
+                              alt="Avatar" 
+                              className="w-10 h-10 rounded-xl object-cover border border-slate-200 dark:border-slate-700" 
+                            />
                           )}
+                          <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 font-bold" style={{ display: 'none' }}>
+                            {emp.first_name?.[0] || '?'}{emp.last_name?.[0] || ''}
+                          </div>
                           <div>
                             <Link to={`/admin/employees/${emp.id}`} className="text-sm font-bold text-primary-600 dark:text-primary-400 hover:underline">{emp.first_name} {emp.last_name}</Link>
                             <div className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">CNP: {emp.cnp || '-'}</div>
@@ -1370,6 +1566,182 @@ export default function EmployeesList({ tenant, themeColor }) {
         </div>
       )}
       
+
+      {/* MODAL EXPORT DATE ANGAJAȚI */}
+      {showExportModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[90vh]">
+            
+            {/* Header */}
+            <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div 
+                  className="w-10 h-10 rounded-full flex items-center justify-center text-white shrink-0 shadow-xs"
+                  style={{ backgroundColor: themeColor }}
+                >
+                  <FileSpreadsheet size={20} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg text-slate-900 dark:text-white">Export Date Angajați</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Selectează coloanele și formatul dorit pentru descărcare.</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowExportModal(false)}
+                className="p-2 rounded-full text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-6 overflow-y-auto space-y-5">
+              
+              {/* Opțiuni Selecție Rânduri (când există selecții active) */}
+              {selectedIds.length > 0 && (
+                <div className="bg-slate-50 dark:bg-slate-800/50 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700/60">
+                  <span className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Angajați incluși în export:</span>
+                  <div className="flex items-center gap-4">
+                    <label className="flex items-center gap-2 text-xs font-bold text-slate-800 dark:text-slate-200 cursor-pointer">
+                      <input 
+                        type="radio" 
+                        name="exportScope" 
+                        value="selected" 
+                        checked={exportScope === 'selected'} 
+                        onChange={() => setExportScope('selected')}
+                        className="text-primary-600 focus:ring-primary-500 cursor-pointer" 
+                      />
+                      Doar cei {selectedIds.length} selectați
+                    </label>
+                    <label className="flex items-center gap-2 text-xs font-bold text-slate-800 dark:text-slate-200 cursor-pointer">
+                      <input 
+                        type="radio" 
+                        name="exportScope" 
+                        value="all" 
+                        checked={exportScope === 'all'} 
+                        onChange={() => setExportScope('all')}
+                        className="text-primary-600 focus:ring-primary-500 cursor-pointer" 
+                      />
+                      Toți angajații ({filteredEmployees.length})
+                    </label>
+                  </div>
+                </div>
+              )}
+
+              {/* Butoane Rapide Selecție */}
+              <div>
+                <div className="flex items-center justify-between gap-2 mb-2.5 flex-wrap">
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                    Coloane de exportat ({Object.values(selectedExportCols).filter(Boolean).length} selectate)
+                  </span>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={handleSelectOnlyNameCodePin}
+                      className="px-3 py-1 text-[11px] font-bold rounded-full bg-slate-900 text-white dark:bg-white dark:text-slate-900 hover:opacity-90 transition-opacity cursor-pointer shadow-xs"
+                    >
+                      Doar Nume, Cod & PIN
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSelectAllCols}
+                      className="px-2.5 py-1 text-[11px] font-bold rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                    >
+                      Selectează tot
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleDeselectAllCols}
+                      className="px-2.5 py-1 text-[11px] font-bold rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                    >
+                      Deselectează
+                    </button>
+                  </div>
+                </div>
+
+                {/* Grid Checkbox-uri */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-slate-50 dark:bg-slate-800/40 p-3 rounded-2xl border border-slate-200 dark:border-slate-700/60 max-h-60 overflow-y-auto">
+                  {EXPORT_COLUMNS.map(col => {
+                    const isChecked = !!selectedExportCols[col.id];
+                    return (
+                      <button
+                        key={col.id}
+                        type="button"
+                        onClick={() => setSelectedExportCols(prev => ({ ...prev, [col.id]: !prev[col.id] }))}
+                        className={`flex items-center gap-2.5 p-2 rounded-xl text-left transition-all cursor-pointer ${
+                          isChecked 
+                            ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs border border-slate-200/80 dark:border-slate-700 font-bold' 
+                            : 'text-slate-500 dark:text-slate-400 hover:bg-white/50 dark:hover:bg-slate-800/50 font-medium'
+                        }`}
+                      >
+                        {isChecked ? (
+                          <CheckSquare size={16} style={{ color: themeColor }} className="shrink-0" />
+                        ) : (
+                          <Square size={16} className="text-slate-400 shrink-0" />
+                        )}
+                        <span className="text-xs truncate">{col.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Format Fișier */}
+              <div>
+                <span className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Format fișier:</span>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setExportFormat('xlsx')}
+                    className={`flex items-center justify-center gap-2 p-3 rounded-2xl border text-xs font-bold transition-all cursor-pointer ${
+                      exportFormat === 'xlsx'
+                        ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-500'
+                        : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    <FileSpreadsheet size={16} className={exportFormat === 'xlsx' ? 'text-emerald-600' : 'text-slate-400'} />
+                    Excel (.xlsx)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setExportFormat('csv')}
+                    className={`flex items-center justify-center gap-2 p-3 rounded-2xl border text-xs font-bold transition-all cursor-pointer ${
+                      exportFormat === 'csv'
+                        ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-500'
+                        : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    <FileText size={16} className={exportFormat === 'csv' ? 'text-emerald-600' : 'text-slate-400'} />
+                    CSV (.csv)
+                  </button>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 bg-slate-50 dark:bg-slate-800/60 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowExportModal(false)}
+                className="px-4 h-10 rounded-full font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs transition-colors cursor-pointer"
+              >
+                Anulează
+              </button>
+              <button
+                type="button"
+                onClick={handleExecuteExport}
+                className="px-6 h-10 rounded-full text-white font-bold text-xs shadow-sm transition-all flex items-center gap-2 cursor-pointer"
+                style={{ backgroundColor: themeColor }}
+              >
+                <Download size={15} />
+                Descarcă {exportFormat.toUpperCase()}
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
 
       <ConfirmModal 
         isOpen={!!resetPinEmpId}

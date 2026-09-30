@@ -723,6 +723,7 @@ export default function KioskDisplay() {
                                   src={scan.avatar_path.startsWith('http') ? scan.avatar_path : `${import.meta.env.VITE_API_URL || ''}${scan.avatar_path}`} 
                                   alt="" 
                                   className="w-full h-full object-cover" 
+                                  onError={(e) => { e.target.src = '/default-avatar.svg'; }}
                                 />
                               ) : (
                                 <User size={20} className="text-white/60" />

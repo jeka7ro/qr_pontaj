@@ -415,6 +415,7 @@ export default function ScanScreen() {
                   src={(employeeInfo.avatar_path?.startsWith('http') ? employeeInfo.avatar_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${employeeInfo.avatar_path}`)} 
                   alt="Avatar" 
                   className="w-11 h-11 rounded-full object-cover border border-slate-200 dark:border-slate-700" 
+                  onError={(e) => { e.target.src = '/default-avatar.svg'; }}
                 />
               ) : (
                 <div className="w-11 h-11 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 font-bold border border-slate-300 dark:border-slate-600 text-sm">

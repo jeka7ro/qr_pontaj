@@ -801,6 +801,7 @@ export default function ShiftsTable({ tenant, themeColor }) {
                                       src={e.emp.avatar_path.startsWith('http') ? e.emp.avatar_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${e.emp.avatar_path}`} 
                                       alt="" 
                                       className="w-full h-full object-cover" 
+                                      onError={(evt) => { evt.target.src = '/default-avatar.svg'; }}
                                      />
                                    ) : (
                                      `${e.emp.first_name?.[0] || ''}${e.emp.last_name?.[0] || ''}`.toUpperCase()

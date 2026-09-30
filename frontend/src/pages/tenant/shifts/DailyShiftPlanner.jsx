@@ -1104,6 +1104,7 @@ export default function DailyShiftPlanner({ tenant, themeColor, onCalendarViewRe
                                 src={emp.avatar_path.startsWith('http') ? emp.avatar_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${emp.avatar_path}`} 
                                 alt={`${emp.first_name} ${emp.last_name}`} 
                                 className="w-full h-full object-cover" 
+                                onError={(e) => { e.target.src = '/default-avatar.svg'; }}
                               />
                             ) : (
                               `${emp.first_name?.[0] || ''}${emp.last_name?.[0] || ''}`.toUpperCase()
@@ -1254,6 +1255,7 @@ export default function DailyShiftPlanner({ tenant, themeColor, onCalendarViewRe
                       src={individualEmp.avatar_path.startsWith('http') ? individualEmp.avatar_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${individualEmp.avatar_path}`} 
                       alt="" 
                       className="w-full h-full object-cover" 
+                      onError={(e) => { e.target.src = '/default-avatar.svg'; }}
                     />
                   ) : (
                     `${individualEmp.first_name?.[0] || ''}${individualEmp.last_name?.[0] || ''}`.toUpperCase()

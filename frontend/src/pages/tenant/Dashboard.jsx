@@ -13,7 +13,7 @@ const getAvatarUrl = (avatarPath, firstName, lastName) => {
     const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
     return `${baseUrl}${avatarPath}`;
   }
-  return `https://ui-avatars.com/api/?name=${encodeURIComponent(firstName || '')}+${encodeURIComponent(lastName || '')}&background=random`;
+  return '/default-avatar.svg';
 };
 import EmployeesList from '../../components/EmployeesList';
 import TimesheetReport from '../../components/TimesheetReport';
@@ -772,7 +772,7 @@ export default function TenantDashboard() {
                   className="w-12 h-12 rounded-full object-cover border border-slate-200 dark:border-slate-700 shadow-xs"
                   onError={(e) => {
                     e.target.onerror = null;
-                    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(emp.first_name || '')}+${encodeURIComponent(emp.last_name || '')}&background=random`;
+                    e.target.src = '/default-avatar.svg';
                   }}
                 />
                 <span className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full text-white flex items-center justify-center shadow-xs border-2 border-white dark:border-slate-900 ${badgeBg}`}>

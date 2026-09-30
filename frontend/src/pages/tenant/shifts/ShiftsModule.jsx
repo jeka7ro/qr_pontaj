@@ -361,7 +361,7 @@ export default function ShiftsModule({ tenant, themeColor }) {
   }, [employees]);
 
   const getAvatarSrc = (avatarPath) => {
-    if (!avatarPath) return null;
+    if (!avatarPath) return '/default-avatar.svg';
     if (avatarPath.startsWith('http')) return avatarPath;
     const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
     return `${baseUrl.replace(/\/$/, '')}/${avatarPath.replace(/^\//, '')}`;
