@@ -798,7 +798,7 @@ export default function ShiftsModule({ tenant, themeColor }) {
               </div>
               <button
                 onClick={() => openNewShift(currentDate)}
-                className="px-3.5 py-2 rounded-xl bg-white text-slate-900 font-bold text-xs hover:bg-white/90 transition-all shadow-sm flex items-center gap-1.5 ml-1"
+                className="px-3.5 py-1.5 rounded-full bg-white text-slate-900 font-bold text-xs hover:bg-white/90 transition-all shadow-sm flex items-center gap-1.5 ml-1"
               >
                 <Plus size={15} /> Adaugă tură
               </button>
