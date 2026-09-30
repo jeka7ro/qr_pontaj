@@ -4,12 +4,20 @@ import { ShieldCheck, Check, X, FileText, Lock } from 'lucide-react';
 
 export default function GdprConsentBanner() {
   const location = useLocation();
-  const [acknowledged, setAcknowledged] = useState(true);
+  const [acknowledged, setAcknowledged] = useState(() => {
+    try {
+      return localStorage.getItem('qrp_gdpr_acknowledged') === 'true';
+    } catch {
+      return false;
+    }
+  });
   const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
-    const isAck = localStorage.getItem('qrp_gdpr_acknowledged') === 'true';
-    setAcknowledged(isAck);
+    try {
+      const isAck = localStorage.getItem('qrp_gdpr_acknowledged') === 'true';
+      setAcknowledged(isAck);
+    } catch {}
 
     const handleOpen = () => setShowModal(true);
     window.addEventListener('open-gdpr-modal', handleOpen);
@@ -22,7 +30,9 @@ export default function GdprConsentBanner() {
   }
 
   const handleAcknowledge = () => {
-    localStorage.setItem('qrp_gdpr_acknowledged', 'true');
+    try {
+      localStorage.setItem('qrp_gdpr_acknowledged', 'true');
+    } catch {}
     setAcknowledged(true);
     setShowModal(false);
   };
@@ -34,9 +44,9 @@ export default function GdprConsentBanner() {
         <aside
           role="region"
           aria-label="Notă de informare GDPR și protecția datelor"
-          className="fixed bottom-0 inset-x-0 z-50 p-4 sm:p-6 pointer-events-none animate-in fade-in slide-in-from-bottom-5 duration-300"
+          className="fixed bottom-0 inset-x-0 z-[9999] p-3 sm:p-6 pb-6 sm:pb-6 pointer-events-none animate-in fade-in slide-in-from-bottom-5 duration-300"
         >
-          <div className="max-w-5xl mx-auto bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-slate-200/90 dark:border-slate-800 rounded-3xl shadow-2xl shadow-slate-900/15 dark:shadow-black/60 p-5 sm:p-6 pointer-events-auto flex flex-col md:flex-row md:items-center justify-between gap-5 text-slate-800 dark:text-slate-100">
+          <div className="max-w-5xl mx-auto bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-slate-200/90 dark:border-slate-800 rounded-3xl shadow-2xl shadow-slate-900/20 dark:shadow-black/70 p-4 sm:p-6 pointer-events-auto flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-5 text-slate-800 dark:text-slate-100">
             
             <div className="flex items-start gap-4 flex-1 min-w-0">
               <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 border border-blue-100 dark:border-blue-900/50 shadow-xs">

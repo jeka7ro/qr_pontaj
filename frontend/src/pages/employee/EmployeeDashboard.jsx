@@ -281,11 +281,26 @@ export default function EmployeeDashboard() {
         <div className="text-white px-4 pt-5 pb-6 rounded-b-3xl shadow-lg relative overflow-hidden bg-[var(--tc)] flex-none">
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -mr-10 -mt-10"></div>
         
-        {/* Logout sus-dreapta */}
-        <button onClick={handleLogout} className="absolute top-4 right-4 z-10 text-xs text-white/80 hover:text-white flex items-center gap-1 transition-colors bg-white/10 px-2.5 py-1.5 rounded-xl">
-          <LogOut size={12} />
-          <span>Ieșire</span>
-        </button>
+        {/* Butoane sus-dreapta: GDPR & Logout */}
+        <div className="absolute top-4 right-4 z-10 flex items-center gap-1.5">
+          <button 
+            type="button"
+            onClick={() => setShowGdprModal(true)} 
+            className="text-xs text-white/95 hover:text-white flex items-center gap-1 transition-all bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-full backdrop-blur-md font-bold shadow-xs cursor-pointer active:scale-95"
+            title="Notă de informare GDPR & Temei Legal"
+          >
+            <ShieldCheck size={13} className="text-emerald-300" />
+            <span>GDPR</span>
+          </button>
+          <button 
+            type="button"
+            onClick={handleLogout} 
+            className="text-xs text-white/80 hover:text-white flex items-center gap-1 transition-all bg-white/10 hover:bg-white/20 px-2.5 py-1.5 rounded-full cursor-pointer"
+          >
+            <LogOut size={12} />
+            <span>Ieșire</span>
+          </button>
+        </div>
 
         {/* Logo sus-stânga */}
         <div className="absolute top-4 left-4 z-10 flex flex-col items-start gap-0.5">
@@ -343,6 +358,30 @@ export default function EmployeeDashboard() {
 
       {/* Main Content */}
       <div className="p-4 max-w-md mx-auto space-y-4 pb-32">
+        {/* Banner Notificare GDPR în Portalul Angajatului */}
+        <div className="bg-white rounded-2xl p-3.5 shadow-sm border border-slate-100 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+              <ShieldCheck size={18} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                <span>Notă de Informare GDPR</span>
+                <span className="text-[9px] uppercase px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600 font-bold">
+                  Art. 119
+                </span>
+              </p>
+              <p className="text-[11px] text-slate-500 truncate">Datele tale sunt protejate conform legii.</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowGdprModal(true)}
+            className="shrink-0 h-8 px-3.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all cursor-pointer active:scale-95"
+          >
+            Detalii
+          </button>
+        </div>
         {/* Notificări Status Cereri (In-App) */}
         {leaves.filter(l => (l.status === 'APPROVED' || l.status === 'REJECTED') && !dismissedNotifs.includes(l.id)).map(l => (
           <div 
