@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { KeyRound, Mail, Eye, EyeOff, Loader2, CheckCircle2, AlertCircle, X, Send, Clock } from 'lucide-react';
+import { KeyRound, Mail, Eye, EyeOff, Loader2, CheckCircle2, AlertCircle, X, Send, Clock, ShieldCheck, Lock } from 'lucide-react';
 import { updatePageFavicon } from '../../utils/favicon';
 
 // Helper pentru extragerea tenantului fixat din URL (query param ?tenant=... sau subdomeniu hostname)
@@ -53,6 +53,9 @@ export default function AdminLogin() {
   const [forgotLoading, setForgotLoading] = useState(false);
   const [forgotError, setForgotError] = useState('');
   const [forgotSuccess, setForgotSuccess] = useState(false);
+
+  // GDPR Policy Modal State
+  const [showGdprModal, setShowGdprModal] = useState(false);
 
   // Helper pentru interogarea branding-ului public
   const fetchBranding = async (queryObj) => {
@@ -429,6 +432,18 @@ export default function AdminLogin() {
               </button>
             </div>
           </form>
+
+          {/* Notă GDPR & Securitate înainte de logare */}
+          <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 text-center">
+            <button
+              type="button"
+              onClick={() => setShowGdprModal(true)}
+              className="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-300 transition-colors py-1 px-3 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800/60 cursor-pointer"
+            >
+              <ShieldCheck size={13} className="text-emerald-500" />
+              <span>Politica de Confidențialitate & GDPR</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -550,6 +565,101 @@ export default function AdminLogin() {
                 </div>
               </form>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Modal Notă GDPR & Confidențialitate Administratori */}
+      {showGdprModal && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-sm select-none animate-in fade-in duration-200 text-left"
+          onClick={() => setShowGdprModal(false)}
+        >
+          <div 
+            className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200 dark:border-slate-800 flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/60 dark:bg-slate-800/40">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 border border-slate-200 dark:border-slate-700">
+                  <ShieldCheck size={16} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm sm:text-base text-slate-900 dark:text-white">
+                    Politica de Confidențialitate (GDPR)
+                  </h3>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Regulamentul (UE) 2016/679 &bull; Acces Administrator
+                  </p>
+                </div>
+              </div>
+              <button 
+                type="button"
+                onClick={() => setShowGdprModal(false)}
+                className="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <X size={15} />
+              </button>
+            </div>
+
+            <div className="p-5 overflow-y-auto text-xs text-slate-600 dark:text-slate-300 space-y-3.5 leading-relaxed">
+              <div className="p-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/60 rounded-2xl text-slate-800 dark:text-slate-200 text-xs">
+                <div className="font-bold flex items-center gap-1.5 mb-1 text-slate-900 dark:text-white text-[11px] uppercase tracking-wider">
+                  <Lock size={12} className="text-blue-500" />
+                  <span>Securitate & Criptare Date</span>
+                </div>
+                Platforma QR Pontaj aplică protocoale criptate TLS/HTTPS, hashing bcrypt și izolare strictă a datelor pe chiriași (multi-tenant).
+              </div>
+
+              <div>
+                <h4 className="font-bold text-slate-900 dark:text-white text-[11px] uppercase tracking-wider mb-1">
+                  1. Datele contului de administrator
+                </h4>
+                <p>
+                  Adresa de email, acreditările de autentificare, rolul alocat, adresa IP de conectare și jurnalele de audit administrative.
+                </p>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-slate-900 dark:text-white text-[11px] uppercase tracking-wider mb-1">
+                  2. Scopul și temeiul juridic
+                </h4>
+                <p>
+                  Executarea serviciilor contractuale (Art. 6 alin. 1 lit. b), securitatea sistemului (Art. 6 alin. 1 lit. f - interes legitim) și respectarea obligațiilor legale privind evidența muncii conform Codului Muncii.
+                </p>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-slate-900 dark:text-white text-[11px] uppercase tracking-wider mb-1">
+                  3. Confidențialitatea datelor angajaților
+                </h4>
+                <p>
+                  În calitate de administrator, aveți obligația de a asigura confidențialitatea datelor de pontaj și a condicilor de prezență generate, utilizându-le strict în scopuri legitime de HR și raportare ITM.
+                </p>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-slate-900 dark:text-white text-[11px] uppercase tracking-wider mb-1">
+                  4. Drepturile dumneavoastră conform RGPD
+                </h4>
+                <p>
+                  Beneficiați de dreptul de acces, rectificare, restricționare și dreptul de a sesiza <strong>ANSPDCP</strong> (www.dataprotection.ro).
+                </p>
+              </div>
+            </div>
+
+            <div className="px-5 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 flex items-center justify-between gap-3">
+              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+                QR Pontaj &bull; Sistem securizat
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowGdprModal(false)}
+                className="px-5 h-8 rounded-full bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-bold text-xs transition-colors shadow-xs cursor-pointer shrink-0"
+              >
+                Am înțeles
+              </button>
+            </div>
           </div>
         </div>
       )}

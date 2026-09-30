@@ -233,95 +233,102 @@ export default function ScanScreen() {
     if (!showGdprModal) return null;
     return (
       <div 
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm select-none animate-in fade-in duration-200 text-left"
+        className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-sm select-none animate-in fade-in duration-200 text-left"
         onClick={() => setShowGdprModal(false)}
       >
         <div 
-          className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200 dark:border-slate-800 flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200"
+          className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200 dark:border-slate-800 flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200"
           onClick={e => e.stopPropagation()}
         >
-          <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
+          <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/60 dark:bg-slate-800/40">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-                <ShieldCheck size={20} />
+              <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-slate-200 dark:border-slate-700">
+                <ShieldCheck size={16} />
               </div>
               <div>
                 <h3 className="font-bold text-sm sm:text-base text-slate-900 dark:text-white">
                   Notă de Informare — Prelucrarea Datelor
                 </h3>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Regulamentul (UE) 2016/679 (RGPD) &bull; Art. 119 Codul Muncii
+                  Regulamentul (UE) 2016/679 &bull; Art. 119 Codul Muncii
                 </p>
               </div>
             </div>
             <button 
               type="button"
               onClick={() => setShowGdprModal(false)}
-              className="text-slate-400 hover:text-slate-600 dark:text-slate-200 transition-colors rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 p-1.5 cursor-pointer"
+              className="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-white flex items-center justify-center transition-colors cursor-pointer"
             >
-              <X size={18} />
+              <X size={15} />
             </button>
           </div>
 
-          <div className="p-6 overflow-y-auto text-xs sm:text-sm text-slate-600 dark:text-slate-300 space-y-4 leading-relaxed">
-            <div className="p-3 bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/60 rounded-2xl text-emerald-950 dark:text-emerald-200 text-xs">
-              <strong>Temei Legal Obligatoriu:</strong> Conform <strong>Art. 119 din Codul Muncii</strong> (Legea 53/2003 republicată), angajatorul are obligația legală de a ține evidența orelor de muncă prestate zilnic de fiecare salariat.
+          <div className="p-5 overflow-y-auto text-xs text-slate-600 dark:text-slate-300 space-y-3.5 leading-relaxed">
+            <div className="p-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/60 rounded-2xl text-slate-800 dark:text-slate-200 text-xs">
+              <div className="font-bold flex items-center gap-1.5 mb-1 text-slate-900 dark:text-white text-[11px] uppercase tracking-wider">
+                <Lock size={12} className="text-emerald-500" />
+                <span>Temei Legal Obligatoriu</span>
+              </div>
+              Conform <strong>Art. 119 din Codul Muncii</strong> (Legea 53/2003 republicată), angajatorul are obligația legală de a ține evidența orelor de muncă prestate zilnic de fiecare salariat.
             </div>
 
             <div>
-              <h4 className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[11px] mb-1">
+              <h4 className="font-bold text-slate-900 dark:text-white text-[11px] uppercase tracking-wider mb-1">
                 1. Operatorul de date
               </h4>
               <p>
-                Datele dumneavoastră sunt prelucrate de către angajator: <strong>{tenant?.name || 'Compania angajatoare'}</strong>, în calitate de Operator, prin intermediul platformei securizate QR Pontaj.
+                Datele dumneavoastră sunt prelucrate de către angajator: <strong>{tenant?.name || 'Compania angajatoare'}</strong>, în calitate de Operator, prin platforma QR Pontaj.
               </p>
             </div>
 
             <div>
-              <h4 className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[11px] mb-1">
+              <h4 className="font-bold text-slate-900 dark:text-white text-[11px] uppercase tracking-wider mb-1">
                 2. Scopul prelucrării și temeiul legal
               </h4>
-              <p className="mb-2">
-                • <strong>Obligație legală (Art. 6 alin. 1 lit. c din RGPD):</strong> Evidența orelor de muncă prestate zilnic, cu evidențierea exactă a orei de începere și a orei de sfârșit ale programului de lucru, conform <strong>Art. 119 din Codul Muncii</strong>, pentru întocmirea pontajului lunar și supunerea acestuia controlului Inspecției Muncii (ITM).
+              <p className="mb-1.5">
+                • <strong>Obligație legală (Art. 6 alin. 1 lit. c din RGPD):</strong> Evidența orelor de muncă și supunerea acestora controlului Inspecției Muncii (ITM) conform <strong>Art. 119 din Codul Muncii</strong>.
               </p>
               <p>
-                • <strong>Interes legitim (Art. 6 alin. 1 lit. f din RGPD & Legea 190/2018):</strong> Asigurarea exactității pontajului electronic, securitatea punctului de lucru și prevenirea fraudelor la pontaj.
+                • <strong>Interes legitim (Art. 6 alin. 1 lit. f din RGPD):</strong> Asigurarea exactității pontajului electronic și securitatea punctului de lucru.
               </p>
             </div>
 
             <div>
-              <h4 className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[11px] mb-1">
+              <h4 className="font-bold text-slate-900 dark:text-white text-[11px] uppercase tracking-wider mb-1">
                 3. Categoriile de date colectate
               </h4>
               <p>
-                La momentul scanării se înregistrează: numele și prenumele, codul intern de angajat, tipul pontajului (intrare/ieșire), data și ora exactă (la nivel de secundă), punctul de lucru/locația fizică, adresa IP și identificatorul dispozitivului/kiosk-ului.
+                La momentul scanării se înregistrează: numele, codul de angajat, tipul pontajului (intrare/ieșire), data și ora exactă, punctul de lucru, adresa IP și identificatorul dispozitivului/kiosk-ului.
               </p>
             </div>
 
             <div>
-              <h4 className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[11px] mb-1">
+              <h4 className="font-bold text-slate-900 dark:text-white text-[11px] uppercase tracking-wider mb-1">
                 4. Perioada de stocare a datelor
               </h4>
               <p>
-                Evidențele de pontaj se păstrează pe durata prevăzută de legislația muncii și financiar-contabilă aplicabilă documentelor justificative de personal (ITM). Logurile temporare de securitate sunt reținute pentru maximum 30 de zile.
+                Evidențele de pontaj se păstrează pe durata prevăzută de legislația muncii pentru documentele justificative de personal (ITM).
               </p>
             </div>
 
             <div>
-              <h4 className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[11px] mb-1">
+              <h4 className="font-bold text-slate-900 dark:text-white text-[11px] uppercase tracking-wider mb-1">
                 5. Drepturile dumneavoastră conform RGPD
               </h4>
               <p>
-                Beneficiați de dreptul de acces la propriile înregistrări de pontaj (Art. 15), dreptul de rectificare prin sesizarea conducerii/HR (Art. 16), dreptul la restricționare și dreptul de a depune o plângere la <strong>ANSPDCP</strong> (www.dataprotection.ro).
+                Beneficiați de dreptul de acces la datele de pontaj (Art. 15), dreptul de rectificare prin HR (Art. 16), restricționare și dreptul de a depune plângere la <strong>ANSPDCP</strong> (www.dataprotection.ro).
               </p>
             </div>
           </div>
 
-          <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/30 flex justify-end">
+          <div className="px-5 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 flex items-center justify-between gap-3">
+            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+              Conformitate legislația muncii România
+            </span>
             <button
               type="button"
               onClick={() => setShowGdprModal(false)}
-              className="px-6 h-10 rounded-full bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition-colors shadow-sm cursor-pointer"
+              className="px-5 h-8 rounded-full bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-bold text-xs transition-colors shadow-xs cursor-pointer shrink-0"
             >
               Am înțeles
             </button>
@@ -601,15 +608,15 @@ export default function ScanScreen() {
               </p>
             )}
 
-            {/* Link discret Notă de informare GDPR & Temei Legal */}
-            <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 text-center">
+            {/* Notă discretă GDPR */}
+            <div className="mt-5 pt-3 border-t border-slate-100 dark:border-slate-800 text-center">
               <button
                 type="button"
                 onClick={() => setShowGdprModal(true)}
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors py-1 px-3 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800/60"
+                className="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-300 transition-colors py-1 px-3 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800/60 cursor-pointer"
               >
-                <ShieldCheck size={14} className="text-primary-500" />
-                <span>Notă de informare GDPR & Temei Legal</span>
+                <ShieldCheck size={13} className="text-emerald-500" />
+                <span>Notă GDPR & Art. 119 Codul Muncii</span>
               </button>
             </div>
 
