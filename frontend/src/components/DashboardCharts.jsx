@@ -1465,6 +1465,7 @@ function LiveShiftRow({ indexNumber, emp, isPresent, isOut, hasHistory, onOpenSt
 
   let diffHrs = 0;
   let diffMins = 0;
+  let diffSecs = 0;
   let diffMs = 0;
   let hasWorked = false;
   let punctualityNode = null;
@@ -1488,20 +1489,22 @@ function LiveShiftRow({ indexNumber, emp, isPresent, isOut, hasHistory, onOpenSt
     const inTime = new Date(emp.last_in_time);
     
     if (isPresent) {
-      diffMs = now - inTime;
+      diffMs = Math.max(0, now - inTime);
       if (diffMs > 0) {
         diffHrs = Math.floor(diffMs / 3600000);
         diffMins = Math.floor((diffMs % 3600000) / 60000);
+        diffSecs = Math.floor((diffMs % 60000) / 1000);
         hasWorked = true;
       }
     } else if (isOut && isToday) {
       const outTimeStr = emp.last_scan_time || emp.last_out_time;
       if (outTimeStr) {
         const endTime = new Date(outTimeStr);
-        diffMs = endTime - inTime;
+        diffMs = Math.max(0, endTime - inTime);
         if (diffMs > 0) {
           diffHrs = Math.floor(diffMs / 3600000);
           diffMins = Math.floor((diffMs % 3600000) / 60000);
+          diffSecs = Math.floor((diffMs % 60000) / 1000);
           hasWorked = true;
         }
       }
@@ -1536,6 +1539,10 @@ function LiveShiftRow({ indexNumber, emp, isPresent, isOut, hasHistory, onOpenSt
       }
     }
   }
+
+  const hhStr = String(diffHrs).padStart(2, '0');
+  const mmStr = String(diffMins).padStart(2, '0');
+  const ssStr = String(diffSecs).padStart(2, '0');
 
   let lastSeenNode = <span className="text-slate-400 text-xs">-</span>;
   const siteDisplayName = emp.site_name;
@@ -1593,30 +1600,36 @@ function LiveShiftRow({ indexNumber, emp, isPresent, isOut, hasHistory, onOpenSt
     </button>
   ) : isPresent ? (
     <span 
-      className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60 whitespace-nowrap shrink-0 shadow-2xs"
+      className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60 whitespace-nowrap shrink-0 shadow-2xs font-mono tabular-nums"
       title={`În tură (pontat azi la ${presenceDate ? presenceDate.toLocaleTimeString('ro-RO', {hour: '2-digit', minute:'2-digit'}) : ''})`}
     >
       <span className="relative flex h-2 w-2 shrink-0 items-center justify-center">
         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
         <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500 animate-live-blink" />
       </span>
-      <span className="whitespace-nowrap">{diffHrs}h {String(diffMins).padStart(2, '0')}m</span>
+      <span className="whitespace-nowrap tracking-wide flex items-center">
+        <span>{hhStr}</span>
+        <span className="animate-colon-blink font-bold inline-block mx-[1px] select-none text-emerald-600 dark:text-emerald-400">:</span>
+        <span>{mmStr}</span>
+        <span className="animate-colon-blink font-bold inline-block mx-[1px] select-none text-emerald-600 dark:text-emerald-400">:</span>
+        <span>{ssStr}</span>
+      </span>
     </span>
   ) : isOut && hasWorked ? (
     <span 
-      className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700 whitespace-nowrap shrink-0"
-      title={`Tură finalizată (total: ${diffHrs}h ${String(diffMins).padStart(2, '0')}m)`}
+      className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700 whitespace-nowrap shrink-0 font-mono tabular-nums"
+      title={`Tură finalizată (total: ${hhStr}:${mmStr}:${ssStr})`}
     >
       <span className="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0" />
-      <span className="whitespace-nowrap">{diffHrs}h {String(diffMins).padStart(2, '0')}m</span>
+      <span className="whitespace-nowrap tracking-wide">{hhStr}:{mmStr}:{ssStr}</span>
     </span>
   ) : (
     <span 
-      className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200/60 dark:border-rose-800/60 whitespace-nowrap shrink-0"
+      className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200/60 dark:border-rose-800/60 whitespace-nowrap shrink-0 font-mono tabular-nums"
       title="Fără pontaj înregistrat azi"
     >
       <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
-      <span className="whitespace-nowrap">0h 00m</span>
+      <span className="whitespace-nowrap tracking-wide">00:00:00</span>
     </span>
   );
 
