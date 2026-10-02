@@ -33,6 +33,7 @@ export default function DailyShiftPlanner({ tenant, themeColor, onCalendarViewRe
   const [bulkStartTime, setBulkStartTime] = useState('09:00');
   const [bulkEndTime, setBulkEndTime] = useState('17:30');
   const [bulkShiftType, setBulkShiftType] = useState('DAY');
+  const [bulkAutoClose, setBulkAutoClose] = useState(false);
   const [bulkNotes, setBulkNotes] = useState('');
   const [bulkSubmitting, setBulkSubmitting] = useState(false);
 
@@ -43,6 +44,7 @@ export default function DailyShiftPlanner({ tenant, themeColor, onCalendarViewRe
   const [indStartTime, setIndStartTime] = useState('09:00');
   const [indEndTime, setIndEndTime] = useState('17:30');
   const [indShiftType, setIndShiftType] = useState('DAY');
+  const [indAutoClose, setIndAutoClose] = useState(false);
   const [indNotes, setIndNotes] = useState('');
   const [indSubmitting, setIndSubmitting] = useState(false);
 
@@ -328,6 +330,7 @@ export default function DailyShiftPlanner({ tenant, themeColor, onCalendarViewRe
         start_time: bulkStartTime,
         end_time: bulkEndTime,
         shift_type: bulkShiftType,
+        auto_close: bulkAutoClose,
         notes: bulkNotes || null
       };
 
@@ -408,11 +411,13 @@ export default function DailyShiftPlanner({ tenant, themeColor, onCalendarViewRe
       setIndStartTime(shift.start_time?.substring(0, 5) || '09:00');
       setIndEndTime(shift.end_time?.substring(0, 5) || '17:30');
       setIndShiftType(shift.shift_type || 'DAY');
+      setIndAutoClose(shift.auto_close === true);
       setIndNotes(shift.notes || '');
     } else {
       setIndStartTime('09:00');
       setIndEndTime('17:30');
       setIndShiftType('DAY');
+      setIndAutoClose(false);
       setIndNotes('');
     }
     setIndividualModalOpen(true);
@@ -436,6 +441,7 @@ export default function DailyShiftPlanner({ tenant, themeColor, onCalendarViewRe
         start_time: indStartTime,
         end_time: indEndTime,
         shift_type: indShiftType,
+        auto_close: indAutoClose,
         notes: indNotes || null
       };
 
@@ -876,6 +882,40 @@ export default function DailyShiftPlanner({ tenant, themeColor, onCalendarViewRe
                 </div>
               </div>
 
+              {/* Toggle Inchidere Automata (Bulk) */}
+              <div className="md:col-span-12 flex flex-wrap items-center justify-between gap-3 bg-slate-50 dark:bg-slate-900/40 px-4 py-2.5 rounded-2xl border border-slate-200/70 dark:border-slate-700/70">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
+                    Închidere automată la final de tură:
+                  </span>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Înregistrează automat ieșirea la ora {bulkEndTime || '--:--'} dacă angajatul nu a scanat la plecare.
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
+                    {bulkAutoClose ? 'Da' : 'Nu'}
+                  </span>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={bulkAutoClose}
+                    onClick={() => setBulkAutoClose(prev => !prev)}
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                      bulkAutoClose ? 'bg-primary-600' : 'bg-slate-300 dark:bg-slate-600'
+                    }`}
+                    style={bulkAutoClose ? { backgroundColor: themeColor || '#2563eb' } : {}}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                        bulkAutoClose ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+
               {/* Butoane Actiune */}
               <div className="md:col-span-4 flex items-center gap-2">
                 <button
@@ -1143,6 +1183,15 @@ export default function DailyShiftPlanner({ tenant, themeColor, onCalendarViewRe
                               <Moon size={13} className="text-indigo-500" title="Tură de noapte" />
                             )}
 
+                            {shift.auto_close && (
+                              <span 
+                                className="text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-1.5 py-0.2 rounded border border-blue-200/60 dark:border-blue-800/60"
+                                title="Tura se închide automat la sfârșitul programului"
+                              >
+                                Auto
+                              </span>
+                            )}
+
                             {/* Indicator vizualizat */}
                             <div title={shift.seen_at ? "Vizualizat de angajat" : "Nevizualizat de angajat"}>
                               {shift.seen_at ? (
@@ -1358,6 +1407,42 @@ export default function DailyShiftPlanner({ tenant, themeColor, onCalendarViewRe
                   >
                     <Moon size={14} /> Tură de Noapte
                   </button>
+                </div>
+              </div>
+
+              {/* Închidere automată la final de tură */}
+              <div className="bg-slate-50 dark:bg-slate-900/60 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-700/80">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <label className="text-xs font-bold text-slate-800 dark:text-white block">
+                      Închidere automată la final de tură
+                    </label>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      Înregistrează automat pontajul de ieșire la ora de sfârșit ({indEndTime || '--:--'}) dacă angajatul nu a scanat la plecare.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
+                      {indAutoClose ? 'Da' : 'Nu'}
+                    </span>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={indAutoClose}
+                      onClick={() => setIndAutoClose(prev => !prev)}
+                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                        indAutoClose ? 'bg-primary-600' : 'bg-slate-300 dark:bg-slate-600'
+                      }`}
+                      style={indAutoClose ? { backgroundColor: themeColor || '#2563eb' } : {}}
+                    >
+                      <span
+                        aria-hidden="true"
+                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                          indAutoClose ? 'translate-x-5' : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
+                  </div>
                 </div>
               </div>
 

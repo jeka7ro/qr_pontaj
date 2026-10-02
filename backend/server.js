@@ -42,6 +42,9 @@ app.get('/api/system/ip', (req, res) => {
   res.json({ ip: 'localhost' });
 });
 
+const { startAutoCloseJob } = require('./jobs/autoCloseShiftsJob');
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  startAutoCloseJob();
 });

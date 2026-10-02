@@ -8,6 +8,7 @@ export default function CreateShiftModal({ onClose, onShiftCreated, tenantId, em
     start_time: initialData?.start_time?.substring(0, 5) || '09:00',
     end_time: initialData?.end_time?.substring(0, 5) || '17:00',
     shift_type: initialData?.shift_type || 'DAY',
+    auto_close: initialData?.auto_close === true,
     notes: initialData?.notes || ''
   });
   
@@ -37,13 +38,13 @@ export default function CreateShiftModal({ onClose, onShiftCreated, tenantId, em
   useEffect(() => {
     if (isEdit && initialData?.date) {
       if (targetDate) {
-        setFormData(prev => ({ ...prev, date: targetDate }));
+        setFormData(prev => ({ ...prev, date: targetDate, auto_close: initialData.auto_close === true }));
       } else {
         const dateObj = new Date(initialData.date);
         const yyyy = dateObj.getFullYear();
         const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
         const dd = String(dateObj.getDate()).padStart(2, '0');
-        setFormData(prev => ({ ...prev, date: `${yyyy}-${mm}-${dd}` }));
+        setFormData(prev => ({ ...prev, date: `${yyyy}-${mm}-${dd}`, auto_close: initialData.auto_close === true }));
       }
     }
   }, [isEdit, initialData, targetDate]);
@@ -303,6 +304,42 @@ export default function CreateShiftModal({ onClose, onShiftCreated, tenantId, em
                 >
                   Noapte
                 </button>
+              </div>
+            </div>
+
+            {/* Închidere automată la final de tură */}
+            <div className="bg-slate-50 dark:bg-slate-900/60 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-700/80">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-800 dark:text-white block">
+                    Închidere automată la final de tură
+                  </label>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                    Înregistrează automat pontajul de ieșire la ora de sfârșit ({formData.end_time || '--:--'}) dacă angajatul nu a scanat la plecare.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
+                    {formData.auto_close ? 'Da' : 'Nu'}
+                  </span>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={formData.auto_close}
+                    onClick={() => setFormData(prev => ({ ...prev, auto_close: !prev.auto_close }))}
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                      formData.auto_close ? 'bg-primary-600' : 'bg-slate-300 dark:bg-slate-600'
+                    }`}
+                    style={formData.auto_close ? { backgroundColor: themeColor || '#2563eb' } : {}}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                        formData.auto_close ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </div>
               </div>
             </div>
 

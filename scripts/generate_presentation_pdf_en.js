@@ -14,7 +14,7 @@ function getBase64Image(filePath) {
   }
 }
 
-async function buildPdf() {
+async function buildPdfEn() {
   const logoImg = getBase64Image(path.join(__dirname, '../logo_getapp_smartqr.jpg'));
   const kioskImg = getBase64Image(path.join(__dirname, '../screenshot_kiosk_display.png'));
   const dashboardImg = getBase64Image(path.join(__dirname, '../screenshot_dashboard.png'));
@@ -23,10 +23,10 @@ async function buildPdf() {
   const employeesImg = getBase64Image(path.join(__dirname, '../screenshot_employees.png'));
 
   const htmlContent = `<!DOCTYPE html>
-<html lang="ro">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Prezentare Comercială — GetApp Smart QR</title>
+  <title>Commercial Presentation — GetApp Smart QR</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -47,7 +47,7 @@ async function buildPdf() {
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
       text-rendering: optimizeLegibility;
-      letter-spacing: -0.012em;
+      letter-spacing: -0.014em;
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
       font-size: 13px;
@@ -93,101 +93,70 @@ async function buildPdf() {
       letter-spacing: 0.3px;
       padding-left: 2px;
     }
-    .logo-badge {
-      width: 36px;
-      height: 36px;
-      background: linear-gradient(135deg, #1d4ed8, #2563eb);
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #ffffff;
-      font-weight: 800;
-      font-size: 16px;
-      box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
-    }
-    .brand-title {
-      font-size: 19px;
-      font-weight: 800;
-      color: #0f172a;
-      letter-spacing: -0.5px;
-    }
-    .brand-title span {
-      color: #2563eb;
-    }
     .header-tagline {
       font-size: 11px;
-      font-weight: 600;
+      font-weight: 700;
       color: #64748b;
+      letter-spacing: 0.5px;
       text-transform: uppercase;
-      letter-spacing: 0.6px;
-      background: #f1f5f9;
-      padding: 5px 12px;
-      border-radius: 999px;
     }
 
-    /* Page Footer */
+    /* Footer Bar */
     .footer-bar {
       display: flex;
       justify-content: space-between;
       align-items: center;
       padding-top: 10px;
       border-top: 1px solid #e2e8f0;
-      font-size: 10.5px;
+      font-size: 10px;
       color: #64748b;
-      margin-top: 8px;
-    }
-    .footer-bar .left {
       font-weight: 600;
     }
-    .footer-bar .right {
-      font-weight: 700;
-      color: #2563eb;
-    }
 
-    /* Hero Section */
+    /* Hero Banner */
     .hero-banner {
       background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-      border-radius: 16px;
-      padding: 18px 22px;
       color: #ffffff;
-      margin-bottom: 14px;
-      box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.25);
+      border-radius: 16px;
+      padding: 20px 24px;
+      margin-bottom: 16px;
       position: relative;
       overflow: hidden;
+      box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.2);
     }
     .hero-badge {
       display: inline-block;
+      background: rgba(37, 99, 235, 0.25);
+      border: 1px solid rgba(96, 165, 250, 0.4);
+      color: #93c5fd;
       font-size: 10px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.8px;
-      background: rgba(37, 99, 235, 0.35);
-      color: #93c5fd;
       padding: 3px 10px;
-      border-radius: 999px;
-      margin-bottom: 8px;
-      border: 1px solid rgba(147, 197, 253, 0.3);
+      border-radius: 20px;
+      margin-bottom: 10px;
     }
     .hero-title {
-      font-size: 21px;
-      font-weight: 800;
+      font-size: 22px;
+      font-weight: 900;
       line-height: 1.25;
-      letter-spacing: -0.5px;
-      margin-bottom: 6px;
+      letter-spacing: -0.6px;
+      margin-bottom: 8px;
+      color: #ffffff;
     }
     .hero-desc {
       font-size: 12px;
+      line-height: 1.5;
       color: #cbd5e1;
-      max-width: 90%;
-      line-height: 1.45;
+      max-width: 95%;
     }
 
-    /* Feature Grid */
+    /* Feature Grid (3 cards) */
     .features-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
       margin-bottom: 14px;
     }
     .feature-card {
@@ -195,40 +164,42 @@ async function buildPdf() {
       border: 1px solid #e2e8f0;
       border-radius: 12px;
       padding: 12px 14px;
+      transition: all 0.2s;
     }
     .feature-icon {
-      font-size: 16px;
-      margin-bottom: 4px;
-      color: #2563eb;
+      font-size: 10px;
       font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: #2563eb;
+      margin-bottom: 4px;
     }
     .feature-title {
-      font-size: 12px;
-      font-weight: 700;
+      font-size: 13px;
+      font-weight: 800;
       color: #0f172a;
-      margin-bottom: 3px;
+      margin-bottom: 4px;
     }
     .feature-text {
       font-size: 11px;
-      color: #64748b;
-      line-height: 1.35;
+      color: #475569;
+      line-height: 1.4;
     }
 
-    /* Screenshots / Mockups */
+    /* Mockup Container */
     .mockup-container {
-      background: #f8fafc;
-      border: 1px solid #cbd5e1;
+      background: #0f172a;
       border-radius: 14px;
       padding: 8px;
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08);
+      box-shadow: 0 12px 28px -6px rgba(15, 23, 42, 0.25);
+      border: 1px solid #334155;
       margin-bottom: 12px;
     }
     .mockup-header {
       display: flex;
       align-items: center;
       gap: 6px;
-      margin-bottom: 6px;
-      padding-left: 6px;
+      padding: 4px 8px 8px 8px;
     }
     .mockup-dot {
       width: 8px;
@@ -239,10 +210,11 @@ async function buildPdf() {
     .mockup-dot.yellow { background: #f59e0b; }
     .mockup-dot.green { background: #10b981; }
     .mockup-label {
-      font-size: 10.5px;
+      font-size: 10px;
       font-weight: 700;
-      color: #475569;
-      margin-left: 8px;
+      color: #94a3b8;
+      margin-left: 6px;
+      letter-spacing: 0.3px;
     }
     .mockup-img {
       width: 100%;
@@ -361,8 +333,8 @@ async function buildPdf() {
       background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
       border: 2px solid #2563eb;
       border-radius: 16px;
-      padding: 18px 22px;
-      margin-bottom: 14px;
+      padding: 22px 26px;
+      margin-bottom: 20px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -380,81 +352,49 @@ async function buildPdf() {
       margin-bottom: 4px;
     }
     .pricing-heading {
-      font-size: 18px;
-      font-weight: 800;
+      font-size: 24px;
+      font-weight: 900;
       color: #0f172a;
-      margin-bottom: 4px;
+      margin-bottom: 6px;
+      letter-spacing: -0.4px;
     }
     .pricing-sub {
-      font-size: 12px;
+      font-size: 12.5px;
       color: #475569;
-      line-height: 1.4;
+      line-height: 1.5;
+      max-width: 460px;
     }
     .pricing-box {
       background: #ffffff;
       border-radius: 14px;
-      padding: 14px 20px;
+      padding: 18px 24px;
       text-align: center;
       box-shadow: 0 8px 16px rgba(37, 99, 235, 0.12);
       border: 1px solid #bfdbfe;
-      min-width: 140px;
+      min-width: 150px;
     }
     .price-value {
-      font-size: 32px;
-      font-weight: 800;
+      font-size: 40px;
+      font-weight: 900;
       color: #1d4ed8;
       line-height: 1;
       letter-spacing: -1px;
     }
     .price-unit {
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 700;
       color: #64748b;
       margin-top: 4px;
     }
     .price-minimum {
       display: inline-block;
-      margin-top: 6px;
+      margin-top: 8px;
       background: #f1f5f9;
       color: #0f172a;
-      font-size: 10px;
+      font-size: 10.5px;
       font-weight: 800;
       padding: 3px 8px;
       border-radius: 6px;
-    }
-
-    /* Simulation Table */
-    .table-calc {
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 14px;
-      border-radius: 12px;
-      overflow: hidden;
-      border: 1px solid #e2e8f0;
-    }
-    .table-calc th {
-      background: #0f172a;
-      color: #ffffff;
-      font-size: 11px;
-      font-weight: 700;
-      padding: 8px 12px;
-      text-align: left;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    .table-calc td {
-      padding: 8px 12px;
-      font-size: 11.5px;
-      border-bottom: 1px solid #f1f5f9;
-      color: #334155;
-    }
-    .table-calc tr:nth-child(even) td {
-      background: #f8fafc;
-    }
-    .table-calc tr.highlight td {
-      background: #eff6ff;
-      font-weight: 700;
-      color: #1d4ed8;
     }
 
     /* CTA Card */
@@ -462,37 +402,40 @@ async function buildPdf() {
       background: #0f172a;
       color: #ffffff;
       border-radius: 14px;
-      padding: 16px 20px;
+      padding: 20px 26px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-top: auto;
+      box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.3);
     }
     .cta-text h4 {
-      font-size: 15px;
+      font-size: 17px;
       font-weight: 800;
-      margin-bottom: 3px;
+      margin-bottom: 4px;
+      color: #ffffff;
     }
     .cta-text p {
-      font-size: 11.5px;
+      font-size: 12px;
       color: #94a3b8;
     }
     .cta-button {
       background: #2563eb;
       color: #ffffff;
       font-weight: 800;
-      font-size: 12px;
-      padding: 10px 18px;
+      font-size: 13.5px;
+      padding: 13px 24px;
       border-radius: 10px;
       text-decoration: none;
       white-space: nowrap;
-      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.45);
+      transition: background 0.2s;
     }
   </style>
 </head>
 <body>
 
-  <!-- ==================== PAGINA 1: INTRODUCERE & KIOSK TABLETĂ ==================== -->
+  <!-- ==================== PAGE 1: INTRODUCTION & KIOSK TABLET ==================== -->
   <div class="page">
     <div>
       <div class="header-bar">
@@ -500,67 +443,67 @@ async function buildPdf() {
           <img src="${logoImg}" alt="GetApp Smart QR" style="height: 48px; width: auto; object-fit: contain; display: block;">
           <div class="brand-web">www.getapp.ro</div>
         </div>
-        <div class="header-tagline">Soluție Digitală de Pontaj Profesional</div>
+        <div class="header-tagline">Smart QR Time & Attendance Solution</div>
       </div>
 
       <div class="hero-banner">
-        <div class="hero-badge">Tehnologie Cloud & Tablete Kiosk</div>
-        <h1 class="hero-title">Sistem Inteligent de Pontaj Digital<br>prin Cod QR Dinamic și Tabletă</h1>
+        <div class="hero-badge">Cloud Architecture & Tablet Kiosks</div>
+        <h1 class="hero-title">Intelligent Digital Time & Attendance<br>via Dynamic QR Codes & Tablet Kiosks</h1>
         <p class="hero-desc">
-          Elimină complet foile de prezență fizice, cartelele pierdute și timpul irosit la calculul lunar al orelor. 
-          Sistem full protejat, securizat și 100% conform cu normele GDPR și Art. 119 din Codul Muncii.
+          Completely eliminate paper sign-in sheets, lost keycards, and hours wasted on month-end payroll computations. 
+          Enterprise-grade, fully encrypted, and 100% compliant with EU GDPR and statutory labor regulations.
         </p>
       </div>
 
       <div class="features-grid">
         <div class="feature-card">
-          <div class="feature-icon">Sub 1 Secundă</div>
-          <div class="feature-title">Scanare Ultra-Rapidă</div>
-          <div class="feature-text">Angajatul apropie legitimația sau ecranul telefonului de camera tabletei. Confirmare audio-vizuală instantanee.</div>
+          <div class="feature-icon">Sub-1 Second</div>
+          <div class="feature-title">Ultra-Fast Check-In</div>
+          <div class="feature-text">Team members present their digital ID badge or smartphone to the tablet camera. Instant audio-visual confirmation.</div>
         </div>
         <div class="feature-card">
-          <div class="feature-icon">Zero Fraudă</div>
-          <div class="feature-title">Cod QR Dinamic & GDPR</div>
-          <div class="feature-text">Codul se regenerează automat la fiecare 15 secunde. Zero biometrie invazivă, protecție totală a datelor salariaților.</div>
+          <div class="feature-icon">Zero Fraud</div>
+          <div class="feature-title">Dynamic QR & GDPR</div>
+          <div class="feature-text">Tokens refresh automatically every 15 seconds. Zero invasive biometrics, ensuring complete employee privacy.</div>
         </div>
         <div class="feature-card">
-          <div class="feature-icon">Zero Hardware Suplimentar</div>
-          <div class="feature-title">Rulează pe Orice Tabletă</div>
-          <div class="feature-text">Funcționează pe orice iPad sau tabletă Android standard, fără dispozitive biometrice scumpe sau mentenanță.</div>
+          <div class="feature-icon">No Custom Hardware</div>
+          <div class="feature-title">Runs on Any Tablet</div>
+          <div class="feature-text">Compatible with any standard iPad or Android tablet. Zero proprietary hardware cost and zero maintenance overhead.</div>
         </div>
       </div>
 
-      <div class="section-title">Terminalul Kiosk de Intrare (Afișat la recepție sau poartă)</div>
+      <div class="section-title">Front-Desk & Entrance Tablet Kiosk (Reception, Lobby, or Gate)</div>
       
       <div class="mockup-container">
         <div class="mockup-header">
           <span class="mockup-dot red"></span>
           <span class="mockup-dot yellow"></span>
           <span class="mockup-dot green"></span>
-          <span class="mockup-label">Terminal Kiosk Activ - Ecran Tabletă (Ceas digital, Dată, QR Dinamic securizat)</span>
+          <span class="mockup-label">Active Kiosk Terminal — Live Display (Digital Clock, Date, Encrypted Dynamic QR)</span>
         </div>
         <img src="${kioskImg}" class="mockup-img" style="max-height: 145mm; object-fit: contain; background: #000;" alt="Kiosk Tablet Screen">
       </div>
 
       <div class="two-cols" style="margin-top: 6px;">
         <ul class="check-list">
-          <li><span class="check-bullet">✓</span> <span><strong>Anti-Standby 24/7</strong>: Tableta rămâne aprinsă permanent în regim securizat kiosk.</span></li>
-          <li><span class="check-bullet">✓</span> <span><strong>Dublă opțiune</strong>: Scanare QR sau tastare cod PIN individual pentru fiecare angajat.</span></li>
+          <li><span class="check-bullet">&#10003;</span> <span><strong>24/7 Anti-Standby</strong>: Intelligent keep-awake ensures the tablet remains active continuously in secure kiosk mode.</span></li>
+          <li><span class="check-bullet">&#10003;</span> <span><strong>Dual Method</strong>: Fast dynamic QR scan or individual numeric PIN entry for each employee.</span></li>
         </ul>
         <ul class="check-list">
-          <li><span class="check-bullet">✓</span> <span><strong>Full Protejat GDPR</strong>: Criptare completă SSL/TLS, fără stocare de amprente sau date faciale.</span></li>
-          <li><span class="check-bullet">✓</span> <span><strong>Multi-locație</strong>: Gestionează puncte de lucru nelimitate de pe un singur cont central.</span></li>
+          <li><span class="check-bullet">&#10003;</span> <span><strong>Full GDPR Protection</strong>: End-to-end SSL/TLS encryption; zero biometric or facial storage.</span></li>
+          <li><span class="check-bullet">&#10003;</span> <span><strong>Multi-Location Support</strong>: Centrally manage unlimited branches and work sites from one cloud account.</span></li>
         </ul>
       </div>
     </div>
 
     <div class="footer-bar">
-      <div class="left">GetApp Smart QR — Tel: 0757 77 77 12 | Email: contact@getapp.ro | Web: www.getapp.ro</div>
-      <div class="right">Pagina 1 din 3</div>
+      <div class="left">GetApp Smart QR — Tel: +40 757 77 77 12 | Email: contact@getapp.ro | Web: www.getapp.ro</div>
+      <div class="right">Page 1 of 3</div>
     </div>
   </div>
 
-  <!-- ==================== PAGINA 2: DASHBOARD LIVE & MODUL HR ==================== -->
+  <!-- ==================== PAGE 2: REAL-TIME DASHBOARD & HR MODULE ==================== -->
   <div class="page">
     <div>
       <div class="header-bar">
@@ -568,12 +511,12 @@ async function buildPdf() {
           <img src="${logoImg}" alt="GetApp Smart QR" style="height: 48px; width: auto; object-fit: contain; display: block;">
           <div class="brand-web">www.getapp.ro</div>
         </div>
-        <div class="header-tagline">Panou Administrativ & Rapoarte</div>
+        <div class="header-tagline">Management Dashboard & HR Analytics</div>
       </div>
 
-      <div class="section-title">Dashboard Live & Grafice Interactive de Prezență</div>
+      <div class="section-title">Real-Time Dashboard & Interactive Attendance Analytics</div>
       <p style="font-size: 11.5px; color: #475569; margin-bottom: 7px;">
-        Monitorizare completă în timp real: metrici cheie (angajați activi, prezenți, absenți), grafic circular de distribuție, evoluție săptămânală a orelor și situația live cu cronometru la secundă.
+        Complete operational oversight in real time: key metrics (total workforce, currently present, absent), interactive donut status distribution, weekly hours trends, and second-by-second live shift tracking.
       </p>
 
       <div class="mockup-container" style="margin-bottom: 10px;">
@@ -581,64 +524,64 @@ async function buildPdf() {
           <span class="mockup-dot red"></span>
           <span class="mockup-dot yellow"></span>
           <span class="mockup-dot green"></span>
-          <span class="mockup-label">Panou Control Live — Metrici KPI, Grafic Status (Donut), Evoluție Săptămânală și Tabel Live</span>
+          <span class="mockup-label">Live Control Panel — Core KPIs, Interactive Donut Chart, Weekly Hours Evolution & Live Staff Roster</span>
         </div>
-        <img src="${dashboardImg}" class="mockup-img" style="max-height: 80mm; object-fit: cover; object-position: top;" alt="Dashboard cu Grafice Interactive">
+        <img src="${dashboardImg}" class="mockup-img" style="max-height: 80mm; object-fit: cover; object-position: top;" alt="Dashboard with Interactive Charts">
       </div>
 
       <div class="two-cols" style="margin-bottom: 8px;">
         <div>
-          <div class="section-title" style="font-size: 13.5px; margin-bottom: 6px;">Rapoarte Lunare & Grafice Ore</div>
+          <div class="section-title" style="font-size: 13.5px; margin-bottom: 6px;">Monthly Reports & Timesheets</div>
           <div class="mockup-container" style="margin-bottom: 5px; padding: 6px;">
-            <img src="${timesheetImg}" class="mockup-img" style="max-height: 46mm; object-fit: cover; object-position: top;" alt="Rapoarte Pontaje și Grafice">
+            <img src="${timesheetImg}" class="mockup-img" style="max-height: 46mm; object-fit: cover; object-position: top;" alt="Timesheet Reports and Graphs">
           </div>
           <ul class="check-list">
-            <li><span class="check-bullet">✓</span> <span><strong>Calcul automat ore</strong>: Totalizator ore zi, noapte, weekend și suplimentare.</span></li>
-            <li><span class="check-bullet">✓</span> <span><strong>Export SAGA C & Excel</strong>: Centralizator gata de salarizare și ITM.</span></li>
+            <li><span class="check-bullet">&#10003;</span> <span><strong>Automatic Hour Calculations</strong>: Daytime, nighttime, weekend, and overtime tallies.</span></li>
+            <li><span class="check-bullet">&#10003;</span> <span><strong>Excel & ERP Export</strong>: Ready-to-use centralized payroll reports for accounting & audits.</span></li>
           </ul>
         </div>
 
         <div>
-          <div class="section-title" style="font-size: 13.5px; margin-bottom: 6px;">Modul HR & Evidență Salariați</div>
+          <div class="section-title" style="font-size: 13.5px; margin-bottom: 6px;">HR Module & Team Management</div>
           <div class="mockup-container" style="margin-bottom: 5px; padding: 6px;">
-            <img src="${employeesImg}" class="mockup-img" style="max-height: 46mm; object-fit: cover; object-position: top;" alt="Gestiune Salariați HR">
+            <img src="${employeesImg}" class="mockup-img" style="max-height: 46mm; object-fit: cover; object-position: top;" alt="HR Employee Management">
           </div>
           <ul class="check-list">
-            <li><span class="check-bullet">✓</span> <span><strong>Import 1-Click din Excel</strong>: Încarci 50 sau 500 de salariați în sub 2 minute.</span></li>
-            <li><span class="check-bullet">✓</span> <span><strong>Legitimații Digitale & PIN</strong>: Generare automată carduri de acces QR.</span></li>
+            <li><span class="check-bullet">&#10003;</span> <span><strong>1-Click Excel Import</strong>: Onboard 50 to 500+ employees in under 2 minutes.</span></li>
+            <li><span class="check-bullet">&#10003;</span> <span><strong>Digital Badges & PINs</strong>: Automated generation of printable QR access cards.</span></li>
           </ul>
         </div>
       </div>
 
       <div class="gdpr-banner">
         <div class="gdpr-header">
-          <span class="gdpr-badge">FULL PROTEJAT</span>
-          <span class="gdpr-title">Conformitate Legală Totală & Protecție Riguroasă GDPR</span>
+          <span class="gdpr-badge">FULL PROTECTION</span>
+          <span class="gdpr-title">Total Legal Compliance & Strict EU GDPR Data Security</span>
         </div>
         <div class="gdpr-grid">
           <div class="gdpr-col">
-            <div class="gdpr-col-title">Zero Date Biometrice</div>
-            <div class="gdpr-col-desc">Fără amprente sau scanări faciale invazive. Utilizare de coduri QR dinamice criptate și PIN individual, respectând 100% GDPR Art. 5.</div>
+            <div class="gdpr-col-title">Zero Biometric Data</div>
+            <div class="gdpr-col-desc">No invasive fingerprint or facial scans. Uses secure, rotating dynamic QR tokens and private PINs, strictly complying with GDPR Article 5.</div>
           </div>
           <div class="gdpr-col">
-            <div class="gdpr-col-title">Securitate & Criptare Cloud</div>
-            <div class="gdpr-col-desc">Comunicații securizate SSL/TLS 256-bit, baze de date izolate pe companie, backup zilnic automat și jurnal de audit inalterabil.</div>
+            <div class="gdpr-col-title">Cloud Security & Encryption</div>
+            <div class="gdpr-col-desc">256-bit SSL/TLS secure communications, tenant-isolated databases, automated daily backups, and tamper-proof immutable audit logs.</div>
           </div>
           <div class="gdpr-col">
-            <div class="gdpr-col-title">Codul Muncii (Art. 119)</div>
-            <div class="gdpr-col-desc">Evidență clară a orelor de început și sfârșit de tură, cerută obligatoriu de ITM. Foi colective de pontaj complet conforme legal.</div>
+            <div class="gdpr-col-title">Labor Law Compliance</div>
+            <div class="gdpr-col-desc">Clear, auditable records of exact shift start and end times mandated by labor authorities. Certified collective timesheet registers.</div>
           </div>
         </div>
       </div>
     </div>
 
     <div class="footer-bar">
-      <div class="left">GetApp Smart QR — Tel: 0757 77 77 12 | Email: contact@getapp.ro | Web: www.getapp.ro</div>
-      <div class="right">Pagina 2 din 3</div>
+      <div class="left">GetApp Smart QR — Tel: +40 757 77 77 12 | Email: contact@getapp.ro | Web: www.getapp.ro</div>
+      <div class="right">Page 2 of 3</div>
     </div>
   </div>
 
-  <!-- ==================== PAGINA 3: OFERTĂ COMERCIALĂ & COSTURI ==================== -->
+  <!-- ==================== PAGE 3: COMMERCIAL OFFER & PRICING ==================== -->
   <div class="page">
     <div>
       <div class="header-bar">
@@ -646,90 +589,90 @@ async function buildPdf() {
           <img src="${logoImg}" alt="GetApp Smart QR" style="height: 48px; width: auto; object-fit: contain; display: block;">
           <div class="brand-web">www.getapp.ro</div>
         </div>
-        <div class="header-tagline">Ofertă Comercială & Implementare</div>
+        <div class="header-tagline">Commercial Proposal & Implementation</div>
       </div>
 
       <div class="pricing-hero" style="padding: 22px 26px; margin-bottom: 20px;">
         <div class="pricing-details">
-          <div class="pricing-tag">Planul Recomandat de Bază</div>
-          <div class="pricing-heading" style="font-size: 24px; margin-bottom: 6px;">Abonament Lunar Smart</div>
+          <div class="pricing-tag">Recommended Core Subscription</div>
+          <div class="pricing-heading" style="font-size: 24px; margin-bottom: 6px;">Smart Monthly Plan</div>
           <div class="pricing-sub" style="font-size: 12.5px; max-width: 460px; line-height: 1.5;">
-            Fără costuri de instalare, fără licențe de server și fără perioadă contractuală forțată.
-            Plătești exclusiv pentru numărul de angajați activi din companie.
+            Zero installation charges, no expensive server licenses, and no forced long-term lock-in.
+            Pay strictly for the number of active employees in your organization.
           </div>
           <div style="margin-top: 8px; font-size: 11px; color: #1d4ed8; font-weight: 600; line-height: 1.4;">
-            Pentru companii cu cerințe complexe, sunt disponibile și pachetele superioare <strong>Pro</strong> și <strong>Premium</strong>.
+            For organizations with advanced enterprise requirements, <strong>Pro</strong> and <strong>Premium</strong> tiers with custom integrations are also available.
           </div>
         </div>
         <div class="pricing-box" style="padding: 18px 24px;">
-          <div style="font-size: 10px; font-weight: 800; color: #2563eb; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 4px;">Pachet Smart</div>
-          <div class="price-value" style="font-size: 40px;">5 €</div>
-          <div class="price-unit" style="font-size: 12px; margin-top: 4px;">/ angajat / lună</div>
-          <div class="price-minimum" style="font-size: 10.5px; margin-top: 8px;">Minim 50 € / lună / firmă</div>
+          <div style="font-size: 10px; font-weight: 800; color: #2563eb; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 4px;">Smart Plan</div>
+          <div class="price-value" style="font-size: 40px;">15 €</div>
+          <div class="price-unit" style="font-size: 12px; margin-top: 4px;">/ employee / month</div>
+          <div class="price-minimum" style="font-size: 10.5px; margin-top: 8px;">Min. 150 € / month / company</div>
         </div>
       </div>
 
-      <div class="section-title" style="margin-bottom: 12px;">Ce Include Abonamentul Smart</div>
+      <div class="section-title" style="margin-bottom: 12px;">What the Smart Subscription Includes</div>
       <div class="two-cols" style="margin-bottom: 26px; gap: 24px;">
         <ul class="check-list" style="gap: 14px;">
-          <li><span class="check-bullet">✓</span> <span><strong>Aplicație Kiosk Nelimitată</strong> pe oricâte tablete sau terminale doriți.</span></li>
-          <li><span class="check-bullet">✓</span> <span><strong>Dashboard Live & Monitorizare</strong> a prezenței în timp real pe orice dispozitiv.</span></li>
-          <li><span class="check-bullet">✓</span> <span><strong>Rapoarte Complete & Condică de Prezență</strong> conformă 100% cu Codul Muncii.</span></li>
-          <li><span class="check-bullet">✓</span> <span><strong>Export Automat în Excel & SAGA C</strong> pentru transmitere rapidă la contabilitate.</span></li>
+          <li><span class="check-bullet">&#10003;</span> <span><strong>Unlimited Kiosk Terminals</strong> on as many tablets or entrance devices as you require.</span></li>
+          <li><span class="check-bullet">&#10003;</span> <span><strong>Live Dashboard & Real-Time Monitoring</strong> of attendance on any mobile or desktop device.</span></li>
+          <li><span class="check-bullet">&#10003;</span> <span><strong>Complete Timesheet Reports & Registers</strong> fully compliant with statutory labor standards.</span></li>
+          <li><span class="check-bullet">&#10003;</span> <span><strong>Automatic Excel & CSV Exports</strong> for seamless transmission to payroll and accounting.</span></li>
         </ul>
         <ul class="check-list" style="gap: 14px;">
-          <li><span class="check-bullet">✓</span> <span><strong>Modul Planificator Ture & Concedii</strong> cu aprobări și pontaj orar flexibil.</span></li>
-          <li><span class="check-bullet">✓</span> <span><strong>Notificări WhatsApp & Email</strong> pentru întârzieri, absențe și alerte de sistem.</span></li>
-          <li><span class="check-bullet">✓</span> <span><strong>Full Protejat & Backup Zilnic</strong>: Criptare avansată a datelor, securitate Cloud și conformitate deplină GDPR.</span></li>
-          <li><span class="check-bullet">✓</span> <span><strong>Suport Tehnic Direct & Asistență</strong> la configurarea inițială a contului.</span></li>
+          <li><span class="check-bullet">&#10003;</span> <span><strong>Shift Planner & Leave Management</strong> with approvals and automated end-of-shift closing.</span></li>
+          <li><span class="check-bullet">&#10003;</span> <span><strong>WhatsApp & Email Notifications</strong> for delays, absences, and critical system alerts.</span></li>
+          <li><span class="check-bullet">&#10003;</span> <span><strong>Full Protection & Daily Backups</strong>: 256-bit data encryption, cloud security, and full GDPR compliance.</span></li>
+          <li><span class="check-bullet">&#10003;</span> <span><strong>Direct Technical Support & Fast-Track Onboarding</strong> for effortless initial account setup.</span></li>
         </ul>
       </div>
 
-      <div class="section-title" style="margin-bottom: 12px;">Implementare în 3 Pași Simpli (Gata în 15 Minute)</div>
+      <div class="section-title" style="margin-bottom: 12px;">Deployment in 3 Simple Steps (Ready in 15 Minutes)</div>
       <div class="features-grid" style="margin-bottom: 26px;">
         <div class="feature-card" style="border-left: 4px solid #2563eb; padding: 16px 18px;">
-          <div class="feature-icon" style="font-size: 11px;">Pasul 1</div>
-          <div class="feature-title" style="font-size: 15px; margin-bottom: 6px;">Import Angajați</div>
-          <div class="feature-text">Încarci tabelul Excel cu echipa. Sistemul generează automat legitimația digitală și codul PIN.</div>
+          <div class="feature-icon" style="font-size: 11px;">Step 1</div>
+          <div class="feature-title" style="font-size: 15px; margin-bottom: 6px;">Import Team</div>
+          <div class="feature-text">Upload your Excel employee roster. The system instantly generates digital badges and individual PIN codes.</div>
         </div>
         <div class="feature-card" style="border-left: 4px solid #10b981; padding: 16px 18px;">
-          <div class="feature-icon" style="font-size: 11px;">Pasul 2</div>
-          <div class="feature-title" style="font-size: 15px; margin-bottom: 6px;">Activezi Tableta</div>
-          <div class="feature-text">Deschizi link-ul Kiosk securizat pe tableta montată la recepție sau poartă. Gata de scanare.</div>
+          <div class="feature-icon" style="font-size: 11px;">Step 2</div>
+          <div class="feature-title" style="font-size: 15px; margin-bottom: 6px;">Activate Tablet</div>
+          <div class="feature-text">Open the secure Kiosk web application on your reception or entrance tablet. Instantly ready for scanning.</div>
         </div>
         <div class="feature-card" style="border-left: 4px solid #8b5cf6; padding: 16px 18px;">
-          <div class="feature-icon" style="font-size: 11px;">Pasul 3</div>
-          <div class="feature-title" style="font-size: 15px; margin-bottom: 6px;">Pontaj Automat</div>
-          <div class="feature-text">Angajații scanează codul la sosire și plecare. Orele lucrate și suplimentare se calculează automat.</div>
+          <div class="feature-icon" style="font-size: 11px;">Step 3</div>
+          <div class="feature-title" style="font-size: 15px; margin-bottom: 6px;">Automated Tracking</div>
+          <div class="feature-text">Staff scan their badges upon arrival and departure. Working hours and overtime are compiled automatically in real time.</div>
         </div>
       </div>
 
       <div class="cta-card" style="padding: 20px 26px;">
         <div class="cta-text">
-          <h4 style="font-size: 17px; margin-bottom: 4px;">Vrei să testezi sistemul în compania ta?</h4>
-          <p style="font-size: 12.5px; margin-bottom: 8px;">Oferim 14 zile de testare gratuită completă, fără niciun cost inițial și fără card bancar.</p>
+          <h4 style="font-size: 17px; margin-bottom: 4px;">Ready to test the system in your organization?</h4>
+          <p style="font-size: 12.5px; margin-bottom: 8px;">We offer a 14-day comprehensive free trial with full feature access — no upfront fees, no credit card required.</p>
           <div style="font-size: 11.5px; color: #94a3b8; display: flex; gap: 16px; margin-top: 6px;">
-            <span>Tel: <strong style="color: #ffffff;">0757 77 77 12</strong></span>
+            <span>Tel: <strong style="color: #ffffff;">+40 757 77 77 12</strong></span>
             <span>Email: <strong style="color: #ffffff;">contact@getapp.ro</strong></span>
             <span>Web: <strong style="color: #ffffff;">www.getapp.ro</strong></span>
           </div>
         </div>
-        <a href="mailto:contact@getapp.ro" class="cta-button" style="font-size: 13.5px; padding: 13px 24px;">Solicită Demo Gratuit</a>
+        <a href="mailto:contact@getapp.ro" class="cta-button" style="font-size: 13.5px; padding: 13px 24px;">Request Free Demo</a>
       </div>
     </div>
 
     <div class="footer-bar">
-      <div class="left">GetApp Smart QR — Tel: 0757 77 77 12 | Email: contact@getapp.ro | Web: www.getapp.ro</div>
-      <div class="right">Pagina 3 din 3</div>
+      <div class="left">GetApp Smart QR — Tel: +40 757 77 77 12 | Email: contact@getapp.ro | Web: www.getapp.ro</div>
+      <div class="right">Page 3 of 3</div>
     </div>
   </div>
 
 </body>
 </html>`;
 
-  const htmlPath = path.join(__dirname, '../presentation_temp.html');
+  const htmlPath = path.join(__dirname, '../presentation_en_temp.html');
   fs.writeFileSync(htmlPath, htmlContent, 'utf8');
-  console.log('Saved presentation_temp.html');
+  console.log('Saved presentation_en_temp.html');
 
   const browser = await puppeteer.launch({
     executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
@@ -742,7 +685,7 @@ async function buildPdf() {
   await page.evaluateHandle('document.fonts.ready');
   await new Promise(r => setTimeout(r, 2000)); // wait for Google Fonts
 
-  const pdfPath = path.join(__dirname, '../Prezentare_Comerciala_QR_Pontaj.pdf');
+  const pdfPath = path.join(__dirname, '../Commercial_Presentation_Smart_QR.pdf');
   await page.pdf({
     path: pdfPath,
     format: 'A4',
@@ -755,13 +698,13 @@ async function buildPdf() {
     }
   });
 
-  console.log(`Successfully generated PDF at: ${pdfPath}`);
+  console.log(`Successfully generated English PDF at: ${pdfPath}`);
 
-  // Also save PNG preview of each page
+  // Save PNG preview of each page
   await page.setViewport({ width: 794, height: 1123, deviceScaleFactor: 2 });
   const pageElements = await page.$$('.page');
   for (let i = 0; i < pageElements.length; i++) {
-    const previewPath = path.join(__dirname, `../pdf_page_${i + 1}.png`);
+    const previewPath = path.join(__dirname, `../pdf_en_page_${i + 1}.png`);
     await pageElements[i].screenshot({ path: previewPath });
     console.log(`Saved page preview: ${previewPath}`);
   }
@@ -769,7 +712,7 @@ async function buildPdf() {
   await browser.close();
 }
 
-buildPdf().catch(err => {
-  console.error('Error generating PDF:', err);
+buildPdfEn().catch(err => {
+  console.error('Error generating English PDF:', err);
   process.exit(1);
 });

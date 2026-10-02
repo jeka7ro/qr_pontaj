@@ -291,6 +291,48 @@ export default function DashboardCharts({ tenant, themeColor }) {
   }
 
   const getDonutOption = () => {
+    const formattedData = activeDonutData.map(item => {
+      const isPresent = item.name === 'Prezenți';
+      const isAbsent = item.name === 'Absenți';
+      const baseColor = isPresent ? '#3b82f6' : isAbsent ? '#f59e0b' : (item.itemStyle?.color || '#64748b');
+
+      let isSelected = false;
+      let opacity = 1;
+      let borderWidth = 3;
+      let borderColor = '#fff';
+
+      if (liveFilter === 'IN') {
+        if (isPresent) {
+          isSelected = true;
+          opacity = 1;
+          borderWidth = 4;
+          borderColor = '#2563eb';
+        } else {
+          opacity = 0.25;
+        }
+      } else if (liveFilter === 'ABSENT') {
+        if (isAbsent) {
+          isSelected = true;
+          opacity = 1;
+          borderWidth = 4;
+          borderColor = '#d97706';
+        } else {
+          opacity = 0.25;
+        }
+      }
+
+      return {
+        ...item,
+        selected: isSelected,
+        itemStyle: {
+          color: baseColor,
+          opacity: opacity,
+          borderColor: borderColor,
+          borderWidth: borderWidth
+        }
+      };
+    });
+
     return {
       tooltip: {
         trigger: 'item',
@@ -307,6 +349,9 @@ export default function DashboardCharts({ tenant, themeColor }) {
           type: 'pie',
           radius: ['56%', '90%'],
           avoidLabelOverlap: false,
+          selectedMode: 'single',
+          selectedOffset: 7,
+          cursor: 'pointer',
           itemStyle: {
             borderRadius: 8,
             borderColor: '#fff',
@@ -336,6 +381,8 @@ export default function DashboardCharts({ tenant, themeColor }) {
             show: false
           },
           emphasis: {
+            scale: true,
+            scaleSize: 8,
             label: {
               show: true,
               fontSize: 18,
@@ -343,12 +390,12 @@ export default function DashboardCharts({ tenant, themeColor }) {
               color: '#ffffff'
             },
             itemStyle: {
-              shadowBlur: 12,
+              shadowBlur: 14,
               shadowOffsetX: 0,
               shadowColor: 'rgba(0, 0, 0, 0.35)'
             }
           },
-          data: activeDonutData
+          data: formattedData
         }
       ]
     };
@@ -694,8 +741,31 @@ export default function DashboardCharts({ tenant, themeColor }) {
     };
   };
 
+  const handleToggleFilter = (filterType, shouldScroll = true) => {
+    setLiveFilter(prev => (prev === filterType ? 'ALL' : filterType));
+    setLivePage(1);
+    if (shouldScroll) {
+      setTimeout(() => {
+        const el = document.getElementById('live-shifts-section');
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 60);
+    }
+  };
+
   const onChartClick = (e) => {
-    if (drillLevel === 'root' && stats.donutDataDetails[e.name]) {
+    if (!e || !e.name) return;
+    if (e.name === 'Prezenți') {
+      handleToggleFilter('IN', true);
+      return;
+    }
+    if (e.name === 'Absenți') {
+      handleToggleFilter('ABSENT', true);
+      return;
+    }
+
+    if (drillLevel === 'root' && stats.donutDataDetails && stats.donutDataDetails[e.name]) {
       setDrillLevel('details');
       setDrillParentName(e.name);
       const details = stats.donutDataDetails[e.name];
@@ -709,6 +779,15 @@ export default function DashboardCharts({ tenant, themeColor }) {
     }
   };
 
+  const onBarChartClick = (e) => {
+    if (!e || !e.seriesName) return;
+    if (e.seriesName === 'Prezenți') {
+      handleToggleFilter('IN', true);
+    } else if (e.seriesName === 'Absenți') {
+      handleToggleFilter('ABSENT', true);
+    }
+  };
+
   const onBackClick = () => {
     if (drillLevel === 'details') {
       setDrillLevel('root');
@@ -719,28 +798,53 @@ export default function DashboardCharts({ tenant, themeColor }) {
   return (
     <div className="w-full">
       
-      {/* Top KPI Cards */}
+      {/* Top KPI Cards - interactive */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 flex items-center gap-4">
-          <div className="w-14 h-14 rounded-full flex items-center justify-center bg-slate-50 text-slate-400">
+        <button
+          type="button"
+          onClick={() => handleToggleFilter('ALL', true)}
+          className={`bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border flex items-center gap-4 text-left transition-all cursor-pointer hover:shadow-md hover:-translate-y-0.5 ${
+            liveFilter === 'ALL'
+              ? 'border-slate-300 dark:border-slate-600'
+              : 'border-slate-100 dark:border-slate-700 hover:border-slate-300'
+          }`}
+        >
+          <div className="w-14 h-14 rounded-full flex items-center justify-center bg-slate-50 text-slate-400 shrink-0">
             <Users size={24} />
           </div>
           <div>
             <div className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-1">Total Angajați</div>
             <div className="text-3xl font-black text-slate-800 dark:text-white">{stats.totalEmployees}</div>
           </div>
-        </div>
-        <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 flex items-center gap-4">
-          <div className="w-14 h-14 rounded-full flex items-center justify-center bg-green-50 text-green-500">
+        </button>
+
+        <button
+          type="button"
+          onClick={() => handleToggleFilter('IN', true)}
+          className={`bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border flex items-center gap-4 text-left transition-all cursor-pointer hover:shadow-md hover:-translate-y-0.5 ${
+            liveFilter === 'IN'
+              ? 'border-emerald-500 ring-2 ring-emerald-500/20 shadow-md'
+              : 'border-slate-100 dark:border-slate-700 hover:border-emerald-300'
+          }`}
+        >
+          <div className="w-14 h-14 rounded-full flex items-center justify-center bg-green-50 text-green-500 shrink-0">
             <Clock size={24} />
           </div>
           <div>
-            <div className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-1">Prezenți Acum</div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-sm font-bold text-slate-400 uppercase tracking-wider">Prezenți Acum</span>
+              {liveFilter === 'IN' && (
+                <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-full">
+                  Filtru activ
+                </span>
+              )}
+            </div>
             <div className="text-3xl font-black text-slate-800 dark:text-white">{stats.presentNow}</div>
           </div>
-        </div>
+        </button>
+
         <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 flex items-center gap-4">
-          <div className="w-14 h-14 rounded-full flex items-center justify-center bg-blue-50 text-blue-500">
+          <div className="w-14 h-14 rounded-full flex items-center justify-center bg-blue-50 text-blue-500 shrink-0">
             <LogIn size={24} />
           </div>
           <div>
@@ -755,13 +859,21 @@ export default function DashboardCharts({ tenant, themeColor }) {
         {/* ZoomCharts Style Donut (ECharts) - Slim Modern Card */}
         <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 lg:col-span-1 flex flex-col justify-between relative">
           <div className="flex items-center justify-between mb-1">
-            <h3 className="text-base font-bold text-slate-800 dark:text-white">Status Prezență</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-base font-bold text-slate-800 dark:text-white">Status Prezență</h3>
+              {liveFilter !== 'ALL' && (
+                <span className="text-[10px] font-bold text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-950/50 px-2 py-0.5 rounded-full border border-primary-200/50 dark:border-primary-800/50">
+                  Filtru activ
+                </span>
+              )}
+            </div>
             {drillLevel === 'details' && (
               <button 
                 onClick={onBackClick}
-                className="text-xs font-bold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-200 px-2.5 py-1 rounded-full hover:bg-slate-200 transition-colors z-10 flex items-center gap-1"
+                className="text-xs font-bold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-200 px-2.5 py-1 rounded-full hover:bg-slate-200 transition-colors z-10 flex items-center gap-1 cursor-pointer"
               >
-                ⬅ Înapoi
+                <ChevronLeft size={13} className="shrink-0" />
+                <span>Înapoi</span>
               </button>
             )}
           </div>
@@ -774,16 +886,44 @@ export default function DashboardCharts({ tenant, themeColor }) {
               opts={{ renderer: 'svg' }}
             />
             
-            {/* Centered HTML overlay for Donut text */}
+            {/* Centered HTML overlay for Donut text - interactive button */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div 
-                className="rounded-full flex flex-col items-center justify-center shadow-inner border border-slate-700/50"
-                style={{ width: '84px', height: '84px', backgroundColor: '#1e293b' }}
+              <button 
+                type="button"
+                onClick={() => handleToggleFilter('ALL', false)}
+                title={liveFilter !== 'ALL' ? 'Apasă pentru a reseta filtrul (arată toți)' : 'Total angajați'}
+                className={`rounded-full flex flex-col items-center justify-center shadow-inner border transition-all select-none ${
+                  liveFilter !== 'ALL' 
+                    ? 'pointer-events-auto cursor-pointer hover:scale-105 active:scale-95 ring-2 ring-primary-500/50 hover:ring-primary-500 bg-slate-900 border-primary-500' 
+                    : 'border-slate-700/50 bg-[#1e293b]'
+                }`}
+                style={{ width: '88px', height: '88px' }}
               >
                 {drillLevel === 'root' ? (
-                  <div className="text-center">
-                    <div className="text-2xl font-black text-white leading-none">{stats.totalEmployees}</div>
-                    <div className="text-[8px] font-bold text-slate-400 tracking-wider mt-0.5">ANGAJAȚI</div>
+                  <div className="text-center px-1">
+                    {liveFilter === 'IN' ? (
+                      <>
+                        <div className="text-2xl font-black text-blue-400 leading-none">{stats.presentNow}</div>
+                        <div className="text-[8px] font-black text-blue-300 tracking-wider mt-0.5">PREZENȚI</div>
+                        <div className="text-[7.5px] font-medium text-slate-400 mt-0.5">Reset</div>
+                      </>
+                    ) : liveFilter === 'ABSENT' ? (
+                      <>
+                        <div className="text-2xl font-black text-amber-400 leading-none">{Math.max(0, (stats.totalEmployees || 0) - (stats.presentNow || 0))}</div>
+                        <div className="text-[8px] font-black text-amber-300 tracking-wider mt-0.5">ABSENȚI</div>
+                        <div className="text-[7.5px] font-medium text-slate-400 mt-0.5">Reset</div>
+                      </>
+                    ) : liveFilter === 'OUT' ? (
+                      <>
+                        <div className="text-2xl font-black text-slate-300 leading-none">PLECAȚI</div>
+                        <div className="text-[7.5px] font-medium text-slate-400 mt-0.5">Reset</div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="text-2xl font-black text-white leading-none">{stats.totalEmployees}</div>
+                        <div className="text-[8px] font-bold text-slate-400 tracking-wider mt-0.5">ANGAJAȚI</div>
+                      </>
+                    )}
                   </div>
                 ) : (
                   <div className="text-center">
@@ -791,25 +931,60 @@ export default function DashboardCharts({ tenant, themeColor }) {
                     <div className="text-[11px] font-black text-white px-1 leading-tight uppercase truncate max-w-[70px]">{drillParentName}</div>
                   </div>
                 )}
-              </div>
+              </button>
             </div>
           </div>
 
-          {/* Legendă cu valori explicite sub grafic */}
+          {/* Legendă cu valori explicite sub grafic - interactive buttons */}
           <div className="flex flex-wrap items-center justify-center gap-2 mt-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">
             {activeDonutData.map((item, idx) => {
               const total = activeDonutData.reduce((sum, d) => sum + (d.value || 0), 0);
               const pct = total > 0 ? Math.round((item.value / total) * 100) : 0;
               const dotColor = item.itemStyle?.color || (item.name === 'Prezenți' ? '#3b82f6' : '#f59e0b');
+              const filterTarget = item.name === 'Prezenți' ? 'IN' : (item.name === 'Absenți' ? 'ABSENT' : null);
+              const isActive = filterTarget && liveFilter === filterTarget;
+
               return (
-                <div key={idx} className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 dark:bg-slate-700/40 border border-slate-100 dark:border-slate-700">
-                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: dotColor }}></span>
-                  <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">{item.name}:</span>
-                  <strong className="text-[11px] font-black text-slate-900 dark:text-white">{item.value}</strong>
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => filterTarget && handleToggleFilter(filterTarget, true)}
+                  title={`Filtrează lista: ${item.name}`}
+                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border transition-all cursor-pointer text-left ${
+                    isActive
+                      ? item.name === 'Prezenți'
+                        ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-500 ring-2 ring-blue-500/40 shadow-xs'
+                        : 'bg-amber-50 dark:bg-amber-950/40 border-amber-500 ring-2 ring-amber-500/40 shadow-xs'
+                      : 'bg-slate-50 dark:bg-slate-700/40 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
+                  }`}
+                >
+                  <span className={`w-2 h-2 rounded-full shrink-0 ${isActive ? 'animate-pulse' : ''}`} style={{ backgroundColor: dotColor }}></span>
+                  <span className={`text-[11px] font-semibold ${isActive ? (item.name === 'Prezenți' ? 'text-blue-700 dark:text-blue-300 font-bold' : 'text-amber-700 dark:text-amber-300 font-bold') : 'text-slate-600 dark:text-slate-300'}`}>
+                    {item.name}:
+                  </span>
+                  <strong className={`text-[11px] font-black ${isActive ? (item.name === 'Prezenți' ? 'text-blue-900 dark:text-blue-100' : 'text-amber-900 dark:text-amber-100') : 'text-slate-900 dark:text-white'}`}>
+                    {item.value}
+                  </strong>
                   <span className="text-[10px] text-slate-400 font-bold">({pct}%)</span>
-                </div>
+                  {isActive && (
+                    <span className="ml-1 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded bg-white dark:bg-slate-800 shadow-2xs text-slate-700 dark:text-slate-200">
+                      Activ
+                    </span>
+                  )}
+                </button>
               );
             })}
+
+            {liveFilter !== 'ALL' && (
+              <button
+                type="button"
+                onClick={() => handleToggleFilter('ALL', false)}
+                className="text-[10px] font-bold text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white px-2 py-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                title="Resetează filtrul"
+              >
+                Resetează (Toți)
+              </button>
+            )}
           </div>
         </div>
 
@@ -858,17 +1033,35 @@ export default function DashboardCharts({ tenant, themeColor }) {
                 </div>
               </div>
 
-              {/* Quick KPI pill badges for Today */}
+              {/* Quick KPI pill badges for Today - interactive */}
               <div className="flex flex-wrap items-center gap-2 my-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">
                 <span className="text-[11px] font-bold text-slate-400">Azi ({todayItem.name}):</span>
-                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/50">
+                <button
+                  type="button"
+                  onClick={() => handleToggleFilter('IN', true)}
+                  title="Filtrează prezenți astăzi"
+                  className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-bold border transition-all cursor-pointer ${
+                    liveFilter === 'IN'
+                      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-200 border-emerald-500 ring-2 ring-emerald-500/30'
+                      : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200/60 dark:border-emerald-800/50 hover:bg-emerald-100'
+                  }`}
+                >
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                   {todayItem.present || 0} Prezenți
-                </span>
-                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200/60 dark:border-rose-800/50">
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleToggleFilter('ABSENT', true)}
+                  title="Filtrează absenți astăzi"
+                  className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-bold border transition-all cursor-pointer ${
+                    liveFilter === 'ABSENT'
+                      ? 'bg-rose-100 text-rose-800 dark:bg-rose-900/60 dark:text-rose-200 border-rose-500 ring-2 ring-rose-500/30'
+                      : 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border-rose-200/60 dark:border-rose-800/50 hover:bg-rose-100'
+                  }`}
+                >
                   <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
                   {todayItem.absent || 0} Absenți
-                </span>
+                </button>
                 <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/50">
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
                   {todayItem.hours || 0}h Lucrate
@@ -879,6 +1072,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
                 <ReactECharts 
                   option={getBarOption()} 
                   style={{ height: '100%', width: '100%' }}
+                  onEvents={{ click: onBarChartClick }}
                   opts={{ renderer: 'svg' }}
                 />
               </div>
@@ -956,10 +1150,13 @@ export default function DashboardCharts({ tenant, themeColor }) {
           : sortedLiveShifts.slice((safePage - 1) * liveRowsPerPage, safePage * liveRowsPerPage);
 
         return (
-          <div className="mt-8 bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden flex flex-col">
+          <div 
+            id="live-shifts-section"
+            className="mt-8 bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden flex flex-col scroll-mt-6"
+          >
             <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-700 space-y-3.5">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-2.5 sm:gap-3 flex-nowrap">
+                <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap">
                   <h3 className="text-base sm:text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2 whitespace-nowrap">
                     <span className="relative flex h-2.5 w-2.5 shrink-0">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
@@ -974,6 +1171,22 @@ export default function DashboardCharts({ tenant, themeColor }) {
                   <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 whitespace-nowrap">
                     <strong className="text-emerald-600 dark:text-emerald-400">{inCount} prezenți acum</strong> din {liveShifts.length} angajați.
                   </p>
+                  {liveFilter !== 'ALL' && (
+                    <>
+                      <span className="text-slate-300 dark:text-slate-600 font-light select-none">•</span>
+                      <span className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-0.5 rounded-full bg-primary-50 dark:bg-primary-950/40 text-primary-600 dark:text-primary-400 border border-primary-200/60 dark:border-primary-800/50">
+                        Filtru: {liveFilter === 'IN' ? 'Prezenți' : liveFilter === 'ABSENT' ? 'Absenți' : 'Plecați'} ({filteredLiveShifts.length})
+                        <button
+                          type="button"
+                          onClick={() => handleToggleFilter('ALL', false)}
+                          className="hover:text-primary-800 dark:hover:text-primary-200 ml-0.5 cursor-pointer"
+                          title="Resetează filtrul"
+                        >
+                          <X size={12} />
+                        </button>
+                      </span>
+                    </>
+                  )}
                 </div>
               </div>
 

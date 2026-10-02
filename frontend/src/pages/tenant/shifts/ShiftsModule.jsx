@@ -894,6 +894,14 @@ export default function ShiftsModule({ tenant, themeColor }) {
                             <span className="text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40 px-2.5 py-0.5 rounded-full border border-blue-200 dark:border-blue-800">
                               {totalEmployees} {totalEmployees === 1 ? 'Angajat' : 'Angajați'}
                             </span>
+                            {group.items.some(i => i.shift?.auto_close) && (
+                              <span 
+                                className="text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded-full border border-blue-200/60 dark:border-blue-800/60"
+                                title="Tura se închide automat la finalul programului"
+                              >
+                                Auto-închidere
+                              </span>
+                            )}
                           </div>
 
                           {group.notes && (

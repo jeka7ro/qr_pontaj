@@ -32,7 +32,7 @@ export default function UpsellLock({ title, description, themeColor }) {
           </p>
           
           <button 
-            onClick={() => window.location.href = 'mailto:contact@qrpontaj.ro?subject=Deblocare Modul Premium'}
+            onClick={() => window.location.href = 'mailto:contact@getapp.ro?subject=Deblocare Modul Premium'}
             className="w-full flex items-center justify-center gap-2 px-5 h-10 text-sm rounded-full font-bold text-white shadow-lg transition-transform hover:scale-105 active:scale-95"
             style={{ backgroundColor: themeColor || '#2563EB', boxShadow: `0 10px 25px -5px ${themeColor || '#2563EB'}60` }}
           >

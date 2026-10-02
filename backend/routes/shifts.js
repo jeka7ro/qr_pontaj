@@ -35,7 +35,7 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const { id } = req.params;
-    const { employee_id, date, start_time, end_time, shift_type, notes } = req.body;
+    const { employee_id, date, start_time, end_time, shift_type, notes, auto_close } = req.body;
     
     if (!employee_id || !date || !start_time || !end_time) {
       return res.status(400).json({ error: 'Toate câmpurile (angajat, data, ora start/stop) sunt obligatorii.' });
@@ -51,10 +51,10 @@ router.post('/', async (req, res) => {
     }
     
     const result = await db.query(
-      `INSERT INTO qrp_shifts (tenant_id, employee_id, date, start_time, end_time, shift_type, notes)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `INSERT INTO qrp_shifts (tenant_id, employee_id, date, start_time, end_time, shift_type, notes, auto_close)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING *`,
-      [id, employee_id, date, start_time, end_time, shift_type || 'DAY', notes || null]
+      [id, employee_id, date, start_time, end_time, shift_type || 'DAY', notes || null, auto_close === true]
     );
     
     res.status(201).json(result.rows[0]);
@@ -69,7 +69,7 @@ router.post('/bulk', async (req, res) => {
   const client = await db.connect();
   try {
     const { id } = req.params;
-    const { employee_ids, date, dates, start_time, end_time, shift_type, notes } = req.body;
+    const { employee_ids, date, dates, start_time, end_time, shift_type, notes, auto_close } = req.body;
 
     const targetDates = Array.isArray(dates) && dates.length > 0 ? dates : (date ? [date] : []);
 
@@ -91,18 +91,18 @@ router.post('/bulk', async (req, res) => {
         if (existing.rowCount > 0) {
           const updateRes = await client.query(
             `UPDATE qrp_shifts 
-             SET start_time = $1, end_time = $2, shift_type = $3, notes = $4, seen_at = NULL
-             WHERE id = $5 AND tenant_id = $6
+             SET start_time = $1, end_time = $2, shift_type = $3, notes = $4, auto_close = $5, seen_at = NULL
+             WHERE id = $6 AND tenant_id = $7
              RETURNING *`,
-            [start_time, end_time, shift_type || 'DAY', notes || null, existing.rows[0].id, id]
+            [start_time, end_time, shift_type || 'DAY', notes || null, auto_close === true, existing.rows[0].id, id]
           );
           savedShift = updateRes.rows[0];
         } else {
           const insertRes = await client.query(
-            `INSERT INTO qrp_shifts (tenant_id, employee_id, date, start_time, end_time, shift_type, notes)
-             VALUES ($1, $2, $3, $4, $5, $6, $7)
+            `INSERT INTO qrp_shifts (tenant_id, employee_id, date, start_time, end_time, shift_type, notes, auto_close)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
              RETURNING *`,
-            [id, empId, d, start_time, end_time, shift_type || 'DAY', notes || null]
+            [id, empId, d, start_time, end_time, shift_type || 'DAY', notes || null, auto_close === true]
           );
           savedShift = insertRes.rows[0];
         }
@@ -125,7 +125,7 @@ router.post('/bulk', async (req, res) => {
 router.post('/bulk-update', async (req, res) => {
   try {
     const { id } = req.params;
-    const { shift_ids, start_time, end_time, shift_type, notes } = req.body;
+    const { shift_ids, start_time, end_time, shift_type, notes, auto_close } = req.body;
 
     if (!Array.isArray(shift_ids) || shift_ids.length === 0 || !start_time || !end_time) {
       return res.status(400).json({ error: 'Date incomplete pentru actualizarea în masă a turelor.' });
@@ -137,10 +137,11 @@ router.post('/bulk-update', async (req, res) => {
            end_time = $2, 
            shift_type = COALESCE($3, shift_type), 
            notes = COALESCE($4, notes), 
+           auto_close = COALESCE($5, auto_close),
            seen_at = NULL
-       WHERE tenant_id = $5 AND id = ANY($6::int[])
+       WHERE tenant_id = $6 AND id = ANY($7::int[])
        RETURNING *`,
-      [start_time, end_time, shift_type || 'DAY', notes || null, id, shift_ids]
+      [start_time, end_time, shift_type || 'DAY', notes || null, typeof auto_close === 'boolean' ? auto_close : null, id, shift_ids]
     );
 
     res.json({ success: true, count: result.rowCount, shifts: result.rows });
@@ -193,7 +194,7 @@ router.post('/bulk-delete', async (req, res) => {
 router.put('/:shiftId', async (req, res) => {
   try {
     const { id, shiftId } = req.params;
-    const { employee_id, date, start_time, end_time, shift_type, notes } = req.body;
+    const { employee_id, date, start_time, end_time, shift_type, notes, auto_close } = req.body;
     
     if (!employee_id || !date || !start_time || !end_time) {
       return res.status(400).json({ error: 'Toate câmpurile (angajat, data, ora start/stop) sunt obligatorii.' });
@@ -210,10 +211,10 @@ router.put('/:shiftId', async (req, res) => {
     
     const result = await db.query(
       `UPDATE qrp_shifts 
-       SET employee_id = $1, date = $2, start_time = $3, end_time = $4, shift_type = $5, notes = $6
-       WHERE id = $7 AND tenant_id = $8
+       SET employee_id = $1, date = $2, start_time = $3, end_time = $4, shift_type = $5, notes = $6, auto_close = COALESCE($7, auto_close)
+       WHERE id = $8 AND tenant_id = $9
        RETURNING *`,
-      [employee_id, date, start_time, end_time, shift_type || 'DAY', notes || null, shiftId, id]
+      [employee_id, date, start_time, end_time, shift_type || 'DAY', notes || null, typeof auto_close === 'boolean' ? auto_close : null, shiftId, id]
     );
     
     if (result.rowCount === 0) {

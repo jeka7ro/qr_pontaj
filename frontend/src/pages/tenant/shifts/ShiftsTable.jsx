@@ -45,6 +45,7 @@ export default function ShiftsTable({ tenant, themeColor }) {
   const [editStartTime, setEditStartTime] = useState('09:00');
   const [editEndTime, setEditEndTime] = useState('17:30');
   const [editShiftType, setEditShiftType] = useState('DAY');
+  const [editAutoClose, setEditAutoClose] = useState(false);
   const [editNotes, setEditNotes] = useState('');
   const [editShiftIdsToKeep, setEditShiftIdsToKeep] = useState([]);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
@@ -59,6 +60,7 @@ export default function ShiftsTable({ tenant, themeColor }) {
   const [bulkStartTime, setBulkStartTime] = useState('09:00');
   const [bulkEndTime, setBulkEndTime] = useState('17:30');
   const [bulkShiftType, setBulkShiftType] = useState('DAY');
+  const [bulkAutoClose, setBulkAutoClose] = useState(false);
   const [bulkNotes, setBulkNotes] = useState('');
   const [isSavingBulk, setIsSavingBulk] = useState(false);
 
@@ -168,6 +170,7 @@ export default function ShiftsTable({ tenant, themeColor }) {
           start_time: s.start_time,
           end_time: s.end_time,
           shift_type: s.shift_type,
+          auto_close: s.auto_close === true,
           notes: s.notes,
           shift_ids: [],
           employees: []
@@ -251,6 +254,7 @@ export default function ShiftsTable({ tenant, themeColor }) {
     setEditStartTime(group.start_time?.substring(0, 5) || '09:00');
     setEditEndTime(group.end_time?.substring(0, 5) || '17:30');
     setEditShiftType(group.shift_type || 'DAY');
+    setEditAutoClose(group.auto_close === true);
     setEditNotes(group.notes || '');
     setEditShiftIdsToKeep(group.shift_ids);
   };
@@ -286,6 +290,7 @@ export default function ShiftsTable({ tenant, themeColor }) {
             start_time: editStartTime,
             end_time: editEndTime,
             shift_type: editShiftType,
+            auto_close: editAutoClose,
             notes: editNotes || null
           })
         });
@@ -322,6 +327,7 @@ export default function ShiftsTable({ tenant, themeColor }) {
           start_time: bulkStartTime,
           end_time: bulkEndTime,
           shift_type: bulkShiftType,
+          auto_close: bulkAutoClose,
           notes: bulkNotes || null
         })
       });
@@ -778,6 +784,14 @@ export default function ShiftsTable({ tenant, themeColor }) {
                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-black text-slate-800 dark:text-white">
                           <Clock size={12} className="text-slate-400" />
                           <span>{group.start_time?.substring(0, 5)} - {group.end_time?.substring(0, 5)}</span>
+                          {group.auto_close && (
+                            <span 
+                              className="text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-1.5 py-0.2 rounded border border-blue-200/60 dark:border-blue-800/60"
+                              title="Tura se închide automat la sfârșitul programului"
+                            >
+                              Auto
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td className="py-3 px-4 text-center">
@@ -990,6 +1004,42 @@ export default function ShiftsTable({ tenant, themeColor }) {
                 </div>
               </div>
 
+              {/* Închidere automată la final de tură */}
+              <div className="bg-slate-50 dark:bg-slate-900/60 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-700/80">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <label className="text-xs font-bold text-slate-800 dark:text-white block">
+                      Închidere automată la final de tură
+                    </label>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      Înregistrează automat pontajul de ieșire la ora de sfârșit ({editEndTime || '--:--'}) dacă angajatul nu a scanat la plecare.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
+                      {editAutoClose ? 'Da' : 'Nu'}
+                    </span>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={editAutoClose}
+                      onClick={() => setEditAutoClose(prev => !prev)}
+                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                        editAutoClose ? 'bg-primary-600' : 'bg-slate-300 dark:bg-slate-600'
+                      }`}
+                      style={editAutoClose ? { backgroundColor: themeColor || '#2563eb' } : {}}
+                    >
+                      <span
+                        aria-hidden="true"
+                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                          editAutoClose ? 'translate-x-5' : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
               <div>
                 <label className="text-xs font-bold uppercase tracking-wider text-slate-500 block mb-1">
                   Observații (Opțional)
@@ -1126,6 +1176,42 @@ export default function ShiftsTable({ tenant, themeColor }) {
                   >
                     <Moon size={14} /> Tură de Noapte
                   </button>
+                </div>
+              </div>
+
+              {/* Închidere automată la final de tură (Bulk) */}
+              <div className="bg-slate-50 dark:bg-slate-900/60 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-700/80">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <label className="text-xs font-bold text-slate-800 dark:text-white block">
+                      Închidere automată la final de tură
+                    </label>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      Înregistrează automat pontajul de ieșire la ora de sfârșit ({bulkEndTime || '--:--'}) pentru toate cele {selectedGroupIds.length} ture selectate.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
+                      {bulkAutoClose ? 'Da' : 'Nu'}
+                    </span>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={bulkAutoClose}
+                      onClick={() => setBulkAutoClose(prev => !prev)}
+                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                        bulkAutoClose ? 'bg-primary-600' : 'bg-slate-300 dark:bg-slate-600'
+                      }`}
+                      style={bulkAutoClose ? { backgroundColor: themeColor || '#2563eb' } : {}}
+                    >
+                      <span
+                        aria-hidden="true"
+                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                          bulkAutoClose ? 'translate-x-5' : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
+                  </div>
                 </div>
               </div>
 
