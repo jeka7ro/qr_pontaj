@@ -44,11 +44,19 @@ app.get('/api/system/ip', (req, res) => {
   res.json({ ip: 'localhost' });
 });
 
-const { startAutoCloseJob } = require('./jobs/autoCloseShiftsJob');
-const { startBackupJob } = require('./jobs/backupJob');
-
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-  startAutoCloseJob();
-  startBackupJob();
+  try {
+    const { startAutoCloseJob } = require('./jobs/autoCloseShiftsJob');
+    startAutoCloseJob();
+  } catch (err) {
+    console.error('Eroare pornire job autoClose:', err.message);
+  }
+
+  try {
+    const { startBackupJob } = require('./jobs/backupJob');
+    startBackupJob();
+  } catch (err) {
+    console.error('Eroare pornire job backup:', err.message);
+  }
 });
