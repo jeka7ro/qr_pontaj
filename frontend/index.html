@@ -13,6 +13,47 @@
   </head>
   <body>
     <script>
+      // Compatibilitate telefoane mai vechi: adauga doar functiile care lipsesc din browser
+      (function () {
+        try {
+          if (typeof Promise !== 'undefined' && !Promise.withResolvers) {
+            Promise.withResolvers = function () {
+              var resolve, reject;
+              var promise = new Promise(function (res, rej) { resolve = res; reject = rej; });
+              return { promise: promise, resolve: resolve, reject: reject };
+            };
+          }
+          if (!Array.prototype.at) {
+            Object.defineProperty(Array.prototype, 'at', { value: function (n) { n = Math.trunc(n) || 0; if (n < 0) n += this.length; return this[n]; }, writable: true, configurable: true });
+          }
+          if (!Array.prototype.findLast) {
+            Object.defineProperty(Array.prototype, 'findLast', { value: function (fn, thisArg) { for (var i = this.length - 1; i >= 0; i--) { if (fn.call(thisArg, this[i], i, this)) return this[i]; } return undefined; }, writable: true, configurable: true });
+          }
+          if (!Array.prototype.findLastIndex) {
+            Object.defineProperty(Array.prototype, 'findLastIndex', { value: function (fn, thisArg) { for (var i = this.length - 1; i >= 0; i--) { if (fn.call(thisArg, this[i], i, this)) return i; } return -1; }, writable: true, configurable: true });
+          }
+          if (!String.prototype.at) {
+            Object.defineProperty(String.prototype, 'at', { value: function (n) { n = Math.trunc(n) || 0; if (n < 0) n += this.length; return n < 0 || n >= this.length ? undefined : this.charAt(n); }, writable: true, configurable: true });
+          }
+          if (!String.prototype.replaceAll) {
+            Object.defineProperty(String.prototype, 'replaceAll', { value: function (s, r) { if (s instanceof RegExp) { return this.replace(s, r); } return this.split(String(s)).join(r); }, writable: true, configurable: true });
+          }
+          if (!Object.hasOwn) {
+            Object.hasOwn = function (o, k) { return Object.prototype.hasOwnProperty.call(o, k); };
+          }
+          if (typeof globalThis.structuredClone !== 'function') {
+            globalThis.structuredClone = function (v) { return v === undefined ? v : JSON.parse(JSON.stringify(v)); };
+          }
+          if (!window.crypto) { window.crypto = {}; }
+          if (!window.crypto.randomUUID) {
+            window.crypto.randomUUID = function () {
+              return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) { var r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3 | 8)).toString(16); });
+            };
+          }
+        } catch (e) { /* nu blocam pornirea */ }
+      })();
+    </script>
+    <script>
       // Rezerva stocare: unele telefoane blocheaza localStorage (mod privat, cookie-uri blocate) si aplicatia ramanea alba
       (function () {
         function works(name) {
