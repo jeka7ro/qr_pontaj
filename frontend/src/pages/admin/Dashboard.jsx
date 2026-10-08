@@ -20,6 +20,7 @@ import CreateTenantModal from '../../components/CreateTenantModal';
 import TenantAdminsModal from '../../components/TenantAdminsModal';
 import LoginLogs from './LoginLogs';
 import BillingCalculator from './BillingCalculator';
+import LanguageToggle from '../../components/LanguageToggle';
 import { resolveFaviconUrl } from '../../utils/favicon';
 
 export default function AdminDashboard() {
@@ -151,7 +152,10 @@ export default function AdminDashboard() {
             <span className="font-bold text-lg text-slate-800 dark:text-white md:hidden">SaaS Admin</span>
           </div>
           
-          <div className="flex items-center gap-4 md:gap-6 ml-auto">
+          <div className="flex items-center gap-3 md:gap-5 ml-auto">
+            {/* Selector Limbă */}
+            <LanguageToggle />
+
             {/* Dark Mode Toggle */}
             <button 
               onClick={() => setIsDarkMode(!isDarkMode)}
@@ -194,6 +198,7 @@ export default function AdminDashboard() {
             <Route path="/dashboard" element={<TenantsList />} />
             <Route path="/billing" element={<BillingCalculator />} />
             <Route path="/logs" element={<LoginLogs />} />
+            <Route path="/login-logs" element={<LoginLogs />} />
           </Routes>
         </main>
         <ProfileModal 
