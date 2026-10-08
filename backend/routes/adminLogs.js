@@ -517,8 +517,8 @@ router.post('/manual-punch', async (req, res) => {
     // Jurnal scanări
     await client.query(
       `INSERT INTO qrp_scan_logs 
-        (tenant_id, tenant_name, location_id, location_name, employee_id, employee_code, employee_name, action_type, status, failure_reason, ip_address, user_agent, metadata)
-       VALUES ($1, (SELECT name FROM qrp_tenants WHERE id = $1), $2, $3, $4, $5, $6, $7, 'MANUAL', $8, $9, $10, $11)`,
+        (tenant_id, tenant_name, location_id, location_name, employee_id, employee_code, employee_name, action_type, status, failure_reason, ip_address, user_agent, metadata, created_at)
+       VALUES ($1, (SELECT name FROM qrp_tenants WHERE id = $1), $2, $3, $4, $5, $6, $7, 'MANUAL', $8, $9, $10, $11, $12)`,
       [
         tenant_id,
         locationId || null,
@@ -530,7 +530,8 @@ router.post('/manual-punch', async (req, res) => {
         `Intervenție manuală de urgență: ${reason}`,
         req.headers['x-forwarded-for'] || req.socket.remoteAddress || null,
         req.headers['user-agent'] || null,
-        JSON.stringify({ manual: true, operator: req.user?.email || 'SuperAdmin' })
+        JSON.stringify({ manual: true, operator: req.user?.email || 'SuperAdmin' }),
+        punchTime
       ]
     );
 

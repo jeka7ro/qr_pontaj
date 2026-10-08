@@ -4,7 +4,8 @@ import {
   QrCode, Users, LogOut, Menu, X, Info, MapPin, Sun, Moon, CreditCard, 
   CalendarDays, FileSpreadsheet, Globe, Map, BookOpenCheck, Calculator, 
   CalendarClock, ScanFace, MessageSquare, Wrench, Table, ChevronDown,
-  Bell, LogIn, Briefcase, Clock, User, PanelLeftClose, PanelLeftOpen, ChevronRight, Settings
+  Bell, LogIn, Briefcase, Clock, User, PanelLeftClose, PanelLeftOpen, ChevronRight, Settings,
+  Activity
 } from 'lucide-react';
 import TenantSettingsModal from '../../components/TenantSettingsModal';
 
@@ -35,6 +36,7 @@ import ErpModule from './erp/ErpModule';
 import FaceRecognitionModule from './face_recognition/FaceRecognitionModule';
 import WhatsappModule from './whatsapp/WhatsappModule';
 import AssetsModule from './assets/AssetsModule';
+import TenantLogsModule from './logs/TenantLogsModule';
 import { QRCodeSVG } from 'qrcode.react';
 import { updatePageFavicon } from '../../utils/favicon';
 import LanguageToggle from '../../components/LanguageToggle';
@@ -359,6 +361,20 @@ export default function TenantDashboard() {
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
             </div>
             <span className={`${sidebarCollapsed ? 'md:hidden' : ''} truncate`}>{t('timesheets')}</span>
+          </Link>
+
+          <Link 
+            to="/admin/logs"
+            onClick={() => setSidebarOpen(false)}
+            title={t('activityLogs')}
+            className={`w-full flex items-center ${sidebarCollapsed ? 'md:justify-center md:px-0 gap-3 px-4' : 'gap-3 px-4'} py-3 rounded-full transition-all font-medium text-sm
+              ${location.pathname === '/admin/logs' ? 'font-bold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/40 hover:text-slate-800 dark:hover:text-white'}`}
+            style={getNavStyle(location.pathname === '/admin/logs')}
+          >
+            <div className="w-5 h-5 flex items-center justify-center shrink-0">
+              <Activity size={18} />
+            </div>
+            <span className={`${sidebarCollapsed ? 'md:hidden' : ''} truncate`}>{t('activityLogs')}</span>
           </Link>
           
           <Link 
@@ -757,6 +773,12 @@ export default function TenantDashboard() {
             <Route path="timesheets" element={
               <div className="w-full">
                 <TimesheetReport tenant={tenant} themeColor={themeColor} />
+              </div>
+            } />
+
+            <Route path="logs" element={
+              <div className="w-full">
+                <TenantLogsModule tenant={tenant} themeColor={themeColor} />
               </div>
             } />
 

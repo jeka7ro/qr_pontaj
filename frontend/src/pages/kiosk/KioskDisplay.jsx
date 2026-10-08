@@ -48,28 +48,46 @@ export default function KioskDisplay() {
   // Anti-standby state
   const wakeLockRef = useRef(null);
 
-  // 1. Incarcare date Tenant pentru branding (logo, culori)
+  // 1. Incarcare date Tenant pentru branding (logo, culori) cu auto-retry si cache offline
   useEffect(() => {
+    let retryTimer = null;
+    let isMounted = true;
+
     const fetchTenant = async () => {
       try {
-        const apiUrl = `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}`;
+        const apiUrl = `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + (window.location.hostname.includes('localhost') ? ':5001' : ''))}`;
         const res = await fetch(`${apiUrl}/api/tenants/${tenantId}`);
         if (!res.ok) throw new Error('Nu am putut încărca datele tenantului.');
         const data = await res.json();
+        if (!isMounted) return;
         setTenant(data);
+        setError(null);
         if (data.favicon_url || data.logo_url) {
           updatePageFavicon(data.favicon_url || data.logo_url, `${data.name || 'Kiosk'} - Pontaj`);
         }
         localStorage.setItem(`kiosk_tenant_${tenantId}`, JSON.stringify(data));
       } catch (err) {
-        if (!localStorage.getItem(`kiosk_tenant_${tenantId}`)) {
+        if (!isMounted) return;
+        const cached = localStorage.getItem(`kiosk_tenant_${tenantId}`);
+        if (cached) {
+          try {
+            setTenant(JSON.parse(cached));
+          } catch {}
+        } else {
           setError(err.message);
         }
+        // Auto-reincearca automat la fiecare 5 secunde daca conexiunea a esuat
+        retryTimer = setTimeout(fetchTenant, 5000);
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
     fetchTenant();
+
+    return () => {
+      isMounted = false;
+      if (retryTimer) clearTimeout(retryTimer);
+    };
   }, [tenantId]);
 
   // 2. Ceas digital (update in fiecare secunda)
@@ -456,12 +474,22 @@ export default function KioskDisplay() {
 
 
 
-  if (error) {
+  if (error && !tenant) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center" style={{ backgroundColor: customBgColor || '#020617' }}>
-        <AlertCircle className="w-16 h-16 text-red-500 mb-4" />
+        <AlertCircle className="w-16 h-16 text-red-500 mb-4 animate-pulse" />
         <h1 className="text-3xl font-bold text-white mb-2">Eroare Kiosk</h1>
-        <p className="text-slate-400 text-lg">{error}</p>
+        <p className="text-slate-400 text-lg mb-6">{error}</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="px-6 py-3 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-lg transition-all active:scale-95 flex items-center gap-2 cursor-pointer"
+        >
+          <RefreshCw size={16} />
+          <span>Reîncearcă conexiunea</span>
+        </button>
+        <p className="text-slate-500 text-xs mt-4">
+          Se reîncearcă automat conectarea la server...
+        </p>
       </div>
     );
   }

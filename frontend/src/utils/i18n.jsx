@@ -14,6 +14,7 @@ const translations = {
     gdprLegal: "GDPR & Legal",
     dashboard: "Panou Principal",
     timesheets: "Pontaje & Rapoarte",
+    activityLogs: "Jurnal & Activitate",
     employees: "Personal (Angajați)",
     roles: "Funcții & Roluri",
     locations: "Puncte de Lucru",
@@ -562,6 +563,7 @@ const translations = {
     gdprLegal: "GDPR & Legal",
     dashboard: "Dashboard",
     timesheets: "Timesheets",
+    activityLogs: "Activity Logs",
     employees: "Employees",
     roles: "Roles & Positions",
     locations: "Locations",
@@ -1110,6 +1112,7 @@ const translations = {
     gdprLegal: "RGPD & Légal",
     dashboard: "Tableau de Bord",
     timesheets: "Feuilles d'Heures",
+    activityLogs: "Journal d'activité",
     employees: "Employés",
     roles: "Rôles & Postes",
     locations: "Sites de Travail",
@@ -1658,6 +1661,7 @@ const translations = {
     gdprLegal: "AVG & Juridisch",
     dashboard: "Dashboard",
     timesheets: "Tijdregistraties",
+    activityLogs: "Activiteitenlogboek",
     employees: "Medewerkers",
     roles: "Rollen & Functies",
     locations: "Werklocaties",
@@ -2241,5 +2245,7 @@ export function LanguageProvider({ children }) {
 export function useTranslation() {
   return useContext(LanguageContext);
 }
+
+export const useLanguage = useTranslation;
 
 export default translations;

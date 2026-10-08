@@ -167,6 +167,9 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
     if (webhookSecret && sig) {
+      if (!process.env.STRIPE_SECRET_KEY) {
+        return res.status(500).send('STRIPE_SECRET_KEY lipsește din mediu');
+      }
       const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
       event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
     } else {
