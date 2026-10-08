@@ -1,0 +1,1 @@
+(function(){try{if(sessionStorage.getItem('qrp_reload'))return;sessionStorage.setItem('qrp_reload','1');var u=new URL(location.href);u.searchParams.set('_v',Date.now());location.replace(u.toString());}catch(e){location.reload();}})();
