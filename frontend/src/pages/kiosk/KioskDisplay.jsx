@@ -128,6 +128,10 @@ export default function KioskDisplay() {
       let baseUrl = window.location.origin;
       if (window.location.hostname.includes('localhost') && resolvedIp) {
         baseUrl = `${window.location.protocol}//${resolvedIp}:${window.location.port || 5188}`;
+      } else if (!window.location.hostname.includes('localhost')) {
+        // În producție, folosim garantat domeniul oficial railway.app pentru scanare QR
+        // pentru ca nicio rețea cu filtru / firewall (Fortinet etc.) să nu blocheze telefoanele angajaților
+        baseUrl = 'https://qr-pontaj.up.railway.app';
       }
       
       const ts = Math.floor(Date.now() / 1000); // Unix timestamp in seconds

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { ShieldAlert, Loader2, LogIn, LogOut, CheckCircle2, Eye, EyeOff, X, ShieldCheck, MapPin, Clock, Calendar, FileText, Coffee, Play } from 'lucide-react';
+import { ShieldAlert, Loader2, LogIn, LogOut, CheckCircle2, Eye, EyeOff, X, ShieldCheck, MapPin, Clock, Calendar, FileText, Coffee, Play, Lock } from 'lucide-react';
 
 export default function ScanScreen() {
   const [searchParams] = useSearchParams();
@@ -573,17 +573,17 @@ export default function ScanScreen() {
         <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 dark:border-slate-800 overflow-hidden">
           {/* Header */}
           <div className="p-6 text-center border-b border-slate-800 bg-slate-950">
-            {tenant.logo_url ? (
-              <img src={tenant.logo_url.startsWith('http') ? tenant.logo_url : ( tenant.logo_url?.startsWith('http') ? tenant.logo_url : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${tenant.logo_url}` )} alt="Logo" className="h-14 object-contain mx-auto mb-3 filter drop-shadow-md" />
+            {tenant?.logo_url ? (
+              <img src={tenant.logo_url.startsWith('http') ? tenant.logo_url : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${tenant.logo_url}`} alt="Logo" className="h-14 object-contain mx-auto mb-3 filter drop-shadow-md" />
             ) : (
               <div
                 className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-black shadow-sm mx-auto mb-3"
                 style={{ backgroundColor: themeColor, color: '#fff' }}
               >
-                {tenant.name.substring(0, 2).toUpperCase()}
+                {tenant?.name ? tenant.name.substring(0, 2).toUpperCase() : 'QR'}
               </div>
             )}
-            <h1 className="text-lg font-bold text-white">{tenant.name}</h1>
+            <h1 className="text-lg font-bold text-white">{tenant?.name || 'QR Pontaj'}</h1>
             <p className="text-xs text-slate-400 uppercase font-bold tracking-wider mt-1">Portal Pontaj</p>
           </div>
 

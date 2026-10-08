@@ -12,7 +12,8 @@ import {
   Sun,
   Moon,
   History,
-  Calculator
+  Calculator,
+  Activity
 } from 'lucide-react';
 import DataTable from '../../components/DataTable';
 import ProfileModal from '../../components/ProfileModal';
