@@ -566,12 +566,12 @@ export default function TenantLogsModule({ tenant, themeColor = '#2563EB' }) {
                           {/* Tip Pontaj */}
                           <td className="py-3 px-4 whitespace-nowrap font-bold">
                             {log.action_type === 'IN' && (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200">
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-emerald-600 text-white border border-emerald-600">
                                 <LogIn size={11} /> {L.typeIn}
                               </span>
                             )}
                             {log.action_type === 'OUT' && (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-200 border border-slate-200">
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-red-600 text-white border border-red-600">
                                 <LogOut size={11} /> {L.typeOut}
                               </span>
                             )}
@@ -586,7 +586,7 @@ export default function TenantLogsModule({ tenant, themeColor = '#2563EB' }) {
                               </span>
                             )}
                             {log.action_type === 'LOGIN' && (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-slate-100 text-slate-500 border border-dashed border-slate-300">
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-blue-600 text-white border border-blue-600">
                                 {L.typeLogin}
                               </span>
                             )}
