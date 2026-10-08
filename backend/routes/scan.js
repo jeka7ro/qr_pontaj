@@ -125,6 +125,45 @@ async function logScanEvent({
   }
 }
 
+// Explica motivul exact al esecului la autentificare: cod inexistent sau PIN gresit.
+// Daca codul introdus difera doar prin zerouri (ex. UND0052 vs UND052), sugereaza varianta existenta.
+async function describeLoginFailure(employee_code, tenant_id) {
+  try {
+    return await describeLoginFailureInner(employee_code, tenant_id);
+  } catch (err) {
+    console.error('Eroare describeLoginFailure:', err.message);
+    return { error: 'Cod angajat sau PIN incorect.', reason: 'Cod angajat sau PIN incorect' };
+  }
+}
+
+async function describeLoginFailureInner(employee_code, tenant_id) {
+  const code = String(employee_code || '').trim().slice(0, 30);
+  const exists = await pool.query(
+    'SELECT 1 FROM qrp_employees WHERE employee_code = $1 AND tenant_id = $2 LIMIT 1',
+    [code, tenant_id]
+  );
+  if (exists.rows.length > 0) {
+    return { error: 'PIN incorect.', reason: 'PIN incorect' };
+  }
+  let hint = '';
+  const m = code.match(/^([A-Za-z]+)0*(\d+)$/);
+  if (m) {
+    const prefix = m[1].toUpperCase();
+    const candidates = [2, 3, 4, 5].map(w => prefix + m[2].padStart(w, '0')).filter(c => c !== code);
+    const found = await pool.query(
+      'SELECT employee_code FROM qrp_employees WHERE employee_code = ANY($1) AND tenant_id = $2 LIMIT 1',
+      [candidates, tenant_id]
+    );
+    if (found.rows.length > 0) {
+      hint = ` Poate ai vrut ${found.rows[0].employee_code}?`;
+    }
+  }
+  return {
+    error: `Codul ${code} nu există.${hint || ' Verifică codul introdus.'}`,
+    reason: 'Cod angajat inexistent'
+  };
+}
+
 // Verificare status (Intrat/Ieșit) inainte de a ponta
 router.post('/status', async (req, res) => {
   const { employee_code, pin_code, tenant_id, kiosk_id } = req.body;
@@ -135,16 +174,17 @@ router.post('/status', async (req, res) => {
     );
 
     if (empResult.rows.length === 0) {
+      const failure = await describeLoginFailure(employee_code, tenant_id);
       await logScanEvent({
         tenant_id,
         kiosk_id,
         employee_code,
         action_type: 'STATUS_CHECK',
         status: 'FAILED',
-        failure_reason: 'Cod angajat sau PIN incorect la verificare status',
+        failure_reason: `${failure.reason} la verificare status`,
         req
       });
-      return res.status(404).json({ error: 'Cod angajat sau PIN incorect.' });
+      return res.status(404).json({ error: failure.error });
     }
 
     const employee = empResult.rows[0];
@@ -163,6 +203,18 @@ router.post('/status', async (req, res) => {
       });
       return res.status(403).json({ error: 'Contul acestui angajat a fost arhivat și nu poate efectua pontajul.' });
     }
+
+    // Autentificare reusita: se jurnalizeaza ca sa se vada ca angajatul a intrat in aplicatie
+    await logScanEvent({
+      tenant_id,
+      kiosk_id,
+      employee_id: employee.id,
+      employee_code,
+      employee_name: `${employee.first_name} ${employee.last_name}`,
+      action_type: 'LOGIN',
+      status: 'SUCCESS',
+      req
+    });
     const lastEntryRes = await pool.query(
       'SELECT action_type FROM qrp_timesheets WHERE employee_id = $1 ORDER BY created_at DESC LIMIT 1',
       [employee.id]
@@ -251,16 +303,17 @@ router.post('/', async (req, res) => {
     );
 
     if (empResult.rows.length === 0) {
+      const failure = await describeLoginFailure(employee_code, tenant_id);
       await logScanEvent({
         tenant_id,
         kiosk_id,
         employee_code,
         action_type: type,
         status: 'FAILED',
-        failure_reason: 'Cod angajat sau PIN incorect la pontaj',
+        failure_reason: `${failure.reason} la pontaj`,
         req
       });
-      return res.status(404).json({ error: 'Cod angajat sau PIN incorect.' });
+      return res.status(404).json({ error: failure.error });
     }
 
     const employee = empResult.rows[0];

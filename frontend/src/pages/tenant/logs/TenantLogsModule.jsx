@@ -583,7 +583,12 @@ export default function TenantLogsModule({ tenant, themeColor = '#2563EB' }) {
                                 RELUARE
                               </span>
                             )}
-                            {!['IN', 'OUT', 'BREAK_START', 'BREAK_END'].includes(log.action_type) && (
+                            {log.action_type === 'LOGIN' && (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-sky-50 text-sky-700 border border-sky-200">
+                                AUTENTIFICARE
+                              </span>
+                            )}
+                            {!['IN', 'OUT', 'BREAK_START', 'BREAK_END', 'LOGIN'].includes(log.action_type) && (
                               <span className="text-slate-500 font-medium">
                                 {log.action_type || '-'}
                               </span>
@@ -630,7 +635,7 @@ export default function TenantLogsModule({ tenant, themeColor = '#2563EB' }) {
                           {/* Detalii / Motiv */}
                           <td className="py-3 px-4 text-slate-600 dark:text-slate-300 max-w-xs">
                             <div className={`text-[11px] ${isFailed ? 'font-bold text-red-600 dark:text-red-400' : ''}`}>
-                              {log.failure_reason || (isSuccess ? 'Scanare QR validată cu succes' : '-')}
+                              {log.failure_reason || (isSuccess ? (log.action_type === 'LOGIN' ? 'Angajatul a intrat în aplicație (cod și PIN corecte)' : 'Scanare QR validată cu succes') : '-')}
                             </div>
                           </td>
 
