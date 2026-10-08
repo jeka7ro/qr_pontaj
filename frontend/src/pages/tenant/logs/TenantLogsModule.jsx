@@ -586,7 +586,7 @@ export default function TenantLogsModule({ tenant, themeColor = '#2563EB' }) {
                               </span>
                             )}
                             {log.action_type === 'LOGIN' && (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-sky-50 text-sky-700 border border-sky-200">
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-slate-100 text-slate-500 border border-dashed border-slate-300">
                                 {L.typeLogin}
                               </span>
                             )}
@@ -640,7 +640,7 @@ export default function TenantLogsModule({ tenant, themeColor = '#2563EB' }) {
                           </td>
 
                           {/* Detalii / Motiv */}
-                          <td className="py-3 px-4 text-slate-600 dark:text-slate-300 max-w-xs">
+                          <td className="py-3 px-4 text-slate-600 dark:text-slate-300 max-w-xs min-w-[200px]">
                             <div className={`text-[11px] ${isFailed ? 'font-bold text-red-600 dark:text-red-400' : ''}`}>
                               {translateReason(log.failure_reason) || (isSuccess ? (log.action_type === 'LOGIN' ? L.detailLoginOk : L.detailScanOk) : '-')}
                             </div>
