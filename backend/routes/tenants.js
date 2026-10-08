@@ -215,6 +215,7 @@ router.get('/', async (req, res) => {
     const query = `
       SELECT 
         t.id, t.name as nume, t.subdomain, t.theme_color as culoare, t.logo_url, t.favicon_url, t.modules,
+        t.portal_bg_image_url, t.portal_bg_color,
         COALESCE(t.billing_per_employee, false) as billing_per_employee,
         COALESCE(t.price_per_employee, 0)::numeric as price_per_employee,
         s.qr_mode as mod_qr, s.allowed_radius_meters as raza_gps, s.name as tip_modul,
