@@ -13,6 +13,36 @@
   </head>
   <body>
     <script>
+      // Rezerva stocare: unele telefoane blocheaza localStorage (mod privat, cookie-uri blocate) si aplicatia ramanea alba
+      (function () {
+        function works(name) {
+          try {
+            var s = window[name];
+            var k = '__qrp_test__';
+            s.setItem(k, '1');
+            s.removeItem(k);
+            return true;
+          } catch (e) { return false; }
+        }
+        function memoryStorage() {
+          var d = {};
+          return {
+            getItem: function (k) { return Object.prototype.hasOwnProperty.call(d, k) ? d[k] : null; },
+            setItem: function (k, v) { d[k] = String(v); },
+            removeItem: function (k) { delete d[k]; },
+            clear: function () { d = {}; },
+            key: function (i) { return Object.keys(d)[i] || null; },
+            get length() { return Object.keys(d).length; }
+          };
+        }
+        ['localStorage', 'sessionStorage'].forEach(function (name) {
+          if (!works(name)) {
+            try { Object.defineProperty(window, name, { value: memoryStorage(), configurable: true }); } catch (e) {}
+          }
+        });
+      })();
+    </script>
+    <script>
       // Auto-recuperare: daca bundle-ul JS vechi din cache nu mai exista dupa un deploy, reincarca o singura data
       (function () {
         function recover() {
@@ -36,5 +66,29 @@
     </script>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    <script>
+      // Daca aplicatia nu porneste in 12 secunde, arata un mesaj in loc de pagina alba + eroarea
+      (function () {
+        var lastErr = '';
+        window.addEventListener('error', function (e) {
+          lastErr = (e && e.message) ? e.message + (e.filename ? ' @ ' + String(e.filename).split('/').pop() + ':' + e.lineno : '') : lastErr;
+        });
+        window.addEventListener('unhandledrejection', function (e) {
+          lastErr = String((e.reason && e.reason.message) || e.reason || lastErr);
+        });
+        setTimeout(function () {
+          var root = document.getElementById('root');
+          if (root && root.children.length === 0) {
+            root.innerHTML =
+              '<div style="font-family:-apple-system,Arial,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;background:#f8fafc;color:#0f172a">' +
+              '<h1 style="font-size:20px;margin:0 0 8px">Pagina nu s-a incarcat</h1>' +
+              '<p style="margin:0 0 16px;font-size:14px;color:#475569">Verifica conexiunea la internet si incearca din nou.</p>' +
+              '<button onclick="location.reload()" style="background:#0f172a;color:#fff;border:0;border-radius:999px;padding:12px 28px;font-size:15px;font-weight:700">Reincarca</button>' +
+              '<p style="margin:20px 0 0;font-size:11px;color:#94a3b8;word-break:break-all;max-width:320px">' + (lastErr ? 'Detalii: ' + lastErr.replace(/</g, '&lt;') : 'Fara detalii de eroare') + '</p>' +
+              '</div>';
+          }
+        }, 12000);
+      })();
+    </script>
   </body>
 </html>
