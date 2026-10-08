@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Diagnostic</title>
+<style>
+  body{font-family:-apple-system,Helvetica,Arial,sans-serif;margin:0;padding:16px;background:#fff;color:#111;font-size:15px;line-height:1.4}
+  h1{font-size:18px;margin:0 0 10px}
+  pre{white-space:pre-wrap;word-break:break-word;background:#f3f3f3;padding:10px;border-radius:8px;font-size:13px}
+  .ok{color:#0a7a2f}.bad{color:#c00;font-weight:bold}
+</style>
+</head>
+<body>
+<h1>Diagnostic Smart QR Pontaj</h1>
+<pre id="out">Pornit. Daca vezi acest text, JavaScript-ul ruleaza.</pre>
+<div id="root" style="display:none"></div>
+<script>
+(function () {
+  var out = document.getElementById('out');
+  function log(t, cls) { out.textContent += '\n' + t; }
+  window.__diagLog = log;
+  log('UA: ' + navigator.userAgent);
+  log('Ecran: ' + screen.width + 'x' + screen.height + ' DPR ' + window.devicePixelRatio);
+  var checks = {
+    'Promise.withResolvers': typeof Promise.withResolvers,
+    'Promise.try': typeof Promise.try,
+    'URL.parse': typeof URL.parse,
+    'Array.prototype.at': typeof [].at,
+    'Array.prototype.findLast': typeof [].findLast,
+    'structuredClone': typeof window.structuredClone,
+    'Object.hasOwn': typeof Object.hasOwn,
+    'crypto.randomUUID': typeof (window.crypto && window.crypto.randomUUID),
+    'localStorage': (function () { try { localStorage.setItem('_d', '1'); localStorage.removeItem('_d'); return 'ok'; } catch (e) { return 'BLOCAT: ' + e.message; } })(),
+    'sessionStorage': (function () { try { sessionStorage.setItem('_d', '1'); sessionStorage.removeItem('_d'); return 'ok'; } catch (e) { return 'BLOCAT: ' + e.message; } })(),
+    'fetch': typeof window.fetch,
+    'Worker': typeof window.Worker,
+    'ResizeObserver': typeof window.ResizeObserver,
+    'IntersectionObserver': typeof window.IntersectionObserver,
+    'WebAssembly': typeof window.WebAssembly
+  };
+  for (var k in checks) log(k + ': ' + checks[k]);
+  window.addEventListener('error', function (e) {
+    log('EROARE: ' + e.message + ' @ ' + (e.filename || '') + ':' + (e.lineno || '') + ':' + (e.colno || ''));
+  });
+  window.addEventListener('unhandledrejection', function (e) {
+    var r = e.reason; log('PROMISE RESPINS: ' + (r && (r.stack || r.message) || r));
+  });
+  log('Test API server...');
+  fetch('https://qrpontaj.up.railway.app/api/health').then(function (r) { return r.text(); })
+    .then(function (t) { log('API server: ' + t.slice(0, 80)); })
+    .catch(function (e) { log('API server EROARE: ' + e.message); });
+  log('Incarc aplicatia...');
+  fetch('/index.html?d=' + Date.now()).then(function (r) { return r.text(); }).then(function (html) {
+    var m = html.match(/src="(\/assets\/index-[^"]+\.js)"/);
+    if (!m) { log('Nu gasesc scriptul principal'); return; }
+    log('Script: ' + m[1]);
+    return import(m[1]).then(function () { log('Aplicatia s-a incarcat fara eroare de modul.'); })
+      .catch(function (e) { log('EROARE LA INCARCARE MODUL: ' + (e && (e.stack || e.message) || e)); });
+  }).catch(function (e) { log('EROARE: ' + e.message); });
+  setTimeout(function () { log('--- 15s: trimite captura acestui ecran ---'); }, 15000);
+})();
+</script>
+</body>
+</html>
