@@ -7,6 +7,7 @@ import { extractTextFromImageOrPdf, cropFaceFromIdCard } from '../lib/pdfOcr';
 import { parseIdCardText, getBirthDateFromCnp } from '../lib/idParser';
 import ConfirmModal from './ConfirmModal';
 import UpgradeSubscriptionModal from './UpgradeSubscriptionModal';
+import { useLanguage } from '../utils/i18n.jsx';
 
 const EXPORT_COLUMNS = [
   { id: 'full_name', label: 'Nume și Prenume' },
@@ -27,6 +28,19 @@ const EXPORT_COLUMNS = [
 ];
 
 export default function EmployeesList({ tenant, themeColor }) {
+  const { language } = useLanguage();
+  const searchPlaceholders = {
+    ro: 'Caută după nume, cod sau CNP...',
+    en: 'Search by name, code or ID number...',
+    fr: 'Rechercher par nom, code ou CNP...',
+    nl: 'Zoek op naam, code of CNP...'
+  };
+  const archiveSearchPlaceholders = {
+    ro: 'Caută în arhivă...',
+    en: 'Search the archive...',
+    fr: "Rechercher dans l'archive...",
+    nl: 'Zoeken in archief...'
+  };
   const [employees, setEmployees] = useState([]);
   const [jobTitles, setJobTitles] = useState([]);
   const [locations, setLocations] = useState([]);
@@ -270,9 +284,38 @@ export default function EmployeesList({ tenant, themeColor }) {
     return age >= 0 ? age : null;
   };
 
+  // Normalizează un cod: păstrează prefixul de litere și numărul fără zerouri în față (UND0052 -> und52)
+  const normalizeCode = (v) => {
+    const m = String(v || '').toLowerCase().replace(/[\s#-]/g, '').match(/^([a-z]*)(\d*)$/);
+    if (!m) return null;
+    return { prefix: m[1], num: m[2] ? String(parseInt(m[2], 10)) : '' };
+  };
+
   const filteredEmployees = employees.filter(emp => {
-    const s = search.toLowerCase();
-    return (emp.first_name?.toLowerCase().includes(s) || emp.last_name?.toLowerCase().includes(s) || emp.cnp?.includes(s));
+    const s = search.toLowerCase().trim();
+    if (!s) return true;
+    const first = (emp.first_name || '').toLowerCase();
+    const last = (emp.last_name || '').toLowerCase();
+    const code = (emp.employee_code || '').toLowerCase();
+
+    let codeMatch = code.includes(s);
+    if (!codeMatch) {
+      const q = normalizeCode(s);
+      const c = normalizeCode(code);
+      if (q && c && q.num !== '' && q.num === c.num && (q.prefix === '' || q.prefix === c.prefix)) {
+        codeMatch = true;
+      }
+    }
+
+    return (
+      first.includes(s) ||
+      last.includes(s) ||
+      `${first} ${last}`.includes(s) ||
+      `${last} ${first}`.includes(s) ||
+      codeMatch ||
+      (emp.job_title || '').toLowerCase().includes(s) ||
+      (emp.cnp || '').includes(s)
+    );
   });
   
   const total = filteredEmployees.length;
@@ -706,7 +749,7 @@ export default function EmployeesList({ tenant, themeColor }) {
               <input
                 className="w-full h-10 border border-slate-200 dark:border-slate-700 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white shadow-sm outline-none focus:ring-2 focus:ring-primary-500 transition-all text-sm font-medium"
                 style={{ paddingLeft: 36, paddingRight: search ? 80 : 16, borderRadius: 9999 }}
-                placeholder={employeeFilter === 'archived' ? "Caută în arhivă..." : "Caută angajat..."}
+                placeholder={employeeFilter === 'archived' ? (archiveSearchPlaceholders[language] || archiveSearchPlaceholders.ro) : (searchPlaceholders[language] || searchPlaceholders.ro)}
                 value={search}
                 onChange={e => setSearch(e.target.value)}
               />

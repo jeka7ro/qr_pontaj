@@ -23,9 +23,11 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { useLanguage } from '../../../utils/i18n.jsx';
+import { getLogsLabels, REASON_PRESETS } from './logsLabels.js';
 
 export default function TenantLogsModule({ tenant, themeColor = '#2563EB' }) {
   const { t, language } = useLanguage();
+  const { L, locale, translateReason } = getLogsLabels(language);
 
   const getTodayDateStr = () => {
     const now = new Date();
@@ -138,7 +140,7 @@ export default function TenantLogsModule({ tenant, themeColor = '#2563EB' }) {
       });
 
       if (!res.ok) {
-        throw new Error('Eroare la preluarea jurnalului de activitate.');
+        throw new Error(L.errLoad);
       }
 
       const data = await res.json();
@@ -210,8 +212,8 @@ export default function TenantLogsModule({ tenant, themeColor = '#2563EB' }) {
             ? `${manualForm.reason_preset} - ${manualForm.reason_custom.trim()}`
             : manualForm.reason_preset);
 
-      if (!manualForm.employee_id) throw new Error('Alegeți un angajat.');
-      if (!finalReason) throw new Error('Motivul intervenției este obligatoriu.');
+      if (!manualForm.employee_id) throw new Error(L.errChooseEmp);
+      if (!finalReason) throw new Error(L.errReason);
 
       const res = await fetch(`${getApiUrl()}/api/tenant/dashboard/manual-punch`, {
         method: 'POST',
@@ -226,9 +228,9 @@ export default function TenantLogsModule({ tenant, themeColor = '#2563EB' }) {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Eroare la înregistrarea pontajului manual');
+      if (!res.ok) throw new Error(data.error || L.errManual);
 
-      setSuccessMessage('Pontajul a fost salvat și sincronizat cu succes.');
+      setSuccessMessage(L.okManual);
       setIsManualModalOpen(false);
       setTimeout(() => setSuccessMessage(null), 4000);
       fetchLogs(1);
@@ -243,13 +245,13 @@ export default function TenantLogsModule({ tenant, themeColor = '#2563EB' }) {
   const formatTime = (ts) => {
     if (!ts) return '-';
     const date = new Date(ts);
-    return date.toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    return date.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   };
 
   const formatDateLabel = (dateStr) => {
     if (!dateStr) return '';
     const date = new Date(dateStr);
-    return date.toLocaleDateString('ro-RO', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    return date.toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   };
 
   return (
@@ -259,17 +261,17 @@ export default function TenantLogsModule({ tenant, themeColor = '#2563EB' }) {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-              Jurnal Activitate & Scanări
+              {L.title}
             </h1>
             <span 
               className="px-2.5 py-0.5 rounded-full text-xs font-bold text-white shadow-xs"
               style={{ backgroundColor: themeColor }}
             >
-              Live Feed
+              {L.liveFeed}
             </span>
           </div>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Monitorizează în timp real fiecare scanare, tentativele eșuate de la tablete și adaugă pontaje manuale de corecție.
+            {L.subtitle}
           </p>
         </div>
 
@@ -280,7 +282,7 @@ export default function TenantLogsModule({ tenant, themeColor = '#2563EB' }) {
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 text-xs font-bold transition-all shadow-xs"
           >
             <RotateCcw size={14} className={loading ? 'animate-spin' : ''} />
-            <span>Actualizează</span>
+            <span>{L.refresh}</span>
           </button>
 
           <button
@@ -289,7 +291,7 @@ export default function TenantLogsModule({ tenant, themeColor = '#2563EB' }) {
             style={{ backgroundColor: themeColor }}
           >
             <PlusCircle size={15} />
-            <span>Intervenție Manuală / Pontaj de Urgență</span>
+            <span>{L.manualBtn}</span>
           </button>
         </div>
       </div>
@@ -324,7 +326,7 @@ export default function TenantLogsModule({ tenant, themeColor = '#2563EB' }) {
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
         <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Evenimente</span>
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{L.totalEvents}</span>
             <div className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-600">
               <Activity size={16} />
             </div>
@@ -335,46 +337,46 @@ export default function TenantLogsModule({ tenant, themeColor = '#2563EB' }) {
 
         <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Intrări (IN)</span>
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{L.inLabel}</span>
             <div className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600">
               <LogIn size={16} />
             </div>
           </div>
           <div className="text-2xl font-black text-emerald-600 mt-1.5">{stats.in_count}</div>
-          <div className="text-[11px] text-slate-400 mt-0.5">Pontaje de venire</div>
+          <div className="text-[11px] text-slate-400 mt-0.5">{L.inSub}</div>
         </div>
 
         <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Ieșiri (OUT)</span>
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{L.outLabel}</span>
             <div className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
               <LogOut size={16} />
             </div>
           </div>
           <div className="text-2xl font-black text-slate-900 dark:text-white mt-1.5">{stats.out_count}</div>
-          <div className="text-[11px] text-slate-400 mt-0.5">Pontaje de plecare</div>
+          <div className="text-[11px] text-slate-400 mt-0.5">{L.outSub}</div>
         </div>
 
         <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Erori / Respinse</span>
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{L.errLabel}</span>
             <div className="p-1.5 rounded-lg bg-red-50 dark:bg-red-950/40 text-red-600">
               <AlertTriangle size={16} />
             </div>
           </div>
           <div className="text-2xl font-black text-red-600 mt-1.5">{stats.incident_count}</div>
-          <div className="text-[11px] text-slate-400 mt-0.5">PIN greșit / QR expirat</div>
+          <div className="text-[11px] text-slate-400 mt-0.5">{L.errSub}</div>
         </div>
 
         <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs col-span-2 lg:col-span-1">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Manuale</span>
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{L.manualLabel}</span>
             <div className="p-1.5 rounded-lg bg-purple-50 dark:bg-purple-950/40 text-purple-600">
               <ShieldAlert size={16} />
             </div>
           </div>
           <div className="text-2xl font-black text-purple-600 mt-1.5">{stats.manual_count}</div>
-          <div className="text-[11px] text-slate-400 mt-0.5">Intervenții admin</div>
+          <div className="text-[11px] text-slate-400 mt-0.5">{L.manualSub}</div>
         </div>
       </div>
 
@@ -384,7 +386,7 @@ export default function TenantLogsModule({ tenant, themeColor = '#2563EB' }) {
           <div className="flex items-center gap-2">
             <Filter size={16} className="text-slate-400" />
             <span className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider">
-              Filtrează Jurnalul de Activitate
+              {L.filterTitle}
             </span>
           </div>
 
@@ -398,7 +400,7 @@ export default function TenantLogsModule({ tenant, themeColor = '#2563EB' }) {
                   : 'bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100'
               }`}
             >
-              Astăzi
+              {L.today}
             </button>
             <button
               onClick={() => {
@@ -409,7 +411,7 @@ export default function TenantLogsModule({ tenant, themeColor = '#2563EB' }) {
               }}
               className="px-3 py-1 rounded-full text-xs font-bold bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100"
             >
-              Ieri
+              {L.yesterday}
             </button>
           </div>
         </div>
@@ -418,7 +420,7 @@ export default function TenantLogsModule({ tenant, themeColor = '#2563EB' }) {
           {/* Data exactă */}
           <div>
             <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1">
-              Selectează Ziua
+              {L.selectDay}
             </label>
             <input
               type="date"
@@ -431,31 +433,31 @@ export default function TenantLogsModule({ tenant, themeColor = '#2563EB' }) {
           {/* Interval Orar */}
           <div>
             <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1">
-              Interval Orar
+              {L.timeRange}
             </label>
             <select
               value={selectedHourPreset}
               onChange={(e) => setSelectedHourPreset(e.target.value)}
               className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-semibold text-slate-900 dark:text-white focus:ring-2 focus:ring-primary-500"
             >
-              <option value="all">Toată Ziua (00:00 - 24:00)</option>
-              <option value="morning">Dimineață (06:00 - 14:00)</option>
-              <option value="afternoon">După-amiază (14:00 - 22:00)</option>
-              <option value="night">Noapte (22:00 - 24:00)</option>
+              <option value="all">{L.allDay}</option>
+              <option value="morning">{L.morning}</option>
+              <option value="afternoon">{L.afternoon}</option>
+              <option value="night">{L.night}</option>
             </select>
           </div>
 
           {/* Angajat */}
           <div>
             <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1">
-              Angajat
+              {L.employee}
             </label>
             <select
               value={selectedEmployee}
               onChange={(e) => setSelectedEmployee(e.target.value)}
               className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-semibold text-slate-900 dark:text-white focus:ring-2 focus:ring-primary-500"
             >
-              <option value="all">Toți Angajații</option>
+              <option value="all">{L.allEmployees}</option>
               {meta.employees.map(emp => (
                 <option key={emp.id} value={emp.id}>
                   {emp.last_name} {emp.first_name}
@@ -467,25 +469,25 @@ export default function TenantLogsModule({ tenant, themeColor = '#2563EB' }) {
           {/* Status */}
           <div>
             <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1">
-              Status Eveniment
+              {L.eventStatus}
             </label>
             <select
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value)}
               className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-semibold text-slate-900 dark:text-white focus:ring-2 focus:ring-primary-500"
             >
-              <option value="all">Toate Statusurile</option>
-              <option value="SUCCESS">Succes</option>
-              <option value="FAILED">Eșuate (PIN incorect)</option>
-              <option value="REJECTED">Respinse (QR expirat)</option>
-              <option value="MANUAL">Pontaje Manuale</option>
+              <option value="all">{L.allStatuses}</option>
+              <option value="SUCCESS">{L.sSuccess}</option>
+              <option value="FAILED">{L.sFailed}</option>
+              <option value="REJECTED">{L.sRejected}</option>
+              <option value="MANUAL">{L.sManual}</option>
             </select>
           </div>
 
           {/* Căutare liberă */}
           <div>
             <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1">
-              Căutare Text
+              {L.searchText}
             </label>
             <div className="relative">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -494,7 +496,7 @@ export default function TenantLogsModule({ tenant, themeColor = '#2563EB' }) {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') fetchLogs(1); }}
-                placeholder="Nume, cod, motiv..."
+                placeholder={L.searchPh}
                 className="w-full pl-8 pr-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-primary-500"
               />
             </div>
@@ -507,7 +509,7 @@ export default function TenantLogsModule({ tenant, themeColor = '#2563EB' }) {
         {loading ? (
           <div className="py-20 flex flex-col items-center justify-center text-slate-400">
             <RotateCcw size={32} className="animate-spin text-primary-500 mb-3" />
-            <span className="text-xs font-semibold">Se încarcă jurnalul de activitate...</span>
+            <span className="text-xs font-semibold">{L.loading}</span>
           </div>
         ) : (
           <>
@@ -515,21 +517,21 @@ export default function TenantLogsModule({ tenant, themeColor = '#2563EB' }) {
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wider">
-                    <th className="py-3 px-4">Ora & Timestamp</th>
-                    <th className="py-3 px-4">Angajat</th>
-                    <th className="py-3 px-4">Tip Pontaj</th>
-                    <th className="py-3 px-4">Status Eveniment</th>
-                    <th className="py-3 px-4">Punct de Lucru / Kiosk</th>
-                    <th className="py-3 px-4">Detalii Scanare & Motiv</th>
-                    <th className="py-3 px-4">Dispozitiv / IP</th>
-                    <th className="py-3 px-4 text-right">Intervenție</th>
+                    <th className="py-3 px-4">{L.thTime}</th>
+                    <th className="py-3 px-4">{L.employee}</th>
+                    <th className="py-3 px-4">{L.thType}</th>
+                    <th className="py-3 px-4">{L.eventStatus}</th>
+                    <th className="py-3 px-4">{L.thSite}</th>
+                    <th className="py-3 px-4">{L.thDetails}</th>
+                    <th className="py-3 px-4">{L.thDevice}</th>
+                    <th className="py-3 px-4 text-right">{L.thAction}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-750">
                   {logs.length === 0 ? (
                     <tr>
                       <td colSpan="8" className="py-12 text-center text-slate-400">
-                        Niciun eveniment sau pontaj înregistrat pentru filtrele selectate.
+                        {L.empty}
                       </td>
                     </tr>
                   ) : (
@@ -547,17 +549,17 @@ export default function TenantLogsModule({ tenant, themeColor = '#2563EB' }) {
                               <span>{formatTime(log.created_at)}</span>
                             </div>
                             <div className="text-[10px] text-slate-400">
-                              {new Date(log.created_at).toLocaleDateString('ro-RO', { day: '2-digit', month: 'short' })}
+                              {new Date(log.created_at).toLocaleDateString(locale, { day: '2-digit', month: 'short' })}
                             </div>
                           </td>
 
                           {/* Angajat */}
                           <td className="py-3 px-4 whitespace-nowrap">
                             <div className="font-bold text-slate-900 dark:text-white">
-                              {log.employee_name || 'Necunoscut / Neidentificat'}
+                              {log.employee_name || L.unknownEmp}
                             </div>
                             <div className="text-[10px] text-slate-400">
-                              Cod: {log.employee_code || '-'}
+                              {L.code}: {log.employee_code || '-'}
                             </div>
                           </td>
 
@@ -565,27 +567,27 @@ export default function TenantLogsModule({ tenant, themeColor = '#2563EB' }) {
                           <td className="py-3 px-4 whitespace-nowrap font-bold">
                             {log.action_type === 'IN' && (
                               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200">
-                                <LogIn size={11} /> INTRARE
+                                <LogIn size={11} /> {L.typeIn}
                               </span>
                             )}
                             {log.action_type === 'OUT' && (
                               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-200 border border-slate-200">
-                                <LogOut size={11} /> IEȘIRE
+                                <LogOut size={11} /> {L.typeOut}
                               </span>
                             )}
                             {log.action_type === 'BREAK_START' && (
                               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200">
-                                <Coffee size={11} /> PAUZĂ
+                                <Coffee size={11} /> {L.typeBreak}
                               </span>
                             )}
                             {log.action_type === 'BREAK_END' && (
                               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-blue-50 text-blue-700 border border-blue-200">
-                                RELUARE
+                                {L.typeResume}
                               </span>
                             )}
                             {log.action_type === 'LOGIN' && (
                               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-sky-50 text-sky-700 border border-sky-200">
-                                AUTENTIFICARE
+                                {L.typeLogin}
                               </span>
                             )}
                             {!['IN', 'OUT', 'BREAK_START', 'BREAK_END', 'LOGIN'].includes(log.action_type) && (
@@ -599,22 +601,22 @@ export default function TenantLogsModule({ tenant, themeColor = '#2563EB' }) {
                           <td className="py-3 px-4 whitespace-nowrap">
                             {isSuccess && (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                <CheckCircle2 size={11} /> Succes
+                                <CheckCircle2 size={11} /> {L.stSuccess}
                               </span>
                             )}
                             {log.status === 'FAILED' && (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-50 text-red-700 border border-red-200">
-                                <XCircle size={11} /> Eșuat
+                                <XCircle size={11} /> {L.stFailed}
                               </span>
                             )}
                             {log.status === 'REJECTED' && (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
-                                <AlertTriangle size={11} /> Respins
+                                <AlertTriangle size={11} /> {L.stRejected}
                               </span>
                             )}
                             {isManual && (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
-                                <ShieldAlert size={11} /> Manual
+                                <ShieldAlert size={11} /> {L.stManual}
                               </span>
                             )}
                           </td>
@@ -623,7 +625,7 @@ export default function TenantLogsModule({ tenant, themeColor = '#2563EB' }) {
                           <td className="py-3 px-4 whitespace-nowrap text-slate-600 dark:text-slate-300">
                             <div className="flex items-center gap-1 font-semibold">
                               <MapPin size={12} className="text-slate-400" />
-                              <span>{log.location_name || 'Locație principală'}</span>
+                              <span>{log.location_name || L.defaultLocation}</span>
                             </div>
                             {log.kiosk_id && (
                               <div className="text-[10px] text-slate-400">
@@ -635,7 +637,7 @@ export default function TenantLogsModule({ tenant, themeColor = '#2563EB' }) {
                           {/* Detalii / Motiv */}
                           <td className="py-3 px-4 text-slate-600 dark:text-slate-300 max-w-xs">
                             <div className={`text-[11px] ${isFailed ? 'font-bold text-red-600 dark:text-red-400' : ''}`}>
-                              {log.failure_reason || (isSuccess ? (log.action_type === 'LOGIN' ? 'Angajatul a intrat în aplicație (cod și PIN corecte)' : 'Scanare QR validată cu succes') : '-')}
+                              {translateReason(log.failure_reason) || (isSuccess ? (log.action_type === 'LOGIN' ? L.detailLoginOk : L.detailScanOk) : '-')}
                             </div>
                           </td>
 
@@ -651,7 +653,7 @@ export default function TenantLogsModule({ tenant, themeColor = '#2563EB' }) {
                                 onClick={() => handleOpenManualModal(log.employee_id, log.action_type || 'IN', log.created_at)}
                                 className="px-2.5 py-1 rounded-full bg-primary-50 hover:bg-primary-100 text-primary-700 dark:bg-primary-950/40 dark:text-primary-300 font-bold text-[11px] border border-primary-200 inline-flex items-center gap-1"
                               >
-                                <span>Pontează Manual</span>
+                                <span>{L.punchManual}</span>
                                 <ArrowRight size={11} />
                               </button>
                             )}
@@ -667,7 +669,7 @@ export default function TenantLogsModule({ tenant, themeColor = '#2563EB' }) {
             {/* Paginare */}
             <div className="p-4 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
               <div>
-                Afișare înregistrări (Pagina {page} din {totalPages || 1}, Total: {total})
+                {L.paginationText(page, totalPages || 1, total)}
               </div>
 
               <div className="flex items-center gap-2">
@@ -676,7 +678,7 @@ export default function TenantLogsModule({ tenant, themeColor = '#2563EB' }) {
                   disabled={page <= 1 || loading}
                   className="px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed font-bold"
                 >
-                  Anterior
+                  {L.prev}
                 </button>
                 <span className="font-bold text-slate-700 dark:text-slate-300 px-2">
                   {page} / {totalPages || 1}
@@ -686,7 +688,7 @@ export default function TenantLogsModule({ tenant, themeColor = '#2563EB' }) {
                   disabled={page >= totalPages || loading}
                   className="px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed font-bold"
                 >
-                  Următor
+                  {L.next}
                 </button>
               </div>
             </div>
@@ -708,10 +710,10 @@ export default function TenantLogsModule({ tenant, themeColor = '#2563EB' }) {
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-900 dark:text-white text-base">
-                    Adaugă Pontaj Manual de Urgență
+                    {L.modalTitle}
                   </h3>
                   <p className="text-xs text-slate-500">
-                    Înregistrează o oră de venire sau plecare cu motiv auditabil.
+                    {L.modalSub}
                   </p>
                 </div>
               </div>
@@ -727,7 +729,7 @@ export default function TenantLogsModule({ tenant, themeColor = '#2563EB' }) {
               {/* Selectare Angajat */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                  Angajat <span className="text-red-500">*</span>
+                  {L.employee} <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={manualForm.employee_id}
@@ -735,10 +737,10 @@ export default function TenantLogsModule({ tenant, themeColor = '#2563EB' }) {
                   required
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-900 dark:text-white focus:ring-2 focus:ring-primary-500"
                 >
-                  <option value="">Alegeți angajatul...</option>
+                  <option value="">{L.chooseEmp}</option>
                   {meta.employees.map(emp => (
                     <option key={emp.id} value={emp.id}>
-                      {emp.last_name} {emp.first_name} {emp.employee_code ? `(${emp.employee_code})` : ''} - {emp.job_title || 'Angajat'}
+                      {emp.last_name} {emp.first_name} {emp.employee_code ? `(${emp.employee_code})` : ''} - {emp.job_title || L.defaultJob}
                     </option>
                   ))}
                 </select>
@@ -748,7 +750,7 @@ export default function TenantLogsModule({ tenant, themeColor = '#2563EB' }) {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                    Tip Pontaj <span className="text-red-500">*</span>
+                    {L.thType} <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={manualForm.action_type}
@@ -756,23 +758,23 @@ export default function TenantLogsModule({ tenant, themeColor = '#2563EB' }) {
                     required
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-900 dark:text-white focus:ring-2 focus:ring-primary-500"
                   >
-                    <option value="IN">Intrare în Tură (IN)</option>
-                    <option value="OUT">Ieșire din Tură (OUT)</option>
-                    <option value="BREAK_START">Început Pauză (BREAK_START)</option>
-                    <option value="BREAK_END">Sfârșit Pauză (BREAK_END)</option>
+                    <option value="IN">{L.optIn}</option>
+                    <option value="OUT">{L.optOut}</option>
+                    <option value="BREAK_START">{L.optBreakStart}</option>
+                    <option value="BREAK_END">{L.optBreakEnd}</option>
                   </select>
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                    Punct de Lucru
+                    {L.workSite}
                   </label>
                   <select
                     value={manualForm.site_id}
                     onChange={(e) => setManualForm({ ...manualForm, site_id: e.target.value })}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-900 dark:text-white focus:ring-2 focus:ring-primary-500"
                   >
-                    <option value="">Locație implicită a companiei</option>
+                    <option value="">{L.defaultSite}</option>
                     {meta.locations.map(loc => (
                       <option key={loc.id} value={loc.id}>
                         {loc.name}
@@ -785,7 +787,7 @@ export default function TenantLogsModule({ tenant, themeColor = '#2563EB' }) {
               {/* Data și Ora exactă */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                  Data și Ora Pontajului <span className="text-red-500">*</span>
+                  {L.dateTimeLbl} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="datetime-local"
@@ -799,24 +801,22 @@ export default function TenantLogsModule({ tenant, themeColor = '#2563EB' }) {
               {/* Motivul intervenției manuale */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                  Motiv Intervenție (Obligatoriu pentru Audit) <span className="text-red-500">*</span>
+                  {L.reasonLbl} <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={manualForm.reason_preset}
                   onChange={(e) => setManualForm({ ...manualForm, reason_preset: e.target.value })}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-900 dark:text-white focus:ring-2 focus:ring-primary-500 mb-2"
                 >
-                  <option value="Problemă scanare cod QR / tabletă">Problemă scanare cod QR / tabletă</option>
-                  <option value="Solicitare telefonică angajat">Solicitare telefonică angajat</option>
-                  <option value="Lipsă conexiune internet la punctul de lucru">Lipsă conexiune internet la punctul de lucru</option>
-                  <option value="Corecție uitare pontaj la intrare/ieșire">Corecție uitare pontaj la intrare/ieșire</option>
-                  <option value="Alt motiv">Alt motiv (specifică mai jos)</option>
+                  {REASON_PRESETS.map(p => (
+                    <option key={p.key} value={p.value}>{L[p.key]}</option>
+                  ))}
                 </select>
 
                 <textarea
                   value={manualForm.reason_custom}
                   onChange={(e) => setManualForm({ ...manualForm, reason_custom: e.target.value })}
-                  placeholder="Detalii suplimentare referitoare la intervenție..."
+                  placeholder={L.detailsPh}
                   rows="2"
                   className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-slate-900 dark:text-white focus:ring-2 focus:ring-primary-500 placeholder-slate-400"
                 />
@@ -828,7 +828,7 @@ export default function TenantLogsModule({ tenant, themeColor = '#2563EB' }) {
                   onClick={() => setIsManualModalOpen(false)}
                   className="px-4 py-2.5 rounded-full border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs hover:bg-slate-50"
                 >
-                  Anulează
+                  {L.cancel}
                 </button>
 
                 <button
@@ -837,7 +837,7 @@ export default function TenantLogsModule({ tenant, themeColor = '#2563EB' }) {
                   className="px-5 py-2.5 rounded-full text-white font-bold text-xs shadow-sm transition-all disabled:opacity-50"
                   style={{ backgroundColor: themeColor }}
                 >
-                  {submittingManual ? 'Se salvează...' : 'Înregistrează Pontaj'}
+                  {submittingManual ? L.saving : L.saveBtn}
                 </button>
               </div>
             </form>
