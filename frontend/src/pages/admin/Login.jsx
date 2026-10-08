@@ -11,8 +11,10 @@ const getUrlTenant = () => {
     const param = urlParams.get('tenant') || urlParams.get('t');
     if (param) return param.toLowerCase().trim();
 
-    const hostParts = window.location.hostname.split('.');
-    if (hostParts.length >= 2 && !['localhost', 'qr', 'scan', 'pontaj', 'www'].includes(hostParts[0])) {
+    const hostname = window.location.hostname;
+    const isRailwayHost = hostname.endsWith('.up.railway.app') || hostname.endsWith('.railway.app');
+    const hostParts = hostname.split('.');
+    if (!isRailwayHost && hostParts.length >= 2 && !['localhost', 'qr', 'scan', 'pontaj', 'www'].includes(hostParts[0])) {
       return hostParts[0].toLowerCase().trim();
     }
   } catch {
