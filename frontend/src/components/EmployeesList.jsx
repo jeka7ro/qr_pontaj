@@ -8,6 +8,7 @@ import { parseIdCardText, getBirthDateFromCnp } from '../lib/idParser';
 import ConfirmModal from './ConfirmModal';
 import UpgradeSubscriptionModal from './UpgradeSubscriptionModal';
 import { useLanguage } from '../utils/i18n.jsx';
+import { getEmployeesLabels } from './employeesLabels.js';
 
 const EXPORT_COLUMNS = [
   { id: 'full_name', label: 'Nume și Prenume' },
@@ -29,18 +30,8 @@ const EXPORT_COLUMNS = [
 
 export default function EmployeesList({ tenant, themeColor }) {
   const { language } = useLanguage();
-  const searchPlaceholders = {
-    ro: 'Caută după nume, cod sau CNP...',
-    en: 'Search by name, code or ID number...',
-    fr: 'Rechercher par nom, code ou CNP...',
-    nl: 'Zoek op naam, code of CNP...'
-  };
-  const archiveSearchPlaceholders = {
-    ro: 'Caută în arhivă...',
-    en: 'Search the archive...',
-    fr: "Rechercher dans l'archive...",
-    nl: 'Zoeken in archief...'
-  };
+  const { L, locale } = getEmployeesLabels(language);
+  const exportCols = EXPORT_COLUMNS.map(c => ({ ...c, label: L.cols[c.id] || c.label }));
   const [employees, setEmployees] = useState([]);
   const [jobTitles, setJobTitles] = useState([]);
   const [locations, setLocations] = useState([]);
@@ -141,7 +132,7 @@ export default function EmployeesList({ tenant, themeColor }) {
 
   const handleSelectOnlyNameCodePin = () => {
     const next = {};
-    EXPORT_COLUMNS.forEach(c => {
+    exportCols.forEach(c => {
       next[c.id] = (c.id === 'full_name' || c.id === 'employee_code' || c.id === 'pin_code');
     });
     setSelectedExportCols(next);
@@ -149,13 +140,13 @@ export default function EmployeesList({ tenant, themeColor }) {
 
   const handleSelectAllCols = () => {
     const next = {};
-    EXPORT_COLUMNS.forEach(c => { next[c.id] = true; });
+    exportCols.forEach(c => { next[c.id] = true; });
     setSelectedExportCols(next);
   };
 
   const handleDeselectAllCols = () => {
     const next = {};
-    EXPORT_COLUMNS.forEach(c => { next[c.id] = false; });
+    exportCols.forEach(c => { next[c.id] = false; });
     setSelectedExportCols(next);
   };
 
@@ -168,13 +159,13 @@ export default function EmployeesList({ tenant, themeColor }) {
     }
 
     if (sourceEmployees.length === 0) {
-      alert('Nu există angajați de exportat.');
+      alert(L.alertNoEmp);
       return;
     }
 
-    const activeCols = EXPORT_COLUMNS.filter(c => selectedExportCols[c.id]);
+    const activeCols = exportCols.filter(c => selectedExportCols[c.id]);
     if (activeCols.length === 0) {
-      alert('Vă rugăm să selectați cel puțin o coloană pentru export.');
+      alert(L.alertNoCol);
       return;
     }
 
@@ -227,7 +218,7 @@ export default function EmployeesList({ tenant, themeColor }) {
             row[col.label] = emp.id_card_series || '-';
             break;
           case 'status':
-            row[col.label] = emp.is_archived ? 'Arhivat' : 'Activ';
+            row[col.label] = emp.is_archived ? L.statusArchived : L.statusActive;
             break;
           default:
             row[col.label] = emp[col.id] || '-';
@@ -251,7 +242,7 @@ export default function EmployeesList({ tenant, themeColor }) {
     }
 
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Angajați");
+    XLSX.utils.book_append_sheet(workbook, worksheet, L.sheetName);
 
     const todayStr = new Date().toISOString().slice(0, 10);
     const tenantSlug = (tenant.name || 'Companie').replace(/[^a-zA-Z0-9]/g, '_');
@@ -421,7 +412,7 @@ export default function EmployeesList({ tenant, themeColor }) {
 
     } catch (err) {
       console.error(err);
-      setOcrError('Eroare la citirea buletinului. Completează manual.');
+      setOcrError(L.errOcr);
     } finally {
       setOcrLoading(false);
       e.target.value = ''; // reset file input
@@ -463,7 +454,7 @@ export default function EmployeesList({ tenant, themeColor }) {
         fetchEmployees();
       } else {
         const error = await res.json();
-        setSaveError(error.error || 'Eroare la salvare. Verificați datele.');
+        setSaveError(error.error || L.errSave);
         if (error.code === 'SUBSCRIPTION_LIMIT_REACHED') {
           setLimitReached(true);
         }
@@ -479,7 +470,7 @@ export default function EmployeesList({ tenant, themeColor }) {
       const res = await fetch(`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenants/${tenant.id}/employees/${resetPinEmpId}/reset-pin`, { method: 'POST' });
       if (res.ok) {
         const data = await res.json();
-        setNewPinInfo(`PIN-ul a fost resetat cu succes!\nNoul PIN este: ${data.newPin}`);
+        setNewPinInfo(L.pinResetOk(data.newPin));
         fetchEmployees();
       } else {
         console.error('Eroare la resetarea PIN-ului.');
@@ -581,11 +572,11 @@ export default function EmployeesList({ tenant, themeColor }) {
         fetchEmployees();
       } else {
         const data = await res.json();
-        setBulkError(data.error || 'Eroare la arhivarea în masă a angajaților.');
+        setBulkError(data.error || L.errBulkArchive);
       }
     } catch (err) {
       console.error('Error bulk deleting employees:', err);
-      setBulkError('Eroare la conexiunea cu serverul.');
+      setBulkError(L.errConn);
     } finally {
       setBulkDeleting(false);
     }
@@ -606,11 +597,11 @@ export default function EmployeesList({ tenant, themeColor }) {
         fetchEmployees();
       } else {
         const data = await res.json();
-        setBulkError(data.error || 'Eroare la restaurarea în masă a angajaților.');
+        setBulkError(data.error || L.errBulkRestore);
       }
     } catch (err) {
       console.error('Error bulk restoring employees:', err);
-      setBulkError('Eroare la conexiunea cu serverul.');
+      setBulkError(L.errConn);
     } finally {
       setBulkRestoring(false);
     }
@@ -619,7 +610,7 @@ export default function EmployeesList({ tenant, themeColor }) {
   const handleBulkUpdate = async (e) => {
     e.preventDefault();
     if (!bulkUpdateJob && !bulkUpdateLocation) {
-      setBulkError('Bifează cel puțin un câmp de modificat (Funcție sau Punct de Lucru).');
+      setBulkError(L.errBulkPick);
       return;
     }
     setBulkSaving(true);
@@ -646,11 +637,11 @@ export default function EmployeesList({ tenant, themeColor }) {
         fetchEmployees();
       } else {
         const data = await res.json();
-        setBulkError(data.error || 'Eroare la actualizarea în masă.');
+        setBulkError(data.error || L.errBulkUpdate);
       }
     } catch (err) {
       console.error('Error bulk updating employees:', err);
-      setBulkError('Eroare de conexiune cu serverul.');
+      setBulkError(L.errConn2);
     } finally {
       setBulkSaving(false);
     }
@@ -661,8 +652,8 @@ export default function EmployeesList({ tenant, themeColor }) {
     <div className="w-full">
       <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white dark:text-white">Echipa Angajați</h1>
-          <p className="text-slate-500 dark:text-slate-400 dark:text-slate-400 mt-1">Gestionează personalul care are acces să scaneze la această locație.</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white dark:text-white">{L.title}</h1>
+          <p className="text-slate-500 dark:text-slate-400 dark:text-slate-400 mt-1">{L.subtitle}</p>
         </div>
         {!showAddModal && (
           <div className="flex items-center gap-2.5 flex-wrap">
@@ -674,21 +665,21 @@ export default function EmployeesList({ tenant, themeColor }) {
               }}
               className="px-4 py-2.5 text-sm rounded-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 font-bold hover:bg-slate-50 dark:hover:bg-slate-750 shadow-xs transition-all flex items-center gap-2 shrink-0 cursor-pointer"
             >
-              <Download size={17} /> Exportă Date
+              <Download size={17} /> {L.exportData}
             </button>
             <button 
               onClick={handleAddEmployeeClick}
               className="px-4 py-2.5 text-sm rounded-full text-white font-bold shadow-sm transition-all flex items-center gap-2 shrink-0 cursor-pointer"
               style={{ backgroundColor: themeColor }}
             >
-              <UserPlus size={18} /> Adaugă Angajat
+              <UserPlus size={18} /> {L.addEmployee}
             </button>
           </div>
         )}
       </div>
 
       {loading ? (
-        <div className="py-20 text-center text-slate-500 dark:text-slate-400">Se încarcă angajații...</div>
+        <div className="py-20 text-center text-slate-500 dark:text-slate-400">{L.loading}</div>
       ) : (
         <>
           {/* TABS ACTIVI / ARHIVĂ */}
@@ -709,7 +700,7 @@ export default function EmployeesList({ tenant, themeColor }) {
               style={employeeFilter === 'active' ? { backgroundColor: themeColor } : {}}
             >
               <UserCheck size={15} />
-              <span>Activi</span>
+              <span>{L.tabActive}</span>
               <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
                 employeeFilter === 'active' ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
               }`}>
@@ -733,7 +724,7 @@ export default function EmployeesList({ tenant, themeColor }) {
               style={employeeFilter === 'archived' ? { backgroundColor: themeColor } : {}}
             >
               <Archive size={15} />
-              <span>Arhivă</span>
+              <span>{L.tabArchive}</span>
               <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
                 employeeFilter === 'archived' ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
               }`}>
@@ -749,13 +740,13 @@ export default function EmployeesList({ tenant, themeColor }) {
               <input
                 className="w-full h-10 border border-slate-200 dark:border-slate-700 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white shadow-sm outline-none focus:ring-2 focus:ring-primary-500 transition-all text-sm font-medium"
                 style={{ paddingLeft: 36, paddingRight: search ? 80 : 16, borderRadius: 9999 }}
-                placeholder={employeeFilter === 'archived' ? (archiveSearchPlaceholders[language] || archiveSearchPlaceholders.ro) : (searchPlaceholders[language] || searchPlaceholders.ro)}
+                placeholder={employeeFilter === 'archived' ? L.searchArchivePh : L.searchPh}
                 value={search}
                 onChange={e => setSearch(e.target.value)}
               />
               {search && (
                 <div style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: themeColor, color: 'white', borderRadius: 9999, padding: '2px 10px', fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap' }}>
-                  {total} rez.
+                  {total} {L.results}
                 </div>
               )}
             </div>
@@ -773,12 +764,12 @@ export default function EmployeesList({ tenant, themeColor }) {
                 </div>
                 <div>
                   <div className="font-bold text-slate-900 dark:text-white text-sm">
-                    {selectedIds.length} {selectedIds.length === 1 ? 'angajat selectat' : 'angajați selectați'}
+                    {selectedIds.length} {selectedIds.length === 1 ? L.selOne : L.selMany}
                   </div>
                   <div className="text-xs text-slate-500 dark:text-slate-400">
                     {employeeFilter === 'archived'
-                      ? 'Poți restaura angajații selectați în lista activă.'
-                      : 'Poți schimba funcția/locația în masă sau poți arhiva înregistrările selectate.'}
+                      ? L.helpArchived
+                      : L.helpActive}
                   </div>
                 </div>
               </div>
@@ -793,7 +784,7 @@ export default function EmployeesList({ tenant, themeColor }) {
                   className="flex-1 sm:flex-initial h-10 px-4 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   <Download size={14} />
-                  Exportă ({selectedIds.length})
+                  {L.exportBtn} ({selectedIds.length})
                 </button>
 
                 {employeeFilter === 'archived' ? (
@@ -803,7 +794,7 @@ export default function EmployeesList({ tenant, themeColor }) {
                     className="flex-1 sm:flex-initial h-10 px-5 rounded-full bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/30 dark:hover:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 text-xs font-bold border border-emerald-200 dark:border-emerald-900 transition-colors flex items-center justify-center gap-1.5"
                   >
                     <RotateCcw size={14} />
-                    Restaurează ({selectedIds.length})
+                    {L.restore} ({selectedIds.length})
                   </button>
                 ) : (
                   <>
@@ -817,7 +808,7 @@ export default function EmployeesList({ tenant, themeColor }) {
                         className="flex-1 sm:flex-initial h-10 px-4 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-colors flex items-center justify-center gap-1.5"
                       >
                         <Edit size={14} />
-                        Editează Date
+                        {L.editData}
                       </button>
                     )}
 
@@ -835,7 +826,7 @@ export default function EmployeesList({ tenant, themeColor }) {
                       style={{ backgroundColor: themeColor }}
                     >
                       <Edit2 size={14} />
-                      Modifică în Masă
+                      {L.bulkEdit}
                     </button>
 
                     <button
@@ -844,7 +835,7 @@ export default function EmployeesList({ tenant, themeColor }) {
                       className="flex-1 sm:flex-initial h-10 px-4 rounded-full bg-red-50 hover:bg-red-100 dark:bg-red-950/30 dark:hover:bg-red-950/50 text-red-600 dark:text-red-400 text-xs font-bold border border-red-200 dark:border-red-900 transition-colors flex items-center justify-center gap-1.5"
                     >
                       <Archive size={14} />
-                      Arhivează ({selectedIds.length})
+                      {L.archive} ({selectedIds.length})
                     </button>
                   </>
                 )}
@@ -854,7 +845,7 @@ export default function EmployeesList({ tenant, themeColor }) {
                   onClick={handleClearSelection}
                   className="h-10 px-3.5 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-bold transition-colors"
                 >
-                  Anulează
+                  {L.cancel}
                 </button>
               </div>
             </div>
@@ -864,14 +855,14 @@ export default function EmployeesList({ tenant, themeColor }) {
             {/* Notificare selecție pe toate paginile */}
             {isAllCurrentSelected && total > currentRows.length && selectedIds.length < total && (
               <div className="px-4 py-2.5 bg-slate-50 dark:bg-slate-800/80 text-center text-xs text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700">
-                Sunt selectați toți cei <strong>{currentRows.length}</strong> angajați de pe această pagină.&nbsp;
+                {L.pageSelPre} <strong>{currentRows.length}</strong> {L.pageSelPost}&nbsp;
                 <button 
                   type="button" 
                   onClick={handleSelectAllFiltered} 
                   className="font-bold underline hover:opacity-80 transition-opacity"
                   style={{ color: themeColor }}
                 >
-                  Selectează toți cei {total} angajați din lista filtrată
+                  {L.selectAllFiltered(total)}
                 </button>
               </div>
             )}
@@ -884,7 +875,7 @@ export default function EmployeesList({ tenant, themeColor }) {
                       type="button"
                       onClick={handleSelectAll}
                       className="p-1 hover:opacity-80 transition-opacity text-slate-400 flex items-center justify-center mx-auto"
-                      title={isAllCurrentSelected ? 'Deselectează toate' : 'Selectează toate de pe pagină'}
+                      title={isAllCurrentSelected ? L.tipDeselectAll : L.tipSelectAllPage}
                     >
                       {isAllCurrentSelected ? (
                         <CheckSquare size={18} style={{ color: themeColor }} />
@@ -895,12 +886,12 @@ export default function EmployeesList({ tenant, themeColor }) {
                       )}
                     </button>
                   </th>
-                  <th style={{ width: 44, textAlign: 'center' }} className="py-3 font-bold text-xs tracking-wider text-slate-500 dark:text-slate-400">Nr.</th>
-                  <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Angajat</th>
-                  <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Funcție</th>
-                  <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Data Nașterii / Vârstă</th>
-                  <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">PIN / Acces</th>
-                  <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">Acțiuni</th>
+                  <th style={{ width: 44, textAlign: 'center' }} className="py-3 font-bold text-xs tracking-wider text-slate-500 dark:text-slate-400">{L.thNr}</th>
+                  <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{L.thEmployee}</th>
+                  <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{L.thJob}</th>
+                  <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{L.thBirth}</th>
+                  <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{L.thPin}</th>
+                  <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">{L.thActions}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
@@ -910,10 +901,10 @@ export default function EmployeesList({ tenant, themeColor }) {
                       <div className="w-16 h-16 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center mx-auto mb-4 border border-slate-100 dark:border-slate-700">
                         <Users className="text-slate-300 dark:text-slate-500" size={32} />
                       </div>
-                      <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2">Nu s-au găsit înregistrări.</h3>
+                      <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2">{L.noRecords}</h3>
                       {!search && (
                         <button onClick={handleAddEmployeeClick} className="text-sm font-bold text-primary-600 dark:text-primary-400 hover:underline">
-                          Adaugă primul angajat
+                          {L.addFirst}
                         </button>
                       )}
                     </td>
@@ -969,7 +960,7 @@ export default function EmployeesList({ tenant, themeColor }) {
                             <div className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">CNP: {emp.cnp || '-'}</div>
                             {emp.pin_reset_requested && (
                               <div className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-400 text-[10px] font-bold uppercase tracking-wider">
-                                <AlertTriangle size={10} /> Resetare PIN cerută
+                                <AlertTriangle size={10} /> {L.pinResetBadge}
                               </div>
                             )}
                           </div>
@@ -980,7 +971,7 @@ export default function EmployeesList({ tenant, themeColor }) {
                         {emp.location_id && (
                           <div className="flex items-center text-xs text-slate-500 dark:text-slate-400 mt-1">
                             <MapPin size={12} className="mr-1 text-slate-400" />
-                            {locations.find(l => l.id === emp.location_id)?.name || 'Punct lucru necunoscut'}
+                            {locations.find(l => l.id === emp.location_id)?.name || L.unknownLoc}
                           </div>
                         )}
                       </td>
@@ -988,11 +979,11 @@ export default function EmployeesList({ tenant, themeColor }) {
                         {emp.birth_date ? (
                           <div>
                             <div className="font-bold text-sm text-slate-800 dark:text-white">
-                              {calculateAge(emp.birth_date) !== null ? `${calculateAge(emp.birth_date)} ani` : '-'}
+                              {calculateAge(emp.birth_date) !== null ? L.years(calculateAge(emp.birth_date)) : '-'}
                             </div>
                             <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mt-0.5 font-medium">
                               <Calendar size={12} className="text-slate-400 shrink-0" />
-                              <span>{new Date(emp.birth_date).toLocaleDateString('ro-RO', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                              <span>{new Date(emp.birth_date).toLocaleDateString(locale, { day: '2-digit', month: 'short', year: 'numeric' })}</span>
                             </div>
                           </div>
                         ) : (
@@ -1014,38 +1005,38 @@ export default function EmployeesList({ tenant, themeColor }) {
                           <button 
                             onClick={() => setEmployeeToRestore(emp)}
                             className="px-3 py-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 hover:bg-emerald-100 dark:hover:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900 rounded-full transition-all flex items-center gap-1.5"
-                            title="Restaurează din Arhivă"
+                            title={L.tipRestoreArchive}
                           >
                             <RotateCcw size={14} />
-                            <span>Restaurează</span>
+                            <span>{L.restore}</span>
                           </button>
                         ) : (
                           <>
                             <button
                               onClick={() => setResetPinEmpId(emp.id)}
                               className="p-2 text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm hover:text-amber-600 hover:bg-amber-50 rounded-full transition-all"
-                              title="Resetează PIN"
+                              title={L.tipResetPin}
                             >
                               <KeyRound size={16} />
                             </button>
                             <button 
                               onClick={() => setQrEmployee(emp)}
                               className="p-2 text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm hover:text-slate-800 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800 rounded-full transition-all"
-                              title="Printează Legitimație (QR)"
+                              title={L.tipPrint}
                             >
                               <QrCode size={16} />
                             </button>
                             <button 
                               onClick={() => openEditModal(emp)}
                               className="p-2 text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm hover:text-primary-600 hover:bg-primary-50 hover:border-primary-200 rounded-full transition-all"
-                              title="Editează Angajat"
+                              title={L.tipEdit}
                             >
                               <Edit size={16} />
                             </button>
                             <button 
                               onClick={() => setEmployeeToDelete(emp)}
                               className="p-2 text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm hover:text-red-600 hover:bg-red-50 hover:border-red-200 rounded-full transition-all"
-                              title="Arhivează Angajat"
+                              title={L.tipArchive}
                             >
                               <Archive size={16} />
                             </button>
@@ -1063,19 +1054,19 @@ export default function EmployeesList({ tenant, themeColor }) {
             <div className="px-4 sm:px-5 py-3 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-50 dark:bg-slate-800/50 rounded-b-2xl">
               <div className="flex flex-wrap items-center justify-between sm:justify-start w-full sm:w-auto gap-3 sm:gap-4">
                 <span className="whitespace-nowrap text-[13px] text-slate-500 dark:text-slate-400 font-bold">
-                  Afișează&nbsp;
+                  {L.show}&nbsp;
                   <select value={rowsPerPage} onChange={e => { setRowsPerPage(Number(e.target.value)); setPage(1); }} className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-full px-2 py-0.5 outline-none dark:text-white">
                     <option value={10}>10</option>
                     <option value={15}>15</option>
                     <option value={25}>25</option>
                     <option value={50}>50</option>
-                    <option value={9999}>Toți</option>
+                    <option value={9999}>{L.all}</option>
                   </select>
                 </span>
-                <span className="whitespace-nowrap text-[13px] text-slate-500 dark:text-slate-400">Total înregistrări: <strong className="text-slate-800 dark:text-white">{total}</strong></span>
+                <span className="whitespace-nowrap text-[13px] text-slate-500 dark:text-slate-400">{L.totalRecords} <strong className="text-slate-800 dark:text-white">{total}</strong></span>
               </div>
               <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-2">
-                <span className="whitespace-nowrap text-[13px] text-slate-500 dark:text-slate-400 font-bold mr-2">Pagina {safePage} din {totalPages || 1}</span>
+                <span className="whitespace-nowrap text-[13px] text-slate-500 dark:text-slate-400 font-bold mr-2">{L.pageOf(safePage, totalPages || 1)}</span>
                 <button className="w-8 h-8 flex items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors shadow-sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={safePage === 1}><ChevronLeft size={16} /></button>
                 <button className="w-8 h-8 flex items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors shadow-sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={safePage >= totalPages}><ChevronRight size={16} /></button>
               </div>
@@ -1089,9 +1080,9 @@ export default function EmployeesList({ tenant, themeColor }) {
         isOpen={!!employeeToDelete}
         onClose={() => setEmployeeToDelete(null)}
         onConfirm={handleDelete}
-        title="Arhivare Angajat"
-        message={`Ești sigur că vrei să arhivezi angajatul ${employeeToDelete?.first_name} ${employeeToDelete?.last_name}? Acesta va fi mutat în arhivă, nu va mai putea efectua pontaje, iar codul său rămâne rezervat pentru a preveni orice conflict.`}
-        confirmText="Arhivează"
+        title={L.archiveTitle}
+        message={L.archiveMsg(`${employeeToDelete?.first_name} ${employeeToDelete?.last_name}`)}
+        confirmText={L.archive}
       />
 
       {/* Restore Single Confirmation Modal */}
@@ -1099,9 +1090,9 @@ export default function EmployeesList({ tenant, themeColor }) {
         isOpen={!!employeeToRestore}
         onClose={() => setEmployeeToRestore(null)}
         onConfirm={handleRestore}
-        title="Restaurare Angajat"
-        message={`Sigur dorești să reactivezi angajatul ${employeeToRestore?.first_name} ${employeeToRestore?.last_name} din arhivă? Acesta va putea efectua din nou pontajul folosind același cod.`}
-        confirmText="Restaurează"
+        title={L.restoreTitle}
+        message={L.restoreMsg(`${employeeToRestore?.first_name} ${employeeToRestore?.last_name}`)}
+        confirmText={L.restore}
         isDanger={false}
       />
 
@@ -1110,9 +1101,9 @@ export default function EmployeesList({ tenant, themeColor }) {
         isOpen={showBulkDeleteModal}
         onClose={() => setShowBulkDeleteModal(false)}
         onConfirm={handleBulkDelete}
-        title="Arhivare în Masă"
-        message={`Ești sigur că vrei să arhivezi cei ${selectedIds.length} angajați selectați? Aceștia vor fi mutați în arhivă, iar codurile lor vor rămâne rezervate.`}
-        confirmText={bulkDeleting ? "Se arhivează..." : `Arhivează (${selectedIds.length})`}
+        title={L.bulkArchiveTitle}
+        message={L.bulkArchiveMsg(selectedIds.length)}
+        confirmText={bulkDeleting ? L.archiving : L.archiveN(selectedIds.length)}
         isDanger={true}
       />
 
@@ -1121,9 +1112,9 @@ export default function EmployeesList({ tenant, themeColor }) {
         isOpen={showBulkRestoreModal}
         onClose={() => setShowBulkRestoreModal(false)}
         onConfirm={handleBulkRestore}
-        title="Restaurare în Masă"
-        message={`Sigur dorești să reactivezi cei ${selectedIds.length} angajați selectați din arhivă?`}
-        confirmText={bulkRestoring ? "Se restaurează..." : `Restaurează (${selectedIds.length})`}
+        title={L.bulkRestoreTitle}
+        message={L.bulkRestoreMsg(selectedIds.length)}
+        confirmText={bulkRestoring ? L.restoring : L.restoreN(selectedIds.length)}
         isDanger={false}
       />
 
@@ -1135,10 +1126,10 @@ export default function EmployeesList({ tenant, themeColor }) {
               <div>
                 <h3 className="font-bold text-lg text-slate-800 dark:text-white flex items-center gap-2">
                   <Edit2 size={18} style={{ color: themeColor }} />
-                  Modificare în Masă Angajați
+                  {L.bulkModalTitle}
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  Aplică modificări simultane pentru cei <strong>{selectedIds.length}</strong> angajați selectați
+                  {L.bulkSubPre} <strong>{selectedIds.length}</strong> {L.bulkSubPost}
                 </p>
               </div>
               <button
@@ -1167,7 +1158,7 @@ export default function EmployeesList({ tenant, themeColor }) {
                     className="w-4 h-4 rounded text-primary-600 focus:ring-primary-500"
                   />
                   <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                    Modifică Funcția (Rolul)
+                    {L.bulkChangeJob}
                   </span>
                 </label>
 
@@ -1178,7 +1169,7 @@ export default function EmployeesList({ tenant, themeColor }) {
                       onChange={(e) => setBulkJobTitle(e.target.value)}
                       className="w-full h-10 px-4 text-sm rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-primary-500 shadow-sm transition-all"
                     >
-                      <option value="">-- Fără funcție atribuită --</option>
+                      <option value="">{L.bulkNoJob}</option>
                       {jobTitles.map((jt, idx) => (
                         <option key={idx} value={jt.name || jt}>{jt.name || jt}</option>
                       ))}
@@ -1197,7 +1188,7 @@ export default function EmployeesList({ tenant, themeColor }) {
                     className="w-4 h-4 rounded text-primary-600 focus:ring-primary-500"
                   />
                   <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                    Modifică Punctul de Lucru (Locația)
+                    {L.bulkChangeLoc}
                   </span>
                 </label>
 
@@ -1208,7 +1199,7 @@ export default function EmployeesList({ tenant, themeColor }) {
                       onChange={(e) => setBulkLocationId(e.target.value)}
                       className="w-full h-10 px-4 text-sm rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-primary-500 shadow-sm transition-all"
                     >
-                      <option value="">-- Fără punct de lucru atribuit --</option>
+                      <option value="">{L.bulkNoLoc}</option>
                       {locations.map((loc) => (
                         <option key={loc.id} value={loc.id}>{loc.name}</option>
                       ))}
@@ -1223,7 +1214,7 @@ export default function EmployeesList({ tenant, themeColor }) {
                   onClick={() => setShowBulkEditModal(false)}
                   className="flex-1 px-5 h-10 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-sm font-bold transition-colors"
                 >
-                  Anulează
+                  {L.cancel}
                 </button>
                 <button
                   type="submit"
@@ -1234,10 +1225,10 @@ export default function EmployeesList({ tenant, themeColor }) {
                   {bulkSaving ? (
                     <>
                       <Loader2 size={16} className="animate-spin" />
-                      Se aplică...
+                      {L.applying}
                     </>
                   ) : (
-                    `Aplică la ${selectedIds.length} ${selectedIds.length === 1 ? 'Angajat' : 'Angajați'}`
+                    L.applyTo(selectedIds.length)
                   )}
                 </button>
               </div>
@@ -1252,16 +1243,16 @@ export default function EmployeesList({ tenant, themeColor }) {
         isOpen={!!resetPinEmpId}
         onClose={() => setResetPinEmpId(null)}
         onConfirm={confirmResetPin}
-        title="Resetare PIN"
-        message="Ești sigur că vrei să resetezi PIN-ul acestui angajat?"
-        confirmText="Resetează"
+        title={L.resetPinTitle}
+        message={L.resetPinMsgShort}
+        confirmText={L.resetBtn}
       />
 
       {/* Info Modal */}
       {newPinInfo && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-sm shadow-2xl p-6 text-center">
-            <h3 className="text-xl font-bold mb-4 text-slate-800 dark:text-white">PIN Resetat</h3>
+            <h3 className="text-xl font-bold mb-4 text-slate-800 dark:text-white">{L.pinResetDone}</h3>
             <p className="whitespace-pre-line text-sm text-slate-600 dark:text-slate-300 mb-6">{newPinInfo}</p>
             <button onClick={() => setNewPinInfo(null)} className="w-full h-11 bg-primary-600 text-white rounded-full font-bold">OK</button>
           </div>
@@ -1282,7 +1273,7 @@ export default function EmployeesList({ tenant, themeColor }) {
               <h3 className="text-2xl font-black text-slate-900 dark:text-white leading-tight">
                 {qrEmployee.first_name} {qrEmployee.last_name}
               </h3>
-              <p className="text-sm text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider mt-1">{qrEmployee.job_title || 'Angajat'}</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider mt-1">{qrEmployee.job_title || L.defaultJob}</p>
             </div>
             
             <div className="bg-primary-50 dark:bg-primary-900/20 p-6 rounded-3xl border border-primary-100 dark:border-primary-800/50 flex flex-col items-center justify-center mx-auto mb-6 w-full text-primary-900 dark:text-primary-100">
@@ -1295,12 +1286,12 @@ export default function EmployeesList({ tenant, themeColor }) {
                 />
               </div>
               <p className="text-sm text-center font-medium leading-relaxed">
-                Scanarea se face de către tableta kiosk-ului sau de pe alt dispozitiv.
+                {L.qrScanNote}
               </p>
             </div>
             
             <p className="text-xs text-slate-500 dark:text-slate-400 mb-6 px-4">
-              Trimiteți link-ul portalului către angajat pentru a se autentifica și a-și accesa legitimația digitală.
+              {L.qrSendLink}
             </p>
             
             <button 
@@ -1317,9 +1308,9 @@ export default function EmployeesList({ tenant, themeColor }) {
               }`}
             >
               {copiedLink ? (
-                <><Check size={18} /> Copiat!</>
+                <><Check size={18} /> {L.copied}</>
               ) : (
-                <><Copy size={18} /> Copiază Link Portal</>
+                <><Copy size={18} /> {L.copyLink}</>
               )}
             </button>
           </div>
@@ -1333,10 +1324,10 @@ export default function EmployeesList({ tenant, themeColor }) {
             <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-700/50 dark:border-slate-700 bg-white dark:bg-slate-800 flex justify-between items-center">
               <div>
                 <h2 className="text-lg font-bold text-slate-800 dark:text-white dark:text-white leading-tight">
-                  {editingId ? 'Editează Angajat' : 'Adaugă Angajat Nou'}
+                  {editingId ? L.modalEdit : L.modalAdd}
                 </h2>
                 <p className="text-sm text-slate-500 dark:text-slate-400 dark:text-slate-400 font-medium leading-tight">
-                  {editingId ? 'Actualizează datele angajatului' : 'Profil pontaj și date identificare'}
+                  {editingId ? L.modalEditSub : L.modalAddSub}
                 </p>
               </div>
               <button onClick={() => {
@@ -1360,13 +1351,13 @@ export default function EmployeesList({ tenant, themeColor }) {
                 className={`pb-3 text-sm font-bold border-b-2 transition-colors ${activeTab === 'identificare' ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300 dark:hover:text-slate-300'}`}
                 onClick={() => setActiveTab('identificare')}
               >
-                1. Date & Contact
+                {L.tab1}
               </button>
               <button 
                 className={`pb-3 text-sm font-bold border-b-2 transition-colors ${activeTab === 'contract' ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300 dark:hover:text-slate-300'}`}
                 onClick={() => setActiveTab('contract')}
               >
-                2. Funcție & Contract
+                {L.tab2}
               </button>
             </div>
 
@@ -1387,7 +1378,7 @@ export default function EmployeesList({ tenant, themeColor }) {
                           onClick={() => setShowUpgradeModal(true)}
                           className="mt-2 px-3 py-1.5 rounded-full bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold transition-all shadow-xs cursor-pointer inline-flex items-center gap-1.5"
                         >
-                          <Plus size={14} /> Mărește Locurile Abonamentului (Prorata)
+                          <Plus size={14} /> {L.increaseSeats}
                         </button>
                       )}
                     </div>
@@ -1410,10 +1401,10 @@ export default function EmployeesList({ tenant, themeColor }) {
                     <ScanLine className="w-10 h-10 text-slate-400 group-hover:text-primary-500 mb-3 transition-colors" />
                   )}
                   <h4 className="font-bold text-slate-800 dark:text-white dark:text-white mb-1">
-                    {ocrLoading ? 'Scanare automată în curs...' : 'Apasă aici pentru a scana un Buletin (C.I.)'}
+                    {ocrLoading ? L.ocrBusy : L.ocrIdle}
                   </h4>
                   <p className="text-sm text-slate-500 dark:text-slate-400">
-                    Sistemul va tăia și extrage automat poza angajatului.
+                    {L.ocrHint}
                   </p>
                 </div>
               </div>
@@ -1423,9 +1414,9 @@ export default function EmployeesList({ tenant, themeColor }) {
               {avatarUrl && (
                 <div className="mb-6 flex flex-col items-center">
                   <div className="w-20 h-20 rounded-full border-2 border-slate-200 dark:border-slate-700 overflow-hidden bg-slate-100 dark:bg-slate-800 shadow-sm relative">
-                    <img src={avatarUrl} alt="Avatar extras" className="w-full h-full object-cover" />
+                    <img src={avatarUrl} alt={L.avatarAlt} className="w-full h-full object-cover" />
                   </div>
-                  <span className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-2 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-full">Poză extrasă automat</span>
+                  <span className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-2 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-full">{L.avatarCaption}</span>
                 </div>
               )}
 
@@ -1435,15 +1426,15 @@ export default function EmployeesList({ tenant, themeColor }) {
                 {/* TAB 1: IDENTIFICARE */}
                 <div className={activeTab === 'identificare' ? 'grid grid-cols-1 sm:grid-cols-2 gap-4' : 'hidden'}>
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase mb-1 ml-1">Nume *</label>
+                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase mb-1 ml-1">{L.lastName}</label>
                   <input type="text" required value={formData.last_name} onChange={e => setFormData({...formData, last_name: e.target.value})} className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm" />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase mb-1 ml-1">Prenume *</label>
+                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase mb-1 ml-1">{L.firstName}</label>
                   <input type="text" required value={formData.first_name} onChange={e => setFormData({...formData, first_name: e.target.value})} className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm" />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase mb-1 ml-1">CNP *</label>
+                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase mb-1 ml-1">{L.cnp}</label>
                   <input type="text" required value={formData.cnp} onChange={e => {
                     const newCnp = e.target.value;
                     let autoPin = formData.pin_code;
@@ -1463,9 +1454,9 @@ export default function EmployeesList({ tenant, themeColor }) {
                   <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase mb-1 ml-1 flex items-center justify-between">
                     <span className="flex items-center gap-1">
                       <Calendar size={13} className="text-primary-500" />
-                      Data Nașterii
+                      {L.birthDate}
                     </span>
-                    <span className="text-[10px] text-primary-600 dark:text-primary-400 font-semibold normal-case">Extras din CNP / C.I.</span>
+                    <span className="text-[10px] text-primary-600 dark:text-primary-400 font-semibold normal-case">{L.extractedFrom}</span>
                   </label>
                   <input 
                     type="date" 
@@ -1475,19 +1466,19 @@ export default function EmployeesList({ tenant, themeColor }) {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase mb-1 ml-1">Serie și Număr C.I.</label>
+                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase mb-1 ml-1">{L.idSeries}</label>
                   <input type="text" value={formData.id_card_series} onChange={e => setFormData({...formData, id_card_series: e.target.value})} className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm" />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase mb-1 ml-1">Adresă (din C.I.)</label>
+                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase mb-1 ml-1">{L.address}</label>
                   <input type="text" value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm" />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase mb-1 ml-1">Telefon</label>
+                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase mb-1 ml-1">{L.phone}</label>
                   <input type="tel" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm" />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase mb-1 ml-1">Email</label>
+                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase mb-1 ml-1">{L.email}</label>
                   <input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm" />
                 </div>
                 </div>
@@ -1495,7 +1486,7 @@ export default function EmployeesList({ tenant, themeColor }) {
                 {/* TAB 2: CONTRACT */}
                 <div className={activeTab === 'contract' ? 'grid grid-cols-1 sm:grid-cols-2 gap-4' : 'hidden'}>
                   <div className="col-span-1">
-                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase mb-1 ml-1">Meserie (Funcția din Firmă)</label>
+                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase mb-1 ml-1">{L.jobLabel}</label>
                     {!showNewJobInput ? (
                       <div className="flex gap-2">
                         <select 
@@ -1503,7 +1494,7 @@ export default function EmployeesList({ tenant, themeColor }) {
                           onChange={e => setFormData({...formData, job_title: e.target.value})} 
                           className="flex-1 px-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm"
                         >
-                          <option value="">-- Alege o meserie --</option>
+                          <option value="">{L.chooseJob}</option>
                           {jobTitles.map(job => (
                             <option key={job.id} value={job.name}>{job.name}</option>
                           ))}
@@ -1513,7 +1504,7 @@ export default function EmployeesList({ tenant, themeColor }) {
                           onClick={() => setShowNewJobInput(true)} 
                           className="h-10 px-4 rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-700 text-slate-600 dark:text-slate-300 dark:text-slate-300 font-bold hover:bg-slate-100 dark:hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-600 transition-colors flex items-center gap-1 shadow-sm"
                         >
-                          <Plus size={16} /> Nou
+                          <Plus size={16} /> {L.newBtn}
                         </button>
                       </div>
                     ) : (
@@ -1523,7 +1514,7 @@ export default function EmployeesList({ tenant, themeColor }) {
                           value={newJobName} 
                           onChange={e => setNewJobName(e.target.value)} 
                           className="flex-1 px-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm" 
-                          placeholder="Nume meserie nouă..." 
+                          placeholder={L.newJobPh} 
                           autoFocus
                         />
                         <button 
@@ -1563,16 +1554,16 @@ export default function EmployeesList({ tenant, themeColor }) {
                   </div>
                   
                   <div className="col-span-1">
-                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase mb-1 ml-1">PIN Acces (Din CNP)</label>
+                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase mb-1 ml-1">{L.pinLabel}</label>
                     <input type="text" maxLength="4" value={formData.pin_code} onChange={e => setFormData({...formData, pin_code: e.target.value})} className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm" />
                   </div>
 
                   <div className="col-span-1 sm:col-span-2 -mt-2">
-                    <p className="text-xs text-slate-400 dark:text-slate-500 ml-1">Acest PIN (parolă scurtă) este extras din ultimele 4 cifre ale CNP-ului. Angajatul îl va folosi exclusiv pentru a scana codul QR pe tabletă la intrare/ieșire.</p>
+                    <p className="text-xs text-slate-400 dark:text-slate-500 ml-1">{L.pinHelp}</p>
                   </div>
 
                   <div className="col-span-1 sm:col-span-2 mt-2">
-                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-2">Punct de Lucru</label>
+                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-2">{L.workSite}</label>
                     <div className="relative">
                       <MapPin className="w-5 h-5 text-slate-400 dark:text-slate-500 absolute left-3 top-1/2 transform -translate-y-1/2" />
                       <select
@@ -1580,7 +1571,7 @@ export default function EmployeesList({ tenant, themeColor }) {
                         value={formData.location_id}
                         onChange={e => setFormData({...formData, location_id: e.target.value})}
                       >
-                        <option value="">-- Fără punct de lucru fix --</option>
+                        <option value="">{L.noFixedSite}</option>
                         {locations.map(loc => (
                           <option key={loc.id} value={loc.id}>{loc.name} {loc.address ? `(${loc.address})` : ''}</option>
                         ))}
@@ -1589,7 +1580,7 @@ export default function EmployeesList({ tenant, themeColor }) {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-2">Data Angajării</label>
+                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-2">{L.hireDate}</label>
                     <input
                       type="date"
                       className="w-full px-4 h-10 rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm focus:ring-2 focus:ring-primary-500 outline-none transition-all text-sm text-slate-700 dark:text-slate-300 dark:text-slate-200"
@@ -1598,20 +1589,20 @@ export default function EmployeesList({ tenant, themeColor }) {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-2">Salariu</label>
+                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-2">{L.salary}</label>
                     <input
                       type="text"
-                      placeholder="Ex: 4000 RON"
+                      placeholder={L.salaryPh}
                       className="w-full px-4 h-10 rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm focus:ring-2 focus:ring-primary-500 outline-none transition-all text-sm text-slate-700 dark:text-slate-300 dark:text-slate-200"
                       value={formData.salary}
                       onChange={e => setFormData({...formData, salary: e.target.value})}
                     />
                   </div>
                   <div className="col-span-1 sm:col-span-2">
-                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-2">Notițe Contract</label>
+                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-2">{L.contractNotes}</label>
                     <textarea
                       rows="2"
-                      placeholder="Detalii adiționale..."
+                      placeholder={L.notesPh}
                       className="w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm focus:ring-2 focus:ring-primary-500 outline-none transition-all text-sm text-slate-700 dark:text-slate-300 dark:text-slate-200 resize-none"
                       value={formData.contract_notes}
                       onChange={e => setFormData({...formData, contract_notes: e.target.value})}
@@ -1630,10 +1621,10 @@ export default function EmployeesList({ tenant, themeColor }) {
                 setAvatarBlob(null);
                 setAvatarUrl(null);
               }} className="px-4 h-10 rounded-full font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 dark:bg-slate-800 transition-colors">
-                Anulează
+                {L.cancel}
               </button>
               <button type="submit" form="add-employee-form" className="px-6 h-10 rounded-full text-white font-bold shadow-sm transition-colors" style={{ backgroundColor: themeColor }}>
-                Salvează Angajatul
+                {L.saveEmployee}
               </button>
             </div>
           </div>
@@ -1656,8 +1647,8 @@ export default function EmployeesList({ tenant, themeColor }) {
                   <FileSpreadsheet size={20} />
                 </div>
                 <div>
-                  <h3 className="font-bold text-lg text-slate-900 dark:text-white">Export Date Angajați</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Selectează coloanele și formatul dorit pentru descărcare.</p>
+                  <h3 className="font-bold text-lg text-slate-900 dark:text-white">{L.exportModalTitle}</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{L.exportModalSub}</p>
                 </div>
               </div>
               <button 
@@ -1674,7 +1665,7 @@ export default function EmployeesList({ tenant, themeColor }) {
               {/* Opțiuni Selecție Rânduri (când există selecții active) */}
               {selectedIds.length > 0 && (
                 <div className="bg-slate-50 dark:bg-slate-800/50 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700/60">
-                  <span className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Angajați incluși în export:</span>
+                  <span className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">{L.exportInclude}</span>
                   <div className="flex items-center gap-4">
                     <label className="flex items-center gap-2 text-xs font-bold text-slate-800 dark:text-slate-200 cursor-pointer">
                       <input 
@@ -1685,7 +1676,7 @@ export default function EmployeesList({ tenant, themeColor }) {
                         onChange={() => setExportScope('selected')}
                         className="text-primary-600 focus:ring-primary-500 cursor-pointer" 
                       />
-                      Doar cei {selectedIds.length} selectați
+                      {L.onlySelected(selectedIds.length)}
                     </label>
                     <label className="flex items-center gap-2 text-xs font-bold text-slate-800 dark:text-slate-200 cursor-pointer">
                       <input 
@@ -1696,7 +1687,7 @@ export default function EmployeesList({ tenant, themeColor }) {
                         onChange={() => setExportScope('all')}
                         className="text-primary-600 focus:ring-primary-500 cursor-pointer" 
                       />
-                      Toți angajații ({filteredEmployees.length})
+                      {L.allEmployees(filteredEmployees.length)}
                     </label>
                   </div>
                 </div>
@@ -1706,7 +1697,7 @@ export default function EmployeesList({ tenant, themeColor }) {
               <div>
                 <div className="flex items-center justify-between gap-2 mb-2.5 flex-wrap">
                   <span className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                    Coloane de exportat ({Object.values(selectedExportCols).filter(Boolean).length} selectate)
+                    {L.colsHeader(Object.values(selectedExportCols).filter(Boolean).length)}
                   </span>
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <button
@@ -1714,28 +1705,28 @@ export default function EmployeesList({ tenant, themeColor }) {
                       onClick={handleSelectOnlyNameCodePin}
                       className="px-3 py-1 text-[11px] font-bold rounded-full bg-slate-900 text-white dark:bg-white dark:text-slate-900 hover:opacity-90 transition-opacity cursor-pointer shadow-xs"
                     >
-                      Doar Nume, Cod & PIN
+                      {L.onlyNameCodePin}
                     </button>
                     <button
                       type="button"
                       onClick={handleSelectAllCols}
                       className="px-2.5 py-1 text-[11px] font-bold rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
                     >
-                      Selectează tot
+                      {L.selAll}
                     </button>
                     <button
                       type="button"
                       onClick={handleDeselectAllCols}
                       className="px-2.5 py-1 text-[11px] font-bold rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
                     >
-                      Deselectează
+                      {L.deselect}
                     </button>
                   </div>
                 </div>
 
                 {/* Grid Checkbox-uri */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-slate-50 dark:bg-slate-800/40 p-3 rounded-2xl border border-slate-200 dark:border-slate-700/60 max-h-60 overflow-y-auto">
-                  {EXPORT_COLUMNS.map(col => {
+                  {exportCols.map(col => {
                     const isChecked = !!selectedExportCols[col.id];
                     return (
                       <button
@@ -1762,7 +1753,7 @@ export default function EmployeesList({ tenant, themeColor }) {
 
               {/* Format Fișier */}
               <div>
-                <span className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Format fișier:</span>
+                <span className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">{L.formatLabel}</span>
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     type="button"
@@ -1800,7 +1791,7 @@ export default function EmployeesList({ tenant, themeColor }) {
                 onClick={() => setShowExportModal(false)}
                 className="px-4 h-10 rounded-full font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs transition-colors cursor-pointer"
               >
-                Anulează
+                {L.cancel}
               </button>
               <button
                 type="button"
@@ -1809,7 +1800,7 @@ export default function EmployeesList({ tenant, themeColor }) {
                 style={{ backgroundColor: themeColor }}
               >
                 <Download size={15} />
-                Descarcă {exportFormat.toUpperCase()}
+                {L.download(exportFormat.toUpperCase())}
               </button>
             </div>
 
@@ -1821,22 +1812,22 @@ export default function EmployeesList({ tenant, themeColor }) {
         isOpen={!!resetPinEmpId}
         onClose={() => setResetPinEmpId(null)}
         onConfirm={confirmResetPin}
-        title="Resetare PIN"
-        message="Sigur doriți să resetați PIN-ul pentru acest angajat? Acesta va primi un PIN nou."
-        confirmText="Resetează"
+        title={L.resetPinTitle}
+        message={L.resetPinMsgLong}
+        confirmText={L.resetBtn}
         isDanger={false}
       />
 
       {newPinInfo && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-sm shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden text-center p-6 space-y-4">
-            <h3 className="font-bold text-lg text-slate-800 dark:text-white">Succes</h3>
+            <h3 className="font-bold text-lg text-slate-800 dark:text-white">{L.success}</h3>
             <p className="text-slate-600 dark:text-slate-300 font-medium whitespace-pre-line">{newPinInfo}</p>
             <button
               onClick={() => setNewPinInfo(null)}
               className="w-full h-10 rounded-full bg-primary-600 text-white font-bold hover:bg-primary-700 transition-colors"
             >
-              Închide
+              {L.close}
             </button>
           </div>
         </div>

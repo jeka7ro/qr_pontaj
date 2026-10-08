@@ -590,7 +590,12 @@ export default function TenantLogsModule({ tenant, themeColor = '#2563EB' }) {
                                 {L.typeLogin}
                               </span>
                             )}
-                            {!['IN', 'OUT', 'BREAK_START', 'BREAK_END', 'LOGIN'].includes(log.action_type) && (
+                            {log.action_type === 'STATUS_CHECK' && (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-slate-50 text-slate-600 border border-slate-200">
+                                {L.typeStatusCheck}
+                              </span>
+                            )}
+                            {!['IN', 'OUT', 'BREAK_START', 'BREAK_END', 'LOGIN', 'STATUS_CHECK'].includes(log.action_type) && (
                               <span className="text-slate-500 font-medium">
                                 {log.action_type || '-'}
                               </span>
