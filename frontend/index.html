@@ -44,6 +44,26 @@
           if (typeof globalThis.structuredClone !== 'function') {
             globalThis.structuredClone = function (v) { return v === undefined ? v : JSON.parse(JSON.stringify(v)); };
           }
+          if (typeof globalThis.Iterator === 'undefined') {
+            var IterProto = Object.getPrototypeOf(Object.getPrototypeOf([][Symbol.iterator]()));
+            var IterCtor = function Iterator() {};
+            IterCtor.prototype = IterProto;
+            globalThis.Iterator = IterCtor;
+          }
+          if (typeof Promise.try !== 'function') {
+            Promise.try = function (fn) {
+              var args = Array.prototype.slice.call(arguments, 1);
+              return new Promise(function (resolve) { resolve(fn.apply(undefined, args)); });
+            };
+          }
+          [Map, WeakMap].forEach(function (C) {
+            if (!C.prototype.getOrInsert) {
+              Object.defineProperty(C.prototype, 'getOrInsert', { value: function (k, v) { if (!this.has(k)) this.set(k, v); return this.get(k); }, writable: true, configurable: true });
+            }
+            if (!C.prototype.getOrInsertComputed) {
+              Object.defineProperty(C.prototype, 'getOrInsertComputed', { value: function (k, f) { if (!this.has(k)) this.set(k, f(k)); return this.get(k); }, writable: true, configurable: true });
+            }
+          });
           if (!window.crypto) { window.crypto = {}; }
           if (!window.crypto.randomUUID) {
             window.crypto.randomUUID = function () {
