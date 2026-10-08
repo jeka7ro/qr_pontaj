@@ -775,7 +775,7 @@ export default function BillingCalculator() {
 
             <div className="flex flex-wrap justify-between items-center gap-3 pt-1">
               <span className="text-xs text-slate-500 dark:text-slate-400">
-                Restul de {row.full_rate_count} angajați au activat pe toată durata lunii ({row.full_rate_employees?.[0]?.days_active || 31} zile) și se facturează la cotă întreagă.
+                Restul de {row.full_rate_count} angajați au activat din prima zi a lunii{row.full_rate_employees?.[0]?.days_active ? ` (${row.full_rate_employees[0].days_active} zile ${row.full_rate_employees[0].note?.startsWith('Luna în curs') ? 'până azi' : 'în lună'})` : ''} și se facturează la cotă întreagă.
               </span>
               <button
                 onClick={() => openBorderouModal(row)}

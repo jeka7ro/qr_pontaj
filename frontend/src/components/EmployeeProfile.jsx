@@ -439,30 +439,6 @@ const EmployeeProfile = ({ tenant, themeColor, employeeId, onClose }) => {
         {/* Coloana Dreapta: Contract, Statistici & Istoric */}
         <div className="lg:col-span-2 space-y-6">
           
-          {/* Statistici Quick (Mockup pt viitor) */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-100 dark:border-slate-700/50 shadow-sm">
-              <div className="text-slate-400 mb-1"><Activity size={18} /></div>
-              <div className="text-2xl font-black text-slate-800 dark:text-white">142h</div>
-              <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-1">{t('hoursCurrentMonth')}</div>
-            </div>
-            <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-100 dark:border-slate-700/50 shadow-sm">
-              <div className="text-slate-400 mb-1"><Calendar size={18} /></div>
-              <div className="text-2xl font-black text-slate-800 dark:text-white">18</div>
-              <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-1">{t('daysClocked')}</div>
-            </div>
-            <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-100 dark:border-slate-700/50 shadow-sm">
-              <div className="text-blue-400 mb-1"><Shield size={18} /></div>
-              <div className="text-2xl font-black text-slate-800 dark:text-white">10</div>
-              <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-1">{t('remainingLeaveDays')}</div>
-            </div>
-            <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-100 dark:border-slate-700/50 shadow-sm">
-              <div className="text-red-400 mb-1"><User size={18} /></div>
-              <div className="text-2xl font-black text-slate-800 dark:text-white">0</div>
-              <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-1">{t('unexcusedAbsences')}</div>
-            </div>
-          </div>
-
           {/* Date Contact */}
           <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-100 dark:border-slate-700/50 shadow-sm">
             <h3 className="text-sm font-bold text-slate-800 dark:text-white mb-6 flex items-center border-b border-slate-100 dark:border-slate-700/50 pb-4">

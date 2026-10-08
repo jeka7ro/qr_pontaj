@@ -154,12 +154,18 @@ router.get('/', async (req, res) => {
         }
 
         const days = Math.max(1, Math.min(daysInMonth, endDay - startDay + 1));
+        // Luna in curs: zilele afisate sunt cele reale scurse pana azi; tariful ramane calculat pe luna completa
+        const isCurrentMonth = (year === now.getFullYear() && month === (now.getMonth() + 1));
+        const lastRealDay = isCurrentMonth ? Math.min(endDay, now.getDate()) : endDay;
+        const daysShown = Math.max(1, Math.min(daysInMonth, lastRealDay - startDay + 1));
         const ratePercent = days >= 15 ? 100 : 50;
         const amountEur = days >= 15 ? price : (price * 0.5);
         const amountRon = isRomania ? parseFloat((amountEur * exchangeRate).toFixed(2)) : null;
 
-        let note = `Lună completă (1–${daysInMonth})`;
-        let intervalStr = `01.${month.toString().padStart(2, '0')}.${year} – ${daysInMonth.toString().padStart(2, '0')}.${month.toString().padStart(2, '0')}.${year}`;
+        let note = isCurrentMonth
+          ? `Luna în curs (1–${lastRealDay} din ${daysInMonth})`
+          : `Lună completă (1–${daysInMonth})`;
+        let intervalStr = `01.${month.toString().padStart(2, '0')}.${year} – ${(isCurrentMonth ? lastRealDay : daysInMonth).toString().padStart(2, '0')}.${month.toString().padStart(2, '0')}.${year}`;
 
         if (isArchivedThisMonth) {
           const archDate = new Date(emp.archived_at);
@@ -170,7 +176,7 @@ router.get('/', async (req, res) => {
           const crDate = new Date(emp.created_at);
           const fCr = `${crDate.getDate().toString().padStart(2, '0')}.${(crDate.getMonth() + 1).toString().padStart(2, '0')}.${crDate.getFullYear()}`;
           note = `Adăugat pe ${fCr}`;
-          intervalStr = `${fCr} – ${daysInMonth.toString().padStart(2, '0')}.${month.toString().padStart(2, '0')}.${year}`;
+          intervalStr = `${fCr} – ${(isCurrentMonth ? lastRealDay : daysInMonth).toString().padStart(2, '0')}.${month.toString().padStart(2, '0')}.${year}`;
         }
 
         const item = {
@@ -179,7 +185,7 @@ router.get('/', async (req, res) => {
           name: `${emp.first_name || ''} ${emp.last_name || ''}`.trim() || `Angajat #${emp.id}`,
           job_title: emp.job_title || 'Nespecificat',
           interval_activ: intervalStr,
-          days_active: days,
+          days_active: daysShown,
           days_in_month: daysInMonth,
           rate_percent: ratePercent,
           unit_price_eur: price,

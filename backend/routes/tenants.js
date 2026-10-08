@@ -346,8 +346,15 @@ router.get('/billing-summary', async (req, res) => {
         }
 
         const days = Math.max(1, Math.min(daysInMonth, endDay - startDay + 1));
+        // Luna in curs: zilele afisate sunt cele reale scurse pana azi; tariful ramane calculat pe luna completa
+        const isCurrentMonthRow = (year === now.getFullYear() && month === (now.getMonth() + 1));
+        const lastRealDay = isCurrentMonthRow ? Math.min(endDay, now.getDate()) : endDay;
+        const daysShown = Math.max(1, Math.min(daysInMonth, lastRealDay - startDay + 1));
 
-        let note = `Lună completă (1–${daysInMonth})`;
+        let note = isCurrentMonthRow
+          ? `Luna în curs (1–${lastRealDay} din ${daysInMonth})`
+          : `Lună completă (1–${daysInMonth})`;
+
         if (isArchivedThisMonth) {
           const archDate = new Date(emp.archived_at);
           const formatted = `${archDate.getDate().toString().padStart(2, '0')}.${(archDate.getMonth() + 1).toString().padStart(2, '0')}.${archDate.getFullYear()}`;
@@ -362,7 +369,7 @@ router.get('/billing-summary', async (req, res) => {
           id: emp.id,
           name: `${emp.first_name || ''} ${emp.last_name || ''}`.trim() || 'Angajat #' + emp.id,
           job_title: emp.job_title || 'Nespecificat',
-          days_active: days,
+          days_active: daysShown,
           days_in_month: daysInMonth,
           rate_percent: days >= 15 ? 100 : 50,
           amount_eur: days >= 15 ? price : (price * 0.5),
