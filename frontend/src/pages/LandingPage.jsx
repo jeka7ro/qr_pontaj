@@ -1,9 +1,14 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { QrCode, Clock, MapPin, ShieldCheck, ChevronRight, X, Lock, FileText } from 'lucide-react';
+import { QrCode, Clock, MapPin, ShieldCheck, ChevronRight, X, Lock, FileText, CreditCard } from 'lucide-react';
+import LanguageToggle from '../components/LanguageToggle';
+import { useTranslation } from '../utils/i18n.jsx';
+import SelfServiceSubscribeModal from '../components/SelfServiceSubscribeModal';
 
 export default function LandingPage() {
   const [showGdprModal, setShowGdprModal] = useState(false);
+  const [showSubscribeModal, setShowSubscribeModal] = useState(false);
+  const { t } = useTranslation();
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 font-sans selection:bg-primary-100 selection:text-primary-900 transition-colors">
@@ -12,28 +17,37 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <div className="flex items-center gap-2 text-primary-600">
             <QrCode size={32} strokeWidth={2.5} />
-            <span className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">QR Pontaj</span>
+            <span className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">GetApp Smart QR</span>
           </div>
           <div className="flex items-center gap-3">
+            <LanguageToggle />
             <button 
               type="button"
               onClick={() => setShowGdprModal(true)} 
               className="px-4 h-10 text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors flex items-center gap-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
             >
               <ShieldCheck size={16} className="text-emerald-500" />
-              <span className="hidden sm:inline">GDPR & Legal</span>
+              <span className="hidden sm:inline">{t('gdprLegal')}</span>
+            </button>
+            <button 
+              type="button"
+              onClick={() => setShowSubscribeModal(true)}
+              className="px-4 h-10 text-xs font-bold text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-950/40 hover:bg-primary-100 dark:hover:bg-primary-900/60 border border-primary-200 dark:border-primary-800 transition-colors flex items-center gap-1.5 rounded-full cursor-pointer"
+            >
+              <CreditCard size={14} />
+              <span>Abonament (€9.90/angajat)</span>
             </button>
             <Link 
               to="/admin/login" 
               className="px-4 sm:px-5 h-10 text-sm flex items-center justify-center font-bold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:text-white transition-colors rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
             >
-              Autentificare
+              {t('login')}
             </Link>
             <Link 
               to="/admin/login" 
               className="px-5 sm:px-6 h-10 bg-primary-600 hover:bg-primary-700 text-white text-sm font-bold rounded-full shadow-lg shadow-primary-500/25 transition-all flex items-center gap-1.5 cursor-pointer"
             >
-              <span>Contul meu</span>
+              <span>{t('myAccount')}</span>
               <ChevronRight size={16} />
             </Link>
           </div>
@@ -44,17 +58,25 @@ export default function LandingPage() {
       <main className="pt-32 pb-16 px-6 sm:pt-40 sm:pb-24 lg:pb-32 max-w-7xl mx-auto">
         <div className="text-center max-w-3xl mx-auto">
           <h1 className="text-5xl sm:text-6xl font-black text-slate-900 dark:text-white tracking-tight leading-[1.1] mb-8">
-            Viitorul pontajului este <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-blue-400">Digital și Simplu.</span>
+            {t('landingTitle')}
           </h1>
           <p className="text-lg sm:text-xl text-slate-600 dark:text-slate-300 mb-10 leading-relaxed">
-            Renunță la foile de prezență prăfuite. QR Pontaj îți permite să îți pontezi angajații rapid, cu un simplu scan pe tabletă, monitorizând locația și timpul în timp real conform cerințelor ITM.
+            {t('landingSubtitle')}
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <button 
+              type="button"
+              onClick={() => setShowSubscribeModal(true)}
+              className="w-full sm:w-auto px-8 py-4 bg-primary-600 hover:bg-primary-700 text-white text-base font-bold rounded-full shadow-xl shadow-primary-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <CreditCard size={20} />
+              <span>Comandă Online (Calcul per Angajat)</span>
+            </button>
             <Link 
               to="/admin/login" 
               className="w-full sm:w-auto px-8 py-4 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 text-base font-bold rounded-full shadow-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
-              Intră în Panoul de Control
+              {t('enterDashboard')}
             </Link>
           </div>
         </div>
@@ -65,9 +87,9 @@ export default function LandingPage() {
             <div className="w-14 h-14 bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center mb-6">
               <Clock size={28} />
             </div>
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">Timp Real</h3>
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">{t('realtimeTitle')}</h3>
             <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
-              Vezi exact când ajung și când pleacă angajații tăi, totul sincronizat instant în panoul tău de administrator.
+              {t('realtimeDesc')}
             </p>
           </div>
 
@@ -75,9 +97,9 @@ export default function LandingPage() {
             <div className="w-14 h-14 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mb-6">
               <MapPin size={28} />
             </div>
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">Securitate GPS</h3>
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">{t('gpsTitle')}</h3>
             <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
-              Te asiguri că scanarea are loc doar la locația stabilită. Fiecare pontare este verificată prin coordonate GPS.
+              {t('gpsDesc')}
             </p>
           </div>
 
@@ -85,9 +107,9 @@ export default function LandingPage() {
             <div className="w-14 h-14 bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 rounded-full flex items-center justify-center mb-6">
               <ShieldCheck size={28} />
             </div>
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">Protecție Anti-Fraudă</h3>
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">{t('antifraudTitle')}</h3>
             <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
-              Codurile QR dinamice se reîmprospătează constant. Angajații nu pot face poze la cod pentru a se ponta de acasă.
+              {t('antifraudDesc')}
             </p>
           </div>
         </div>
@@ -228,6 +250,12 @@ export default function LandingPage() {
           </div>
         </div>
       )}
+
+      {/* Modal Self-Service Abonare Stripe */}
+      <SelfServiceSubscribeModal
+        isOpen={showSubscribeModal}
+        onClose={() => setShowSubscribeModal(false)}
+      />
     </div>
   );
 }

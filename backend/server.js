@@ -25,6 +25,8 @@ app.use('/api/tenant/dashboard', tenantDashboardRoutes);
 app.use('/api/scan', scanRoutes);
 app.use('/api/employee', require('./routes/employee'));
 app.use('/api/admin', require('./routes/adminLogs'));
+app.use('/api/billing/deviz', require('./routes/billingDeviz'));
+app.use('/api/stripe', require('./routes/stripeBilling'));
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'QR Pontaj API is running' });
@@ -43,8 +45,10 @@ app.get('/api/system/ip', (req, res) => {
 });
 
 const { startAutoCloseJob } = require('./jobs/autoCloseShiftsJob');
+const { startBackupJob } = require('./jobs/backupJob');
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   startAutoCloseJob();
+  startBackupJob();
 });

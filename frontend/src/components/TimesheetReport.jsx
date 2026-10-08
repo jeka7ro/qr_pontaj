@@ -4,8 +4,10 @@ import { Clock, LogIn, LogOut, Eye, X, AlertTriangle, Users, Calendar, TrendingU
 import * as XLSX from 'xlsx';
 import ReactECharts from 'echarts-for-react';
 import DataTable from './DataTable';
+import { useTranslation } from '../utils/i18n.jsx';
 
 export default function TimesheetReport({ tenant, themeColor, employeeId = null }) {
+  const { t, language } = useTranslation();
   const [timesheets, setTimesheets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionFilter, setActionFilter] = useState('all'); // all, in, out
@@ -604,7 +606,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
       },
       series: [
         {
-          name: 'Distribuție Funcții',
+          name: t('hoursByRole'),
           type: 'pie',
           radius: ['48%', '70%'],
           center: ['30%', '50%'],
@@ -650,7 +652,13 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
     });
 
     const sortedDates = sortedDailyDates;
-    const dayNames = ['Dum', 'Lun', 'Mar', 'Mie', 'Joi', 'Vin', 'Sâm'];
+    const dayNames = language === 'ro' 
+      ? ['Dum', 'Lun', 'Mar', 'Mie', 'Joi', 'Vin', 'Sâm']
+      : language === 'fr'
+      ? ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam']
+      : language === 'nl'
+      ? ['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za']
+      : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const xLabels = sortedDates.map(d => {
       const parts = d.split('-');
       const dateObj = new Date(d + 'T00:00:00');
@@ -674,15 +682,15 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
           if (!item) return '';
           const dateStr = sortedDates[item.dataIndex];
           const dObj = dateStr ? new Date(dateStr + 'T00:00:00') : null;
-          const formattedDate = dObj ? dObj.toLocaleDateString('ro-RO', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' }) : item.name;
+          const formattedDate = dObj ? dObj.toLocaleDateString(language === 'ro' ? 'ro-RO' : language === 'fr' ? 'fr-FR' : language === 'nl' ? 'nl-NL' : 'en-US', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' }) : item.name;
           const isSel = isDayActive && activeDay === dateStr;
           return `
-            <div style="font-weight:bold;margin-bottom:4px;text-transform:capitalize;">${formattedDate} ${isSel ? '(Filtru activ)' : ''}</div>
+            <div style="font-weight:bold;margin-bottom:4px;text-transform:capitalize;">${formattedDate} ${isSel ? `(${t('activeFilter')})` : ''}</div>
             <div style="display:flex;align-items:center;gap:6px;">
               <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background-color:#10b981;"></span>
-              <span>Total Ore: <strong>${item.value}h</strong></span>
+              <span>${t('colTotalHours')}: <strong>${item.value}h</strong></span>
             </div>
-            <div style="font-size:10px;color:#94a3b8;margin-top:4px;">${isSel ? 'Click pentru a anula filtrul' : 'Click pentru a filtra toată pagina'}</div>
+            <div style="font-size:10px;color:#94a3b8;margin-top:4px;">${isSel ? t('clickToCancelFilter') : t('clickToFilterPage')}</div>
           `;
         },
         backgroundColor: 'rgba(15, 23, 42, 0.9)',
@@ -720,14 +728,14 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
       },
       yAxis: {
         type: 'value',
-        name: 'Ore',
+        name: t('workedHours'),
         nameTextStyle: { color: '#94a3b8', fontSize: 11, fontWeight: 600 },
         splitLine: { lineStyle: { type: 'dashed', color: '#f1f5f9' } },
         axisLabel: { color: '#94a3b8', fontSize: 11 }
       },
       series: [
         {
-          name: 'Ore Lucrate',
+          name: t('workedHours'),
           type: 'bar',
           barMaxWidth: 28,
           cursor: 'pointer',
@@ -759,7 +767,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
           data: hoursValues
         },
         {
-          name: 'Trend Ore',
+          name: t('hoursTrend'),
           type: 'line',
           smooth: true,
           symbol: 'circle',
@@ -1009,35 +1017,35 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
     return [
       {
         id: 'itm',
-        label: 'Condică ITM (Format Oficial Art. 119)',
-        description: 'Evidență oficială ITM cu ore exacte intrare/ieșire & certificare',
+        label: t('itmExportTitle'),
+        description: t('itmExportDesc'),
         onClick: handleExportItm
       },
       {
         id: 'summary',
-        label: 'Centralizator (Total per Angajat)',
-        description: '1 rând per angajat cu total ore și zile lucrate',
+        label: t('summaryExportTitle'),
+        description: t('summaryExportDesc'),
         onClick: handleExportSummary
       },
       {
         id: 'detailed',
-        label: 'Detaliat (pe Zile & Sesiuni)',
-        description: 'Fiecare zi de lucru pe rând separat',
+        label: t('detailedExportTitle'),
+        description: t('detailedExportDesc'),
         onClick: handleExportDetailed
       },
       {
         id: 'both',
-        label: 'Complet (Ambele Foi în Excel)',
-        description: 'Foaia 1: Total Angajați | Foaia 2: Detaliat pe Zile',
+        label: t('bothExportTitle'),
+        description: t('bothExportDesc'),
         onClick: handleExportBoth
       }
     ];
-  }, [crossFilteredEmployeeSummaryTotals, crossFilteredGroupedTimesheets, startDate, endDate, employeeId]);
+  }, [crossFilteredEmployeeSummaryTotals, crossFilteredGroupedTimesheets, startDate, endDate, employeeId, t]);
 
   const summaryColumns = useMemo(() => [
     {
       key: 'name',
-      label: 'Angajat',
+      label: t('colEmployee'),
       exportRender: (row) => `${row.first_name || ''} ${row.last_name || ''} (${row.employee_code || '-'})`.trim(),
       render: (row) => (
         <Link 
@@ -1075,7 +1083,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
     },
     {
       key: 'job_title',
-      label: 'Funcție',
+      label: t('colRole'),
       exportRender: (row) => row.job_title || '-',
       render: (row) => (
         <span className="text-sm font-medium text-slate-700 dark:text-slate-300 min-w-[120px] inline-block">
@@ -1086,18 +1094,18 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
     },
     {
       key: 'days_worked',
-      label: 'Zile / Sesiuni',
-      exportRender: (row) => `${row.days_worked} ${row.days_worked === 1 ? 'zi' : 'zile'} / ${row.total_sessions} ${row.total_sessions === 1 ? 'sesiune' : 'sesiuni'}`,
+      label: t('colDaysSessions'),
+      exportRender: (row) => `${row.days_worked} ${row.days_worked === 1 ? t('dayUnitSingle') : t('dayUnitPlural')} / ${row.total_sessions} ${row.total_sessions === 1 ? t('sessionUnitSingle') : t('sessionUnitPlural')}`,
       render: (row) => (
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2.5 py-1 rounded-lg w-fit text-xs font-bold shrink-0">
             <Calendar size={13} />
-            <span>{row.days_worked} {row.days_worked === 1 ? 'zi' : 'zile'}</span>
+            <span>{row.days_worked} {row.days_worked === 1 ? t('dayUnitSingle') : t('dayUnitPlural')}</span>
           </div>
           <span className="text-slate-300 dark:text-slate-600 font-bold select-none">•</span>
           <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2.5 py-1 rounded-md w-fit text-xs font-bold shrink-0">
             <span>{row.total_sessions}</span>
-            <span className="text-[10px] uppercase">{row.total_sessions === 1 ? 'sesiune' : 'sesiuni'}</span>
+            <span className="text-[10px] uppercase">{row.total_sessions === 1 ? t('sessionUnitSingle') : t('sessionUnitPlural')}</span>
           </div>
         </div>
       ),
@@ -1105,7 +1113,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
     },
     {
       key: 'total_time_ms',
-      label: 'Total Ore',
+      label: t('colTotalHours'),
       exportRender: (row) => row.total_time_str,
       render: (row) => (
         <div className="flex flex-col items-start gap-0.5">
@@ -1120,7 +1128,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
           {row.has_ongoing && (
             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              Activ acum
+              {t('onShiftBadge')}
             </span>
           )}
         </div>
@@ -1129,7 +1137,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
     },
     {
       key: 'avg_daily_ms',
-      label: 'Medie Ore/Zi',
+      label: t('colAvgDaily'),
       exportRender: (row) => row.avg_daily_str,
       render: (row) => (
         <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
@@ -1138,7 +1146,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
       ),
       sortable: true
     }
-  ], []);
+  ], [t]);
 
   const tableData = useMemo(() => {
     if (!employeeId) {
@@ -1193,7 +1201,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
   const baseColumns = [
     {
       key: 'first_name',
-      label: 'Angajat',
+      label: t('colEmployee'),
       exportRender: (row) => `${row.first_name} ${row.last_name} (${row.employee_code || '-'})`,
       render: (row) => (
         <Link to={`/admin/employees/${row.employee_id}?tab=details`} className="flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 p-1 -m-1 rounded-lg transition-colors cursor-pointer group min-w-[170px]">
@@ -1224,30 +1232,30 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
     },
     {
       key: 'date',
-      label: 'Data',
-      exportRender: (row) => new Date(row.date).toLocaleDateString('ro-RO'),
+      label: t('colDate'),
+      exportRender: (row) => new Date(row.date).toLocaleDateString(language === 'ro' ? 'ro-RO' : language === 'fr' ? 'fr-FR' : language === 'nl' ? 'nl-NL' : 'en-US'),
       render: (row) => (
-        <span className="text-sm font-bold text-slate-800 dark:text-white dark:text-white">
-          {new Date(row.date).toLocaleDateString('ro-RO')}
+        <span className="text-sm font-bold text-slate-800 dark:text-white">
+          {new Date(row.date).toLocaleDateString(language === 'ro' ? 'ro-RO' : language === 'fr' ? 'fr-FR' : language === 'nl' ? 'nl-NL' : 'en-US')}
         </span>
       ),
       sortable: true
     },
     {
       key: 'first_in',
-      label: 'Prima Intrare',
-      exportRender: (row) => row.first_in ? new Date(row.first_in.timestamp).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' }) : '-',
+      label: t('firstIn'),
+      exportRender: (row) => row.first_in ? new Date(row.first_in.timestamp).toLocaleTimeString(language === 'ro' ? 'ro-RO' : language === 'fr' ? 'fr-FR' : language === 'nl' ? 'nl-NL' : 'en-US', { hour: '2-digit', minute: '2-digit' }) : '-',
       render: (row) => row.first_in ? (
         <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 font-bold text-sm bg-emerald-50 dark:bg-emerald-900/30 px-2.5 py-1 rounded-lg w-fit">
           <LogIn size={14} />
-          {new Date(row.first_in.timestamp).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' })}
+          {new Date(row.first_in.timestamp).toLocaleTimeString(language === 'ro' ? 'ro-RO' : language === 'fr' ? 'fr-FR' : language === 'nl' ? 'nl-NL' : 'en-US', { hour: '2-digit', minute: '2-digit' })}
         </div>
       ) : <span className="text-slate-400">-</span>
     },
     {
       key: 'last_out',
-      label: 'Ultima Ieșire',
-      exportRender: (row) => row.last_out ? new Date(row.last_out.timestamp).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' }) : '-',
+      label: t('lastOut'),
+      exportRender: (row) => row.last_out ? new Date(row.last_out.timestamp).toLocaleTimeString(language === 'ro' ? 'ro-RO' : language === 'fr' ? 'fr-FR' : language === 'nl' ? 'nl-NL' : 'en-US', { hour: '2-digit', minute: '2-digit' }) : '-',
       render: (row) => row.last_out ? (
         <div className="flex flex-col gap-1">
           <div className={`flex items-center gap-1.5 font-bold text-sm px-2.5 py-1 rounded-lg w-fit ${row.last_out.is_manual ? 'text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/30' : 'text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30'}`}>
@@ -1256,44 +1264,44 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
             ) : (
               <LogOut size={14} />
             )}
-            {new Date(row.last_out.timestamp).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' })}
+            {new Date(row.last_out.timestamp).toLocaleTimeString(language === 'ro' ? 'ro-RO' : language === 'fr' ? 'fr-FR' : language === 'nl' ? 'nl-NL' : 'en-US', { hour: '2-digit', minute: '2-digit' })}
           </div>
         </div>
       ) : <span className="text-slate-400">-</span>
     },
     {
       key: 'sessions_count',
-      label: 'Sesiuni',
+      label: t('sessionsCount'),
       exportRender: (row) => row.intervals ? row.intervals.length.toString() : '0',
       render: (row) => (
         <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-1 rounded-md w-fit text-xs font-bold">
           <span>{row.intervals ? row.intervals.length : 0}</span>
-          <span className="text-[10px] uppercase">{row.intervals?.length === 1 ? 'sesiune' : 'sesiuni'}</span>
+          <span className="text-[10px] uppercase">{row.intervals?.length === 1 ? t('sessionUnitSingle') : t('sessionUnitPlural')}</span>
         </div>
       )
     },
     {
       key: 'total_time_str',
-      label: 'Total Ore',
+      label: t('colTotalHours'),
       render: (row) => (
         <div className="flex flex-col items-start gap-1">
-          <span className="text-sm font-bold text-slate-700 dark:text-slate-300 dark:text-slate-300">
+          <span className="text-sm font-bold text-slate-700 dark:text-slate-300">
             {row.total_time_str}
           </span>
           {row.is_ongoing && (
             <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-[10px] font-bold whitespace-nowrap shrink-0">
               <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse shrink-0"></div>
-              <span className="whitespace-nowrap">ÎN TURĂ</span>
+              <span className="whitespace-nowrap">{t('onShiftBadge')}</span>
             </span>
           )}
           {row.missing_out && (
             <button
               onClick={() => setCloseShiftModal({ isOpen: true, rowData: row, date: row.date, time: '17:00' })}
-              className="flex items-center gap-1 mt-1 text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300 text-xs font-medium hover:underline transition-colors"
-              title="Apasă pentru a închide tura manual"
+              className="flex items-center gap-1 mt-1 text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300 text-xs font-medium hover:underline transition-colors cursor-pointer"
+              title={t('closeShiftTooltip')}
             >
               <AlertTriangle size={12} />
-              Închide manual
+              {t('manualCloseBadge')}
             </button>
           )}
         </div>
@@ -1306,41 +1314,41 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
       return [
         {
           key: 'nume',
-          label: 'Nume Angajat',
+          label: t('employeeName'),
           hidden: true,
           exportRender: (row) => `${row.first_name || ''} ${row.last_name || ''}`.trim()
         },
         {
           key: 'functie',
-          label: 'Funcția',
+          label: t('colRole'),
           hidden: true,
           exportRender: (row) => row.job_title || '-'
         },
         {
           key: 'date',
-          label: 'Data',
-          exportRender: (row) => new Date(row.date).toLocaleDateString('ro-RO'),
+          label: t('colDate'),
+          exportRender: (row) => new Date(row.date).toLocaleDateString(language === 'ro' ? 'ro-RO' : language === 'fr' ? 'fr-FR' : language === 'nl' ? 'nl-NL' : 'en-US'),
           render: (row) => (
             <span className="text-sm font-medium text-slate-800 dark:text-white">
-              {new Date(row.date).toLocaleDateString('ro-RO')}
+              {new Date(row.date).toLocaleDateString(language === 'ro' ? 'ro-RO' : language === 'fr' ? 'fr-FR' : language === 'nl' ? 'nl-NL' : 'en-US')}
             </span>
           )
         },
         {
           key: 'in',
-          label: 'Intrare',
-          exportRender: (row) => row.in ? new Date(row.in).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' }) : '-',
+          label: t('colIn'),
+          exportRender: (row) => row.in ? new Date(row.in).toLocaleTimeString(language === 'ro' ? 'ro-RO' : language === 'fr' ? 'fr-FR' : language === 'nl' ? 'nl-NL' : 'en-US', { hour: '2-digit', minute: '2-digit' }) : '-',
           render: (row) => row.in ? (
             <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 font-medium text-sm bg-emerald-50 dark:bg-emerald-900/30 px-2.5 py-1 rounded-lg w-fit">
               <LogIn size={14} />
-              {new Date(row.in).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' })}
+              {new Date(row.in).toLocaleTimeString(language === 'ro' ? 'ro-RO' : language === 'fr' ? 'fr-FR' : language === 'nl' ? 'nl-NL' : 'en-US', { hour: '2-digit', minute: '2-digit' })}
             </div>
           ) : <span className="text-slate-400">-</span>
         },
         {
           key: 'out',
-          label: 'Ieșire',
-          exportRender: (row) => row.out ? new Date(row.out).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' }) : '-',
+          label: t('colOut'),
+          exportRender: (row) => row.out ? new Date(row.out).toLocaleTimeString(language === 'ro' ? 'ro-RO' : language === 'fr' ? 'fr-FR' : language === 'nl' ? 'nl-NL' : 'en-US', { hour: '2-digit', minute: '2-digit' }) : '-',
           render: (row) => row.out ? (
             <div className={`flex items-center gap-1.5 font-medium text-sm px-2.5 py-1 rounded-lg w-fit ${row.is_manual ? 'text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/30' : 'text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30'}`}>
               {row.is_manual ? (
@@ -1348,13 +1356,13 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
               ) : (
                 <LogOut size={14} />
               )}
-              {new Date(row.out).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' })}
+              {new Date(row.out).toLocaleTimeString(language === 'ro' ? 'ro-RO' : language === 'fr' ? 'fr-FR' : language === 'nl' ? 'nl-NL' : 'en-US', { hour: '2-digit', minute: '2-digit' })}
             </div>
           ) : <span className="text-slate-400">-</span>
         },
         {
           key: 'total_time_str',
-          label: 'Durată',
+          label: t('colDuration'),
           aggregate: (rows) => {
             const sumMs = rows.reduce((sum, row) => sum + (row.total_time_ms || 0), 0);
             if (sumMs === 0) return '-';
@@ -1370,17 +1378,17 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
               {row.is_ongoing && (
                 <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-[10px] font-bold whitespace-nowrap shrink-0">
                   <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse shrink-0"></div>
-                  <span className="whitespace-nowrap">ÎN TURĂ</span>
+                  <span className="whitespace-nowrap">{t('onShiftBadge')}</span>
                 </span>
               )}
               {row.missing_out && (
                 <button
                   onClick={() => setCloseShiftModal({ isOpen: true, rowData: row, date: row.date, time: '17:00' })}
-                  className="flex items-center gap-1 mt-1 text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300 text-xs font-medium hover:underline transition-colors"
-                  title="Apasă pentru a închide tura manual"
+                  className="flex items-center gap-1 mt-1 text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300 text-xs font-medium hover:underline transition-colors cursor-pointer"
+                  title={t('closeShiftTooltip')}
                 >
                   <AlertTriangle size={12} />
-                  Închide manual
+                  {t('manualCloseBadge')}
                 </button>
               )}
             </div>
@@ -1392,7 +1400,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
     } else {
       return baseColumns;
     }
-  }, [employeeId, viewMode, summaryColumns, baseColumns]);
+  }, [employeeId, viewMode, summaryColumns, baseColumns, t, language]);
 
   const tableFilters = (
     <div className="flex flex-wrap items-center gap-2 w-full py-0.5">
@@ -1404,7 +1412,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
             type="button" 
             onClick={clearCrossFilter} 
             className="p-0.5 hover:bg-emerald-200/60 dark:hover:bg-emerald-800 rounded-full cursor-pointer transition-colors text-emerald-700 dark:text-emerald-300 ml-0.5" 
-            title="Elimină filtrul"
+            title={t('removeFilter')}
           >
             <X size={13} />
           </button>
@@ -1416,9 +1424,9 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
         onChange={(e) => setActionFilter(e.target.value)}
         className="px-3 h-10 rounded-full border border-slate-200 dark:border-slate-700 text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer w-auto shrink-0 shadow-xs"
       >
-        <option value="all">Toate acțiunile</option>
-        <option value="in">Doar Intrări (IN)</option>
-        <option value="out">Doar Ieșiri (OUT)</option>
+        <option value="all">{t('allActions')}</option>
+        <option value="in">{t('onlyIn')}</option>
+        <option value="out">{t('onlyOut')}</option>
       </select>
 
       <select 
@@ -1426,7 +1434,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
         onChange={(e) => setLocationId(e.target.value)}
         className="px-3 h-10 rounded-full border border-slate-200 dark:border-slate-700 text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer w-auto max-w-[160px] truncate shrink-0 shadow-xs"
       >
-        <option value="all">Toate locațiile</option>
+        <option value="all">{t('allLocations')}</option>
         {locations.map(loc => (
           <option key={loc.id} value={loc.id}>{loc.name}</option>
         ))}
@@ -1437,14 +1445,14 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
         onChange={handlePeriodChange}
         className="px-3 h-10 rounded-full border border-slate-200 dark:border-slate-700 text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer w-auto shrink-0 shadow-xs"
       >
-        <option value="today">Azi</option>
-        <option value="yesterday">Ieri</option>
-        <option value="this_week">Săptămâna curentă</option>
-        <option value="this_month">Luna curentă</option>
-        <option value="last_month">Luna trecută</option>
-        <option value="this_year">Anul curent</option>
-        <option value="last_year">Anul trecut</option>
-        <option value="custom">Personalizat...</option>
+        <option value="today">{t('today')}</option>
+        <option value="yesterday">{t('yesterday')}</option>
+        <option value="this_week">{t('thisWeek')}</option>
+        <option value="this_month">{t('currentMonth')}</option>
+        <option value="last_month">{t('lastMonth')}</option>
+        <option value="this_year">{t('thisYear')}</option>
+        <option value="last_year">{t('lastYear')}</option>
+        <option value="custom">{t('customPeriod')}</option>
       </select>
       
       <div className="flex items-center gap-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full px-3.5 h-10 shadow-xs focus-within:ring-2 focus-within:ring-primary-500 transition-all shrink-0">
@@ -1455,7 +1463,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
           onChange={handleDateManualChange(setStartDate)}
           onClick={(e) => e.target.showPicker?.()}
           className="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 bg-transparent outline-none cursor-pointer w-[105px] sm:w-[115px] text-center [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:w-0 [&::-webkit-calendar-picker-indicator]:opacity-0"
-          title="Data Început"
+          title={t('startDate')}
         />
         <span className="text-slate-300 dark:text-slate-600 font-bold select-none px-0.5">-</span>
         <input 
@@ -1464,7 +1472,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
           onChange={handleDateManualChange(setEndDate)}
           onClick={(e) => e.target.showPicker?.()}
           className="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 bg-transparent outline-none cursor-pointer w-[105px] sm:w-[115px] text-center [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:w-0 [&::-webkit-calendar-picker-indicator]:opacity-0"
-          title="Data Sfârșit"
+          title={t('endDate')}
         />
       </div>
     </div>
@@ -1475,11 +1483,11 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
       {!employeeId && (
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Rapoarte Pontaje</h1>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t('timesheetsTitle')}</h1>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
               {viewMode === 'summary' 
-                ? `Centralizator totalizat pe fiecare angajat (${employeeSummaryTotals.length} angajați)`
-                : `Jurnal detaliat pe fiecare zi de activitate (${groupedTimesheets.length} înregistrări)`}
+                ? `${t('summarySubtitle')} (${employeeSummaryTotals.length} ${t('employeesTotal')})`
+                : `${t('detailedSubtitle')} (${groupedTimesheets.length} ${t('recordsUnit')})`}
             </p>
           </div>
 
@@ -1497,7 +1505,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
                 }`}
               >
                 <Users size={14} />
-                <span>Total per Angajat</span>
+                <span>{t('totalPerEmployee')}</span>
                 <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-semibold">
                   {employeeSummaryTotals.length}
                 </span>
@@ -1512,7 +1520,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
                 }`}
               >
                 <Calendar size={14} />
-                <span>Detaliat pe Zile</span>
+                <span>{t('detailedByDays')}</span>
                 <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-semibold">
                   {groupedTimesheets.length}
                 </span>
@@ -1529,13 +1537,13 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
                   title={exportOptions[0].description || exportOptions[0].label}
                 >
                   <Download size={16} className="mr-2" />
-                  Export Excel
+                  {t('exportExcel')}
                 </button>
                 <button
                   type="button"
                   onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
                   className="flex items-center justify-center px-2.5 h-10 rounded-r-full bg-green-700 hover:bg-green-800 text-white border-l border-green-500/50 transition-colors cursor-pointer shadow-sm"
-                  title="Alege opțiuni de export"
+                  title={t('exportOptionsTitle')}
                 >
                   <ChevronDown
                     size={16}
@@ -1553,7 +1561,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
                     />
                     <div className="absolute right-0 top-12 z-50 w-72 rounded-2xl bg-white dark:bg-slate-800 shadow-xl border border-slate-200 dark:border-slate-700 py-2 divide-y divide-slate-100 dark:divide-slate-700/60 animate-in fade-in zoom-in-95">
                       <div className="px-4 py-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                        Opțiuni Export Excel
+                        {t('exportOptionsTitle')}
                       </div>
                       <div className="py-1">
                         {exportOptions.map((opt, idx) => (
@@ -1572,7 +1580,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
                               </span>
                               {idx === 0 && (
                                 <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300">
-                                  Principal
+                                  {t('primaryOption')}
                                 </span>
                               )}
                             </div>
@@ -1604,12 +1612,12 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
                 <Clock size={22} />
               </div>
               <div className="min-w-0">
-                <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total Ore Lucrate</div>
+                <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{t('totalWorkedHours')}</div>
                 <div className="text-xl font-black text-slate-900 dark:text-white truncate">
                   {analyticsSummary.totalHours}h {analyticsSummary.totalMins}m
                 </div>
                 <div className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                  {analyticsSummary.totalHoursDecimal} ore în perioadă
+                  {analyticsSummary.totalHoursDecimal} {t('hoursInPeriod')}
                 </div>
               </div>
             </div>
@@ -1620,12 +1628,12 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
                 <Users size={22} />
               </div>
               <div className="min-w-0">
-                <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Angajați Activi</div>
+                <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{t('activeEmployees')}</div>
                 <div className="text-xl font-black text-slate-900 dark:text-white truncate">
-                  {analyticsSummary.activeEmployeesCount} persoane
+                  {analyticsSummary.activeEmployeesCount} {t('peopleUnit')}
                 </div>
                 <div className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                  {analyticsSummary.totalDaysWorked} zile lucrate pontate
+                  {analyticsSummary.totalDaysWorked} {t('daysWorkedClocked')}
                 </div>
               </div>
             </div>
@@ -1636,12 +1644,12 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
                 <TrendingUp size={22} />
               </div>
               <div className="min-w-0">
-                <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Medie / Angajat</div>
+                <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{t('avgPerEmployee')}</div>
                 <div className="text-xl font-black text-slate-900 dark:text-white truncate">
                   {analyticsSummary.avgPerEmployeeStr}
                 </div>
                 <div className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                  Medie zi: {analyticsSummary.avgDailyStr}
+                  {t('dailyAvg')}: {analyticsSummary.avgDailyStr}
                 </div>
               </div>
             </div>
@@ -1652,12 +1660,12 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
                 <CheckCircle2 size={22} />
               </div>
               <div className="min-w-0">
-                <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total Sesiuni</div>
+                <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{t('totalSessions')}</div>
                 <div className="text-xl font-black text-slate-900 dark:text-white truncate">
-                  {analyticsSummary.totalSessions} pontări
+                  {analyticsSummary.totalSessions} {t('clockEvents')}
                 </div>
                 <div className="text-xs font-medium text-emerald-600 dark:text-emerald-400 truncate">
-                  {locations.find(l => String(l.id) === String(locationId))?.name || 'Toate locațiile'}
+                  {locations.find(l => String(l.id) === String(locationId))?.name || t('allLocations')}
                 </div>
               </div>
             </div>
@@ -1669,8 +1677,8 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
             <div className="lg:col-span-4 bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col justify-between">
               <div className="flex items-center justify-between mb-1">
                 <div>
-                  <h3 className="text-sm font-bold text-slate-800 dark:text-white">Ore pe Funcții / Roluri</h3>
-                  <p className="text-xs text-slate-400">Ponderea orelor lucrate per departament</p>
+                  <h3 className="text-sm font-bold text-slate-800 dark:text-white">{t('hoursByRole')}</h3>
+                  <p className="text-xs text-slate-400">{t('hoursShareByDept')}</p>
                 </div>
                 <PieChart size={18} className="text-slate-400" />
               </div>
@@ -1685,7 +1693,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
                       onEvents={{
                         click: (params) => {
                           if (params && params.name) {
-                            toggleCrossFilter('role', params.name, `Funcție: ${params.name}`);
+                            toggleCrossFilter('role', params.name, `${t('colRole')}: ${params.name}`);
                           }
                         }
                       }}
@@ -1704,7 +1712,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
                   </>
                 ) : (
                   <div className="h-full flex items-center justify-center text-sm text-slate-400">
-                    Nu există date în perioada selectată
+                    {t('noDataInPeriod')}
                   </div>
                 )}
               </div>
@@ -1714,8 +1722,8 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
             <div className="lg:col-span-5 bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col justify-between">
               <div className="flex items-center justify-between mb-1">
                 <div>
-                  <h3 className="text-sm font-bold text-slate-800 dark:text-white">Evoluție Zilnică Ore</h3>
-                  <p className="text-xs text-slate-400">Volumul de ore lucrate pe fiecare zi din perioadă</p>
+                  <h3 className="text-sm font-bold text-slate-800 dark:text-white">{t('dailyHoursTrend')}</h3>
+                  <p className="text-xs text-slate-400">{t('dailyHoursVolumeDesc')}</p>
                 </div>
                 <BarChart3 size={18} className="text-slate-400" />
               </div>
@@ -1733,7 +1741,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
                           if (dateStr) {
                             const parts = dateStr.split('-');
                             const labelDate = parts.length === 3 ? `${parts[2]}.${parts[1]}.${parts[0]}` : dateStr;
-                            toggleCrossFilter('day', dateStr, `Ziua: ${labelDate}`);
+                            toggleCrossFilter('day', dateStr, `${t('colDate')}: ${labelDate}`);
                           }
                         }
                       }
@@ -1741,7 +1749,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
                   />
                 ) : (
                   <div className="h-full flex items-center justify-center text-sm text-slate-400">
-                    Nu există date în perioada selectată
+                    {t('noDataInPeriod')}
                   </div>
                 )}
               </div>
@@ -1751,7 +1759,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
             <div className="lg:col-span-3 bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col justify-between">
               <div className="flex items-center justify-between mb-1.5">
                 <div>
-                  <h3 className="text-sm font-bold text-slate-800 dark:text-white">Top 5 Angajați</h3>
+                  <h3 className="text-sm font-bold text-slate-800 dark:text-white">{t('top5Employees')}</h3>
                 </div>
                 <Award size={18} className="text-amber-500" />
               </div>
@@ -1777,13 +1785,13 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
                   return (
                     <div 
                       key={emp.employee_id} 
-                      onClick={() => toggleCrossFilter('employee', emp.employee_id, `Angajat: ${emp.name}`)}
+                      onClick={() => toggleCrossFilter('employee', emp.employee_id, `${t('colEmployee')}: ${emp.name}`)}
                       className={`block py-1.5 px-2.5 rounded-xl border transition-all cursor-pointer select-none group ${
                         isEmpSelected 
                           ? 'bg-emerald-50/70 dark:bg-emerald-950/40 border-emerald-400 dark:border-emerald-600 ring-2 ring-emerald-400/40 shadow-xs' 
                           : 'bg-slate-50 dark:bg-slate-900/40 border-slate-100 dark:border-slate-700/60 hover:bg-slate-100/80 dark:hover:bg-slate-800/60'
                       }`}
-                      title={isEmpSelected ? "Click pentru a anula filtrul" : "Click pentru a filtra toată pagina"}
+                      title={isEmpSelected ? t('clickToCancelFilter') : t('clickToFilterPage')}
                     >
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2 min-w-0">
@@ -1809,7 +1817,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
                               {emp.name}
                             </div>
                             <div className="text-[10px] text-slate-400 truncate leading-tight">
-                              {emp.job_title || 'Fără rol'}
+                              {emp.job_title || t('noRole')}
                             </div>
                           </div>
                         </div>
@@ -1822,7 +1830,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
                             to={`/admin/employees/${emp.employee_id}?tab=details`}
                             onClick={(e) => e.stopPropagation()}
                             className="p-1 rounded-md text-slate-400 hover:text-primary-600 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-                            title="Vezi profil angajat"
+                            title={t('viewEmployeeProfile')}
                           >
                             <Eye size={12} />
                           </Link>
@@ -1848,9 +1856,9 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
           columns={columns} 
           data={tableData} 
           rowKey={!employeeId && viewMode === 'summary' ? 'id' : 'id'}
-          searchPlaceholder={employeeId ? "Caută după dată..." : (viewMode === 'summary' ? "Caută după nume, cod sau funcție..." : "Caută după nume sau cod...")}
+          searchPlaceholder={employeeId ? t('searchByDate') : (viewMode === 'summary' ? t('searchByNameCodeRole') : t('searchByNameCode'))}
           filters={tableFilters}
-          emptyMessage="Nu există pontaje înregistrate."
+          emptyMessage={t('noRecordsFound')}
           expandable={!employeeId}
           exportOptions={null}
           expandedRowRender={(row) => {
@@ -1860,34 +1868,34 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
                 <div className="p-3 sm:p-4 bg-slate-50 dark:bg-slate-900/50">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-3">
                     <h4 className="text-xs sm:text-sm font-bold text-slate-800 dark:text-white break-words">
-                      Zile lucrate în perioada selectată: <span className="text-primary-600 dark:text-primary-400">{row.first_name} {row.last_name}</span>
+                      {t('daysWorkedInPeriod')}: <span className="text-primary-600 dark:text-primary-400">{row.first_name} {row.last_name}</span>
                     </h4>
                     <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                      {empDays.length} {empDays.length === 1 ? 'zi' : 'zile'} | Total: {row.total_time_str}
+                      {empDays.length} {empDays.length === 1 ? t('dayUnitSingle') : t('dayUnitPlural')} | Total: {row.total_time_str}
                     </span>
                   </div>
                   <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm" style={{ WebkitOverflowScrolling: 'touch' }}>
                     <table className="w-full text-left border-collapse text-xs sm:text-sm min-w-[500px]">
                       <thead>
                         <tr className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">
-                          <th className="px-4 py-2.5">Data</th>
-                          <th className="px-4 py-2.5">Prima Intrare</th>
-                          <th className="px-4 py-2.5">Ultima Ieșire</th>
-                          <th className="px-4 py-2.5">Sesiuni</th>
-                          <th className="px-4 py-2.5 text-right">Total Ore Zi</th>
+                          <th className="px-4 py-2.5">{t('colDate')}</th>
+                          <th className="px-4 py-2.5">{t('firstIn')}</th>
+                          <th className="px-4 py-2.5">{t('lastOut')}</th>
+                          <th className="px-4 py-2.5">{t('sessionsCount')}</th>
+                          <th className="px-4 py-2.5 text-right">{t('totalDayHours')}</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                         {empDays.map((day, idx) => (
                           <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
                             <td className="px-4 py-2.5 font-bold text-slate-800 dark:text-white whitespace-nowrap">
-                              {new Date(day.date).toLocaleDateString('ro-RO', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })}
+                              {new Date(day.date).toLocaleDateString(language === 'ro' ? 'ro-RO' : language === 'fr' ? 'fr-FR' : language === 'nl' ? 'nl-NL' : 'en-US', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })}
                             </td>
                             <td className="px-4 py-2.5 whitespace-nowrap">
                               {day.first_in ? (
                                 <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 font-bold text-xs bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 rounded-md w-fit">
                                   <LogIn size={12} />
-                                  {new Date(day.first_in.timestamp).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' })}
+                                  {new Date(day.first_in.timestamp).toLocaleTimeString(language === 'ro' ? 'ro-RO' : language === 'fr' ? 'fr-FR' : language === 'nl' ? 'nl-NL' : 'en-US', { hour: '2-digit', minute: '2-digit' })}
                                 </div>
                               ) : <span className="text-slate-400">-</span>}
                             </td>
@@ -1899,12 +1907,12 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
                                   ) : (
                                     <LogOut size={12} />
                                   )}
-                                  {new Date(day.last_out.timestamp).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' })}
+                                  {new Date(day.last_out.timestamp).toLocaleTimeString(language === 'ro' ? 'ro-RO' : language === 'fr' ? 'fr-FR' : language === 'nl' ? 'nl-NL' : 'en-US', { hour: '2-digit', minute: '2-digit' })}
                                 </div>
                               ) : <span className="text-slate-400">-</span>}
                             </td>
                             <td className="px-4 py-2.5 text-slate-600 dark:text-slate-400 text-xs font-medium whitespace-nowrap">
-                              {day.intervals?.length || 0} {day.intervals?.length === 1 ? 'sesiune' : 'sesiuni'}
+                              {day.intervals?.length || 0} {day.intervals?.length === 1 ? t('sessionUnitSingle') : t('sessionUnitPlural')}
                             </td>
                             <td className="px-4 py-2.5 text-right font-bold text-slate-900 dark:text-white whitespace-nowrap">
                               {day.total_time_str}
@@ -1920,15 +1928,15 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
             return (
               <div className="p-3 sm:p-4 bg-slate-50 dark:bg-slate-900/50">
                 <h4 className="text-xs sm:text-sm font-bold text-slate-800 dark:text-white mb-3 break-words">
-                  Istoric detaliat pentru {row.first_name} {row.last_name} ({row.date})
+                  {t('detailedHistoryFor')} {row.first_name} {row.last_name} ({row.date})
                 </h4>
                 <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm" style={{ WebkitOverflowScrolling: 'touch' }}>
                   <table className="w-full text-left border-collapse text-xs sm:text-sm min-w-[340px]">
                     <thead>
                       <tr className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700">
-                        <th className="px-4 py-2 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Intrare</th>
-                        <th className="px-4 py-2 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Ieșire</th>
-                        <th className="px-4 py-2 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase text-right">Durată</th>
+                        <th className="px-4 py-2 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">{t('colIn')}</th>
+                        <th className="px-4 py-2 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">{t('colOut')}</th>
+                        <th className="px-4 py-2 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase text-right">{t('colDuration')}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
@@ -1943,7 +1951,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
                         return (
                           <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
                             <td className="px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-300">
-                              {inv.in ? new Date(inv.in).toLocaleTimeString('ro-RO', {hour:'2-digit', minute:'2-digit'}) : '-'}
+                              {inv.in ? new Date(inv.in).toLocaleTimeString(language === 'ro' ? 'ro-RO' : language === 'fr' ? 'fr-FR' : language === 'nl' ? 'nl-NL' : 'en-US', {hour:'2-digit', minute:'2-digit'}) : '-'}
                             </td>
                             <td className="px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-300">
                               {inv.out ? (
@@ -1951,7 +1959,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
                                   {inv.raw_out?.is_manual && (
                                     <span className="w-3.5 h-3.5 rounded-full border-[1.5px] border-current flex items-center justify-center text-[9px] font-black">M</span>
                                   )}
-                                  {new Date(inv.out).toLocaleTimeString('ro-RO', {hour:'2-digit', minute:'2-digit'})}
+                                  {new Date(inv.out).toLocaleTimeString(language === 'ro' ? 'ro-RO' : language === 'fr' ? 'fr-FR' : language === 'nl' ? 'nl-NL' : 'en-US', {hour:'2-digit', minute:'2-digit'})}
                                 </div>
                               ) : '-'}
                             </td>
@@ -1974,7 +1982,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-sm shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
             <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
-              <h3 className="font-bold text-lg text-slate-800 dark:text-white">Închide Tura Manual</h3>
+              <h3 className="font-bold text-lg text-slate-800 dark:text-white">{t('manualOutShift')}</h3>
               <button onClick={() => setCloseShiftModal({ isOpen: false, rowData: null, date: '', time: '17:00' })} className="text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors">
                 <X size={20} />
               </button>
@@ -1982,7 +1990,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
             <div className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Data ieșirii</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t('outDate')}</label>
                   <input
                     type="date"
                     value={closeShiftModal.date}
@@ -1991,7 +1999,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Ora ieșirii</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t('outTime')}</label>
                   <input
                     type="time"
                     value={closeShiftModal.time}
@@ -2005,14 +2013,14 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
                   onClick={() => setCloseShiftModal({ isOpen: false, rowData: null, date: '', time: '17:00' })}
                   className="flex-1 px-5 h-10 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-sm font-bold transition-colors"
                 >
-                  Anulează
+                  {t('cancel')}
                 </button>
                 <button
                   onClick={handleCloseShift}
                   className="flex-1 px-5 h-10 rounded-full text-white text-sm font-bold shadow-sm transition-all"
                   style={{ backgroundColor: themeColor }}
                 >
-                  Salvează
+                  {t('save')}
                 </button>
               </div>
             </div>

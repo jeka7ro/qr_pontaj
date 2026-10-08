@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Users, Clock, LogIn, LogOut, MapPin, UserMinus, X, AlertTriangle, Search, ChevronLeft, ChevronRight, QrCode, Sun, Moon, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
-
+import { useTranslation } from '../utils/i18n.jsx';
 
 const fuzzyMatch = (str, pattern, threshold = 2) => {
   if (!pattern) return true;
@@ -53,6 +53,7 @@ const fuzzyMatch = (str, pattern, threshold = 2) => {
 };
 
 export default function DashboardCharts({ tenant, themeColor }) {
+  const { t } = useTranslation();
   const [stats, setStats] = useState({
     totalEmployees: 0,
     presentNow: 0,
@@ -132,7 +133,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
       const localDateTime = new Date(`${dateVal}T${shiftModal.time}:00`);
 
       if (localDateTime.getTime() > Date.now() + 5 * 60 * 1000) {
-        alert('Ora selectată nu poate fi în viitor! Vă rugăm să alegeți o oră validă.');
+        alert(t('futureTimeError'));
         return;
       }
 
@@ -153,7 +154,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
 
       if (!res.ok) {
         const errorData = await res.json();
-        throw new Error(errorData.error || `Eroare la ${shiftModal.type === 'START' ? 'pornirea' : 'închiderea'} turei`);
+        throw new Error(errorData.error || (shiftModal.type === 'START' ? t('startShiftBtn') : t('closeShiftBtn')));
       }
 
       setShiftModal({ isOpen: false, type: 'CLOSE', rowData: null, date: '', time: '17:00' });
@@ -224,7 +225,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
     if (e) e.preventDefault();
     const presentCount = liveShifts.filter(emp => emp.current_status === 'IN').length;
     if (presentCount === 0) {
-      showToast('Nu există niciun angajat prezent în tura curentă.', 'info');
+      showToast(t('noPresentShiftsMsg'), 'info');
       return;
     }
     const todayStr = new Date().toLocaleDateString('en-CA');
@@ -242,7 +243,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
     if (!closeAllModal.date || !closeAllModal.time) return;
     const localDateTime = new Date(`${closeAllModal.date}T${closeAllModal.time}:00`);
     if (localDateTime.getTime() > Date.now() + 5 * 60 * 1000) {
-      alert('Ora selectată nu poate fi în viitor! Vă rugăm să alegeți o oră validă.');
+      alert(t('futureTimeError'));
       return;
     }
     setClosingAllLoading(true);
@@ -265,11 +266,11 @@ export default function DashboardCharts({ tenant, themeColor }) {
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || 'Eroare la închiderea colectivă a turelor');
+        throw new Error(data.error || t('errorClosingShifts'));
       }
 
       setCloseAllModal({ isOpen: false, date: '', time: '' });
-      showToast(data.message || 'Turele au fost închise cu succes pentru toți angajații prezenți.');
+      showToast(data.message || t('shiftsClosedSuccess'));
       fetchLive();
       fetchStats();
     } catch (err) {
@@ -287,13 +288,14 @@ export default function DashboardCharts({ tenant, themeColor }) {
   }, [tenant.id]);
 
   if (loading) {
-    return <div className="py-20 text-center text-slate-500 font-medium">Se încarcă datele...</div>;
+    return <div className="py-20 text-center text-slate-500 font-medium">{t('loadingLive')}</div>;
   }
 
   const getDonutOption = () => {
     const formattedData = activeDonutData.map(item => {
-      const isPresent = item.name === 'Prezenți';
-      const isAbsent = item.name === 'Absenți';
+      const isPresent = item.name === 'Prezenți' || item.name === t('present');
+      const isAbsent = item.name === 'Absenți' || item.name === t('absent');
+      const displayName = isPresent ? t('present') : isAbsent ? t('absent') : item.name;
       const baseColor = isPresent ? '#3b82f6' : isAbsent ? '#f59e0b' : (item.itemStyle?.color || '#64748b');
 
       let isSelected = false;
@@ -323,6 +325,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
 
       return {
         ...item,
+        name: displayName,
         selected: isSelected,
         itemStyle: {
           color: baseColor,
@@ -345,7 +348,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
       },
       series: [
         {
-          name: 'Status',
+          name: t('attendanceStatus'),
           type: 'pie',
           radius: ['56%', '90%'],
           avoidLabelOverlap: false,
@@ -403,7 +406,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
 
   const getBarOption = () => {
     const list = stats.weeklyData || [];
-    const xCategories = list.map(d => `${d.name}\n${d.formattedDate || ''}`);
+    const xCategories = list.map(d => `${d.name === 'Azi' ? t('todayLabel') : d.name}\n${d.formattedDate || ''}`);
 
     const presentData = list.map(d => d.present ?? d.value ?? 0);
     const absentData = list.map(d => d.absent ?? 0);
@@ -414,13 +417,13 @@ export default function DashboardCharts({ tenant, themeColor }) {
     let legendData = [];
 
     if (chartViewMode === 'ALL') {
-      legendData = ['Prezenți', 'Absenți', 'Ore Lucrate'];
+      legendData = [t('present'), t('absent'), t('workedHours')];
       yAxis = [
         {
           type: 'value',
           position: 'left',
           alignTicks: true,
-          name: 'Persoane',
+          name: t('peopleAxis'),
           nameTextStyle: { color: '#94a3b8', fontSize: 11, fontWeight: 'bold' },
           splitLine: { lineStyle: { type: 'dashed', color: '#f1f5f9' } },
           axisLabel: { color: '#94a3b8', fontWeight: 'bold', formatter: '{value}' },
@@ -430,7 +433,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
           type: 'value',
           position: 'right',
           alignTicks: true,
-          name: 'Ore (h)',
+          name: t('hoursAxis'),
           nameTextStyle: { color: '#d97706', fontSize: 11, fontWeight: 'bold' },
           splitLine: { show: false },
           axisLabel: { 
@@ -443,7 +446,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
 
       series = [
         {
-          name: 'Prezenți',
+          name: t('present'),
           type: 'bar',
           yAxisIndex: 0,
           barMaxWidth: 30,
@@ -470,7 +473,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
           data: presentData
         },
         {
-          name: 'Absenți',
+          name: t('absent'),
           type: 'bar',
           yAxisIndex: 0,
           barMaxWidth: 30,
@@ -497,7 +500,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
           data: absentData
         },
         {
-          name: 'Ore Lucrate',
+          name: t('workedHours'),
           type: 'line',
           smooth: true,
           yAxisIndex: 1,
@@ -549,11 +552,11 @@ export default function DashboardCharts({ tenant, themeColor }) {
         }
       ];
     } else if (chartViewMode === 'ATTENDANCE') {
-      legendData = ['Prezenți', 'Absenți'];
+      legendData = [t('present'), t('absent')];
       yAxis = [
         {
           type: 'value',
-          name: 'Persoane',
+          name: t('peopleAxis'),
           nameTextStyle: { color: '#94a3b8', fontSize: 11, fontWeight: 'bold' },
           splitLine: { lineStyle: { type: 'dashed', color: '#f1f5f9' } },
           axisLabel: { color: '#94a3b8', fontWeight: 'bold' },
@@ -562,7 +565,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
       ];
       series = [
         {
-          name: 'Prezenți',
+          name: t('present'),
           type: 'bar',
           barMaxWidth: 38,
           itemStyle: {
@@ -588,7 +591,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
           data: presentData
         },
         {
-          name: 'Absenți',
+          name: t('absent'),
           type: 'bar',
           barMaxWidth: 38,
           itemStyle: {
@@ -616,11 +619,11 @@ export default function DashboardCharts({ tenant, themeColor }) {
       ];
     } else {
       // chartViewMode === 'HOURS'
-      legendData = ['Ore Lucrate'];
+      legendData = [t('workedHours')];
       yAxis = [
         {
           type: 'value',
-          name: 'Ore Lucrate (h)',
+          name: t('hoursAxis'),
           nameTextStyle: { color: '#d97706', fontSize: 11, fontWeight: 'bold' },
           splitLine: { lineStyle: { type: 'dashed', color: '#f1f5f9' } },
           axisLabel: { color: '#d97706', fontWeight: 'bold', formatter: '{value}h' }
@@ -628,7 +631,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
       ];
       series = [
         {
-          name: 'Ore Lucrate',
+          name: t('workedHours'),
           type: 'bar',
           barMaxWidth: 44,
           itemStyle: {
@@ -691,25 +694,26 @@ export default function DashboardCharts({ tenant, themeColor }) {
           const hours = day.hours ?? 0;
           const total = present + absent;
           const rate = total > 0 ? Math.round((present / total) * 100) : 0;
+          const dayDisplayName = day.name === 'Azi' ? t('todayLabel') : day.name;
 
           return `
             <div style="font-weight: 700; font-size: 13px; margin-bottom: 6px; color: #f8fafc; border-bottom: 1px solid #334155; padding-bottom: 4px;">
-              ${day.name} (${day.formattedDate || day.date})
+              ${dayDisplayName} (${day.formattedDate || day.date})
             </div>
             <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px; margin: 3px 0;">
-              <span style="color: #34d399; font-weight: 600;">● Prezenți:</span>
-              <strong style="color: #ffffff;">${present} pers.</strong>
+              <span style="color: #34d399; font-weight: 600;">● ${t('present')}:</span>
+              <strong style="color: #ffffff;">${present} ${t('persUnit')}</strong>
             </div>
             <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px; margin: 3px 0;">
-              <span style="color: #fb7185; font-weight: 600;">● Absenți:</span>
-              <strong style="color: #ffffff;">${absent} pers.</strong>
+              <span style="color: #fb7185; font-weight: 600;">● ${t('absent')}:</span>
+              <strong style="color: #ffffff;">${absent} ${t('persUnit')}</strong>
             </div>
             <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px; margin: 3px 0;">
-              <span style="color: #fbbf24; font-weight: 600;">● Ore lucrate:</span>
-              <strong style="color: #ffffff;">${hours} ore</strong>
+              <span style="color: #fbbf24; font-weight: 600;">● ${t('workedHours')}:</span>
+              <strong style="color: #ffffff;">${hours} ${t('hoursUnit')}</strong>
             </div>
             <div style="margin-top: 6px; padding-top: 4px; border-top: 1px dashed #334155; font-size: 11px; color: #94a3b8; text-align: right;">
-              Rată prezență: <strong style="color: #38bdf8;">${rate}%</strong>
+              ${t('attendanceRateLabel')}: <strong style="color: #38bdf8;">${rate}%</strong>
             </div>
           `;
         }
@@ -756,11 +760,11 @@ export default function DashboardCharts({ tenant, themeColor }) {
 
   const onChartClick = (e) => {
     if (!e || !e.name) return;
-    if (e.name === 'Prezenți') {
+    if (e.name === 'Prezenți' || e.name === t('present')) {
       handleToggleFilter('IN', true);
       return;
     }
-    if (e.name === 'Absenți') {
+    if (e.name === 'Absenți' || e.name === t('absent')) {
       handleToggleFilter('ABSENT', true);
       return;
     }
@@ -781,9 +785,9 @@ export default function DashboardCharts({ tenant, themeColor }) {
 
   const onBarChartClick = (e) => {
     if (!e || !e.seriesName) return;
-    if (e.seriesName === 'Prezenți') {
+    if (e.seriesName === 'Prezenți' || e.seriesName === t('present')) {
       handleToggleFilter('IN', true);
-    } else if (e.seriesName === 'Absenți') {
+    } else if (e.seriesName === 'Absenți' || e.seriesName === t('absent')) {
       handleToggleFilter('ABSENT', true);
     }
   };
@@ -813,7 +817,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
             <Users size={24} />
           </div>
           <div>
-            <div className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-1">Total Angajați</div>
+            <div className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-1">{t('totalEmployees')}</div>
             <div className="text-3xl font-black text-slate-800 dark:text-white">{stats.totalEmployees}</div>
           </div>
         </button>
@@ -832,10 +836,10 @@ export default function DashboardCharts({ tenant, themeColor }) {
           </div>
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-sm font-bold text-slate-400 uppercase tracking-wider">Prezenți Acum</span>
+              <span className="text-sm font-bold text-slate-400 uppercase tracking-wider">{t('presentNow')}</span>
               {liveFilter === 'IN' && (
                 <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-full">
-                  Filtru activ
+                  {t('filterActive')}
                 </span>
               )}
             </div>
@@ -848,7 +852,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
             <LogIn size={24} />
           </div>
           <div>
-            <div className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-1">Intrări Astăzi</div>
+            <div className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-1">{t('todayEntries')}</div>
             <div className="text-3xl font-black text-slate-800 dark:text-white">{stats.todayCheckins}</div>
           </div>
         </div>
@@ -860,10 +864,10 @@ export default function DashboardCharts({ tenant, themeColor }) {
         <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 lg:col-span-1 flex flex-col justify-between relative">
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-2">
-              <h3 className="text-base font-bold text-slate-800 dark:text-white">Status Prezență</h3>
+              <h3 className="text-base font-bold text-slate-800 dark:text-white">{t('attendanceStatus')}</h3>
               {liveFilter !== 'ALL' && (
                 <span className="text-[10px] font-bold text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-950/50 px-2 py-0.5 rounded-full border border-primary-200/50 dark:border-primary-800/50">
-                  Filtru activ
+                  {t('filterActive')}
                 </span>
               )}
             </div>
@@ -873,7 +877,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
                 className="text-xs font-bold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-200 px-2.5 py-1 rounded-full hover:bg-slate-200 transition-colors z-10 flex items-center gap-1 cursor-pointer"
               >
                 <ChevronLeft size={13} className="shrink-0" />
-                <span>Înapoi</span>
+                <span>{t('back')}</span>
               </button>
             )}
           </div>
@@ -891,7 +895,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
               <button 
                 type="button"
                 onClick={() => handleToggleFilter('ALL', false)}
-                title={liveFilter !== 'ALL' ? 'Apasă pentru a reseta filtrul (arată toți)' : 'Total angajați'}
+                title={liveFilter !== 'ALL' ? t('resetFilterAllTooltip') : (stats.totalEmployees === 1 ? t('employeeBadgeSingle') : t('employeeBadgePlural'))}
                 className={`rounded-full flex flex-col items-center justify-center shadow-inner border transition-all select-none ${
                   liveFilter !== 'ALL' 
                     ? 'pointer-events-auto cursor-pointer hover:scale-105 active:scale-95 ring-2 ring-primary-500/50 hover:ring-primary-500 bg-slate-900 border-primary-500' 
@@ -904,30 +908,32 @@ export default function DashboardCharts({ tenant, themeColor }) {
                     {liveFilter === 'IN' ? (
                       <>
                         <div className="text-2xl font-black text-blue-400 leading-none">{stats.presentNow}</div>
-                        <div className="text-[8px] font-black text-blue-300 tracking-wider mt-0.5">PREZENȚI</div>
-                        <div className="text-[7.5px] font-medium text-slate-400 mt-0.5">Reset</div>
+                        <div className="text-[8px] font-black text-blue-300 tracking-wider mt-0.5">{t('present').toUpperCase()}</div>
+                        <div className="text-[7.5px] font-medium text-slate-400 mt-0.5">{t('reset')}</div>
                       </>
                     ) : liveFilter === 'ABSENT' ? (
                       <>
                         <div className="text-2xl font-black text-amber-400 leading-none">{Math.max(0, (stats.totalEmployees || 0) - (stats.presentNow || 0))}</div>
-                        <div className="text-[8px] font-black text-amber-300 tracking-wider mt-0.5">ABSENȚI</div>
-                        <div className="text-[7.5px] font-medium text-slate-400 mt-0.5">Reset</div>
+                        <div className="text-[8px] font-black text-amber-300 tracking-wider mt-0.5">{t('absent').toUpperCase()}</div>
+                        <div className="text-[7.5px] font-medium text-slate-400 mt-0.5">{t('reset')}</div>
                       </>
                     ) : liveFilter === 'OUT' ? (
                       <>
-                        <div className="text-2xl font-black text-slate-300 leading-none">PLECAȚI</div>
-                        <div className="text-[7.5px] font-medium text-slate-400 mt-0.5">Reset</div>
+                        <div className="text-2xl font-black text-slate-300 leading-none">{t('clockedOut').toUpperCase()}</div>
+                        <div className="text-[7.5px] font-medium text-slate-400 mt-0.5">{t('reset')}</div>
                       </>
                     ) : (
                       <>
                         <div className="text-2xl font-black text-white leading-none">{stats.totalEmployees}</div>
-                        <div className="text-[8px] font-bold text-slate-400 tracking-wider mt-0.5">ANGAJAȚI</div>
+                        <div className="text-[8px] font-bold text-slate-400 tracking-wider mt-0.5">
+                          {stats.totalEmployees === 1 ? t('employeeBadgeSingle') : t('employeeBadgePlural')}
+                        </div>
                       </>
                     )}
                   </div>
                 ) : (
                   <div className="text-center">
-                    <div className="text-[8px] font-bold text-slate-400 mb-0.5">FILTRU</div>
+                    <div className="text-[8px] font-bold text-slate-400 mb-0.5">{t('filterLabel').toUpperCase()}</div>
                     <div className="text-[11px] font-black text-white px-1 leading-tight uppercase truncate max-w-[70px]">{drillParentName}</div>
                   </div>
                 )}
@@ -940,8 +946,11 @@ export default function DashboardCharts({ tenant, themeColor }) {
             {activeDonutData.map((item, idx) => {
               const total = activeDonutData.reduce((sum, d) => sum + (d.value || 0), 0);
               const pct = total > 0 ? Math.round((item.value / total) * 100) : 0;
-              const dotColor = item.itemStyle?.color || (item.name === 'Prezenți' ? '#3b82f6' : '#f59e0b');
-              const filterTarget = item.name === 'Prezenți' ? 'IN' : (item.name === 'Absenți' ? 'ABSENT' : null);
+              const isPresent = item.name === 'Prezenți' || item.name === t('present');
+              const isAbsent = item.name === 'Absenți' || item.name === t('absent');
+              const displayLabel = isPresent ? t('present') : isAbsent ? t('absent') : item.name;
+              const dotColor = item.itemStyle?.color || (isPresent ? '#3b82f6' : '#f59e0b');
+              const filterTarget = isPresent ? 'IN' : (isAbsent ? 'ABSENT' : null);
               const isActive = filterTarget && liveFilter === filterTarget;
 
               return (
@@ -949,26 +958,26 @@ export default function DashboardCharts({ tenant, themeColor }) {
                   key={idx}
                   type="button"
                   onClick={() => filterTarget && handleToggleFilter(filterTarget, true)}
-                  title={`Filtrează lista: ${item.name}`}
+                  title={`${t('filterLabel')}: ${displayLabel}`}
                   className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border transition-all cursor-pointer text-left ${
                     isActive
-                      ? item.name === 'Prezenți'
+                      ? isPresent
                         ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-500 ring-2 ring-blue-500/40 shadow-xs'
                         : 'bg-amber-50 dark:bg-amber-950/40 border-amber-500 ring-2 ring-amber-500/40 shadow-xs'
                       : 'bg-slate-50 dark:bg-slate-700/40 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
                   }`}
                 >
                   <span className={`w-2 h-2 rounded-full shrink-0 ${isActive ? 'animate-pulse' : ''}`} style={{ backgroundColor: dotColor }}></span>
-                  <span className={`text-[11px] font-semibold ${isActive ? (item.name === 'Prezenți' ? 'text-blue-700 dark:text-blue-300 font-bold' : 'text-amber-700 dark:text-amber-300 font-bold') : 'text-slate-600 dark:text-slate-300'}`}>
-                    {item.name}:
+                  <span className={`text-[11px] font-semibold ${isActive ? (isPresent ? 'text-blue-700 dark:text-blue-300 font-bold' : 'text-amber-700 dark:text-amber-300 font-bold') : 'text-slate-600 dark:text-slate-300'}`}>
+                    {displayLabel}:
                   </span>
-                  <strong className={`text-[11px] font-black ${isActive ? (item.name === 'Prezenți' ? 'text-blue-900 dark:text-blue-100' : 'text-amber-900 dark:text-amber-100') : 'text-slate-900 dark:text-white'}`}>
+                  <strong className={`text-[11px] font-black ${isActive ? (isPresent ? 'text-blue-900 dark:text-blue-100' : 'text-amber-900 dark:text-amber-100') : 'text-slate-900 dark:text-white'}`}>
                     {item.value}
                   </strong>
                   <span className="text-[10px] text-slate-400 font-bold">({pct}%)</span>
                   {isActive && (
                     <span className="ml-1 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded bg-white dark:bg-slate-800 shadow-2xs text-slate-700 dark:text-slate-200">
-                      Activ
+                      {t('active')}
                     </span>
                   )}
                 </button>
@@ -980,9 +989,9 @@ export default function DashboardCharts({ tenant, themeColor }) {
                 type="button"
                 onClick={() => handleToggleFilter('ALL', false)}
                 className="text-[10px] font-bold text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white px-2 py-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-                title="Resetează filtrul"
+                title={t('filterResetTooltip')}
               >
-                Resetează (Toți)
+                {t('resetAllLabel')}
               </button>
             )}
           </div>
@@ -1000,10 +1009,10 @@ export default function DashboardCharts({ tenant, themeColor }) {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
                   <h3 className="text-base font-bold text-slate-800 dark:text-white leading-tight">
-                    Evoluție Săptămânală
+                    {t('weeklyEvolution')}
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    Total ore săptămână: <strong className="text-slate-700 dark:text-slate-200">{Math.round(weeklyTotalHours * 10) / 10}h</strong>
+                    {t('totalWeekHours')}: <strong className="text-slate-700 dark:text-slate-200">{Math.round(weeklyTotalHours * 10) / 10}h</strong>
                   </p>
                 </div>
                 
@@ -1012,34 +1021,36 @@ export default function DashboardCharts({ tenant, themeColor }) {
                   <button
                     type="button"
                     onClick={() => setChartViewMode('ALL')}
-                    className={`px-2.5 py-1 rounded-lg transition-all ${chartViewMode === 'ALL' ? 'bg-white dark:bg-slate-800 text-primary-600 dark:text-white shadow-sm font-bold' : 'hover:text-slate-900 dark:hover:text-white'}`}
+                    className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${chartViewMode === 'ALL' ? 'bg-white dark:bg-slate-800 text-primary-600 dark:text-white shadow-sm font-bold' : 'hover:text-slate-900 dark:hover:text-white'}`}
                   >
-                    Complet
+                    {t('allView')}
                   </button>
                   <button
                     type="button"
                     onClick={() => setChartViewMode('ATTENDANCE')}
-                    className={`px-2.5 py-1 rounded-lg transition-all ${chartViewMode === 'ATTENDANCE' ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-white shadow-sm font-bold' : 'hover:text-slate-900 dark:hover:text-white'}`}
+                    className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${chartViewMode === 'ATTENDANCE' ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-white shadow-sm font-bold' : 'hover:text-slate-900 dark:hover:text-white'}`}
                   >
-                    Prezență
+                    {t('attendanceView')}
                   </button>
                   <button
                     type="button"
                     onClick={() => setChartViewMode('HOURS')}
-                    className={`px-2.5 py-1 rounded-lg transition-all ${chartViewMode === 'HOURS' ? 'bg-white dark:bg-slate-800 text-amber-600 dark:text-white shadow-sm font-bold' : 'hover:text-slate-900 dark:hover:text-white'}`}
+                    className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${chartViewMode === 'HOURS' ? 'bg-white dark:bg-slate-800 text-amber-600 dark:text-white shadow-sm font-bold' : 'hover:text-slate-900 dark:hover:text-white'}`}
                   >
-                    Ore
+                    {t('hoursView')}
                   </button>
                 </div>
               </div>
 
               {/* Quick KPI pill badges for Today - interactive */}
               <div className="flex flex-wrap items-center gap-2 my-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">
-                <span className="text-[11px] font-bold text-slate-400">Azi ({todayItem.name}):</span>
+                <span className="text-[11px] font-bold text-slate-400">
+                  {t('todayLabel')} ({todayItem.name === 'Azi' ? t('todayLabel') : todayItem.name}):
+                </span>
                 <button
                   type="button"
                   onClick={() => handleToggleFilter('IN', true)}
-                  title="Filtrează prezenți astăzi"
+                  title={t('filterPresentTooltip')}
                   className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-bold border transition-all cursor-pointer ${
                     liveFilter === 'IN'
                       ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-200 border-emerald-500 ring-2 ring-emerald-500/30'
@@ -1047,12 +1058,12 @@ export default function DashboardCharts({ tenant, themeColor }) {
                   }`}
                 >
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                  {todayItem.present || 0} Prezenți
+                  {todayItem.present || 0} {t('present')}
                 </button>
                 <button
                   type="button"
                   onClick={() => handleToggleFilter('ABSENT', true)}
-                  title="Filtrează absenți astăzi"
+                  title={t('filterAbsentTooltip')}
                   className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-bold border transition-all cursor-pointer ${
                     liveFilter === 'ABSENT'
                       ? 'bg-rose-100 text-rose-800 dark:bg-rose-900/60 dark:text-rose-200 border-rose-500 ring-2 ring-rose-500/30'
@@ -1060,11 +1071,11 @@ export default function DashboardCharts({ tenant, themeColor }) {
                   }`}
                 >
                   <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
-                  {todayItem.absent || 0} Absenți
+                  {todayItem.absent || 0} {t('absent')}
                 </button>
                 <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/50">
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                  {todayItem.hours || 0}h Lucrate
+                  {todayItem.hours || 0}h {t('workedHours')}
                 </span>
               </div>
 
@@ -1162,25 +1173,25 @@ export default function DashboardCharts({ tenant, themeColor }) {
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
                     </span>
-                    <span>Situație Live Angajați</span>
+                    <span>{t('liveRoster')}</span>
                     <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
-                      Tura Curentă
+                      {t('currentShiftBadge')}
                     </span>
                   </h3>
                   <span className="text-slate-300 dark:text-slate-600 font-light select-none">•</span>
                   <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                    <strong className="text-emerald-600 dark:text-emerald-400">{inCount} prezenți acum</strong> din {liveShifts.length} angajați.
+                    <strong className="text-emerald-600 dark:text-emerald-400">{inCount} {t('presentNow').toLowerCase()}</strong> {t('of')} {liveShifts.length} {t('employeesTotal')}.
                   </p>
                   {liveFilter !== 'ALL' && (
                     <>
                       <span className="text-slate-300 dark:text-slate-600 font-light select-none">•</span>
                       <span className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-0.5 rounded-full bg-primary-50 dark:bg-primary-950/40 text-primary-600 dark:text-primary-400 border border-primary-200/60 dark:border-primary-800/50">
-                        Filtru: {liveFilter === 'IN' ? 'Prezenți' : liveFilter === 'ABSENT' ? 'Absenți' : 'Plecați'} ({filteredLiveShifts.length})
+                        {t('filterLabel')}: {liveFilter === 'IN' ? t('present') : liveFilter === 'ABSENT' ? t('absent') : t('clockedOut')} ({filteredLiveShifts.length})
                         <button
                           type="button"
                           onClick={() => handleToggleFilter('ALL', false)}
                           className="hover:text-primary-800 dark:hover:text-primary-200 ml-0.5 cursor-pointer"
-                          title="Resetează filtrul"
+                          title={t('filterResetTooltip')}
                         >
                           <X size={12} />
                         </button>
@@ -1197,7 +1208,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
                   <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 z-10" />
                   <input
                     type="text"
-                    placeholder="Caută după nume, cod, funcție..."
+                    placeholder={t('searchLivePlaceholder')}
                     value={liveSearch}
                     onChange={(e) => { setLiveSearch(e.target.value); setLivePage(1); }}
                     className={`w-full pl-9.5 ${liveSearch ? 'pr-24' : 'pr-4'} h-[34px] rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all shadow-2xs`}
@@ -1214,7 +1225,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
                         type="button"
                         onClick={(e) => { e.stopPropagation(); setLiveSearch(''); }} 
                         className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 rounded-full hover:bg-slate-200/60 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                        title="Șterge căutarea"
+                        title={t('searchClearTooltip')}
                       >
                         <X size={13} />
                       </button>
@@ -1228,29 +1239,29 @@ export default function DashboardCharts({ tenant, themeColor }) {
                   <div className="flex items-center overflow-x-auto max-w-full bg-slate-100 dark:bg-slate-900 p-1 rounded-full border border-slate-200/60 dark:border-slate-700/60 text-xs font-bold shrink-0 h-[34px]">
                     <button
                       onClick={() => { setLiveFilter('ALL'); setLivePage(1); }}
-                      className={`h-6 px-3 rounded-full shrink-0 whitespace-nowrap transition-all flex items-center justify-center ${liveFilter === 'ALL' ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'}`}
+                      className={`h-6 px-3 rounded-full shrink-0 whitespace-nowrap transition-all flex items-center justify-center cursor-pointer ${liveFilter === 'ALL' ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'}`}
                     >
-                      Toți ({liveShifts.length})
+                      {t('allFilterLabel')} ({liveShifts.length})
                     </button>
                     <button
                       onClick={() => { setLiveFilter('IN'); setLivePage(1); }}
-                      className={`h-6 px-3 rounded-full shrink-0 whitespace-nowrap transition-all flex items-center gap-1.5 ${liveFilter === 'IN' ? 'bg-white dark:bg-slate-800 shadow-sm' : 'text-slate-500 dark:text-slate-400'}`}
+                      className={`h-6 px-3 rounded-full shrink-0 whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer ${liveFilter === 'IN' ? 'bg-white dark:bg-slate-800 shadow-sm font-bold' : 'text-slate-500 dark:text-slate-400'}`}
                       style={liveFilter === 'IN' ? { color: themeColor } : {}}
                     >
                       <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                      Prezenți ({inCount})
+                      {t('present')} ({inCount})
                     </button>
                     <button
                       onClick={() => { setLiveFilter('OUT'); setLivePage(1); }}
-                      className={`h-6 px-3 rounded-full shrink-0 whitespace-nowrap transition-all flex items-center justify-center ${liveFilter === 'OUT' ? 'bg-white dark:bg-slate-800 text-slate-800 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'}`}
+                      className={`h-6 px-3 rounded-full shrink-0 whitespace-nowrap transition-all flex items-center justify-center cursor-pointer ${liveFilter === 'OUT' ? 'bg-white dark:bg-slate-800 text-slate-800 dark:text-white shadow-sm font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'}`}
                     >
-                      Plecați ({outCount})
+                      {t('clockedOut')} ({outCount})
                     </button>
                     <button
                       onClick={() => { setLiveFilter('ABSENT'); setLivePage(1); }}
-                      className={`h-6 px-3 rounded-full shrink-0 whitespace-nowrap transition-all flex items-center justify-center ${liveFilter === 'ABSENT' ? 'bg-white dark:bg-slate-800 text-amber-600 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-amber-600'}`}
+                      className={`h-6 px-3 rounded-full shrink-0 whitespace-nowrap transition-all flex items-center justify-center cursor-pointer ${liveFilter === 'ABSENT' ? 'bg-white dark:bg-slate-800 text-amber-600 shadow-sm font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-amber-600'}`}
                     >
-                      Absenți ({absentCount})
+                      {t('absent')} ({absentCount})
                     </button>
                   </div>
 
@@ -1264,10 +1275,10 @@ export default function DashboardCharts({ tenant, themeColor }) {
                         ? 'bg-rose-600 hover:bg-rose-700 active:scale-95 text-white shadow-rose-200 dark:shadow-none hover:shadow-md' 
                         : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed border border-slate-200/60 dark:border-slate-700/60'
                     }`}
-                    title={inCount > 0 ? `Închide manual tura pentru toți cei ${inCount} angajați prezenți` : 'Niciun angajat prezent în tură'}
+                    title={inCount > 0 ? `${t('closeAllTooltipActive')} (${inCount})` : t('closeAllTooltipEmpty')}
                   >
                     <LogOut size={13} className="shrink-0" />
-                    <span>Închide Tura la Toți</span>
+                    <span>{t('closeAllShifts')}</span>
                     {inCount > 0 && (
                       <span className="bg-white/20 text-white px-1.5 py-0.5 rounded-full text-[10px] font-black">
                         {inCount}
@@ -1280,7 +1291,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
             
             <div>
               {liveLoading ? (
-                <div className="p-8 text-center text-slate-500 font-medium">Se încarcă datele live...</div>
+                <div className="p-8 text-center text-slate-500 font-medium">{t('loadingLive')}</div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse min-w-[650px]">
@@ -1289,7 +1300,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
                         <th 
                           onClick={() => handleLiveSort('default')}
                           className="px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-center w-10 whitespace-nowrap cursor-pointer hover:bg-slate-100/80 dark:hover:bg-slate-700/60 transition-colors"
-                          title="Sortează implicit (Prezenți întâi)"
+                          title={t('sortDefaultTooltip')}
                         >
                           <div className="flex items-center justify-center gap-1">
                             <span className={liveSortField === 'default' ? 'text-primary-600 dark:text-primary-400 font-black' : 'text-slate-400 dark:text-slate-500'}>#</span>
@@ -1301,10 +1312,10 @@ export default function DashboardCharts({ tenant, themeColor }) {
                         <th 
                           onClick={() => handleLiveSort('name')}
                           className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider whitespace-nowrap cursor-pointer hover:bg-slate-100/80 dark:hover:bg-slate-700/60 transition-colors group"
-                          title="Sortează alfabetic după nume"
+                          title={t('sortNameTooltip')}
                         >
                           <div className={`flex items-center gap-1.5 ${liveSortField === 'name' ? 'text-primary-600 dark:text-primary-400 font-black' : 'text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-200'}`}>
-                            <span>Angajat</span>
+                            <span>{t('colEmployee')}</span>
                             {liveSortField === 'name' ? (
                               liveSortDirection === 'asc' ? <ArrowUp size={12} className="shrink-0" /> : <ArrowDown size={12} className="shrink-0" />
                             ) : (
@@ -1315,10 +1326,10 @@ export default function DashboardCharts({ tenant, themeColor }) {
                         <th 
                           onClick={() => handleLiveSort('presence')}
                           className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider whitespace-nowrap min-w-[130px] cursor-pointer hover:bg-slate-100/80 dark:hover:bg-slate-700/60 transition-colors group"
-                          title="Sortează după data și ora pontajului"
+                          title={t('sortPresenceTooltip')}
                         >
                           <div className={`flex items-center gap-1.5 ${liveSortField === 'presence' ? 'text-primary-600 dark:text-primary-400 font-black' : 'text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-200'}`}>
-                            <span>Prezență</span>
+                            <span>{t('colPresence')}</span>
                             {liveSortField === 'presence' ? (
                               liveSortDirection === 'asc' ? <ArrowUp size={12} className="shrink-0" /> : <ArrowDown size={12} className="shrink-0" />
                             ) : (
@@ -1329,10 +1340,10 @@ export default function DashboardCharts({ tenant, themeColor }) {
                         <th 
                           onClick={() => handleLiveSort('schedule')}
                           className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider whitespace-nowrap min-w-[140px] cursor-pointer hover:bg-slate-100/80 dark:hover:bg-slate-700/60 transition-colors group"
-                          title="Sortează după ora programată"
+                          title={t('sortScheduleTooltip')}
                         >
                           <div className={`flex items-center gap-1.5 ${liveSortField === 'schedule' ? 'text-primary-600 dark:text-primary-400 font-black' : 'text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-200'}`}>
-                            <span>Program</span>
+                            <span>{t('colSchedule')}</span>
                             {liveSortField === 'schedule' ? (
                               liveSortDirection === 'asc' ? <ArrowUp size={12} className="shrink-0" /> : <ArrowDown size={12} className="shrink-0" />
                             ) : (
@@ -1343,10 +1354,10 @@ export default function DashboardCharts({ tenant, themeColor }) {
                         <th 
                           onClick={() => handleLiveSort('duration')}
                           className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider whitespace-nowrap min-w-[125px] cursor-pointer hover:bg-slate-100/80 dark:hover:bg-slate-700/60 transition-colors group"
-                          title="Sortează după timpul lucrat"
+                          title={t('sortDurationTooltip')}
                         >
                           <div className={`flex items-center gap-1.5 ${liveSortField === 'duration' ? 'text-primary-600 dark:text-primary-400 font-black' : 'text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-200'}`}>
-                            <span>Timp Lucrat / Tură</span>
+                            <span>{t('colWorkedTime')}</span>
                             {liveSortField === 'duration' ? (
                               liveSortDirection === 'asc' ? <ArrowUp size={12} className="shrink-0" /> : <ArrowDown size={12} className="shrink-0" />
                             ) : (
@@ -1354,7 +1365,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
                             )}
                           </div>
                         </th>
-                        <th className="px-4 py-2 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider text-right whitespace-nowrap">Acțiuni Manuale</th>
+                        <th className="px-4 py-2 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider text-right whitespace-nowrap">{t('colActions')}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
@@ -1373,7 +1384,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
                       )) : (
                         <tr>
                           <td colSpan="6" className="px-6 py-10 text-center text-slate-500 dark:text-slate-400">
-                            Nu există angajați conform filtrului selectat.
+                            {t('emptyFilteredLive')}
                           </td>
                         </tr>
                       )}
@@ -1387,37 +1398,39 @@ export default function DashboardCharts({ tenant, themeColor }) {
             {filteredLiveShifts.length > 0 && (
               <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-900/30">
                 <div className="flex items-center gap-2">
-                  <span>Afișează</span>
+                  <span>{t('showRows')}</span>
                   <select
                     value={liveRowsPerPage}
                     onChange={(e) => { setLiveRowsPerPage(Number(e.target.value)); setLivePage(1); }}
                     className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 outline-none font-bold text-slate-700 dark:text-slate-200 shadow-sm"
                   >
-                    <option value={10}>10 rânduri</option>
-                    <option value={15}>15 rânduri</option>
-                    <option value={25}>25 rânduri</option>
-                    <option value={50}>50 rânduri</option>
-                    <option value={9999}>Toți</option>
+                    <option value={10}>10 {t('rowsUnit')}</option>
+                    <option value={15}>15 {t('rowsUnit')}</option>
+                    <option value={25}>25 {t('rowsUnit')}</option>
+                    <option value={50}>50 {t('rowsUnit')}</option>
+                    <option value={9999}>{t('allFilterLabel')}</option>
                   </select>
-                  <span>din <strong>{filteredLiveShifts.length}</strong> angajați</span>
+                  <span>{t('of')} <strong>{filteredLiveShifts.length}</strong> {t('employeesTotal')}</span>
                 </div>
 
                 {totalLivePages > 1 && (
                   <div className="flex items-center gap-2">
-                    <span className="font-bold mr-1">Pagina {safePage} din {totalLivePages}</span>
+                    <span className="font-bold mr-1">{t('page')} {safePage} {t('of')} {totalLivePages}</span>
                     <button
+                      type="button"
                       onClick={() => setLivePage(p => Math.max(1, p - 1))}
                       disabled={safePage === 1}
-                      className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 disabled:opacity-30 hover:bg-slate-50 shadow-sm transition-colors"
-                      title="Pagina anterioară"
+                      className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 disabled:opacity-30 hover:bg-slate-50 shadow-sm transition-colors cursor-pointer"
+                      title={t('prevPage')}
                     >
                       <ChevronLeft size={16} />
                     </button>
                     <button
+                      type="button"
                       onClick={() => setLivePage(p => Math.min(totalLivePages, p + 1))}
                       disabled={safePage >= totalLivePages}
-                      className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 disabled:opacity-30 hover:bg-slate-50 shadow-sm transition-colors"
-                      title="Pagina următoare"
+                      className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 disabled:opacity-30 hover:bg-slate-50 shadow-sm transition-colors cursor-pointer"
+                      title={t('nextPage')}
                     >
                       <ChevronRight size={16} />
                     </button>
@@ -1439,7 +1452,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
                 </div>
                 <div>
                   <h3 className="font-bold text-base text-slate-800 dark:text-white leading-tight">
-                    {shiftModal.type === 'START' ? 'Pornește Tura Manual' : 'Închide Tura Manual'}
+                    {shiftModal.type === 'START' ? t('manualInShift') : t('manualOutShift')}
                   </h3>
                   <div className="flex items-center gap-2 mt-1">
                     {shiftModal.rowData?.avatar_path && !shiftModal.rowData.avatar_path.includes('default-avatar') ? (
@@ -1481,7 +1494,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
-                    {shiftModal.type === 'START' ? 'Data Intrării' : 'Data Ieșirii'}
+                    {shiftModal.type === 'START' ? t('inDate') : t('outDate')}
                   </label>
                   <input
                     type="date"
@@ -1492,7 +1505,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
                 </div>
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
-                    {shiftModal.type === 'START' ? 'Ora Intrării' : 'Ora Ieșirii'}
+                    {shiftModal.type === 'START' ? t('inTime') : t('outTime')}
                   </label>
                   <input
                     type="time"
@@ -1505,8 +1518,8 @@ export default function DashboardCharts({ tenant, themeColor }) {
 
               <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl border border-slate-100 dark:border-slate-700/50 text-xs text-slate-500 dark:text-slate-400">
                 {shiftModal.type === 'START' 
-                  ? 'Angajatul va fi marcat ca INTRARE (Prezent) la ora specificată, util în caz de defecțiune scanner sau lipsă telefon.'
-                  : 'Angajatul va fi marcat ca IEȘIRE (Plecat) și se va închide intervalul de lucru.'}
+                  ? t('manualInHelp')
+                  : t('manualOutHelp')}
               </div>
 
               <div className="pt-2 flex gap-3">
@@ -1514,13 +1527,13 @@ export default function DashboardCharts({ tenant, themeColor }) {
                   onClick={() => setShiftModal({ isOpen: false, type: 'CLOSE', rowData: null, date: '', time: '17:00' })}
                   className="flex-1 px-4 h-10 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-sm font-bold transition-colors"
                 >
-                  Anulează
+                  {t('cancel')}
                 </button>
                 <button
                   onClick={handleSaveShift}
                   className={`flex-1 px-4 h-10 rounded-full text-white text-sm font-bold shadow-sm transition-all ${shiftModal.type === 'START' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-rose-600 hover:bg-rose-700'}`}
                 >
-                  {shiftModal.type === 'START' ? 'Pornește Tură' : 'Închide Tură'}
+                  {shiftModal.type === 'START' ? t('startShiftBtn') : t('closeShiftBtn')}
                 </button>
               </div>
             </div>
@@ -1540,10 +1553,10 @@ export default function DashboardCharts({ tenant, themeColor }) {
                 </div>
                 <div>
                   <h3 className="font-black text-base text-slate-900 dark:text-white leading-tight">
-                    Închidere Tură pentru Toți
+                    {t('closeAllModalTitle')}
                   </h3>
                   <p className="text-xs text-rose-600 dark:text-rose-400 font-bold mt-0.5">
-                    {liveShifts.filter(emp => emp.current_status === 'IN').length} angajați prezenți în tura curentă
+                    {liveShifts.filter(emp => emp.current_status === 'IN').length} {t('activeEmployees').toLowerCase()}
                   </p>
                 </div>
               </div>
@@ -1560,14 +1573,14 @@ export default function DashboardCharts({ tenant, themeColor }) {
               <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/40 rounded-2xl p-3.5 text-xs text-amber-800 dark:text-amber-200 flex items-start gap-2.5">
                 <AlertTriangle size={18} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
                 <div className="leading-relaxed">
-                  Această acțiune va ponta <strong>IEȘIREA (OUT)</strong> manuală pentru toți angajații aflați în prezent la lucru.
+                  {t('closeAllModalWarning')}
                 </div>
               </div>
 
               {/* Lista angajaților afectați */}
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
-                  Angajați Afectați ({liveShifts.filter(emp => emp.current_status === 'IN').length})
+                  {t('affectedEmployees')} ({liveShifts.filter(emp => emp.current_status === 'IN').length})
                 </label>
                 <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto p-2 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200/60 dark:border-slate-700/60">
                   {liveShifts.filter(emp => emp.current_status === 'IN').map(emp => (
@@ -1583,7 +1596,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
               <div className="grid grid-cols-2 gap-3 pt-1">
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
-                    Data Ieșirii
+                    {t('outDate')}
                   </label>
                   <input
                     type="date"
@@ -1595,7 +1608,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                      Ora Ieșirii
+                      {t('outTime')}
                     </label>
                     <button
                       type="button"
@@ -1607,7 +1620,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
                       }}
                       className="text-[10px] font-bold text-rose-600 dark:text-rose-400 hover:underline cursor-pointer"
                     >
-                      Ora Acum
+                      {t('currentTimeBtn')}
                     </button>
                   </div>
                   <input
@@ -1627,7 +1640,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
                 onClick={() => setCloseAllModal({ isOpen: false, date: '', time: '' })}
                 className="px-4 py-2 rounded-full border border-slate-200 dark:border-slate-700 font-bold text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
               >
-                Anulează
+                {t('cancel')}
               </button>
               <button
                 type="button"
@@ -1638,12 +1651,12 @@ export default function DashboardCharts({ tenant, themeColor }) {
                 {closingAllLoading ? (
                   <>
                     <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                    <span>Se închid turele...</span>
+                    <span>{t('closingShiftsLoading')}</span>
                   </>
                 ) : (
                   <>
                     <LogOut size={14} />
-                    <span>Confirmă Închiderea ({liveShifts.filter(emp => emp.current_status === 'IN').length})</span>
+                    <span>{t('confirmCloseBtn')} ({liveShifts.filter(emp => emp.current_status === 'IN').length})</span>
                   </>
                 )}
               </button>
@@ -1674,6 +1687,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
 }
 
 function LiveShiftRow({ indexNumber, emp, isPresent, isOut, hasHistory, onOpenStartShift, onOpenCloseShift, themeColor }) {
+  const { t, language } = useTranslation();
   const [now, setNow] = useState(new Date());
 
   useEffect(() => {
@@ -1743,7 +1757,7 @@ function LiveShiftRow({ indexNumber, emp, isPresent, isOut, hasHistory, onOpenSt
         punctualityNode = (
           <div className="text-emerald-600 dark:text-emerald-400 font-bold text-[11px] flex items-center gap-1 mt-0.5 leading-tight whitespace-nowrap">
             <Clock size={11} className="shrink-0" />
-            <span className="whitespace-nowrap">LA TIMP</span>
+            <span className="whitespace-nowrap">{t('onTimeBadge')}</span>
           </div>
         );
       } else {
@@ -1756,7 +1770,7 @@ function LiveShiftRow({ indexNumber, emp, isPresent, isOut, hasHistory, onOpenSt
         punctualityNode = (
           <div className="text-red-600 dark:text-red-400 font-bold text-[11px] flex items-center gap-1 mt-0.5 leading-tight whitespace-nowrap">
             <Clock size={11} className="shrink-0" />
-            <span className="whitespace-nowrap">ÎNTÂRZIAT {lateStr}</span>
+            <span className="whitespace-nowrap">{t('lateBadge')} {lateStr}</span>
           </div>
         );
       }
@@ -1796,6 +1810,7 @@ function LiveShiftRow({ indexNumber, emp, isPresent, isOut, hasHistory, onOpenSt
     }
   }
 
+  const locale = language === 'ro' ? 'ro-RO' : language === 'fr' ? 'fr-FR' : language === 'nl' ? 'nl-NL' : 'en-US';
   const hhStr = String(diffHrs).padStart(2, '0');
   const mmStr = String(diffMins).padStart(2, '0');
   const ssStr = String(diffSecs).padStart(2, '0');
@@ -1805,11 +1820,11 @@ function LiveShiftRow({ indexNumber, emp, isPresent, isOut, hasHistory, onOpenSt
 
   if (presenceDate) {
     const scanModeIndicator = emp.current_is_manual ? (
-      <span className="inline-flex items-center justify-center cursor-help shrink-0" title="Manual">
+      <span className="inline-flex items-center justify-center cursor-help shrink-0" title={t('manualScan')}>
         <span className="w-2 h-2 rounded-full bg-amber-400 ring-2 ring-amber-200/80 dark:ring-amber-900/60 shadow-2xs" />
       </span>
     ) : (
-      <span className="inline-flex items-center justify-center cursor-help text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 shrink-0" title="Scanat QR">
+      <span className="inline-flex items-center justify-center cursor-help text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 shrink-0" title={t('qrScan')}>
         <QrCode size={12} className="shrink-0" />
       </span>
     );
@@ -1818,10 +1833,10 @@ function LiveShiftRow({ indexNumber, emp, isPresent, isOut, hasHistory, onOpenSt
       lastSeenNode = (
         <div className="leading-tight whitespace-nowrap">
           <div className="text-slate-800 dark:text-slate-200 font-bold text-xs whitespace-nowrap">
-            Azi, {presenceDate.toLocaleTimeString('ro-RO', {hour: '2-digit', minute:'2-digit'})}
+            {t('todayAt')}, {presenceDate.toLocaleTimeString(locale, {hour: '2-digit', minute:'2-digit'})}
           </div>
           {siteDisplayName && (
-            <div className="text-[10px] text-slate-400 dark:text-slate-500 truncate mt-0.5 max-w-[130px] flex items-center gap-1.5" title={`${siteDisplayName} (${emp.current_is_manual ? 'Manual' : 'Scanat QR'})`}>
+            <div className="text-[10px] text-slate-400 dark:text-slate-500 truncate mt-0.5 max-w-[130px] flex items-center gap-1.5" title={`${siteDisplayName} (${emp.current_is_manual ? t('manualScan') : t('qrScan')})`}>
               {scanModeIndicator}
               <span className="truncate">{siteDisplayName}</span>
             </div>
@@ -1832,10 +1847,10 @@ function LiveShiftRow({ indexNumber, emp, isPresent, isOut, hasHistory, onOpenSt
       lastSeenNode = (
         <div className="leading-tight whitespace-nowrap">
           <div className="text-slate-600 dark:text-slate-300 font-medium text-xs whitespace-nowrap">
-            {presenceDate.toLocaleDateString('ro-RO')} {presenceDate.toLocaleTimeString('ro-RO', {hour: '2-digit', minute:'2-digit'})}
+            {presenceDate.toLocaleDateString(locale)} {presenceDate.toLocaleTimeString(locale, {hour: '2-digit', minute:'2-digit'})}
           </div>
           {siteDisplayName && (
-            <div className="text-[10px] text-slate-400 dark:text-slate-500 truncate mt-0.5 max-w-[130px] flex items-center gap-1.5" title={`${siteDisplayName} (${emp.current_is_manual ? 'Manual' : 'Scanat QR'})`}>
+            <div className="text-[10px] text-slate-400 dark:text-slate-500 truncate mt-0.5 max-w-[130px] flex items-center gap-1.5" title={`${siteDisplayName} (${emp.current_is_manual ? t('manualScan') : t('qrScan')})`}>
               {scanModeIndicator}
               <span className="truncate">{siteDisplayName}</span>
             </div>
@@ -1848,18 +1863,18 @@ function LiveShiftRow({ indexNumber, emp, isPresent, isOut, hasHistory, onOpenSt
   const timerBadge = isMissingOut ? (
     <button
       onClick={() => onOpenCloseShift(emp)}
-      className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300 border border-orange-200/60 dark:border-orange-800/60 hover:bg-orange-100 transition-colors whitespace-nowrap shrink-0"
-      title="Apasă pentru a închide tura manual"
+      className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300 border border-orange-200/60 dark:border-orange-800/60 hover:bg-orange-100 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+      title={t('closeShiftTooltip')}
     >
       <AlertTriangle size={10} className="shrink-0" />
-      <span className="whitespace-nowrap">Închide manual</span>
+      <span className="whitespace-nowrap">{t('manualCloseBadge')}</span>
     </button>
   ) : isPresent ? (
     isOvertime ? (
       /* Peste Program */
       <div 
         className="flex items-center gap-1.5 text-xs font-bold leading-tight whitespace-nowrap"
-        title={`În tură - Peste program (${overtimeStr})`}
+        title={`${t('inShift')} - ${t('overtimeLabel')} (${overtimeStr})`}
       >
         <span className="relative flex h-2 w-2 shrink-0 items-center justify-center">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
@@ -1880,7 +1895,7 @@ function LiveShiftRow({ indexNumber, emp, isPresent, isOut, hasHistory, onOpenSt
       /* În Program */
       <div 
         className="flex items-center gap-1.5 text-xs font-bold leading-tight whitespace-nowrap"
-        title={`În tură (pontat azi la ${presenceDate ? presenceDate.toLocaleTimeString('ro-RO', {hour: '2-digit', minute:'2-digit'}) : ''})`}
+        title={`${t('inShift')} (${t('todayAt')} ${presenceDate ? presenceDate.toLocaleTimeString(locale, {hour: '2-digit', minute:'2-digit'}) : ''})`}
       >
         <span className="relative flex h-2 w-2 shrink-0 items-center justify-center">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
@@ -1899,7 +1914,7 @@ function LiveShiftRow({ indexNumber, emp, isPresent, isOut, hasHistory, onOpenSt
     isOvertime ? (
       <div 
         className="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 leading-tight whitespace-nowrap"
-        title={`Tură finalizată peste program (total: ${hhStr}:${mmStr}:${ssStr}, depășire: ${overtimeStr})`}
+        title={`${t('shiftCompleted')} - ${t('overtimeLabel')} (total: ${hhStr}:${mmStr}:${ssStr}, ${overtimeStr})`}
       >
         <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
         <span className="whitespace-nowrap">{hhStr}:{mmStr}:{ssStr}</span>
@@ -1910,7 +1925,7 @@ function LiveShiftRow({ indexNumber, emp, isPresent, isOut, hasHistory, onOpenSt
     ) : (
       <div 
         className="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 leading-tight whitespace-nowrap"
-        title={`Tură finalizată (total: ${hhStr}:${mmStr}:${ssStr})`}
+        title={`${t('shiftCompleted')} (total: ${hhStr}:${mmStr}:${ssStr})`}
       >
         <span className="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0" />
         <span className="whitespace-nowrap">{hhStr}:{mmStr}:{ssStr}</span>
@@ -1919,7 +1934,7 @@ function LiveShiftRow({ indexNumber, emp, isPresent, isOut, hasHistory, onOpenSt
   ) : (
     <div 
       className="flex items-center gap-1.5 text-xs font-bold text-slate-400 dark:text-slate-500 leading-tight whitespace-nowrap"
-      title="Fără pontaj înregistrat azi"
+      title={t('noScanToday')}
     >
       <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-600 shrink-0" />
       <span className="whitespace-nowrap">00:00:00</span>
@@ -1951,12 +1966,12 @@ function LiveShiftRow({ indexNumber, emp, isPresent, isOut, hasHistory, onOpenSt
       {isNightShift ? (
         <>
           <Moon size={11} className="shrink-0 text-indigo-500" />
-          <span className="whitespace-nowrap">Tură de noapte</span>
+          <span className="whitespace-nowrap">{t('nightShiftBadge')}</span>
         </>
       ) : (
         <>
           <Sun size={11} className="shrink-0 text-amber-500" />
-          <span className="whitespace-nowrap">Tură de zi</span>
+          <span className="whitespace-nowrap">{t('dayShiftBadge')}</span>
         </>
       )}
     </div>
@@ -1971,7 +1986,7 @@ function LiveShiftRow({ indexNumber, emp, isPresent, isOut, hasHistory, onOpenSt
         <Link 
           to={`/admin/employees/${emp.id}${window.location.search || ''}`}
           className="group flex items-center gap-2.5 hover:opacity-95 transition-all cursor-pointer"
-          title={`Deschide fișa angajatului: ${emp.first_name} ${emp.last_name}`}
+          title={`${t('openEmployeeProfile')}: ${emp.first_name} ${emp.last_name}`}
         >
           <div className="relative shrink-0">
             {emp.avatar_path && !emp.avatar_path.includes('default-avatar') ? (
@@ -2026,21 +2041,21 @@ function LiveShiftRow({ indexNumber, emp, isPresent, isOut, hasHistory, onOpenSt
         {isPresent ? (
           <button
             onClick={() => onOpenCloseShift(emp)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:text-rose-400 dark:hover:bg-rose-900/50 border border-rose-200 dark:border-rose-800 transition-colors shadow-2xs whitespace-nowrap"
-            title="Închide tura manual (ieșire)"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:text-rose-400 dark:hover:bg-rose-900/50 border border-rose-200 dark:border-rose-800 transition-colors shadow-2xs whitespace-nowrap cursor-pointer"
+            title={t('closeShiftTooltip')}
           >
             <LogOut size={12} className="shrink-0" />
-            <span className="whitespace-nowrap">Închide Tură</span>
+            <span className="whitespace-nowrap">{t('closeShiftBtn')}</span>
           </button>
         ) : (
           <button
             onClick={() => onOpenStartShift(emp)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-colors shadow-2xs whitespace-nowrap"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-colors shadow-2xs whitespace-nowrap cursor-pointer"
             style={{ color: themeColor, backgroundColor: themeColor + '1A', borderColor: themeColor + '40' }}
-            title="Pornește tura manual (intrare)"
+            title={t('startShiftTooltip')}
           >
             <LogIn size={12} className="shrink-0" />
-            <span className="whitespace-nowrap">Pornește Tură</span>
+            <span className="whitespace-nowrap">{t('startShiftBtn')}</span>
           </button>
         )}
       </td>

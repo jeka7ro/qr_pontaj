@@ -18,7 +18,9 @@ router.post('/login', async (req, res) => {
     }
 
     const result = await db.query(
-      `SELECT e.id, e.tenant_id, e.first_name, e.last_name, e.avatar_path, e.job_title, e.is_archived, e.email, t.theme_color as tenant_culoare, t.logo_url as tenant_logo, t.favicon_url as tenant_favicon, t.name as tenant_nume
+      `SELECT e.id, e.tenant_id, e.first_name, e.last_name, e.avatar_path, e.job_title, e.is_archived, e.email, 
+              t.theme_color as tenant_culoare, t.logo_url as tenant_logo, t.favicon_url as tenant_favicon, t.name as tenant_nume,
+              t.allow_employee_portal
        FROM qrp_employees e
        JOIN qrp_tenants t ON e.tenant_id = t.id
        WHERE e.employee_code = $1 AND e.pin_code = $2`,
@@ -38,6 +40,27 @@ router.post('/login', async (req, res) => {
     }
 
     const emp = result.rows[0];
+
+    // Verificare setare companie: acces permis la portalul angajaților
+    if (emp.allow_employee_portal === false) {
+      await logLoginEvent({
+        tenant_id: emp.tenant_id,
+        tenant_name: emp.tenant_nume,
+        user_id: emp.id,
+        email: emp.email || employee_code,
+        user_name: `${emp.first_name} ${emp.last_name}`,
+        role: 'EMPLOYEE',
+        login_type: 'EMPLOYEE',
+        ip_address,
+        user_agent,
+        status: 'BLOCKED',
+        failure_reason: 'Portalul angajatilor este dezactivat de companie'
+      });
+      return res.status(403).json({ 
+        error: 'Accesul la portalul angajaților a fost dezactivat de administratorul companiei. Puteți ponta doar fizic la Kiosk.' 
+      });
+    }
+
     if (emp.is_archived) {
       await logLoginEvent({
         tenant_id: emp.tenant_id,

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Users, UserPlus, User, Info, Mail, Lock, Plus, Trash2 } from 'lucide-react';
+import { X, Users, UserPlus, User, Info, Mail, Lock, Plus, Trash2, Eye, EyeOff } from 'lucide-react';
 
 export default function TenantAdminsModal({ isOpen, onClose, tenant }) {
   const [admins, setAdmins] = useState([]);
@@ -7,11 +7,14 @@ export default function TenantAdminsModal({ isOpen, onClose, tenant }) {
   const [error, setError] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newAdmin, setNewAdmin] = useState({ name: '', email: '', password: '' });
+  const [showAddPassword, setShowAddPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [resettingAdminId, setResettingAdminId] = useState(null);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
 
   useEffect(() => {
@@ -80,6 +83,8 @@ export default function TenantAdminsModal({ isOpen, onClose, tenant }) {
       setResettingAdminId(null);
       setNewPassword('');
       setConfirmPassword('');
+      setShowNewPassword(false);
+      setShowConfirmPassword(false);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -176,13 +181,21 @@ export default function TenantAdminsModal({ isOpen, onClose, tenant }) {
                   <div className="relative">
                     <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input 
-                      type="password" 
+                      type={showAddPassword ? "text" : "password"} 
                       value={newAdmin.password}
                       onChange={e => setNewAdmin({...newAdmin, password: e.target.value})}
                       required
-                      className="w-full pl-10 pr-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white dark:border-slate-700 outline-none transition-all shadow-sm"
+                      className="w-full pl-10 pr-10 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white dark:border-slate-700 outline-none transition-all shadow-sm"
                       placeholder="••••••••"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowAddPassword(!showAddPassword)}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                      title={showAddPassword ? "Ascunde parola" : "Vezi parola"}
+                    >
+                      {showAddPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
                   </div>
                 </div>
                 <div className="pt-2 flex justify-end gap-2">
@@ -238,6 +251,8 @@ export default function TenantAdminsModal({ isOpen, onClose, tenant }) {
                           setResettingAdminId(admin.id);
                           setNewPassword('');
                           setConfirmPassword('');
+                          setShowNewPassword(false);
+                          setShowConfirmPassword(false);
                           setError(null);
                         }}
                         className="w-8 h-8 flex items-center justify-center rounded-full border border-slate-200 dark:border-slate-700 hover:bg-orange-50 hover:text-orange-600 text-slate-500 dark:text-slate-400 transition-colors"
@@ -272,37 +287,59 @@ export default function TenantAdminsModal({ isOpen, onClose, tenant }) {
 
                   {/* Inline Reset Password Form */}
                   {resettingAdminId === admin.id && (
-                    <div className="mt-2 p-3 bg-orange-50 border border-orange-100 rounded-lg flex flex-col gap-2">
+                    <div className="mt-2 p-3 bg-orange-50 dark:bg-orange-950/30 border border-orange-100 dark:border-orange-900/50 rounded-lg flex flex-col gap-2">
                       <div className="flex items-center gap-2">
-                        <input 
-                          type="password" 
-                          value={newPassword}
-                          onChange={e => setNewPassword(e.target.value)}
-                          placeholder="Noua parolă..."
-                          className="flex-1 h-8 px-3 text-sm rounded-full border border-slate-200 dark:border-slate-700 focus:outline-none focus:border-orange-300"
-                        />
-                        <input 
-                          type="password" 
-                          value={confirmPassword}
-                          onChange={e => setConfirmPassword(e.target.value)}
-                          placeholder="Confirmă parola..."
-                          className="flex-1 h-8 px-3 text-sm rounded-full border border-slate-200 dark:border-slate-700 focus:outline-none focus:border-orange-300"
-                        />
+                        <div className="relative flex-1">
+                          <input 
+                            type={showNewPassword ? "text" : "password"} 
+                            value={newPassword}
+                            onChange={e => setNewPassword(e.target.value)}
+                            placeholder="Noua parolă..."
+                            className="w-full h-8 pl-3 pr-8 text-sm rounded-full border border-slate-200 dark:border-slate-700 focus:outline-none focus:border-orange-300 bg-white dark:bg-slate-800 text-slate-800 dark:text-white"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowNewPassword(!showNewPassword)}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                            title={showNewPassword ? "Ascunde parola" : "Vezi parola"}
+                          >
+                            {showNewPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                          </button>
+                        </div>
+                        <div className="relative flex-1">
+                          <input 
+                            type={showConfirmPassword ? "text" : "password"} 
+                            value={confirmPassword}
+                            onChange={e => setConfirmPassword(e.target.value)}
+                            placeholder="Confirmă parola..."
+                            className="w-full h-8 pl-3 pr-8 text-sm rounded-full border border-slate-200 dark:border-slate-700 focus:outline-none focus:border-orange-300 bg-white dark:bg-slate-800 text-slate-800 dark:text-white"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                            title={showConfirmPassword ? "Ascunde parola" : "Vezi parola"}
+                          >
+                            {showConfirmPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                          </button>
+                        </div>
                       </div>
                       <div className="flex justify-end gap-2">
                         <button 
                           onClick={() => {
                             setResettingAdminId(null);
+                            setShowNewPassword(false);
+                            setShowConfirmPassword(false);
                             setError(null);
                           }}
-                          className="px-3 h-8 text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300 bg-white border border-slate-200 dark:border-slate-700 rounded-full"
+                          className="px-3 h-8 text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full cursor-pointer"
                         >
                           Anulează
                         </button>
                         <button 
                           onClick={() => handleResetPassword(admin.id)}
                           disabled={!newPassword || !confirmPassword || isResetting}
-                          className="px-3 h-8 text-xs font-bold text-white bg-orange-500 hover:bg-orange-600 rounded-full disabled:opacity-50"
+                          className="px-3 h-8 text-xs font-bold text-white bg-orange-500 hover:bg-orange-600 rounded-full disabled:opacity-50 cursor-pointer"
                         >
                           {isResetting ? 'Se salvează...' : 'Salvează'}
                         </button>

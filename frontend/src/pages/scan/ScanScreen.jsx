@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { ShieldAlert, Loader2, LogIn, LogOut, CheckCircle2, Eye, EyeOff, X, ShieldCheck, MapPin, Clock, Calendar, FileText } from 'lucide-react';
+import { ShieldAlert, Loader2, LogIn, LogOut, CheckCircle2, Eye, EyeOff, X, ShieldCheck, MapPin, Clock, Calendar, FileText, Coffee, Play } from 'lucide-react';
 
 export default function ScanScreen() {
   const [searchParams] = useSearchParams();
-  const tenantId = searchParams.get('t');
-  const kioskId = searchParams.get('k');
-  const ts = parseInt(searchParams.get('ts'), 10);
+  const [tenantId, setTenantId] = useState(() => searchParams.get('t') || searchParams.get('tenantId') || null);
+  const [kioskId, setKioskId] = useState(() => searchParams.get('k') || searchParams.get('kioskId') || null);
+  const tsParam = searchParams.get('ts');
+  const ts = tsParam ? parseInt(tsParam, 10) : Math.floor(Date.now() / 1000);
 
   const [tenant, setTenant] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [timingNotice, setTimingNotice] = useState(null);
   const getInitialCredentials = () => {
     try {
       const savedCreds = localStorage.getItem('emp_saved_credentials');
@@ -50,38 +52,100 @@ export default function ScanScreen() {
   const [forgotStatus, setForgotStatus] = useState(null); // 'loading', 'success', 'error'
   const [forgotMsg, setForgotMsg] = useState('');
 
-  // Validate URL and time
+  // Validate URL and time - Auto-resolve tenant & tolerant to clock drifts
   useEffect(() => {
-    if (!tenantId || !kioskId || !ts) {
-      setError('Link invalid. Vă rugăm să scanați codul QR de pe tabletă.');
-      setLoading(false);
-      return;
-    }
+    let isMounted = true;
 
-    const now = Math.floor(Date.now() / 1000);
-    // Allow a 90 second window (supports mobile 4G latency, clock drifts, and scan time)
-    if (now - ts > 90) {
-      setError('Cod QR expirat. Vă rugăm să scanați noul cod afișat pe ecranul tabletei.');
-      setLoading(false);
-      return;
-    }
+    const initScanScreen = async () => {
+      setLoading(true);
+      setError(null);
+      setTimingNotice(null);
 
-    // Fetch tenant data for branding
-    const fetchTenant = async () => {
-      try {
-        const apiUrl = `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}`;
-        const res = await fetch(`${apiUrl}/api/tenants/${tenantId}`);
-        if (!res.ok) throw new Error('Nu am putut încărca datele companiei.');
-        const data = await res.json();
-        setTenant(data);
-      } catch (err) {
-        setError(err.message);
-      } finally {
+      const apiUrl = `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}`;
+      let resolvedTenantId = searchParams.get('t') || searchParams.get('tenantId') || tenantId;
+      let resolvedKioskId = searchParams.get('k') || searchParams.get('kioskId') || kioskId;
+
+      // 1. Daca nu avem tenantId din URL, incercam sa-l deducem din subdomeniu (ex: unda.qr.pontaj.app -> unda)
+      if (!resolvedTenantId) {
+        const hostname = window.location.hostname;
+        const parts = hostname.split('.');
+        if (parts[0] !== 'localhost' && !/^[0-9]+$/.test(parts[0]) && parts[0] !== 'qr' && parts[0] !== 'scan') {
+          try {
+            const brandingRes = await fetch(`${apiUrl}/api/tenants/public-branding?subdomain=${encodeURIComponent(parts[0])}`);
+            if (brandingRes.ok) {
+              const bData = await brandingRes.json();
+              if (bData && bData.found) {
+                resolvedTenantId = bData.id;
+                if (isMounted) {
+                  setTenantId(bData.id);
+                  setTenant(bData);
+                }
+              }
+            }
+          } catch (e) {
+            console.warn('Subdomain detection warning:', e);
+          }
+        }
+      }
+
+      // 2. Fetch tenant branding daca avem ID-ul dar nu avem obiectul complet
+      if (resolvedTenantId) {
+        try {
+          const res = await fetch(`${apiUrl}/api/tenants/${resolvedTenantId}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (isMounted) {
+              setTenant(data);
+              setTenantId(resolvedTenantId);
+            }
+          }
+        } catch (err) {
+          console.warn('Tenant fetch error:', err);
+        }
+
+        // 3. Daca nu avem kioskId, incarcam primul kiosk al locatiei
+        if (!resolvedKioskId) {
+          try {
+            const kiosksRes = await fetch(`${apiUrl}/api/tenants/${resolvedTenantId}/kiosks`);
+            if (kiosksRes.ok) {
+              const kiosks = await kiosksRes.json();
+              if (kiosks && kiosks.length > 0 && isMounted) {
+                resolvedKioskId = kiosks[0].id;
+                setKioskId(kiosks[0].id);
+              }
+            }
+          } catch (kErr) {
+            console.warn('Kiosk fetch error:', kErr);
+          }
+        }
+      }
+
+      // 4. Verificare timestamp toleranta (non-blocanta)
+      if (tsParam) {
+        const now = Math.floor(Date.now() / 1000);
+        const parsedTs = parseInt(tsParam, 10);
+        if (!isNaN(parsedTs) && (now - parsedTs > 900 || parsedTs - now > 300)) {
+          if (isMounted) {
+            setTimingNotice('Codul QR a fost scanat anterior. Daca intampinati erori, scanati codul curent de pe tableta.');
+          }
+        }
+      }
+
+      if (!resolvedTenantId && isMounted) {
+        setError('Link invalid sau companie neidentificata. Va rugam sa scanati codul QR de pe ecranul tabletei.');
+      }
+
+      if (isMounted) {
         setLoading(false);
       }
     };
-    fetchTenant();
-  }, [tenantId, kioskId, ts]);
+
+    initScanScreen();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [searchParams]);
 
   const handleScan = async (actionType) => {
     if (!employeeCode || !pinCode) {
@@ -114,7 +178,8 @@ export default function ScanScreen() {
           kiosk_id: kioskId,
           employee_code: employeeCode,
           pin_code: pinCode,
-          type: actionType
+          type: actionType,
+          ts
         })
       });
 
@@ -131,7 +196,12 @@ export default function ScanScreen() {
         timesheetId: data.timesheet_id,
         locationName: data.location_name || employeeStatus?.locationName || tenant?.name || 'Punct de lucru alocat'
       });
-      setSuccessMsg(`Pontaj înregistrat: ${actionType === 'IN' ? 'INTRARE' : 'IEȘIRE'}`);
+      
+      let msgLabel = 'INTRARE';
+      if (actionType === 'OUT') msgLabel = 'IEȘIRE';
+      if (actionType === 'BREAK_START') msgLabel = 'PAUZĂ ÎNCEPUTĂ';
+      if (actionType === 'BREAK_END') msgLabel = 'RELUARE LUCRU';
+      setSuccessMsg(`Pontaj înregistrat: ${msgLabel}`);
 
     } catch (err) {
       setError(err.message);
@@ -163,7 +233,8 @@ export default function ScanScreen() {
             setEmployeeStatus({
               lastAction: data.lastAction,
               showPhoto: data.showPhoto,
-              locationName: data.location_name
+              locationName: data.location_name,
+              allowBreaks: !!data.allowBreaks
             });
           }
         } catch (e) {
@@ -218,10 +289,17 @@ export default function ScanScreen() {
   if (error && !tenant) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-900 flex items-center justify-center p-6">
-        <div className="bg-white dark:bg-slate-900 p-8 rounded-lg shadow-sm border border-red-100 dark:border-red-900 max-w-md w-full text-center">
+        <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-sm border border-red-100 dark:border-red-900 max-w-md w-full text-center">
           <ShieldAlert className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-xl font-bold text-slate-900 dark:text-white dark:text-white mb-2">Eroare Scanare</h1>
-          <p className="text-slate-600 dark:text-slate-300 dark:text-slate-400">{error}</p>
+          <h1 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Eroare Scanare</h1>
+          <p className="text-slate-600 dark:text-slate-300 dark:text-slate-400 mb-6">{error}</p>
+          <button 
+            type="button"
+            onClick={() => window.location.reload()}
+            className="px-6 py-2.5 rounded-full bg-primary-600 hover:bg-primary-700 text-white font-bold text-sm shadow-sm transition-all cursor-pointer"
+          >
+            Reîncearcă
+          </button>
         </div>
       </div>
     );
@@ -367,12 +445,24 @@ export default function ScanScreen() {
           <div 
             className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-black uppercase tracking-wider my-3"
             style={{
-              backgroundColor: isEntry ? '#dcfce7' : '#f1f5f9',
-              color: isEntry ? '#166534' : '#334155'
+              backgroundColor: scanDetails.actionType === 'IN' ? '#dcfce7' : 
+                               scanDetails.actionType === 'BREAK_START' ? '#fef3c7' :
+                               scanDetails.actionType === 'BREAK_END' ? '#e0e7ff' : '#f1f5f9',
+              color: scanDetails.actionType === 'IN' ? '#166534' : 
+                     scanDetails.actionType === 'BREAK_START' ? '#b45309' :
+                     scanDetails.actionType === 'BREAK_END' ? '#4338ca' : '#334155'
             }}
           >
-            {isEntry ? <LogIn size={14} /> : <LogOut size={14} />}
-            <span>{isEntry ? 'INTRARE ÎN TURĂ' : 'IEȘIRE DIN TURĂ'}</span>
+            {scanDetails.actionType === 'IN' && <LogIn size={14} />}
+            {scanDetails.actionType === 'OUT' && <LogOut size={14} />}
+            {scanDetails.actionType === 'BREAK_START' && <Coffee size={14} />}
+            {scanDetails.actionType === 'BREAK_END' && <Play size={14} />}
+            <span>
+              {scanDetails.actionType === 'IN' && 'INTRARE ÎN TURĂ'}
+              {scanDetails.actionType === 'OUT' && 'IEȘIRE DIN TURĂ'}
+              {scanDetails.actionType === 'BREAK_START' && 'PAUZĂ LUCRU'}
+              {scanDetails.actionType === 'BREAK_END' && 'RELUARE LUCRU'}
+            </span>
           </div>
 
           {/* Legal ITM & Timestamp Details */}
@@ -468,15 +558,7 @@ export default function ScanScreen() {
             </button>
           </div>
 
-          <button
-            onClick={() => {
-              setSuccessMsg(null);
-              setScanDetails(null);
-            }}
-            className="w-full h-11 px-5 text-sm rounded-full bg-slate-900 hover:bg-slate-800 text-white font-bold transition-all shadow-md active:scale-95 cursor-pointer"
-          >
-            Efectuează alt pontaj
-          </button>
+
         </div>
 
         {renderGdprModal()}
@@ -506,6 +588,11 @@ export default function ScanScreen() {
           </div>
 
           <div className="p-6">
+            {timingNotice && (
+              <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 rounded-xl text-amber-800 dark:text-amber-300 text-xs font-medium text-center">
+                {timingNotice}
+              </div>
+            )}
             {error && (
               <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-lg flex items-start gap-3 text-sm">
                 <ShieldAlert size={18} className="shrink-0 mt-0.5" />
@@ -568,43 +655,114 @@ export default function ScanScreen() {
               </label>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 relative">
-              {checkingStatus && (
-                <div className="absolute inset-0 bg-white/50 dark:bg-slate-900/50 backdrop-blur-[1px] flex items-center justify-center z-10 rounded-full">
-                  <Loader2 className="w-6 h-6 animate-spin text-primary-500" />
-                </div>
-              )}
-              
-              <button
-                onClick={() => handleScan('IN')}
-                disabled={submitting || (employeeStatus?.lastAction === 'IN')}
-                className={`relative overflow-hidden group h-14 rounded-full font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-sm ${
-                  employeeStatus?.lastAction === 'IN'
-                    ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed dark:bg-slate-800'
-                    : 'bg-white border-2 border-green-500 text-green-600 hover:bg-green-50 focus:ring-4 focus:ring-green-100 dark:bg-slate-800'
-                }`}
-              >
-                <LogIn size={20} className={employeeStatus?.lastAction !== 'IN' ? "group-hover:-translate-x-1 transition-transform" : ""} />
-                Intrare
-              </button>
+            {employeeStatus?.allowBreaks ? (
+              // Mod cu suport de Pauze (ex: Belgia sau chiriași cu pauze activate)
+              <div className="space-y-3 relative">
+                {checkingStatus && (
+                  <div className="absolute inset-0 bg-white/50 dark:bg-slate-900/50 backdrop-blur-[1px] flex items-center justify-center z-10 rounded-full">
+                    <Loader2 className="w-6 h-6 animate-spin text-primary-500" />
+                  </div>
+                )}
 
-              <button
-                onClick={() => handleScan('OUT')}
-                disabled={submitting || (employeeStatus?.lastAction === 'OUT' || employeeStatus?.lastAction === null)}
-                className={`relative overflow-hidden group h-14 rounded-full font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-sm ${
-                  (employeeStatus?.lastAction === 'OUT' || employeeStatus?.lastAction === null)
-                    ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed dark:bg-slate-800'
-                    : 'bg-slate-900 text-white hover:bg-slate-800 focus:ring-4 focus:ring-slate-200 dark:border-2 dark:border-slate-700'
-                }`}
-              >
-                Ieșire
-                <LogOut size={20} className={(employeeStatus?.lastAction !== 'OUT' && employeeStatus?.lastAction !== null) ? "group-hover:translate-x-1 transition-transform" : ""} />
-              </button>
-            </div>
+                {(!employeeStatus?.lastAction || employeeStatus?.lastAction === 'OUT') && (
+                  <button
+                    onClick={() => handleScan('IN')}
+                    disabled={submitting}
+                    className="w-full relative overflow-hidden group h-14 rounded-full font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-sm bg-white border-2 border-green-500 text-green-600 hover:bg-green-50 focus:ring-4 focus:ring-green-100 dark:bg-slate-800"
+                  >
+                    <LogIn size={20} className="group-hover:-translate-x-1 transition-transform" />
+                    Intrare în Tură
+                  </button>
+                )}
+
+                {(employeeStatus?.lastAction === 'IN' || employeeStatus?.lastAction === 'BREAK_END') && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      onClick={() => handleScan('BREAK_START')}
+                      disabled={submitting}
+                      className="h-14 rounded-full font-black text-xs sm:text-sm uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-sm bg-amber-500 hover:bg-amber-600 text-white focus:ring-4 focus:ring-amber-200"
+                    >
+                      <Coffee size={18} />
+                      Pauză
+                    </button>
+                    <button
+                      onClick={() => handleScan('OUT')}
+                      disabled={submitting}
+                      className="h-14 rounded-full font-black text-xs sm:text-sm uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-sm bg-slate-900 text-white hover:bg-slate-800 focus:ring-4 focus:ring-slate-200 dark:border-2 dark:border-slate-700"
+                    >
+                      <LogOut size={18} />
+                      Ieșire Tură
+                    </button>
+                  </div>
+                )}
+
+                {employeeStatus?.lastAction === 'BREAK_START' && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      onClick={() => handleScan('BREAK_END')}
+                      disabled={submitting}
+                      className="h-14 rounded-full font-black text-xs sm:text-sm uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-sm bg-emerald-600 hover:bg-emerald-700 text-white focus:ring-4 focus:ring-emerald-200"
+                    >
+                      <Play size={18} />
+                      Reia Lucrul
+                    </button>
+                    <button
+                      onClick={() => handleScan('OUT')}
+                      disabled={submitting}
+                      className="h-14 rounded-full font-black text-xs sm:text-sm uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-sm bg-slate-900 text-white hover:bg-slate-800 focus:ring-4 focus:ring-slate-200 dark:border-2 dark:border-slate-700"
+                    >
+                      <LogOut size={18} />
+                      Ieșire Tură
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              // Modul Clasic existent (Intrare / Ieșire) - Nemodificat pentru chiriașii actuali
+              <div className="grid grid-cols-2 gap-4 relative">
+                {checkingStatus && (
+                  <div className="absolute inset-0 bg-white/50 dark:bg-slate-900/50 backdrop-blur-[1px] flex items-center justify-center z-10 rounded-full">
+                    <Loader2 className="w-6 h-6 animate-spin text-primary-500" />
+                  </div>
+                )}
+                
+                <button
+                  onClick={() => handleScan('IN')}
+                  disabled={submitting || (employeeStatus?.lastAction === 'IN')}
+                  className={`relative overflow-hidden group h-14 rounded-full font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-sm ${
+                    employeeStatus?.lastAction === 'IN'
+                      ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed dark:bg-slate-800'
+                      : 'bg-white border-2 border-green-500 text-green-600 hover:bg-green-50 focus:ring-4 focus:ring-green-100 dark:bg-slate-800'
+                  }`}
+                >
+                  <LogIn size={20} className={employeeStatus?.lastAction !== 'IN' ? "group-hover:-translate-x-1 transition-transform" : ""} />
+                  Intrare
+                </button>
+
+                <button
+                  onClick={() => handleScan('OUT')}
+                  disabled={submitting || (employeeStatus?.lastAction === 'OUT' || employeeStatus?.lastAction === null)}
+                  className={`relative overflow-hidden group h-14 rounded-full font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-sm ${
+                    (employeeStatus?.lastAction === 'OUT' || employeeStatus?.lastAction === null)
+                      ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed dark:bg-slate-800'
+                      : 'bg-slate-900 text-white hover:bg-slate-800 focus:ring-4 focus:ring-slate-200 dark:border-2 dark:border-slate-700'
+                  }`}
+                >
+                  Ieșire
+                  <LogOut size={20} className={(employeeStatus?.lastAction !== 'OUT' && employeeStatus?.lastAction !== null) ? "group-hover:translate-x-1 transition-transform" : ""} />
+                </button>
+              </div>
+            )}
             
             {employeeStatus?.lastAction === 'IN' && (
               <p className="text-center text-xs font-bold text-green-600 mt-4 bg-green-50 py-2 rounded-full border border-green-100">
                 Ești pontat ca INTRARE.
+              </p>
+            )}
+
+            {employeeStatus?.lastAction === 'BREAK_START' && (
+              <p className="text-center text-xs font-bold text-amber-700 mt-4 bg-amber-50 py-2 rounded-full border border-amber-200">
+                Ești în PAUZĂ de lucru.
               </p>
             )}
             

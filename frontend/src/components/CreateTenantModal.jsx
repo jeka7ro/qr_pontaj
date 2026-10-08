@@ -1,19 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { X, Upload, Copy, ExternalLink, Image as ImageIcon } from 'lucide-react';
+import { X, Upload, Copy, ExternalLink, Image as ImageIcon, Globe, Smartphone, Coffee, Eye, EyeOff } from 'lucide-react';
 import { resolveFaviconUrl } from '../utils/favicon';
 
 export default function CreateTenantModal({ onClose, onTenantCreated, editTenant = null }) {
+  const [showInitialPassword, setShowInitialPassword] = useState(false);
   const [formData, setFormData] = useState({
     nume_locatie: '',
     nume_admin: '',
     tip_modul: 'Restaurant / HORECA',
+    country_code: 'RO',
+    timezone: 'Europe/Bucharest',
+    allow_employee_portal: true,
+    allow_breaks: false,
     logo_url: '',
     favicon_url: '',
+    portal_bg_image_url: '',
+    portal_bg_color: '',
     culoare_tema: '#2563EB',
     email_admin: '',
     parola_initiala: '',
     distanta_gps: '100',
     mod_qr: 'STATIC',
+    billing_per_employee: false,
+    price_per_employee: '3.50',
     modules: {
       billing: false,
       leaves: false,
@@ -32,13 +41,14 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
   
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingFavicon, setUploadingFavicon] = useState(false);
+  const [uploadingBg, setUploadingBg] = useState(false);
 
   const handleFileUpload = async (e, field) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const isLogo = field === 'logo_url';
-    if (isLogo) setUploadingLogo(true);
+    if (field === 'logo_url') setUploadingLogo(true);
+    else if (field === 'portal_bg_image_url') setUploadingBg(true);
     else setUploadingFavicon(true);
 
     try {
@@ -59,7 +69,8 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
     } catch (err) {
       alert(err.message);
     } finally {
-      if (isLogo) setUploadingLogo(false);
+      if (field === 'logo_url') setUploadingLogo(false);
+      else if (field === 'portal_bg_image_url') setUploadingBg(false);
       else setUploadingFavicon(false);
     }
   };
@@ -79,13 +90,21 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
       setFormData({
         nume_locatie: editTenant.nume || '',
         tip_modul: editTenant.tip_modul || 'Restaurant / HORECA',
+        country_code: editTenant.country_code || 'RO',
+        timezone: editTenant.timezone || (editTenant.country_code === 'BE' ? 'Europe/Brussels' : 'Europe/Bucharest'),
+        allow_employee_portal: editTenant.allow_employee_portal !== false,
+        allow_breaks: editTenant.allow_breaks === true || editTenant.country_code === 'BE',
         logo_url: editTenant.logo_url || '',
         favicon_url: editTenant.favicon_url || '',
+        portal_bg_image_url: editTenant.portal_bg_image_url || '',
+        portal_bg_color: editTenant.portal_bg_color || '',
         culoare_tema: editTenant.culoare || '#2563EB',
         email_admin: '', // Nu e folosit la editare
         parola_initiala: '',
         distanta_gps: editTenant.raza_gps?.toString() || '100',
         mod_qr: editTenant.mod_qr || 'STATIC',
+        billing_per_employee: Boolean(editTenant.billing_per_employee),
+        price_per_employee: editTenant.price_per_employee ? editTenant.price_per_employee.toString() : '3.50',
         modules: {
           billing: false,
           leaves: false,
@@ -245,6 +264,177 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
                   </select>
                 </div>
               </div>
+
+              {/* Selector Țară (România vs Belgia) */}
+              <div className="pt-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+                  Țară & Conformitate Juridică *
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({
+                      ...prev,
+                      country_code: 'RO',
+                      timezone: 'Europe/Bucharest',
+                      allow_breaks: false
+                    }))}
+                    className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${
+                      formData.country_code === 'RO'
+                        ? 'border-primary-500 bg-primary-50/70 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300 font-bold shadow-xs ring-2 ring-primary-500/20'
+                        : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'
+                    }`}
+                  >
+                    <div className="text-base font-extrabold flex items-center gap-2">
+                      <span className="text-xl">🇷🇴</span> România
+                    </div>
+                    <div className="text-[11px] opacity-75 mt-1 font-medium">CNP obligatoriu, Fus Orar București, Export SAGA</div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({
+                      ...prev,
+                      country_code: 'BE',
+                      timezone: 'Europe/Brussels',
+                      allow_breaks: true
+                    }))}
+                    className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${
+                      formData.country_code === 'BE'
+                        ? 'border-primary-500 bg-primary-50/70 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300 font-bold shadow-xs ring-2 ring-primary-500/20'
+                        : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'
+                    }`}
+                  >
+                    <div className="text-base font-extrabold flex items-center gap-2">
+                      <span className="text-xl">🇧🇪</span> Belgia
+                    </div>
+                    <div className="text-[11px] opacity-75 mt-1 font-medium">NISS, Fus Orar Bruxelles, Cerințe 2027, Pauze</div>
+                  </button>
+                </div>
+              </div>
+
+              {/* Setare ON/OFF: Acces Portal Angajați */}
+              <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/40">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 mt-0.5">
+                      <Smartphone size={18} />
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-slate-900 dark:text-white">
+                        Acces Portal Angajați (Mobil / Cod & PIN)
+                      </div>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                        Permite angajaților să se autentifice pe telefon cu codul și PIN-ul pentru a-și vedea orele lucrate.
+                      </p>
+                    </div>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                    <input 
+                      type="checkbox" 
+                      checked={formData.allow_employee_portal !== false}
+                      onChange={(e) => setFormData(prev => ({ ...prev, allow_employee_portal: e.target.checked }))}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:bg-emerald-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 dark:border-slate-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                  </label>
+                </div>
+                {!formData.allow_employee_portal && (
+                  <div className="mt-2.5 pt-2.5 border-t border-slate-200 dark:border-slate-700/60 text-[11px] font-semibold text-amber-600 dark:text-amber-400">
+                    Logarea angajaților de pe telefon va fi BLOCATĂ. Angajații vor putea ponta strict fizic la tabletă / Kiosk.
+                  </div>
+                )}
+              </div>
+
+              {/* Setare ON/OFF: Înregistrare Pauze */}
+              <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/40">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 mt-0.5">
+                      <Coffee size={18} />
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-slate-900 dark:text-white">
+                        Înregistrare Pauze de Masă
+                      </div>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                        Afișează opțiuni de pauză de masă și revenire pe ecranul de pontaj.
+                      </p>
+                    </div>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                    <input 
+                      type="checkbox" 
+                      checked={Boolean(formData.allow_breaks)}
+                      onChange={(e) => setFormData(prev => ({ ...prev, allow_breaks: e.target.checked }))}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:bg-emerald-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 dark:border-slate-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {/* Secțiune Tarifare / Facturare per Angajat */}
+            <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-sm font-semibold text-slate-800 dark:text-white uppercase tracking-wider">
+                    Tarifare & Facturare
+                  </h4>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    Activează includerea automată a acestui tenant în modulul de calcul facturi.
+                  </p>
+                </div>
+                
+                <label className="flex items-center gap-2 cursor-pointer group">
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Tarifare per angajat
+                  </span>
+                  <div className="relative inline-flex items-center">
+                    <input 
+                      type="checkbox" 
+                      className="sr-only peer" 
+                      checked={Boolean(formData.billing_per_employee)}
+                      onChange={(e) => setFormData(prev => ({ ...prev, billing_per_employee: e.target.checked }))}
+                    />
+                    <div 
+                      className="w-11 h-6 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:bg-primary-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 dark:border-slate-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"
+                    ></div>
+                  </div>
+                </label>
+              </div>
+
+              {formData.billing_per_employee && (
+                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                        Preț per Angajat Activ (€ / lună) *
+                      </label>
+                      <div className="relative">
+                        <input 
+                          type="number" 
+                          step="0.01" 
+                          min="0"
+                          name="price_per_employee"
+                          value={formData.price_per_employee}
+                          onChange={handleChange}
+                          required={formData.billing_per_employee}
+                          className="w-full pl-4 pr-12 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all font-semibold"
+                          placeholder="3.50"
+                        />
+                        <span className="absolute right-4 top-2.5 text-xs font-bold text-slate-400">EUR</span>
+                      </div>
+                    </div>
+                    <div className="text-xs text-slate-600 dark:text-slate-300 space-y-1">
+                      <div className="font-semibold text-slate-800 dark:text-white">Regulă prag 15 zile (contract):</div>
+                      <div className="text-slate-500 dark:text-slate-400">• &lt; 15 zile activitate: 50% din tarif ({((parseFloat(formData.price_per_employee) || 0) * 0.5).toFixed(2)} €)</div>
+                      <div className="text-slate-500 dark:text-slate-400">• ≥ 15 zile activitate: 100% din tarif ({((parseFloat(formData.price_per_employee) || 0)).toFixed(2)} €)</div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-700">
@@ -311,24 +501,25 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Culoare Temă (Hex)</label>
                     <div className="flex space-x-2">
-                      <input 
-                        type="color" 
-                        name="culoare_tema"
-                        value={formData.culoare_tema}
-                        onChange={handleChange}
-                        className="h-10 w-10 rounded-full cursor-pointer shadow-sm border-0" 
-                        style={{ 
-                          border: `2px solid ${formData.culoare_tema || '#000000'}`, 
-                          backgroundColor: 'white', 
-                          padding: '3px' 
-                        }}
-                      />
+                      <label 
+                        className="relative flex items-center justify-center w-10 h-10 rounded-full border-2 border-slate-300 dark:border-slate-600 shadow-xs cursor-pointer shrink-0 overflow-hidden transition-transform hover:scale-105 active:scale-95"
+                        style={{ backgroundColor: formData.culoare_tema || '#3b82f6' }}
+                        title="Alege culoarea temei"
+                      >
+                        <input 
+                          type="color" 
+                          name="culoare_tema"
+                          value={formData.culoare_tema}
+                          onChange={handleChange}
+                          className="absolute inset-0 opacity-0 w-full h-full cursor-pointer" 
+                        />
+                      </label>
                       <input 
                         type="text" 
                         name="culoare_tema"
                         value={formData.culoare_tema}
                         onChange={handleChange}
-                        className="flex-1 px-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm" 
+                        className="flex-1 px-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm font-medium" 
                       />
                     </div>
                   </div>
@@ -401,6 +592,88 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
                       </div>
                     </div>
                   </div>
+
+                  {/* Fundal Autentificare & Portal Section */}
+                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                        Fundal Autentificare & Portal (Login Background)
+                      </label>
+                      {formData.portal_bg_image_url && (
+                        <button
+                          type="button"
+                          onClick={() => setFormData(prev => ({ ...prev, portal_bg_image_url: '' }))}
+                          className="text-[11px] text-red-500 hover:text-red-600 font-semibold cursor-pointer"
+                        >
+                          Elimină Fundal
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="space-y-3.5">
+                      <div>
+                        <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
+                          Imagine Fundal (URL sau Fișier Local)
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <input 
+                            type="text" 
+                            name="portal_bg_image_url"
+                            value={formData.portal_bg_image_url}
+                            onChange={handleChange}
+                            placeholder="Lipește link-ul imaginii (ex: https://...)" 
+                            className="flex-1 px-4 h-10 text-xs rounded-full border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm font-medium" 
+                          />
+                          <label 
+                            className="flex items-center justify-center gap-1.5 h-10 px-4 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer transition-colors text-xs font-semibold text-slate-700 dark:text-slate-200 shrink-0 shadow-sm active:scale-98"
+                            title="Alege fișier local"
+                          >
+                            <input 
+                              type="file" 
+                              accept="image/*" 
+                              className="hidden" 
+                              onChange={(e) => handleFileUpload(e, 'portal_bg_image_url')} 
+                              disabled={uploadingBg}
+                            />
+                            {uploadingBg ? <Loader2 size={13} className="animate-spin text-slate-500" /> : <Upload size={13} className="text-slate-500" />}
+                            <span>{uploadingBg ? 'Se încarcă...' : 'Încarcă fișier'}</span>
+                          </label>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
+                          Culoare Fundal (Hex)
+                        </label>
+                        <div className="flex items-center gap-3">
+                          <label 
+                            className="relative flex items-center justify-center w-10 h-10 rounded-full border-2 border-slate-300 dark:border-slate-600 shadow-xs cursor-pointer shrink-0 overflow-hidden transition-transform hover:scale-105 active:scale-95"
+                            style={{ backgroundColor: formData.portal_bg_color || '#020617' }}
+                            title="Alege culoarea de fundal"
+                          >
+                            <input 
+                              type="color" 
+                              name="portal_bg_color"
+                              value={formData.portal_bg_color || '#020617'}
+                              onChange={handleChange}
+                              className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                            />
+                          </label>
+                          <input 
+                            type="text" 
+                            name="portal_bg_color"
+                            value={formData.portal_bg_color}
+                            onChange={handleChange}
+                            placeholder="#020617"
+                            className="w-32 px-3 h-10 text-xs rounded-full border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm font-mono uppercase font-bold text-center" 
+                          />
+                          <span className="text-[11px] text-slate-400 dark:text-slate-500">
+                            Nuanța de fundal pentru pagina de autentificare
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -433,16 +706,26 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 dark:text-slate-400 mb-1">Parolă Inițială *</label>
-                    <input 
-                      type="password" 
-                      name="parola_initiala"
-                      value={formData.parola_initiala}
-                      onChange={handleChange}
-                      required
-                      className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white dark:border-slate-700 outline-none transition-all shadow-sm" 
-                      placeholder="••••••••" 
-                    />
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Parolă Inițială *</label>
+                    <div className="relative">
+                      <input 
+                        type={showInitialPassword ? "text" : "password"} 
+                        name="parola_initiala"
+                        value={formData.parola_initiala}
+                        onChange={handleChange}
+                        required
+                        className="w-full pl-4 pr-10 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm" 
+                        placeholder="••••••••" 
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowInitialPassword(!showInitialPassword)}
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                        title={showInitialPassword ? "Ascunde parola" : "Vezi parola"}
+                      >
+                        {showInitialPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>

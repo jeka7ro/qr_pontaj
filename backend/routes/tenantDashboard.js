@@ -19,7 +19,10 @@ router.get('/info', async (req, res) => {
 
     // Luăm datele tenant-ului
     const tenantQuery = `
-      SELECT id, name, logo_url, favicon_url, theme_color, created_at, modules 
+      SELECT id, name, logo_url, favicon_url, theme_color, created_at, modules,
+             subdomain, country_code, timezone, currency, allow_employee_portal, allow_breaks,
+             portal_bg_image_url, portal_bg_color,
+             stripe_customer_id, stripe_subscription_id, subscription_seats, subscription_status
       FROM qrp_tenants 
       WHERE id = $1
     `;

@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Plus, Edit2, Trash2, MapPin, Search, ChevronLeft, ChevronRight, X, AlertCircle } from 'lucide-react';
 import Autocomplete from 'react-google-autocomplete';
+import { useTranslation } from '../utils/i18n.jsx';
 
 export default function LocationsList({ tenant, themeColor }) {
+  const { t } = useTranslation();
   const [locations, setLocations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -113,10 +115,10 @@ export default function LocationsList({ tenant, themeColor }) {
       {/* Header & Controls */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-slate-800 dark:text-white dark:text-white tracking-tight flex items-center gap-2">
-            <MapPin className="text-primary-500" size={24} /> Puncte de Lucru
+          <h1 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight flex items-center gap-2">
+            <MapPin className="text-primary-500" size={24} /> {t('locationsTitle')}
           </h1>
-          <p className="text-sm font-medium text-slate-500 dark:text-slate-400 dark:text-slate-400 mt-1">Gestionează locațiile și adresele pentru pontaj.</p>
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">{t('locationsSubtitle')}</p>
         </div>
         
         {!showAddForm && (
@@ -126,8 +128,9 @@ export default function LocationsList({ tenant, themeColor }) {
             style={{ backgroundColor: themeColor }}
           >
             <Plus size={18} />
-            Adaugă Locație
-        </button>)}
+            {t('addLocationBtn')}
+          </button>
+        )}
       </div>
 
       {error && (
@@ -145,10 +148,11 @@ export default function LocationsList({ tenant, themeColor }) {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm overflow-y-auto">
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 w-full max-w-2xl my-auto animate-in fade-in zoom-in-95 duration-200">
             <div className="bg-slate-50 dark:bg-slate-800/80 px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between rounded-t-2xl">
-              <h2 className="text-lg font-bold text-slate-800 dark:text-white">{editingId ? 'Editare Locație' : 'Locație Nouă'}</h2>
+              <h2 className="text-lg font-bold text-slate-800 dark:text-white">{editingId ? t('editLocationModalTitle') : t('newLocationModalTitle')}</h2>
               <button 
                 onClick={() => { setShowAddForm(false); setEditingId(null); setFormError(null); }}
                 className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                title={t('close')}
               >
                 <X size={20} />
               </button>
@@ -157,18 +161,18 @@ export default function LocationsList({ tenant, themeColor }) {
               {formError && <div className="mb-4 text-sm text-red-600 font-bold bg-red-50 p-3 rounded-2xl border border-red-100">{formError}</div>}
               <form onSubmit={handleSave} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Nume Locație *</label>
+                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{t('locationNameLabel')}</label>
                   <input
                     type="text"
                     required
-                    placeholder="Ex: Sediu Central"
+                    placeholder={t('locationNamePlaceholder')}
                     className="w-full px-4 py-3 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm focus:ring-2 focus:ring-primary-500 outline-none transition-all font-medium text-slate-700 dark:text-slate-200"
                     value={formData.name}
                     onChange={e => setFormData({...formData, name: e.target.value})}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Adresă (opțional)</label>
+                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{t('addressOptionalLabel')}</label>
                   <Autocomplete
                     apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''}
                     onPlaceSelected={(place) => {
@@ -184,21 +188,21 @@ export default function LocationsList({ tenant, themeColor }) {
                     }}
                     value={formData.address || ''}
                     onChange={(e) => setFormData({...formData, address: e.target.value})}
-                    placeholder="Ex: Str. Lalelelor Nr. 12"
+                    placeholder={t('addressPlaceholder')}
                     className="w-full px-4 py-3 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm focus:ring-2 focus:ring-primary-500 outline-none transition-all font-medium text-slate-700 dark:text-slate-200"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Mod Generare QR *</label>
+                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{t('qrModeLabel')}</label>
                   <select
                     className="w-full px-4 py-3 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm focus:ring-2 focus:ring-primary-500 outline-none transition-all font-medium text-slate-700 dark:text-slate-300 appearance-none"
                     value={formData.qr_mode || 'DYNAMIC'}
                     onChange={e => setFormData({ ...formData, qr_mode: e.target.value })}
                   >
-                    <option value="DYNAMIC">Cod QR Dinamic (pe tabletă/telefon)</option>
-                    <option value="STATIC">Cod QR Static (tipărit)</option>
-                    <option value="HARDWARE">Scanner (angajatul scanează legitimația)</option>
-                    <option value="HYBRID">Hibrid (Kiosk + Scaner)</option>
+                    <option value="DYNAMIC">{t('qrModeDynamic')}</option>
+                    <option value="STATIC">{t('qrModeStatic')}</option>
+                    <option value="HARDWARE">{t('qrModeHardware')}</option>
+                    <option value="HYBRID">{t('qrModeHybrid')}</option>
                   </select>
                 </div>
 
@@ -208,14 +212,14 @@ export default function LocationsList({ tenant, themeColor }) {
                     onClick={() => { setShowAddForm(false); setEditingId(null); setFormError(null); }}
                     className="px-5 h-10 text-sm flex items-center justify-center rounded-full font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
                   >
-                    Anulează
+                    {t('cancel')}
                   </button>
                   <button
                     type="submit"
                     className="px-5 h-10 text-sm flex items-center justify-center rounded-full font-bold text-white shadow-md transition-all hover:-translate-y-0.5 active:translate-y-0"
                     style={{ backgroundColor: themeColor }}
                   >
-                    {editingId ? 'Salvează Modificările' : 'Adaugă Locație'}
+                    {editingId ? t('saveLocationChanges') : t('addLocationBtn')}
                   </button>
                 </div>
               </form>
@@ -224,14 +228,14 @@ export default function LocationsList({ tenant, themeColor }) {
         </div>
       )}
 
-            {/* SEARCH BAR (Regula 1 - SmartDevize) */}
+      {/* SEARCH BAR */}
       <div className="mb-4">
         <div style={{ position: 'relative' }} className="w-full max-w-sm">
           <Search className="w-4 h-4 text-slate-400" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', zIndex: 1 }} />
           <input
-            className="w-full h-10 border border-slate-200 dark:border-slate-700 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white shadow-sm outline-none focus:ring-2 focus:ring-primary-500 transition-all text-sm font-medium"
+            className="w-full h-10 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white shadow-sm outline-none focus:ring-2 focus:ring-primary-500 transition-all text-sm font-medium"
             style={{ paddingLeft: 36, paddingRight: search ? 80 : 16, borderRadius: 9999 }}
-            placeholder="Caută..."
+            placeholder={t('search')}
             value={search}
             onChange={e => { setSearch(e.target.value); setPage(1); }}
           />
@@ -243,47 +247,47 @@ export default function LocationsList({ tenant, themeColor }) {
         </div>
       </div>
 
-      {/* Tabel cu Reguli SmartDevize */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 dark:border-slate-700">
+      {/* Tabel */}
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
         
-        {/* Search Bar + Header Informațional */}
-        <div className="p-4 border-b border-slate-100 dark:border-slate-700/50 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-800/50 rounded-t-lg">
-          <div className="font-bold text-slate-700 dark:text-slate-300 dark:text-white">Total: {total} înregistrări</div>
+        {/* Header Informațional */}
+        <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50 dark:bg-slate-800/50 rounded-t-lg">
+          <div className="font-bold text-slate-700 dark:text-slate-300">{t('totalRecords')} {total}</div>
         </div>
 
-        {/* Tabelul - vizibil mereu */}
+        {/* Tabelul */}
         <div className="overflow-x-auto min-h-[300px]">
           <table className="w-full text-left border-collapse min-w-[550px]">
             <thead>
-              <tr className="bg-slate-50 dark:bg-slate-800/50/50 dark:bg-slate-800/30 border-b border-slate-200 dark:border-slate-700 dark:border-slate-700">
-                <th style={{ width: 50, textAlign: 'center' }} className="py-3 font-bold text-xs tracking-wider text-slate-500 dark:text-slate-400 dark:text-slate-400">Nr.</th>
-                <th className="py-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 dark:text-slate-400">Nume Punct de Lucru</th>
-                <th className="py-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 dark:text-slate-400">Adresă</th>
-                <th className="py-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 dark:text-slate-400 text-right">Acțiuni</th>
+              <tr className="bg-slate-50 dark:bg-slate-800/30 border-b border-slate-200 dark:border-slate-700">
+                <th style={{ width: 50, textAlign: 'center' }} className="py-3 font-bold text-xs tracking-wider text-slate-500 dark:text-slate-400">{t('rowNumber')}</th>
+                <th className="py-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">{t('colLocationName')}</th>
+                <th className="py-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">{t('colAddress')}</th>
+                <th className="py-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 text-right">{t('colActionsHeader')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {currentData.length > 0 ? (
                 currentData.map((loc, index) => (
-                  <tr key={loc.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50/80 dark:hover:bg-slate-700/50 transition-colors group">
-                    <td style={{ textAlign: 'center' }} className="text-slate-500 dark:text-slate-400 dark:text-slate-400 text-[13px]">
+                  <tr key={loc.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors group">
+                    <td style={{ textAlign: 'center' }} className="text-slate-500 dark:text-slate-400 text-[13px]">
                       {(page - 1) * rowsPerPage + index + 1}
                     </td>
                     <td className="py-3 px-4">
-                      <div className="font-bold text-slate-800 dark:text-white dark:text-white flex items-center gap-2">
+                      <div className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
                         <MapPin size={16} className="text-primary-500" />
                         {loc.name}
                       </div>
                     </td>
-                    <td className="py-3 px-4 text-sm text-slate-600 dark:text-slate-300 dark:text-slate-300">
-                      {loc.address || <span className="text-slate-400 italic">Fără adresă specificată</span>}
+                    <td className="py-3 px-4 text-sm text-slate-600 dark:text-slate-300">
+                      {loc.address || <span className="text-slate-400 italic">{t('noAddress')}</span>}
                     </td>
                     <td className="py-3 px-4 text-right">
                       {deleteConfirmId === loc.id ? (
                         <div className="flex items-center justify-end gap-2">
-                          <span className="text-xs font-bold text-red-600">Sigur?</span>
-                          <button onClick={() => handleDelete(loc.id)} className="px-3 py-1 bg-red-600 text-white text-xs font-bold rounded-full hover:bg-red-700 transition-colors">Da</button>
-                          <button onClick={() => setDeleteConfirmId(null)} className="px-3 py-1 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-full hover:bg-slate-300 transition-colors">Nu</button>
+                          <span className="text-xs font-bold text-red-600">{t('deleteConfirmQuestion')}</span>
+                          <button onClick={() => handleDelete(loc.id)} className="px-3 py-1 bg-red-600 text-white text-xs font-bold rounded-full hover:bg-red-700 transition-colors">{t('yes')}</button>
+                          <button onClick={() => setDeleteConfirmId(null)} className="px-3 py-1 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-full hover:bg-slate-300 transition-colors">{t('no')}</button>
                         </div>
                       ) : (
                         <div className="flex justify-end gap-2">
@@ -298,14 +302,14 @@ export default function LocationsList({ tenant, themeColor }) {
                               setShowAddForm(true); 
                             }}
                             className="p-2 text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm hover:text-primary-600 hover:bg-primary-50 hover:border-primary-200 rounded-full transition-all"
-                            title="Editează"
+                            title={t('editTooltip')}
                           >
                             <Edit2 size={16} />
                           </button>
                           <button 
                             onClick={() => setDeleteConfirmId(loc.id)}
                             className="p-2 text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm hover:text-red-600 hover:bg-red-50 hover:border-red-200 rounded-full transition-all"
-                            title="Șterge"
+                            title={t('deleteTooltip')}
                           >
                             <Trash2 size={16} />
                           </button>
@@ -316,9 +320,9 @@ export default function LocationsList({ tenant, themeColor }) {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="4" className="py-12 text-center text-slate-500 dark:text-slate-400 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50/50 dark:bg-slate-900/20">
+                  <td colSpan="4" className="py-12 text-center text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/20">
                     <MapPin className="mx-auto h-12 w-12 text-slate-300 dark:text-slate-600 mb-3" />
-                    <p className="font-medium">Nu am găsit nicio locație.</p>
+                    <p className="font-medium">{t('noLocationsFound')}</p>
                   </td>
                 </tr>
               )}
@@ -326,25 +330,25 @@ export default function LocationsList({ tenant, themeColor }) {
           </table>
         </div>
 
-        {/* FOOTER PAGINARE (Regula 3 - SmartDevize) */}
+        {/* FOOTER PAGINARE */}
         <div className="px-4 sm:px-5 py-3 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-50 dark:bg-slate-800/50 rounded-b-xl">
           <div className="flex flex-wrap items-center justify-between sm:justify-start w-full sm:w-auto gap-3 sm:gap-4">
             <span className="whitespace-nowrap text-[13px] text-slate-500 dark:text-slate-400 font-bold">
-              Afișează&nbsp;
+              {t('showRows')}&nbsp;
               <select value={rowsPerPage} onChange={e => { setRowsPerPage(Number(e.target.value)); setPage(1); }} className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-full px-2 py-0.5 outline-none dark:text-white">
                 <option value={10}>10</option>
                 <option value={15}>15</option>
                 <option value={25}>25</option>
                 <option value={50}>50</option>
-                <option value={9999}>Toți</option>
+                <option value={9999}>{t('allOption')}</option>
               </select>
             </span>
-            <span className="whitespace-nowrap text-[13px] text-slate-500 dark:text-slate-400">Total înregistrări: <strong className="text-slate-800 dark:text-white">{total}</strong></span>
+            <span className="whitespace-nowrap text-[13px] text-slate-500 dark:text-slate-400">{t('totalRecords')} <strong className="text-slate-800 dark:text-white">{total}</strong></span>
           </div>
           <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-2">
-            <span className="whitespace-nowrap text-[13px] text-slate-500 dark:text-slate-400 font-bold mr-2">Pagina {page} din {totalPages || 1}</span>
-            <button className="w-8 h-8 flex items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors shadow-sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}><ChevronLeft size={16} /></button>
-            <button className="w-8 h-8 flex items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors shadow-sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages}><ChevronRight size={16} /></button>
+            <span className="whitespace-nowrap text-[13px] text-slate-500 dark:text-slate-400 font-bold mr-2">{t('page')} {page} {t('of')} {totalPages || 1}</span>
+            <button className="w-8 h-8 flex items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors shadow-sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} title={t('prevPage')}><ChevronLeft size={16} /></button>
+            <button className="w-8 h-8 flex items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors shadow-sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages} title={t('nextPage')}><ChevronRight size={16} /></button>
           </div>
         </div>
       </div>

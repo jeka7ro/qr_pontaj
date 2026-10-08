@@ -22,6 +22,7 @@ const { evaluateModules } = require('../utils/modulesHelper');
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 const supabase = require('../supabaseClient');
+const bnrService = require('../services/bnrService');
 
 const uploadToSupabase = async (file, folder = 'avatars') => {
   if (!file) return null;
@@ -214,7 +215,10 @@ router.get('/', async (req, res) => {
     const query = `
       SELECT 
         t.id, t.name as nume, t.subdomain, t.theme_color as culoare, t.logo_url, t.favicon_url, t.modules,
-        s.qr_mode as mod_qr, s.allowed_radius_meters as raza_gps, s.name as tip_modul
+        COALESCE(t.billing_per_employee, false) as billing_per_employee,
+        COALESCE(t.price_per_employee, 0)::numeric as price_per_employee,
+        s.qr_mode as mod_qr, s.allowed_radius_meters as raza_gps, s.name as tip_modul,
+        COALESCE((SELECT count(*)::int FROM qrp_employees e WHERE e.tenant_id = t.id AND (e.is_archived = false OR e.is_archived IS NULL)), 0) as active_employees_count
       FROM qrp_tenants t
       LEFT JOIN qrp_sites s ON s.tenant_id = t.id
       ORDER BY t.created_at DESC
@@ -234,6 +238,231 @@ router.get('/', async (req, res) => {
   }
 });
 
+// GET /api/tenants/billing-summary - Calcul automat facturare pentru tenanții cu tarifare per angajat
+router.get('/billing-summary', async (req, res) => {
+  try {
+    const now = new Date();
+    const month = parseInt(req.query.month, 10) || (now.getMonth() + 1);
+    const year = parseInt(req.query.year, 10) || now.getFullYear();
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const monthStart = new Date(year, month - 1, 1, 0, 0, 0, 0);
+    const monthEnd = new Date(year, month - 1, daysInMonth, 23, 59, 59, 999);
+
+    // Curs BNR oficial in functie de data / zi
+    let exchangeRate = parseFloat(req.query.exchange_rate);
+    let exchangeRateDate = null;
+    let bnrSource = null;
+    if (!exchangeRate || isNaN(exchangeRate)) {
+      let targetDateStr = req.query.date;
+      if (!targetDateStr) {
+        const isCurrentMonth = (year === now.getFullYear() && month === (now.getMonth() + 1));
+        if (isCurrentMonth) {
+          targetDateStr = now.toISOString().slice(0, 10);
+        } else {
+          targetDateStr = `${year}-${String(month).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`;
+        }
+      }
+      const bnrInfo = await bnrService.getBnrRate(targetDateStr, 'EUR');
+      exchangeRate = bnrInfo.rate;
+      exchangeRateDate = bnrInfo.bnr_date;
+      bnrSource = bnrInfo.is_fallback ? 'Fallback' : 'BNR Oficial';
+    }
+
+    const tenantsQuery = `
+      SELECT 
+        t.id, t.name, t.subdomain, t.logo_url, t.favicon_url, t.theme_color,
+        t.billing_start_date,
+        COALESCE(t.country_code, 'RO') as country_code,
+        COALESCE(t.currency, 'RON') as currency,
+        COALESCE(t.price_per_employee, 0)::numeric as price_per_employee
+      FROM qrp_tenants t
+      WHERE t.billing_per_employee = true
+      ORDER BY t.name ASC
+    `;
+    const tenantsResult = await pool.query(tenantsQuery);
+
+    const summaries = [];
+    let grandTotalEur = 0;
+    let grandTotalRonRo = 0;
+
+    for (const tenant of tenantsResult.rows) {
+      if (tenant.billing_start_date) {
+        const startDate = new Date(tenant.billing_start_date);
+        // Dacă luna selectată se încheie înainte de data de începere a contractului, se ignoră (perioadă de test)
+        if (monthEnd < startDate) {
+          continue;
+        }
+      }
+
+      const price = parseFloat(tenant.price_per_employee) || 0;
+      
+      const employeesQuery = `
+        SELECT id, first_name, last_name, job_title, created_at, is_archived, archived_at
+        FROM qrp_employees
+        WHERE tenant_id = $1
+        ORDER BY last_name ASC, first_name ASC
+      `;
+      const empResult = await pool.query(employeesQuery, [tenant.id]);
+
+      const fullRateEmployees = [];
+      const halfRateEmployees = [];
+      const inactiveEmployees = [];
+
+      for (const emp of empResult.rows) {
+        const created = new Date(emp.created_at);
+        if (created > monthEnd) {
+          inactiveEmployees.push({ ...emp, reason: 'Adăugat după sfârșitul lunii' });
+          continue;
+        }
+
+        if (emp.is_archived && emp.archived_at) {
+          const archived = new Date(emp.archived_at);
+          if (archived < monthStart) {
+            inactiveEmployees.push({ ...emp, reason: 'Arhivat înainte de începutul lunii' });
+            continue;
+          }
+        }
+
+        const contractStartDate = tenant.billing_start_date ? new Date(tenant.billing_start_date) : null;
+        let startDay = 1;
+        let isHiredThisMonth = false;
+        if (contractStartDate && created <= contractStartDate) {
+          startDay = 1;
+          isHiredThisMonth = false;
+        } else if (created > monthStart) {
+          startDay = created.getDate();
+          isHiredThisMonth = true;
+        }
+
+        let endDay = daysInMonth;
+        let isArchivedThisMonth = false;
+        if (emp.is_archived && emp.archived_at) {
+          const archived = new Date(emp.archived_at);
+          if (archived <= monthEnd) {
+            endDay = archived.getDate();
+            isArchivedThisMonth = true;
+          }
+        }
+
+        const days = Math.max(1, Math.min(daysInMonth, endDay - startDay + 1));
+
+        let note = `Lună completă (1–${daysInMonth})`;
+        if (isArchivedThisMonth) {
+          const archDate = new Date(emp.archived_at);
+          const formatted = `${archDate.getDate().toString().padStart(2, '0')}.${(archDate.getMonth() + 1).toString().padStart(2, '0')}.${archDate.getFullYear()}`;
+          note = `Arhivat pe ${formatted}`;
+        } else if (isHiredThisMonth) {
+          const crDate = new Date(emp.created_at);
+          const formatted = `${crDate.getDate().toString().padStart(2, '0')}.${(crDate.getMonth() + 1).toString().padStart(2, '0')}.${crDate.getFullYear()}`;
+          note = `Adăugat pe ${formatted}`;
+        }
+
+        const empData = {
+          id: emp.id,
+          name: `${emp.first_name || ''} ${emp.last_name || ''}`.trim() || 'Angajat #' + emp.id,
+          job_title: emp.job_title || 'Nespecificat',
+          days_active: days,
+          days_in_month: daysInMonth,
+          rate_percent: days >= 15 ? 100 : 50,
+          amount_eur: days >= 15 ? price : (price * 0.5),
+          note
+        };
+
+        if (days >= 15) {
+          fullRateEmployees.push(empData);
+        } else {
+          halfRateEmployees.push(empData);
+        }
+      }
+
+      const isRomania = (tenant.country_code || 'RO').toUpperCase() === 'RO';
+      const tenantTotalEur = (fullRateEmployees.length * price) + (halfRateEmployees.length * (price * 0.5));
+      const tenantTotalRon = isRomania ? parseFloat((tenantTotalEur * exchangeRate).toFixed(2)) : null;
+      grandTotalEur += tenantTotalEur;
+      if (isRomania) {
+        grandTotalRonRo += tenantTotalEur * exchangeRate;
+      }
+
+      summaries.push({
+        tenant_id: tenant.id,
+        name: tenant.name,
+        subdomain: tenant.subdomain,
+        country_code: tenant.country_code || 'RO',
+        currency: isRomania ? 'RON' : (tenant.currency || 'EUR'),
+        is_romania: isRomania,
+        logo_url: tenant.logo_url,
+        favicon_url: tenant.favicon_url,
+        theme_color: tenant.theme_color,
+        price_per_employee: price,
+        total_employees: empResult.rows.length,
+        active_employees: fullRateEmployees.length + halfRateEmployees.length,
+        full_rate_count: fullRateEmployees.length,
+        half_rate_count: halfRateEmployees.length,
+        inactive_count: inactiveEmployees.length,
+        total_eur: parseFloat(tenantTotalEur.toFixed(2)),
+        total_ron: tenantTotalRon,
+        full_rate_employees: fullRateEmployees,
+        half_rate_employees: halfRateEmployees
+      });
+    }
+
+    res.json({
+      month,
+      year,
+      exchange_rate: exchangeRate,
+      exchange_rate_date: exchangeRateDate,
+      bnr_source: bnrSource,
+      tenants_count: summaries.length,
+      grand_total_eur: parseFloat(grandTotalEur.toFixed(2)),
+      grand_total_ron: parseFloat(grandTotalRonRo.toFixed(2)),
+      grand_total_ron_ro: parseFloat(grandTotalRonRo.toFixed(2)),
+      tenants: summaries
+    });
+  } catch (error) {
+    console.error('Error calculating billing summary:', error);
+    res.status(500).json({ error: error.message || 'Eroare la calcularea facturării' });
+  }
+});
+
+// PATCH /api/tenants/:id/billing-tariff - Modificare rapidă tarif sau activare/dezactivare tarifare per angajat
+router.patch('/:id/billing-tariff', async (req, res) => {
+  try {
+    const { price_per_employee, billing_per_employee } = req.body;
+    const updates = [];
+    const values = [];
+    let idx = 1;
+
+    if (price_per_employee !== undefined) {
+      updates.push(`price_per_employee = $${idx++}`);
+      values.push(parseFloat(price_per_employee) || 0.00);
+    }
+    if (billing_per_employee !== undefined) {
+      updates.push(`billing_per_employee = $${idx++}`);
+      values.push(Boolean(billing_per_employee));
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ error: 'Niciun câmp specificat pentru actualizare' });
+    }
+
+    values.push(req.params.id);
+    const query = `
+      UPDATE qrp_tenants
+      SET ${updates.join(', ')}
+      WHERE id = $${idx}
+      RETURNING id, name, billing_per_employee, price_per_employee
+    `;
+    const result = await pool.query(query, values);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Tenantul nu a fost găsit' });
+    }
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('Error updating billing tariff:', err);
+    res.status(500).json({ error: err.message || 'Eroare la actualizarea tarifului' });
+  }
+});
+
 // POST /api/tenants - Creare tenant nou (Tranzacție)
 router.post('/', async (req, res) => {
   const client = await pool.connect();
@@ -249,7 +478,13 @@ router.post('/', async (req, res) => {
       parola_initiala,
       distanta_gps,
       mod_qr,
-      modules
+      modules,
+      billing_per_employee,
+      price_per_employee,
+      country_code,
+      allow_employee_portal,
+      allow_breaks,
+      timezone
     } = req.body;
 
     // 1. Validare simplă
@@ -261,9 +496,19 @@ router.post('/', async (req, res) => {
 
     // 2. Inserare în qrp_tenants
     const subdomain = nume_locatie.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const finalCountry = country_code === 'BE' ? 'BE' : 'RO';
+    const finalTimezone = timezone || (finalCountry === 'BE' ? 'Europe/Brussels' : 'Europe/Bucharest');
+    const finalCurrency = finalCountry === 'BE' ? 'EUR' : 'RON';
+    const finalAllowPortal = allow_employee_portal !== false;
+    const finalAllowBreaks = allow_breaks === true || finalCountry === 'BE';
+
     const tenantQuery = `
-      INSERT INTO qrp_tenants (name, logo_url, favicon_url, theme_color, subdomain, modules)
-      VALUES ($1, $2, $3, $4, $5, $6)
+      INSERT INTO qrp_tenants (
+        name, logo_url, favicon_url, theme_color, subdomain, modules, 
+        billing_per_employee, price_per_employee, country_code, timezone, 
+        currency, allow_employee_portal, allow_breaks
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
       RETURNING id
     `;
     const tenantResult = await client.query(tenantQuery, [
@@ -272,7 +517,14 @@ router.post('/', async (req, res) => {
       sanitizeFaviconUrl(favicon_url),
       culoare_tema || '#2563EB',
       subdomain,
-      modules || {}
+      modules || {},
+      Boolean(billing_per_employee),
+      price_per_employee ? parseFloat(price_per_employee) : 0.00,
+      finalCountry,
+      finalTimezone,
+      finalCurrency,
+      finalAllowPortal,
+      finalAllowBreaks
     ]);
     const tenantId = tenantResult.rows[0].id;
 
@@ -346,7 +598,7 @@ router.post('/', async (req, res) => {
       return res.status(409).json({ error: 'Acest email este deja folosit' });
     }
     
-    res.status(500).json({ error: 'Eroare la crearea tenant-ului' });
+    res.status(500).json({ error: error.message || 'Eroare la crearea tenant-ului' });
   } finally {
     client.release();
   }
@@ -380,6 +632,7 @@ router.get('/:id', async (req, res) => {
   try {
     const query = `
       SELECT t.id, t.name, t.subdomain, t.logo_url, t.favicon_url, t.theme_color, t.modules, t.portal_bg_image_url, t.portal_bg_color,
+             t.country_code, t.timezone, t.currency, t.allow_employee_portal, t.allow_breaks, t.subscription_seats, t.subscription_status,
              s.qr_mode 
       FROM qrp_tenants t
       LEFT JOIN qrp_sites s ON s.tenant_id = t.id
@@ -398,6 +651,78 @@ router.get('/:id', async (req, res) => {
   } catch (error) {
     console.error('Error fetching tenant:', error);
     res.status(500).json({ error: 'Eroare la preluarea tenantului' });
+  }
+});
+
+// PUT /api/tenants/:id/settings - Setări generale companie (Multi-country, Portal angajat ON/OFF, Pauze, Fundal Login/Portal)
+router.put('/:id/settings', async (req, res) => {
+  try {
+    const { country_code, timezone, allow_employee_portal, allow_breaks, portal_bg_image_url, portal_bg_color } = req.body;
+    
+    const validTz = timezone || (country_code === 'BE' ? 'Europe/Brussels' : 'Europe/Bucharest');
+    const validCurrency = country_code === 'BE' ? 'EUR' : 'RON';
+    
+    const result = await pool.query(
+      `UPDATE qrp_tenants 
+       SET country_code = COALESCE($1, country_code),
+           timezone = COALESCE($2, timezone),
+           currency = COALESCE($3, currency),
+           allow_employee_portal = COALESCE($4, allow_employee_portal),
+           allow_breaks = COALESCE($5, allow_breaks),
+           portal_bg_image_url = CASE WHEN $6::boolean = true THEN $7 ELSE portal_bg_image_url END,
+           portal_bg_color = CASE WHEN $8::boolean = true THEN $9 ELSE portal_bg_color END
+       WHERE id = $10 RETURNING *`,
+      [
+        country_code || null,
+        timezone || (country_code ? validTz : null),
+        country_code ? validCurrency : null,
+        typeof allow_employee_portal === 'boolean' ? allow_employee_portal : null,
+        typeof allow_breaks === 'boolean' ? allow_breaks : null,
+        portal_bg_image_url !== undefined,
+        portal_bg_image_url || null,
+        portal_bg_color !== undefined,
+        portal_bg_color || null,
+        req.params.id
+      ]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Tenant nu a fost găsit' });
+    }
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error updating tenant settings:', error);
+    res.status(500).json({ error: 'Eroare la salvarea setărilor companiei' });
+  }
+});
+
+// GET /api/tenants/:id/audits - Istoric audit trail pontaje (Cerință Belgia 2027)
+router.get('/:id/audits', async (req, res) => {
+  try {
+    const { start_date, end_date, employee_id } = req.query;
+    let query = `
+      SELECT a.*, 
+             e.first_name as employee_first_name, e.last_name as employee_last_name,
+             u.email as modifier_email
+      FROM qrp_timesheet_audits a
+      JOIN qrp_employees e ON a.employee_id = e.id
+      LEFT JOIN qrp_users u ON a.modified_by_user_id = u.id
+      WHERE a.tenant_id = $1
+    `;
+    const params = [req.params.id];
+    if (employee_id) {
+      params.push(employee_id);
+      query += ` AND a.employee_id = $${params.length}`;
+    }
+    if (start_date && end_date) {
+      params.push(start_date, end_date);
+      query += ` AND a.created_at >= $${params.length - 1} AND a.created_at <= $${params.length}`;
+    }
+    query += ` ORDER BY a.created_at DESC LIMIT 500`;
+    const result = await pool.query(query, params);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching audits:', error);
+    res.status(500).json({ error: 'Eroare la preluarea istoricului de audit' });
   }
 });
 
@@ -533,7 +858,9 @@ router.put('/:id', async (req, res) => {
       mod_qr,
       modules,
       portal_bg_image_url,
-      portal_bg_color
+      portal_bg_color,
+      billing_per_employee,
+      price_per_employee
     } = req.body;
 
     if (!nume_locatie) {
@@ -546,8 +873,9 @@ router.put('/:id', async (req, res) => {
     const subdomain = nume_locatie.toLowerCase().replace(/[^a-z0-9]/g, '');
     const tenantQuery = `
       UPDATE qrp_tenants 
-      SET name = $1, subdomain = $2, logo_url = $3, favicon_url = $4, theme_color = $5, modules = $6, portal_bg_image_url = $7, portal_bg_color = $8
-      WHERE id = $9
+      SET name = $1, subdomain = $2, logo_url = $3, favicon_url = $4, theme_color = $5, modules = $6, portal_bg_image_url = $7, portal_bg_color = $8,
+          billing_per_employee = $9, price_per_employee = $10
+      WHERE id = $11
     `;
     await client.query(tenantQuery, [
       nume_locatie,
@@ -558,6 +886,8 @@ router.put('/:id', async (req, res) => {
       modules || {},
       portal_bg_image_url || null,
       portal_bg_color || null,
+      Boolean(billing_per_employee),
+      price_per_employee ? parseFloat(price_per_employee) : 0.00,
       req.params.id
     ]);
 
@@ -580,7 +910,7 @@ router.put('/:id', async (req, res) => {
   } catch (error) {
     await client.query('ROLLBACK');
     console.error('Error updating tenant:', error);
-    res.status(500).json({ error: 'Eroare la actualizarea tenant-ului' });
+    res.status(500).json({ error: error.message || 'Eroare la actualizarea tenant-ului' });
   } finally {
     client.release();
   }
@@ -716,9 +1046,28 @@ router.post('/:id/employees', upload.fields([
     try {
       await client.query('BEGIN');
       
+      // Verificare capacitate abonament Stripe (seats) dacă este configurat
+      const seatCheck = await client.query('SELECT name, subscription_seats, stripe_subscription_id FROM qrp_tenants WHERE id = $1', [req.params.id]);
+      const currentTenantData = seatCheck.rows[0];
+      if (currentTenantData && currentTenantData.subscription_seats > 0) {
+        const empCountRes = await client.query(
+          'SELECT COUNT(*)::int as count FROM qrp_employees WHERE tenant_id = $1 AND (is_archived = false OR is_archived IS NULL)',
+          [req.params.id]
+        );
+        const currentActiveCount = empCountRes.rows[0]?.count || 0;
+        if (currentActiveCount >= currentTenantData.subscription_seats) {
+          await client.query('ROLLBACK');
+          return res.status(403).json({
+            error: `Limita de ${currentTenantData.subscription_seats} angajați din abonament a fost atinsă. Vă rugăm să măriți capacitatea abonamentului.`,
+            code: 'SUBSCRIPTION_LIMIT_REACHED',
+            subscription_seats: currentTenantData.subscription_seats,
+            active_count: currentActiveCount
+          });
+        }
+      }
+
       // Generare cod unic secvențial, continuu (nu se refolosesc și nu se dublează codurile, inclusiv cele arhivate)
-      const tenantRes = await client.query('SELECT name FROM qrp_tenants WHERE id = $1', [req.params.id]);
-      const prefix = tenantRes.rows[0].name.substring(0, 3).toUpperCase();
+      const prefix = (currentTenantData?.name || 'EMP').substring(0, 3).toUpperCase();
       const countRes = await client.query('SELECT MAX(CAST(REGEXP_REPLACE(employee_code, \'[^0-9]\', \'\', \'g\') AS INTEGER)) FROM qrp_employees WHERE tenant_id = $1', [req.params.id]);
       const nextId = (parseInt(countRes.rows[0].max) || 0) + 1;
       let candidateNum = nextId;
@@ -732,19 +1081,21 @@ router.post('/:id/employees', upload.fields([
         employee_code = `${prefix}${candidateNum.toString().padStart(3, '0')}`;
       }
 
+      const { national_id } = req.body;
       const query = `
         INSERT INTO qrp_employees (
           tenant_id, first_name, last_name, cnp, id_card_series, 
           birth_date, address, phone, email, job_title, pin_code, avatar_path, location_id, id_card_path,
-          contract_start_date, work_schedule, contract_notes, salary, employee_code
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+          contract_start_date, work_schedule, contract_notes, salary, employee_code, national_id
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
         RETURNING *
       `;
       const values = [
-        req.params.id, first_name, last_name, cnp, id_card_series || null, 
+        req.params.id, first_name, last_name, cnp || null, id_card_series || null, 
         finalBirthDate || null, address || null, phone || null, email || null, job_title || null, finalPin, avatarPath || null,
         location_id ? parseInt(location_id) : null, idCardPath,
-        contract_start_date || null, work_schedule || null, contract_notes || null, salary || null, employee_code
+        contract_start_date || null, work_schedule || null, contract_notes || null, salary || null, employee_code,
+        national_id || null
       ];
       
       const result = await client.query(query, values);
@@ -974,6 +1325,24 @@ router.post('/:id/employees/:employeeId/close-shift', async (req, res) => {
       'INSERT INTO qrp_employee_history (employee_id, change_type, new_value) VALUES ($1, $2, $3)',
       [req.params.employeeId, 'pontaj', `Tură ÎNCHISĂ MANUAL de către administrator.`]
     );
+
+    // Save to immutable audit trail (Cerință Belgia 2027)
+    try {
+      await pool.query(
+        `INSERT INTO qrp_timesheet_audits (tenant_id, timesheet_id, employee_id, action_name, new_data, reason)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [
+          req.params.id,
+          result.rows[0].id,
+          req.params.employeeId,
+          'MANUAL_CLOSE',
+          JSON.stringify(result.rows[0]),
+          req.body.reason || 'Tură închisă manual de către administrator'
+        ]
+      );
+    } catch (auditErr) {
+      console.warn('Nu s-a putut salva logul de audit:', auditErr.message);
+    }
 
     res.json(result.rows[0]);
   } catch (error) {

@@ -10,6 +10,7 @@ import EmployeeLogin from './pages/employee/EmployeeLogin';
 import EmployeeDashboard from './pages/employee/EmployeeDashboard';
 import ResetPassword from './pages/admin/ResetPassword';
 import GdprConsentBanner from './components/GdprConsentBanner';
+import { LanguageProvider } from './utils/i18n.jsx';
 
 const getIsSubdomain = () => {
   const hostname = window.location.hostname;
@@ -46,45 +47,47 @@ function App() {
   const isSubdomain = getIsSubdomain();
 
   return (
-    <Router>
-      <Routes>
-        {/* Rută dedicată Kiosk Full Screen (Tablete) */}
-        <Route path="/kiosk/:tenantId/:kioskId" element={<KioskDisplay />} />
-        
-        {/* Rută universală pentru scanare (funcționează și pe IP local) */}
-        <Route path="/scan" element={<ScanScreen />} />
+    <LanguageProvider>
+      <Router>
+        <Routes>
+          {/* Rută dedicată Kiosk Full Screen (Tablete) */}
+          <Route path="/kiosk/:tenantId/:kioskId" element={<KioskDisplay />} />
+          
+          {/* Rută universală pentru scanare (funcționează și pe IP local) */}
+          <Route path="/scan" element={<ScanScreen />} />
 
-        {/* Rută resetare parolă cont administrator */}
-        <Route path="/reset-password" element={<ResetPassword />} />
+          {/* Rută resetare parolă cont administrator */}
+          <Route path="/reset-password" element={<ResetPassword />} />
 
-        {/* Portal angajați - disponibil doar pe subdomeniu */}
-        {isSubdomain && (
-          <>
-            <Route path="/login" element={<EmployeeLogin />} />
-            <Route path="/" element={<EmployeeLogin />} />
-            <Route path="/employee-dashboard" element={<EmployeeDashboard />} />
-          </>
-        )}
+          {/* Portal angajați - disponibil doar pe subdomeniu */}
+          {isSubdomain && (
+            <>
+              <Route path="/login" element={<EmployeeLogin />} />
+              <Route path="/" element={<EmployeeLogin />} />
+              <Route path="/employee-dashboard" element={<EmployeeDashboard />} />
+            </>
+          )}
 
-        {/* Dacă suntem pe domeniul root, arătăm Landing Page pe /, iar /login duce la Admin Login */}
-        {!isSubdomain && (
-          <>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/login" element={<AdminLogin />} />
-          </>
-        )}
+          {/* Dacă suntem pe domeniul root, arătăm Landing Page pe /, iar /login duce la Admin Login */}
+          {!isSubdomain && (
+            <>
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/login" element={<AdminLogin />} />
+            </>
+          )}
 
-        {/* Login pentru Admini (SuperAdmin pe root, TenantAdmin pe subdomeniu) */}
-        <Route path="/admin/login" element={<AdminLogin />} />
-        
-        {/* Panoul de control - Adaptabil în funcție de domeniu */}
-        <Route path="/admin/*" element={<AdminRouter />} />
+          {/* Login pentru Admini (SuperAdmin pe root, TenantAdmin pe subdomeniu) */}
+          <Route path="/admin/login" element={<AdminLogin />} />
+          
+          {/* Panoul de control - Adaptabil în funcție de domeniu */}
+          <Route path="/admin/*" element={<AdminRouter />} />
 
-        {/* Redirect fallback */}
-        <Route path="*" element={<Navigate to={isSubdomain ? "/login" : "/admin/login"} replace />} />
-      </Routes>
-      <GdprConsentBanner />
-    </Router>
+          {/* Redirect fallback */}
+          <Route path="*" element={<Navigate to={isSubdomain ? "/login" : "/admin/login"} replace />} />
+        </Routes>
+        <GdprConsentBanner />
+      </Router>
+    </LanguageProvider>
   );
 }
 

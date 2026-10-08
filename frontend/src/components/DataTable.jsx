@@ -8,12 +8,13 @@ import {
   ChevronRight,
 } from "lucide-react";
 import * as XLSX from "xlsx";
+import { useTranslation } from "../utils/i18n.jsx";
 
 export default function DataTable({
   title,
   data = [],
   columns = [],
-  searchPlaceholder = "Caută...",
+  searchPlaceholder = null,
   headerActions = null,
   filters = null,
   selectable = false,
@@ -25,6 +26,8 @@ export default function DataTable({
   exportOptions = null,
   onExport = null,
 }) {
+  const { t } = useTranslation();
+  const effectivePlaceholder = searchPlaceholder || t('search');
   const [search, setSearch] = useState("");
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
   const [currentPage, setCurrentPage] = useState(1);
@@ -214,7 +217,7 @@ export default function DataTable({
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-10 pointer-events-none" />
           <input
             type="text"
-            placeholder={searchPlaceholder}
+            placeholder={effectivePlaceholder}
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -226,7 +229,7 @@ export default function DataTable({
           {/* Contor Rezultate conform Design System */}
           {search && (
             <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-slate-400 pointer-events-none whitespace-nowrap">
-              {filteredData.length} din {data.length}
+              {filteredData.length} {t('of')} {data.length}
             </div>
           )}
         </div>
@@ -256,13 +259,13 @@ export default function DataTable({
                   title={exportOptions[0].description || exportOptions[0].label}
                 >
                   <Download size={16} className="mr-2" />
-                  Export Excel
+                  {t('exportExcel')}
                 </button>
                 <button
                   type="button"
                   onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
                   className="flex items-center justify-center px-2.5 h-10 rounded-r-full bg-green-700 hover:bg-green-800 text-white border-l border-green-500/50 transition-colors cursor-pointer"
-                  title="Alege opțiuni de export"
+                  title={t('chooseExportOptions')}
                 >
                   <ChevronDown
                     size={16}
@@ -280,7 +283,7 @@ export default function DataTable({
                     />
                     <div className="absolute right-0 top-12 z-50 w-72 rounded-2xl bg-white dark:bg-slate-800 shadow-xl border border-slate-200 dark:border-slate-700 py-2 divide-y divide-slate-100 dark:divide-slate-700/60 animate-in fade-in zoom-in-95">
                       <div className="px-4 py-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                        Opțiuni Export Excel
+                        {t('exportOptionsTitle')}
                       </div>
                       <div className="py-1">
                         {exportOptions.map((opt, idx) => (
@@ -299,7 +302,7 @@ export default function DataTable({
                               </span>
                               {idx === 0 && (
                                 <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300">
-                                  Principal
+                                  {t('primaryOption')}
                                 </span>
                               )}
                             </div>
@@ -322,7 +325,7 @@ export default function DataTable({
                 className="flex items-center px-4 h-10 rounded-full bg-green-600 hover:bg-green-700 text-white text-sm font-bold shadow-sm transition-colors cursor-pointer whitespace-nowrap"
               >
                 <Download size={16} className="mr-2" />
-                Export Excel
+                {t('exportExcel')}
               </button>
             ) : (
               <button
@@ -330,7 +333,7 @@ export default function DataTable({
                 className="flex items-center px-4 h-10 rounded-full bg-green-600 hover:bg-green-700 text-white text-sm font-bold shadow-sm transition-colors cursor-pointer whitespace-nowrap"
               >
                 <Download size={16} className="mr-2" />
-                Export Excel
+                {t('exportExcel')}
               </button>
             )}
           </div>
@@ -338,9 +341,9 @@ export default function DataTable({
       </div>
 
       {/* Container Tabel (cu fundal alb și card) */}
-      <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 dark:border-slate-700 shadow-sm flex flex-col flex-1 overflow-hidden min-h-[300px]">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col flex-1 overflow-hidden min-h-[300px]">
         <div className="flex-1 overflow-x-auto">
-          <table className="w-full text-left text-sm whitespace-nowrap">
+          <table className="w-full text-left text-sm">
             <thead className="bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700 dark:border-slate-700 sticky top-0 z-10">
               <tr>
                 {selectable && (
@@ -356,7 +359,7 @@ export default function DataTable({
                 {expandable && <th className="px-3 py-3 w-10"></th>}
                 {/* Coloana Nr. Crt. */}
                 <th className="w-[50px] text-center px-3 py-3 text-slate-800 dark:text-white dark:text-slate-300 text-sm font-bold uppercase tracking-wider">
-                  Nr.
+                  {t('rowNumber')}
                 </th>
 
                 {columns
@@ -465,7 +468,7 @@ export default function DataTable({
                     colSpan={columns.length + 1}
                     className="px-6 py-12 text-center text-slate-500 dark:text-slate-400 dark:text-slate-400"
                   >
-                    Nu au fost găsite înregistrări.
+                    {t('noRecordsFound')}
                   </td>
                 </tr>
               )}
@@ -476,7 +479,7 @@ export default function DataTable({
                 <tr>
                   {selectable && <td></td>}
                   <td className="px-6 py-3 font-bold text-primary-700 text-sm uppercase tracking-wider">
-                    Total
+                    {t('totalLabel')}
                   </td>
                   {columns
                     .filter((c) => !c.hidden)
@@ -498,7 +501,7 @@ export default function DataTable({
         <div className="px-5 py-3 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex flex-col sm:flex-row items-center justify-between gap-3 rounded-b-lg">
           <div className="flex items-center gap-4 text-sm text-slate-600 dark:text-slate-300">
             <span className="whitespace-nowrap flex items-center gap-1.5">
-              Afișează
+              {t('showRows')}
               <select
                 value={itemsPerPage}
                 onChange={(e) => {
@@ -511,11 +514,11 @@ export default function DataTable({
                 <option value={15}>15</option>
                 <option value={25}>25</option>
                 <option value={50}>50</option>
-                <option value={9999}>Toți</option>
+                <option value={9999}>{t('allFilterLabel')}</option>
               </select>
             </span>
             <span className="whitespace-nowrap">
-              Total înregistrări:{" "}
+              {t('totalRecords')}{" "}
               <strong className="text-slate-900 dark:text-white">
                 {totalItems}
               </strong>
@@ -524,19 +527,23 @@ export default function DataTable({
 
           <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
             <span className="whitespace-nowrap mr-2">
-              Pagina {currentPage} din {Math.max(1, totalPages)}
+              {t('page')} {currentPage} {t('of')} {Math.max(1, totalPages)}
             </span>
             <button
+              type="button"
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               disabled={currentPage === 1}
-              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-slate-600 dark:text-slate-300"
+              title={t('prevPage')}
+              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-slate-600 dark:text-slate-300 cursor-pointer"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
             <button
+              type="button"
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages || totalPages === 0}
-              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-slate-600 dark:text-slate-300"
+              title={t('nextPage')}
+              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-slate-600 dark:text-slate-300 cursor-pointer"
             >
               <ChevronRight className="w-4 h-4" />
             </button>

@@ -4,8 +4,9 @@ import {
   QrCode, Users, LogOut, Menu, X, Info, MapPin, Sun, Moon, CreditCard, 
   CalendarDays, FileSpreadsheet, Globe, Map, BookOpenCheck, Calculator, 
   CalendarClock, ScanFace, MessageSquare, Wrench, Table, ChevronDown,
-  Bell, LogIn, Briefcase, Clock, User, PanelLeftClose, PanelLeftOpen, ChevronRight
+  Bell, LogIn, Briefcase, Clock, User, PanelLeftClose, PanelLeftOpen, ChevronRight, Settings
 } from 'lucide-react';
+import TenantSettingsModal from '../../components/TenantSettingsModal';
 
 const getAvatarUrl = (avatarPath, firstName, lastName) => {
   if (avatarPath && !avatarPath.includes('default-avatar')) {
@@ -36,10 +37,13 @@ import WhatsappModule from './whatsapp/WhatsappModule';
 import AssetsModule from './assets/AssetsModule';
 import { QRCodeSVG } from 'qrcode.react';
 import { updatePageFavicon } from '../../utils/favicon';
+import LanguageToggle from '../../components/LanguageToggle';
+import { useTranslation } from '../../utils/i18n.jsx';
 
 export default function TenantDashboard() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t, language, setLanguage } = useTranslation();
   const [tenantInfo, setTenantInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -59,6 +63,7 @@ export default function TenantDashboard() {
   const [dismissedNotifs, setDismissedNotifs] = useState(new Set());
   const [shiftsExpanded, setShiftsExpanded] = useState(() => location.pathname.startsWith('/admin/shifts'));
   const [liveScans, setLiveScans] = useState([]);
+  const [settingsModalOpen, setSettingsModalOpen] = useState(false);
 
   useEffect(() => {
     if (location.pathname.startsWith('/admin/shifts')) {
@@ -79,6 +84,18 @@ export default function TenantDashboard() {
       localStorage.setItem('theme', 'light');
     }
   }, [isDarkMode]);
+
+  // Sincronizare limbă pe baza țării tenantului dacă utilizatorul nu a ales manual altceva
+  useEffect(() => {
+    if (tenantInfo?.tenant) {
+      const country = (tenantInfo.tenant.country_code || 'RO').toUpperCase();
+      const explicit = localStorage.getItem('app_language_explicit');
+      if (explicit !== 'true') {
+        const defaultLang = country === 'BE' ? 'nl' : 'ro';
+        setLanguage(defaultLang, false);
+      }
+    }
+  }, [tenantInfo, setLanguage]);
 
   useEffect(() => {
     const fetchInfo = async () => {
@@ -186,7 +203,7 @@ export default function TenantDashboard() {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-800/50 flex flex-col items-center justify-center">
         <div className="w-8 h-8 border-4 border-slate-300 dark:border-slate-600 border-t-primary-600 rounded-full animate-spin"></div>
-        <p className="mt-4 text-slate-500 dark:text-slate-400 font-medium">Se încarcă panoul de control...</p>
+        <p className="mt-4 text-slate-500 dark:text-slate-400 font-medium">{t('loadingControlPanel')}</p>
       </div>
     );
   }
@@ -195,13 +212,13 @@ export default function TenantDashboard() {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center p-4">
         <div className="bg-white dark:bg-slate-900 p-8 rounded-lg shadow-xl max-w-md w-full text-center">
-          <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-2">Eroare de acces</h2>
+          <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-2">{t('accessError')}</h2>
           <p className="text-slate-600 dark:text-slate-300 mb-6">{error || 'Nu am putut încărca datele tenantului.'}</p>
           <button 
             onClick={handleLogout}
             className="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold h-11 rounded-full transition-colors"
           >
-            Înapoi la Login
+            {t('backToLogin')}
           </button>
         </div>
       </div>
@@ -300,27 +317,13 @@ export default function TenantDashboard() {
 
               <div className="flex items-center gap-1 shrink-0">
                 <button 
-                  onClick={() => setIsDarkMode(!isDarkMode)}
-                  className="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors focus:outline-none"
-                  title="Comută tema"
-                >
-                  {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
-                </button>
-                <button 
-                  onClick={handleLogout}
-                  className="p-1.5 rounded-full hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors focus:outline-none"
-                  title="Deconectare"
-                >
-                  <LogOut size={18} />
-                </button>
-                <button 
                   onClick={toggleSidebarCollapsed}
-                  className="hidden md:flex p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors focus:outline-none"
+                  className="hidden md:flex p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors focus:outline-none cursor-pointer"
                   title="Micșorează meniul"
                 >
                   <PanelLeftClose size={18} />
                 </button>
-                <button className="md:hidden text-slate-400 hover:text-slate-600 dark:text-slate-300 p-1" onClick={() => setSidebarOpen(false)}>
+                <button className="md:hidden text-slate-400 hover:text-slate-600 dark:text-slate-300 p-1 cursor-pointer" onClick={() => setSidebarOpen(false)}>
                   <X size={20} />
                 </button>
               </div>
@@ -333,7 +336,7 @@ export default function TenantDashboard() {
           <Link 
             to="/admin/dashboard"
             onClick={() => setSidebarOpen(false)}
-            title="Dashboard & Rapoarte"
+            title={t('dashboard')}
             className={`w-full flex items-center ${sidebarCollapsed ? 'md:justify-center md:px-0 gap-3 px-4' : 'gap-3 px-4'} py-3 rounded-full transition-all font-medium text-sm
               ${location.pathname === '/admin/dashboard' ? 'font-bold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/40 hover:text-slate-800 dark:hover:text-white'}`}
             style={getNavStyle(location.pathname === '/admin/dashboard')}
@@ -341,13 +344,13 @@ export default function TenantDashboard() {
             <div className="w-5 h-5 flex items-center justify-center shrink-0">
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
             </div>
-            <span className={`${sidebarCollapsed ? 'md:hidden' : ''} truncate`}>Dashboard & Rapoarte</span>
+            <span className={`${sidebarCollapsed ? 'md:hidden' : ''} truncate`}>{t('dashboard')}</span>
           </Link>
           
           <Link 
             to="/admin/timesheets"
             onClick={() => setSidebarOpen(false)}
-            title="Rapoarte Pontaje"
+            title={t('timesheets')}
             className={`w-full flex items-center ${sidebarCollapsed ? 'md:justify-center md:px-0 gap-3 px-4' : 'gap-3 px-4'} py-3 rounded-full transition-all font-medium text-sm
               ${location.pathname === '/admin/timesheets' ? 'font-bold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/40 hover:text-slate-800 dark:hover:text-white'}`}
             style={getNavStyle(location.pathname === '/admin/timesheets')}
@@ -355,13 +358,13 @@ export default function TenantDashboard() {
             <div className="w-5 h-5 flex items-center justify-center shrink-0">
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
             </div>
-            <span className={`${sidebarCollapsed ? 'md:hidden' : ''} truncate`}>Rapoarte Pontaje</span>
+            <span className={`${sidebarCollapsed ? 'md:hidden' : ''} truncate`}>{t('timesheets')}</span>
           </Link>
           
           <Link 
             to="/admin/employees"
             onClick={() => setSidebarOpen(false)}
-            title="Modul HR (Angajați)"
+            title={t('employees')}
             className={`w-full flex items-center ${sidebarCollapsed ? 'md:justify-center md:px-0 gap-3 px-4' : 'gap-3 px-4'} py-3 rounded-full transition-all font-medium text-sm
               ${location.pathname.startsWith('/admin/employees') ? 'font-bold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/40 hover:text-slate-800 dark:hover:text-white'}`}
             style={getNavStyle(location.pathname.startsWith('/admin/employees'))}
@@ -369,13 +372,13 @@ export default function TenantDashboard() {
             <div className="w-5 h-5 flex items-center justify-center shrink-0">
               <Users size={18} />
             </div>
-            <span className={`${sidebarCollapsed ? 'md:hidden' : ''} truncate`}>Modul HR (Angajați)</span>
+            <span className={`${sidebarCollapsed ? 'md:hidden' : ''} truncate`}>{t('employees')}</span>
           </Link>
 
           <Link 
             to="/admin/locations"
             onClick={() => setSidebarOpen(false)}
-            title="Puncte de Lucru"
+            title={t('locations')}
             className={`w-full flex items-center ${sidebarCollapsed ? 'md:justify-center md:px-0 gap-3 px-4' : 'gap-3 px-4'} py-3 rounded-full transition-all font-medium text-sm
               ${location.pathname === '/admin/locations' ? 'font-bold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/40 hover:text-slate-800 dark:hover:text-white'}`}
             style={getNavStyle(location.pathname === '/admin/locations')}
@@ -383,13 +386,13 @@ export default function TenantDashboard() {
             <div className="w-5 h-5 flex items-center justify-center shrink-0">
               <MapPin size={18} />
             </div>
-            <span className={`${sidebarCollapsed ? 'md:hidden' : ''} truncate`}>Puncte de Lucru</span>
+            <span className={`${sidebarCollapsed ? 'md:hidden' : ''} truncate`}>{t('locations')}</span>
           </Link>
 
           <Link 
             to="/admin/qr"
             onClick={() => setSidebarOpen(false)}
-            title="Kiosk-uri QR"
+            title={t('kiosks')}
             className={`w-full flex items-center ${sidebarCollapsed ? 'md:justify-center md:px-0 gap-3 px-4' : 'gap-3 px-4'} py-3 rounded-full transition-all font-medium text-sm
               ${location.pathname === '/admin/qr' ? 'font-bold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/40 hover:text-slate-800 dark:hover:text-white'}`}
             style={getNavStyle(location.pathname === '/admin/qr')}
@@ -397,14 +400,14 @@ export default function TenantDashboard() {
             <div className="w-5 h-5 flex items-center justify-center shrink-0">
               <QrCode size={18} />
             </div>
-            <span className={`${sidebarCollapsed ? 'md:hidden' : ''} truncate`}>Kiosk-uri QR</span>
+            <span className={`${sidebarCollapsed ? 'md:hidden' : ''} truncate`}>{t('kiosks')}</span>
           </Link>
 
           {tenant.modules?.shifts && (
             <div className="space-y-1">
               <button
                 type="button"
-                title="Planificator Ture"
+                title={t('shifts')}
                 onClick={() => {
                   if (sidebarCollapsed) {
                     navigate('/admin/shifts');
@@ -424,7 +427,7 @@ export default function TenantDashboard() {
                   <div className="w-5 h-5 flex items-center justify-center shrink-0">
                     <CalendarClock size={18} />
                   </div>
-                  <span className={`${sidebarCollapsed ? 'md:hidden' : ''} truncate`}>Planificator Ture</span>
+                  <span className={`${sidebarCollapsed ? 'md:hidden' : ''} truncate`}>{t('shifts')}</span>
                 </div>
                 <ChevronDown 
                   size={16} 
@@ -442,7 +445,7 @@ export default function TenantDashboard() {
                     style={getNavStyle(location.pathname === '/admin/shifts' || location.pathname === '/admin/shifts/planner')}
                   >
                     <CalendarClock size={14} />
-                    <span>Planificator</span>
+                    <span>{t('dailyPlanner')}</span>
                   </Link>
 
                   <Link 
@@ -453,18 +456,7 @@ export default function TenantDashboard() {
                     style={getNavStyle(location.pathname === '/admin/shifts/table')}
                   >
                     <Table size={14} />
-                    <span>Tabel Ture</span>
-                  </Link>
-
-                  <Link 
-                    to="/admin/shifts/calendar"
-                    onClick={() => setSidebarOpen(false)}
-                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-full transition-colors text-xs font-semibold
-                      ${location.pathname === '/admin/shifts/calendar' ? 'font-bold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700/50 hover:text-slate-800 dark:hover:text-white'}`}
-                    style={getNavStyle(location.pathname === '/admin/shifts/calendar')}
-                  >
-                    <CalendarDays size={14} />
-                    <span>Calendar Ture</span>
+                    <span>{t('shiftsTable')}</span>
                   </Link>
                 </div>
               )}
@@ -475,7 +467,7 @@ export default function TenantDashboard() {
             <Link 
               to="/admin/leaves"
               onClick={() => setSidebarOpen(false)}
-              title="Zile Libere (CO/CM)"
+              title={t('leaveRequests')}
               className={`w-full flex items-center ${sidebarCollapsed ? 'md:justify-center md:px-0 gap-3 px-4' : 'gap-3 px-4'} py-3 rounded-full transition-all font-medium text-sm
                 ${location.pathname === '/admin/leaves' ? 'font-bold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/40 hover:text-slate-800 dark:hover:text-white'}`}
               style={getNavStyle(location.pathname === '/admin/leaves')}
@@ -483,7 +475,7 @@ export default function TenantDashboard() {
               <div className="w-5 h-5 flex items-center justify-center shrink-0">
                 <CalendarDays size={18} />
               </div>
-              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} flex-1 text-left truncate`}>Zile Libere (CO/CM)</span>
+              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} flex-1 text-left truncate`}>{t('leaveRequests')}</span>
               <span className={`${sidebarCollapsed ? 'md:hidden' : ''} text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide shrink-0`} style={{ backgroundColor: themeColor }}>PRO</span>
             </Link>
           )}
@@ -492,7 +484,7 @@ export default function TenantDashboard() {
             <Link 
               to="/admin/export"
               onClick={() => setSidebarOpen(false)}
-              title="Export Conta (SAGA)"
+              title={t('sagaExport')}
               className={`w-full flex items-center ${sidebarCollapsed ? 'md:justify-center md:px-0 gap-3 px-4' : 'gap-3 px-4'} py-3 rounded-full transition-all font-medium text-sm
                 ${location.pathname === '/admin/export' ? 'font-bold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/40 hover:text-slate-800 dark:hover:text-white'}`}
               style={getNavStyle(location.pathname === '/admin/export')}
@@ -500,7 +492,7 @@ export default function TenantDashboard() {
               <div className="w-5 h-5 flex items-center justify-center shrink-0">
                 <FileSpreadsheet size={18} />
               </div>
-              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} flex-1 text-left truncate`}>Export Conta (SAGA)</span>
+              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} flex-1 text-left truncate`}>{t('sagaExport')}</span>
               <span className={`${sidebarCollapsed ? 'md:hidden' : ''} text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide shrink-0`} style={{ backgroundColor: themeColor }}>PRO</span>
             </Link>
           )}
@@ -509,7 +501,7 @@ export default function TenantDashboard() {
             <Link 
               to="/admin/geofence"
               onClick={() => setSidebarOpen(false)}
-              title="Hartă Geofence"
+              title={t('geofence')}
               className={`w-full flex items-center ${sidebarCollapsed ? 'md:justify-center md:px-0 gap-3 px-4' : 'gap-3 px-4'} py-3 rounded-full transition-all font-medium text-sm
                 ${location.pathname === '/admin/geofence' ? 'font-bold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/40 hover:text-slate-800 dark:hover:text-white'}`}
               style={getNavStyle(location.pathname === '/admin/geofence')}
@@ -517,7 +509,7 @@ export default function TenantDashboard() {
               <div className="w-5 h-5 flex items-center justify-center shrink-0">
                 <Map size={18} />
               </div>
-              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} flex-1 text-left truncate`}>Hartă Geofence</span>
+              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} flex-1 text-left truncate`}>{t('geofence')}</span>
               <span className={`${sidebarCollapsed ? 'md:hidden' : ''} text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide shrink-0`} style={{ backgroundColor: themeColor }}>PRO</span>
             </Link>
           )}
@@ -526,7 +518,7 @@ export default function TenantDashboard() {
             <Link 
               to="/admin/offline"
               onClick={() => setSidebarOpen(false)}
-              title="Mod Offline"
+              title={t('offlineMode')}
               className={`w-full flex items-center ${sidebarCollapsed ? 'md:justify-center md:px-0 gap-3 px-4' : 'gap-3 px-4'} py-3 rounded-full transition-all font-medium text-sm
                 ${location.pathname === '/admin/offline' ? 'font-bold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/40 hover:text-slate-800 dark:hover:text-white'}`}
               style={getNavStyle(location.pathname === '/admin/offline')}
@@ -534,7 +526,7 @@ export default function TenantDashboard() {
               <div className="w-5 h-5 flex items-center justify-center shrink-0">
                 <Globe size={18} />
               </div>
-              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} flex-1 text-left truncate`}>Mod Offline</span>
+              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} flex-1 text-left truncate`}>{t('offlineMode')}</span>
               <span className={`${sidebarCollapsed ? 'md:hidden' : ''} text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide shrink-0`} style={{ backgroundColor: themeColor }}>PRO</span>
             </Link>
           )}
@@ -543,7 +535,7 @@ export default function TenantDashboard() {
             <Link 
               to="/admin/billing"
               onClick={() => setSidebarOpen(false)}
-              title="Abonament & Facturi"
+              title={t('billing')}
               className={`w-full flex items-center ${sidebarCollapsed ? 'md:justify-center md:px-0 gap-3 px-4' : 'gap-3 px-4'} py-3 rounded-full transition-all font-medium text-sm
                 ${location.pathname === '/admin/billing' ? 'font-bold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/40 hover:text-slate-800 dark:hover:text-white'}`}
               style={getNavStyle(location.pathname === '/admin/billing')}
@@ -551,7 +543,7 @@ export default function TenantDashboard() {
               <div className="w-5 h-5 flex items-center justify-center shrink-0">
                 <CreditCard size={18} />
               </div>
-              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} flex-1 text-left truncate`}>Abonament & Facturi</span>
+              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} flex-1 text-left truncate`}>{t('billing')}</span>
               <span className={`${sidebarCollapsed ? 'md:hidden' : ''} text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide shrink-0`} style={{ backgroundColor: themeColor }}>PRO</span>
             </Link>
           )}
@@ -560,7 +552,7 @@ export default function TenantDashboard() {
             <Link 
               to="/admin/revisal"
               onClick={() => setSidebarOpen(false)}
-              title="Integrare REVISAL"
+              title={t('revisal')}
               className={`w-full flex items-center ${sidebarCollapsed ? 'md:justify-center md:px-0 gap-3 px-4' : 'gap-3 px-4'} py-3 rounded-full transition-all font-medium text-sm
                 ${location.pathname === '/admin/revisal' ? 'font-bold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/40 hover:text-slate-800 dark:hover:text-white'}`}
               style={getNavStyle(location.pathname === '/admin/revisal')}
@@ -568,7 +560,7 @@ export default function TenantDashboard() {
               <div className="w-5 h-5 flex items-center justify-center shrink-0">
                 <BookOpenCheck size={18} />
               </div>
-              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} flex-1 text-left truncate`}>Integrare REVISAL</span>
+              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} flex-1 text-left truncate`}>{t('revisal')}</span>
               <span className={`${sidebarCollapsed ? 'md:hidden' : ''} text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide shrink-0`} style={{ backgroundColor: themeColor }}>PRO</span>
             </Link>
           )}
@@ -577,7 +569,7 @@ export default function TenantDashboard() {
             <Link 
               to="/admin/erp"
               onClick={() => setSidebarOpen(false)}
-              title="Gestiune & ERP"
+              title={t('erp')}
               className={`w-full flex items-center ${sidebarCollapsed ? 'md:justify-center md:px-0 gap-3 px-4' : 'gap-3 px-4'} py-3 rounded-full transition-all font-medium text-sm
                 ${location.pathname === '/admin/erp' ? 'font-bold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/40 hover:text-slate-800 dark:hover:text-white'}`}
               style={getNavStyle(location.pathname === '/admin/erp')}
@@ -585,7 +577,7 @@ export default function TenantDashboard() {
               <div className="w-5 h-5 flex items-center justify-center shrink-0">
                 <Calculator size={18} />
               </div>
-              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} flex-1 text-left truncate`}>Gestiune & ERP</span>
+              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} flex-1 text-left truncate`}>{t('erp')}</span>
               <span className={`${sidebarCollapsed ? 'md:hidden' : ''} text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide shrink-0`} style={{ backgroundColor: themeColor }}>PRO</span>
             </Link>
           )}
@@ -594,7 +586,7 @@ export default function TenantDashboard() {
             <Link 
               to="/admin/face"
               onClick={() => setSidebarOpen(false)}
-              title="Recunoaștere Facială"
+              title={t('faceRecognition')}
               className={`w-full flex items-center ${sidebarCollapsed ? 'md:justify-center md:px-0 gap-3 px-4' : 'gap-3 px-4'} py-3 rounded-full transition-all font-medium text-sm
                 ${location.pathname === '/admin/face' ? 'font-bold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/40 hover:text-slate-800 dark:hover:text-white'}`}
               style={getNavStyle(location.pathname === '/admin/face')}
@@ -602,7 +594,7 @@ export default function TenantDashboard() {
               <div className="w-5 h-5 flex items-center justify-center shrink-0">
                 <ScanFace size={18} />
               </div>
-              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} flex-1 text-left truncate`}>Recunoaștere Facială</span>
+              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} flex-1 text-left truncate`}>{t('faceRecognition')}</span>
               <span className={`${sidebarCollapsed ? 'md:hidden' : ''} text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide shrink-0`} style={{ backgroundColor: themeColor }}>PRO</span>
             </Link>
           )}
@@ -611,7 +603,7 @@ export default function TenantDashboard() {
             <Link 
               to="/admin/whatsapp"
               onClick={() => setSidebarOpen(false)}
-              title="Alerte WhatsApp"
+              title={t('whatsappAlerts')}
               className={`w-full flex items-center ${sidebarCollapsed ? 'md:justify-center md:px-0 gap-3 px-4' : 'gap-3 px-4'} py-3 rounded-full transition-all font-medium text-sm
                 ${location.pathname === '/admin/whatsapp' ? 'font-bold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/40 hover:text-slate-800 dark:hover:text-white'}`}
               style={getNavStyle(location.pathname === '/admin/whatsapp')}
@@ -619,7 +611,7 @@ export default function TenantDashboard() {
               <div className="w-5 h-5 flex items-center justify-center shrink-0">
                 <MessageSquare size={18} />
               </div>
-              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} flex-1 text-left truncate`}>Alerte WhatsApp</span>
+              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} flex-1 text-left truncate`}>{t('whatsappAlerts')}</span>
               <span className={`${sidebarCollapsed ? 'md:hidden' : ''} text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide shrink-0`} style={{ backgroundColor: themeColor }}>PRO</span>
             </Link>
           )}
@@ -628,7 +620,7 @@ export default function TenantDashboard() {
             <Link 
               to="/admin/assets"
               onClick={() => setSidebarOpen(false)}
-              title="Gestiune Echipamente"
+              title={t('assets')}
               className={`w-full flex items-center ${sidebarCollapsed ? 'md:justify-center md:px-0 gap-3 px-4' : 'gap-3 px-4'} py-3 rounded-full transition-all font-medium text-sm
                 ${location.pathname === '/admin/assets' ? 'font-bold shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/40 hover:text-slate-800 dark:hover:text-white'}`}
               style={getNavStyle(location.pathname === '/admin/assets')}
@@ -636,34 +628,32 @@ export default function TenantDashboard() {
               <div className="w-5 h-5 flex items-center justify-center shrink-0">
                 <Wrench size={18} />
               </div>
-              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} flex-1 text-left truncate`}>Gestiune Echipamente</span>
+              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} flex-1 text-left truncate`}>{t('assets')}</span>
               <span className={`${sidebarCollapsed ? 'md:hidden' : ''} text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide shrink-0`} style={{ backgroundColor: themeColor }}>PRO</span>
             </Link>
           )}
+
+          <button 
+            type="button"
+            onClick={() => { setSidebarOpen(false); setSettingsModalOpen(true); }}
+            title={t('companySettings')}
+            className={`w-full flex items-center ${sidebarCollapsed ? 'md:justify-center md:px-0 gap-3 px-4' : 'gap-3 px-4'} py-3 rounded-full transition-all font-medium text-sm text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/40 hover:text-slate-800 dark:hover:text-white cursor-pointer`}
+          >
+            <div className="w-5 h-5 flex items-center justify-center shrink-0">
+              <Settings size={18} />
+            </div>
+            <span className={`${sidebarCollapsed ? 'md:hidden' : ''} flex-1 text-left truncate`}>{t('companySettings')}</span>
+          </button>
         </nav>
 
         {/* Sidebar Footer Toggle Controls */}
         <div className="border-t border-slate-100 dark:border-slate-700/50 hidden md:block">
           {sidebarCollapsed ? (
-            <div className="p-2 flex flex-col items-center gap-1.5">
-              <button 
-                onClick={() => setIsDarkMode(!isDarkMode)}
-                className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors focus:outline-none"
-                title="Comută tema"
-              >
-                {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
-              </button>
-              <button 
-                onClick={handleLogout}
-                className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors focus:outline-none"
-                title="Deconectare"
-              >
-                <LogOut size={18} />
-              </button>
+            <div className="p-2 flex flex-col items-center">
               <button
                 onClick={toggleSidebarCollapsed}
-                className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors focus:outline-none"
-                title="Extinde meniul"
+                className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors focus:outline-none cursor-pointer"
+                title={t('expandMenu')}
               >
                 <PanelLeftOpen size={18} />
               </button>
@@ -673,11 +663,11 @@ export default function TenantDashboard() {
               <button
                 onClick={toggleSidebarCollapsed}
                 className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700/50 hover:text-slate-800 dark:hover:text-white transition-colors"
-                title="Micșorează meniul"
+                title={t('collapseMenu')}
               >
                 <span className="flex items-center gap-2">
                   <PanelLeftClose size={16} />
-                  <span>Restrânge meniul</span>
+                  <span>{t('collapseMenu')}</span>
                 </span>
               </button>
             </div>
@@ -688,28 +678,69 @@ export default function TenantDashboard() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
         
-        {/* Mobile Header */}
-        <header className="h-16 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-4 shrink-0 md:hidden z-10 transition-colors">
+        {/* Desktop Header Bar with Language Selector */}
+        <header className="hidden md:flex h-16 bg-white dark:bg-slate-800 border-b border-slate-200/80 dark:border-slate-700/80 items-center justify-between px-6 shrink-0 z-10 transition-colors">
           <div className="flex items-center gap-3">
-            <button className="p-2 -ml-2 text-slate-500 dark:text-slate-400" onClick={() => setSidebarOpen(true)}>
-              <Menu size={24} />
-            </button>
-            <span className="font-bold text-slate-800 dark:text-white">{tenant.name}</span>
+            <span className="font-bold text-slate-800 dark:text-white text-base tracking-tight">{tenant.name}</span>
           </div>
-          <div className="flex items-center gap-1">
+
+          <div className="flex items-center gap-3">
+            <LanguageToggle countryCode={tenant?.country_code} />
+            <div className="h-4 w-px bg-slate-200 dark:bg-slate-700 mx-1" />
+            <button 
+              onClick={() => setSettingsModalOpen(true)}
+              className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors focus:outline-none"
+              title={t('companySettings')}
+            >
+              <Settings size={18} />
+            </button>
             <button 
               onClick={() => setIsDarkMode(!isDarkMode)}
               className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors focus:outline-none"
-              title="Comută tema"
+              title={t('themeToggle')}
             >
-              {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+              {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
             </button>
             <button 
               onClick={handleLogout}
               className="p-2 rounded-full hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors focus:outline-none"
-              title="Deconectare"
+              title={t('logout')}
             >
-              <LogOut size={20} />
+              <LogOut size={18} />
+            </button>
+          </div>
+        </header>
+
+        {/* Mobile Header */}
+        <header className="h-16 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-4 shrink-0 md:hidden z-10 transition-colors">
+          <div className="flex items-center gap-2">
+            <button className="p-2 -ml-2 text-slate-500 dark:text-slate-400" onClick={() => setSidebarOpen(true)}>
+              <Menu size={24} />
+            </button>
+            <span className="font-bold text-slate-800 dark:text-white truncate max-w-[120px]">{tenant.name}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <LanguageToggle countryCode={tenant?.country_code} variant="compact" />
+            <button 
+              onClick={() => setSettingsModalOpen(true)}
+              className="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors focus:outline-none"
+              title={t('companySettings')}
+            >
+              <Settings size={18} />
+            </button>
+            <button 
+              onClick={() => setIsDarkMode(!isDarkMode)}
+              className="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors focus:outline-none"
+              title={t('themeToggle')}
+            >
+              {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
+            <button 
+              onClick={handleLogout}
+              className="p-1.5 rounded-full hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors focus:outline-none"
+              title={t('logout')}
+            >
+              <LogOut size={18} />
             </button>
           </div>
         </header>
@@ -736,13 +767,13 @@ export default function TenantDashboard() {
                     to="/admin/employees"
                     className={`pb-3 px-2 font-bold text-sm border-b-2 transition-colors ${location.pathname === '/admin/employees' ? 'text-slate-800 dark:text-white border-slate-800 dark:border-white' : 'text-slate-500 dark:text-slate-400 border-transparent hover:text-slate-700 dark:text-slate-300'}`}
                   >
-                    Angajați
+                    {t('employeesTab')}
                   </Link>
                   <Link 
                     to="/admin/employees/roles"
                     className={`pb-3 px-2 font-bold text-sm border-b-2 transition-colors ${location.pathname === '/admin/employees/roles' ? 'text-slate-800 dark:text-white border-slate-800 dark:border-white' : 'text-slate-500 dark:text-slate-400 border-transparent hover:text-slate-700 dark:text-slate-300'}`}
                   >
-                    Roluri (Funcții)
+                    {t('rolesTab')}
                   </Link>
                 </div>
                 <EmployeesList tenant={tenant} themeColor={themeColor} />
@@ -756,13 +787,13 @@ export default function TenantDashboard() {
                     to="/admin/employees"
                     className={`pb-3 px-2 font-bold text-sm border-b-2 transition-colors ${location.pathname === '/admin/employees' ? 'text-slate-800 dark:text-white border-slate-800 dark:border-white' : 'text-slate-500 dark:text-slate-400 border-transparent hover:text-slate-700 dark:text-slate-300'}`}
                   >
-                    Angajați
+                    {t('employeesTab')}
                   </Link>
                   <Link 
                     to="/admin/employees/roles"
                     className={`pb-3 px-2 font-bold text-sm border-b-2 transition-colors ${location.pathname === '/admin/employees/roles' ? 'text-slate-800 dark:text-white border-slate-800 dark:border-white' : 'text-slate-500 dark:text-slate-400 border-transparent hover:text-slate-700 dark:text-slate-300'}`}
                   >
-                    Roluri (Funcții)
+                    {t('rolesTab')}
                   </Link>
                 </div>
                 <RolesList tenant={tenant} themeColor={themeColor} />
@@ -904,29 +935,30 @@ export default function TenantDashboard() {
           const isEntry = scan.type === 'IN' || scan.type === 'LOGIN';
           const isExit = scan.type === 'OUT' || scan.type === 'LOGOUT';
           
-          let actionLabel = 'Pontaj Înregistrat';
+          let actionLabel = t('scanRecorded');
           let actionColor = 'text-slate-600 dark:text-slate-300';
           let badgeBg = 'bg-slate-600';
           if (scan.type === 'IN') {
-            actionLabel = 'Pontaj: INTRARE';
+            actionLabel = t('clockInRecorded');
             actionColor = 'text-emerald-600 dark:text-emerald-400';
             badgeBg = 'bg-emerald-500';
           } else if (scan.type === 'OUT') {
-            actionLabel = 'Pontaj: IEȘIRE';
+            actionLabel = t('clockOutRecorded');
             actionColor = 'text-amber-600 dark:text-amber-400';
             badgeBg = 'bg-amber-500';
           } else if (scan.type === 'LOGIN') {
-            actionLabel = 'Autentificat în aplicație';
+            actionLabel = t('userLoggedInApp');
             actionColor = 'text-blue-600 dark:text-blue-400';
             badgeBg = 'bg-blue-500';
           } else if (scan.type === 'LOGOUT') {
-            actionLabel = 'Deconectat din aplicație';
+            actionLabel = t('userLoggedOutApp');
             actionColor = 'text-slate-500 dark:text-slate-400';
             badgeBg = 'bg-slate-500';
           }
 
           const avatarSrc = getAvatarUrl(emp.avatar_path, emp.first_name, emp.last_name);
-          const timeStr = new Date(scan.timestamp || Date.now()).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+          const locale = language === 'nl' ? 'nl-BE' : language === 'fr' ? 'fr-BE' : language === 'en' ? 'en-US' : 'ro-RO';
+          const timeStr = new Date(scan.timestamp || Date.now()).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
           return (
             <div 
@@ -966,7 +998,7 @@ export default function TenantDashboard() {
                   <button 
                     onClick={() => setLiveScans(prev => prev.filter(s => s.id !== scan.id))} 
                     className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 -mr-1 transition-colors"
-                    title="Închide"
+                    title={t('close')}
                   >
                     <X size={15} />
                   </button>
@@ -974,7 +1006,7 @@ export default function TenantDashboard() {
 
                 <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                   <Briefcase size={12} className="shrink-0 text-slate-400" />
-                  <span className="truncate font-medium">{emp.job_title || 'Angajat'}</span>
+                  <span className="truncate font-medium">{emp.job_title || t('noRole')}</span>
                 </div>
 
                 <div className="flex items-center justify-between text-[11px] mt-1 pt-1 border-t border-slate-100 dark:border-slate-800/80">
@@ -1002,25 +1034,34 @@ export default function TenantDashboard() {
             <div className="flex-1 min-w-0">
               <div className="flex justify-between items-start gap-2">
                 <h4 className="font-bold text-slate-800 dark:text-white text-sm">
-                  {notif.leave_type === 'SHIFT_CHANGE' ? 'Cerere schimbare tură' : 'Cerere concediu/învoire'}
+                  {notif.leave_type === 'SHIFT_CHANGE' ? t('shiftChangeRequest') : t('leaveRequestNotif')}
                 </h4>
                 <button onClick={() => dismissNotif(notif.id)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
                   <X size={14} />
                 </button>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">
-                <span className="font-bold">{notif.first_name} {notif.last_name}</span>: {notif.reason || 'Fără motiv specificat'}
+                <span className="font-bold">{notif.first_name} {notif.last_name}</span>: {notif.reason || t('noReasonSpecified')}
               </p>
               <button 
                 onClick={() => { dismissNotif(notif.id); navigate('/admin/leaves'); }}
                 className="mt-3 text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 px-3 py-1.5 rounded-lg w-full transition-colors"
               >
-                Vezi cererea
+                {t('viewRequest')}
               </button>
             </div>
           </div>
         ))}
       </div>
+
+      <TenantSettingsModal
+        isOpen={settingsModalOpen}
+        onClose={() => setSettingsModalOpen(false)}
+        tenant={tenant}
+        onUpdateTenant={(updated) => {
+          setTenantInfo(prev => ({ ...prev, ...updated }));
+        }}
+      />
 
     </div>
   );

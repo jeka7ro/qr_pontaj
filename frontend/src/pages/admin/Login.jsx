@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { KeyRound, Mail, Eye, EyeOff, Loader2, CheckCircle2, AlertCircle, X, Send, Clock, ShieldCheck, Lock } from 'lucide-react';
 import { updatePageFavicon } from '../../utils/favicon';
+import LanguageToggle from '../../components/LanguageToggle';
 
 // Helper pentru extragerea tenantului fixat din URL (query param ?tenant=... sau subdomeniu hostname)
 const getUrlTenant = () => {
@@ -44,6 +45,7 @@ export default function AdminLogin() {
 
   // Tenant dynamic branding state
   const [tenantBranding, setTenantBranding] = useState(null);
+  const [logoError, setLogoError] = useState(false);
   const [isFetchingBranding, setIsFetchingBranding] = useState(false);
   const lastFetchedEmailRef = useRef('');
 
@@ -68,6 +70,7 @@ export default function AdminLogin() {
         const data = await res.json();
         if (data && data.found) {
           setTenantBranding(data);
+          setLogoError(false);
           if (data.favicon_url || data.logo_url) {
             updatePageFavicon(data.favicon_url || data.logo_url, `${data.name || 'Panou'} - Autentificare`);
           } else if (data.name) {
@@ -234,9 +237,8 @@ export default function AdminLogin() {
     }
   };
 
-  // Tematica Restaurant (cu imagine de fundal și atmosferă dark) este STRICT pentru Unda!
-  // Pentru Roll Master și oricare alt tenant fără imagine de restaurant, este FALSE garantat!
-  const isRestaurantTheme = tenantBranding?.subdomain === 'unda' && !!tenantBranding?.portal_bg_image_url;
+  // Fundal personalizat activ pentru orice tenant configurat cu portal_bg_image_url
+  const isRestaurantTheme = !!tenantBranding?.portal_bg_image_url;
   const brandColor = tenantBranding?.theme_color || '#2563eb';
   const isDarkBrand = brandColor === '#000000' || brandColor === '#111827' || brandColor === '#0f172a';
 
@@ -247,8 +249,12 @@ export default function AdminLogin() {
       }`}
       style={!isRestaurantTheme && tenantBranding?.portal_bg_color ? { backgroundColor: tenantBranding.portal_bg_color } : {}}
     >
-      
-      {/* 1. Fundal Restaurant STRICT și EXCLUSIV pentru tenantul Unda */}
+      {/* Selector Limbă în colțul din dreapta-sus */}
+      <div className="absolute top-4 right-4 z-20">
+        <LanguageToggle countryCode={tenantBranding?.country_code || 'RO'} />
+      </div>
+
+      {/* 1. Fundal Personalizat pentru companie */}
       {isRestaurantTheme && (
         <div 
           className="fixed inset-0 bg-cover bg-center transition-all duration-1000 ease-out -z-10 scale-105 transform"
@@ -260,22 +266,24 @@ export default function AdminLogin() {
 
       {/* 2. Header & Logo Branding */}
       <div className="sm:mx-auto sm:w-full sm:max-w-md z-10 text-center mb-6 animate-in fade-in slide-in-from-top-4 duration-300">
-        {tenantBranding?.logo_url ? (
+        {tenantBranding?.logo_url && !logoError ? (
           <div className="flex flex-col items-center">
             {isRestaurantTheme ? (
-              <div className="inline-flex items-center justify-center p-3.5 rounded-3xl bg-black/40 backdrop-blur-xl border border-white/15 shadow-2xl mb-4 transition-all hover:scale-105">
+              <div className="inline-flex items-center justify-center p-3 rounded-3xl bg-black/40 backdrop-blur-xl border border-white/15 shadow-2xl mb-4 transition-all hover:scale-105">
                 <img 
                   src={tenantBranding.logo_url} 
                   alt={tenantBranding.name || 'Logo'} 
-                  className="h-14 max-w-[220px] object-contain drop-shadow-md"
+                  className="h-16 max-w-[220px] object-contain drop-shadow-md"
+                  onError={() => setLogoError(true)}
                 />
               </div>
             ) : (
-              <div className="h-16 flex items-center justify-center mb-3">
+              <div className="inline-flex items-center justify-center p-3 bg-white dark:bg-slate-800 rounded-3xl shadow-md shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-700/80 mb-3.5 transition-transform hover:scale-105">
                 <img 
                   src={tenantBranding.logo_url} 
                   alt={tenantBranding.name || 'Logo'} 
-                  className="max-h-12 max-w-[220px] object-contain"
+                  className="h-20 max-w-[200px] object-contain"
+                  onError={() => setLogoError(true)}
                 />
               </div>
             )}

@@ -1,8 +1,13 @@
 import React from 'react';
 import { AlertTriangle, X } from 'lucide-react';
+import { useTranslation } from '../utils/i18n.jsx';
 
-export default function ConfirmModal({ isOpen, onClose, onConfirm, title, message, confirmText = 'Confirmă', cancelText = 'Anulează', isDanger = true }) {
+export default function ConfirmModal({ isOpen, onClose, onConfirm, title, message, confirmText, cancelText, isDanger = true }) {
+  const { t } = useTranslation();
   if (!isOpen) return null;
+
+  const resolvedConfirm = confirmText || t('confirm');
+  const resolvedCancel = cancelText || t('cancel');
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
@@ -25,13 +30,13 @@ export default function ConfirmModal({ isOpen, onClose, onConfirm, title, messag
               onClick={onClose}
               className="flex-1 px-5 h-10 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-sm font-bold transition-colors"
             >
-              {cancelText}
+              {resolvedCancel}
             </button>
             <button
               onClick={() => { onConfirm(); onClose(); }}
               className={`flex-1 px-5 h-10 rounded-full text-white text-sm font-bold shadow-sm transition-all ${isDanger ? 'bg-red-600 hover:bg-red-700' : 'bg-primary-600 hover:bg-primary-700'}`}
             >
-              {confirmText}
+              {resolvedConfirm}
             </button>
           </div>
         </div>

@@ -73,6 +73,58 @@ router.get('/stream/:kioskId', (req, res) => {
   });
 });
 
+// Helper pentru jurnalizarea tuturor încercărilor de scanare și pontaj (separate pe tenanți)
+async function logScanEvent({
+  tenant_id,
+  tenant_name,
+  kiosk_id,
+  location_id,
+  location_name,
+  employee_id,
+  employee_code,
+  employee_name,
+  action_type,
+  status,
+  failure_reason,
+  req,
+  metadata
+}) {
+  try {
+    const ip_address = req?.headers['x-forwarded-for'] || req?.socket?.remoteAddress || null;
+    const user_agent = req?.headers['user-agent'] || null;
+
+    let resolvedTenantName = tenant_name;
+    if (!resolvedTenantName && tenant_id) {
+      const tRes = await pool.query('SELECT name FROM qrp_tenants WHERE id = $1', [tenant_id]);
+      resolvedTenantName = tRes.rows[0]?.name || null;
+    }
+
+    await pool.query(
+      `INSERT INTO qrp_scan_logs 
+        (tenant_id, tenant_name, kiosk_id, location_id, location_name, employee_id, employee_code, employee_name, action_type, status, failure_reason, ip_address, user_agent, metadata)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
+      [
+        tenant_id || null,
+        resolvedTenantName,
+        kiosk_id || null,
+        location_id || null,
+        location_name || null,
+        employee_id || null,
+        employee_code || null,
+        employee_name || null,
+        action_type || null,
+        status,
+        failure_reason || null,
+        ip_address,
+        user_agent,
+        metadata ? JSON.stringify(metadata) : null
+      ]
+    );
+  } catch (err) {
+    console.error('Eroare logScanEvent:', err.message);
+  }
+}
+
 // Verificare status (Intrat/Ieșit) inainte de a ponta
 router.post('/status', async (req, res) => {
   const { employee_code, pin_code, tenant_id, kiosk_id } = req.body;
@@ -83,12 +135,32 @@ router.post('/status', async (req, res) => {
     );
 
     if (empResult.rows.length === 0) {
+      await logScanEvent({
+        tenant_id,
+        kiosk_id,
+        employee_code,
+        action_type: 'STATUS_CHECK',
+        status: 'FAILED',
+        failure_reason: 'Cod angajat sau PIN incorect la verificare status',
+        req
+      });
       return res.status(404).json({ error: 'Cod angajat sau PIN incorect.' });
     }
 
     const employee = empResult.rows[0];
 
     if (employee.is_archived) {
+      await logScanEvent({
+        tenant_id,
+        kiosk_id,
+        employee_id: employee.id,
+        employee_code,
+        employee_name: `${employee.first_name} ${employee.last_name}`,
+        action_type: 'STATUS_CHECK',
+        status: 'REJECTED',
+        failure_reason: 'Contul acestui angajat a fost arhivat',
+        req
+      });
       return res.status(403).json({ error: 'Contul acestui angajat a fost arhivat și nu poate efectua pontajul.' });
     }
     const lastEntryRes = await pool.query(
@@ -124,6 +196,13 @@ router.post('/status', async (req, res) => {
       }
     }
 
+    // Obține setările tenant-ului (țară și pauze)
+    const tenantRes = await pool.query(
+      `SELECT country_code, allow_breaks FROM qrp_tenants WHERE id = $1`,
+      [tenant_id]
+    );
+    const allowBreaks = tenantRes.rows[0]?.allow_breaks || tenantRes.rows[0]?.country_code === 'BE';
+
     res.json({ 
       employee: {
         first_name: employee.first_name,
@@ -132,7 +211,9 @@ router.post('/status', async (req, res) => {
       },
       lastAction,
       showPhoto,
-      location_name
+      location_name,
+      allowBreaks: !!allowBreaks,
+      country_code: tenantRes.rows[0]?.country_code || 'RO'
     });
   } catch (error) {
     console.error('Error checking status:', error);
@@ -142,7 +223,25 @@ router.post('/status', async (req, res) => {
 
 // Inregistrare pontaj
 router.post('/', async (req, res) => {
-  const { employee_code, pin_code, tenant_id, kiosk_id, type } = req.body;
+  const { employee_code, pin_code, tenant_id, kiosk_id, type, ts } = req.body;
+
+  // Validare expirare cod QR dacă a fost trimis timestamp-ul (tolerant la decalaje de ceas ale tabletelor până la 15 minute)
+  if (ts) {
+    const nowSec = Math.floor(Date.now() / 1000);
+    const parsedTs = parseInt(ts, 10);
+    if (!isNaN(parsedTs) && (nowSec - parsedTs > 900 || parsedTs - nowSec > 300)) {
+      await logScanEvent({
+        tenant_id,
+        kiosk_id,
+        employee_code,
+        action_type: type,
+        status: 'REJECTED',
+        failure_reason: 'Cod QR expirat (decalaj timestamp tabletă/telefon)',
+        req
+      });
+      return res.status(400).json({ error: 'Codul QR a expirat. Te rugăm să scanezi din nou noul cod afișat pe ecran.' });
+    }
+  }
 
   try {
     // 1. Gaseste angajatul
@@ -152,12 +251,32 @@ router.post('/', async (req, res) => {
     );
 
     if (empResult.rows.length === 0) {
+      await logScanEvent({
+        tenant_id,
+        kiosk_id,
+        employee_code,
+        action_type: type,
+        status: 'FAILED',
+        failure_reason: 'Cod angajat sau PIN incorect la pontaj',
+        req
+      });
       return res.status(404).json({ error: 'Cod angajat sau PIN incorect.' });
     }
 
     const employee = empResult.rows[0];
 
     if (employee.is_archived) {
+      await logScanEvent({
+        tenant_id,
+        kiosk_id,
+        employee_id: employee.id,
+        employee_code,
+        employee_name: `${employee.first_name} ${employee.last_name}`,
+        action_type: type,
+        status: 'REJECTED',
+        failure_reason: 'Contul acestui angajat a fost arhivat',
+        req
+      });
       return res.status(403).json({ error: 'Contul acestui angajat a fost arhivat și nu poate efectua pontajul.' });
     }
 
@@ -182,18 +301,85 @@ router.post('/', async (req, res) => {
       const lastTime = new Date(lastEntryRes.rows[0].created_at);
       const secondsSince = (Date.now() - lastTime.getTime()) / 1000;
       
-      // Cooldown 60 secunde
-      if (secondsSince < 60) {
-        return res.status(400).json({ error: `Ai scanat prea repede. Așteaptă ${Math.ceil(60 - secondsSince)} secunde.` });
+      // Cooldown 60 secunde (redus la 15 secunde pentru pauze rapide)
+      const minCooldown = (type === 'BREAK_START' || type === 'BREAK_END') ? 15 : 60;
+      if (secondsSince < minCooldown) {
+        const errMsg = `Ai scanat prea repede. Așteaptă ${Math.ceil(minCooldown - secondsSince)} secunde.`;
+        await logScanEvent({
+          tenant_id,
+          kiosk_id,
+          employee_id: employee.id,
+          employee_code,
+          employee_name: `${employee.first_name} ${employee.last_name}`,
+          action_type: type,
+          status: 'REJECTED',
+          failure_reason: errMsg,
+          req
+        });
+        return res.status(400).json({ error: errMsg });
       }
       
       const isStaleIn = lastAction === 'IN' && (secondsSince > 14 * 3600);
 
       if (type === 'IN' && lastAction === 'IN' && !isStaleIn) {
-        return res.status(400).json({ error: 'Sunteți deja pontat la intrare!' });
+        const errMsg = 'Sunteți deja pontat la intrare!';
+        await logScanEvent({
+          tenant_id,
+          kiosk_id,
+          employee_id: employee.id,
+          employee_code,
+          employee_name: `${employee.first_name} ${employee.last_name}`,
+          action_type: type,
+          status: 'REJECTED',
+          failure_reason: errMsg,
+          req
+        });
+        return res.status(400).json({ error: errMsg });
       }
       if (type === 'OUT' && lastAction === 'OUT') {
-        return res.status(400).json({ error: 'Sunteți deja pontat la ieșire!' });
+        const errMsg = 'Sunteți deja pontat la ieșire!';
+        await logScanEvent({
+          tenant_id,
+          kiosk_id,
+          employee_id: employee.id,
+          employee_code,
+          employee_name: `${employee.first_name} ${employee.last_name}`,
+          action_type: type,
+          status: 'REJECTED',
+          failure_reason: errMsg,
+          req
+        });
+        return res.status(400).json({ error: errMsg });
+      }
+      if (type === 'BREAK_START' && lastAction !== 'IN' && lastAction !== 'BREAK_END') {
+        const errMsg = 'Nu puteți intra în pauză dacă nu sunteți pontat la intrare!';
+        await logScanEvent({
+          tenant_id,
+          kiosk_id,
+          employee_id: employee.id,
+          employee_code,
+          employee_name: `${employee.first_name} ${employee.last_name}`,
+          action_type: type,
+          status: 'REJECTED',
+          failure_reason: errMsg,
+          req
+        });
+        return res.status(400).json({ error: errMsg });
+      }
+      if (type === 'BREAK_END' && lastAction !== 'BREAK_START') {
+        const errMsg = 'Nu sunteți în pauză pentru a putea relua lucrul!';
+        await logScanEvent({
+          tenant_id,
+          kiosk_id,
+          employee_id: employee.id,
+          employee_code,
+          employee_name: `${employee.first_name} ${employee.last_name}`,
+          action_type: type,
+          status: 'REJECTED',
+          failure_reason: errMsg,
+          req
+        });
+        return res.status(400).json({ error: errMsg });
       }
     }
 
@@ -217,7 +403,19 @@ router.post('/', async (req, res) => {
     }
 
     if (!location_id) {
-      return res.status(400).json({ error: 'Acest Kiosk nu este alocat niciunui Punct de Lucru valid.' });
+      const errMsg = 'Acest Kiosk nu este alocat niciunui Punct de Lucru valid.';
+      await logScanEvent({
+        tenant_id,
+        kiosk_id,
+        employee_id: employee.id,
+        employee_code,
+        employee_name: `${employee.first_name} ${employee.last_name}`,
+        action_type: type,
+        status: 'REJECTED',
+        failure_reason: errMsg,
+        req
+      });
+      return res.status(400).json({ error: errMsg });
     }
 
     // 3. Inserare timesheet cu location_id (site_id in db)
@@ -318,6 +516,20 @@ router.post('/', async (req, res) => {
         } catch(e) {}
       });
     }
+
+    // Logheaza scanarea reusita in jurnalul complet
+    await logScanEvent({
+      tenant_id,
+      kiosk_id,
+      location_id,
+      location_name,
+      employee_id: employee.id,
+      employee_code,
+      employee_name: `${employee.first_name} ${employee.last_name}`,
+      action_type: type,
+      status: 'SUCCESS',
+      req
+    });
 
     res.status(201).json({
       success: true,

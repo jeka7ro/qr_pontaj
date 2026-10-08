@@ -6,6 +6,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { extractTextFromImageOrPdf, cropFaceFromIdCard } from '../lib/pdfOcr';
 import { parseIdCardText, getBirthDateFromCnp } from '../lib/idParser';
 import ConfirmModal from './ConfirmModal';
+import UpgradeSubscriptionModal from './UpgradeSubscriptionModal';
 
 const EXPORT_COLUMNS = [
   { id: 'full_name', label: 'Nume și Prenume' },
@@ -39,6 +40,28 @@ export default function EmployeesList({ tenant, themeColor }) {
   const [activeCount, setActiveCount] = useState(0);
   const [archivedCount, setArchivedCount] = useState(0);
   const [employeeToRestore, setEmployeeToRestore] = useState(null);
+
+  // Stripe Upgrade & Seats Limit
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [currentTenantSeats, setCurrentTenantSeats] = useState(tenant?.subscription_seats || 0);
+  const [limitReached, setLimitReached] = useState(false);
+
+  useEffect(() => {
+    if (tenant?.subscription_seats !== undefined) {
+      setCurrentTenantSeats(tenant.subscription_seats);
+    }
+  }, [tenant?.subscription_seats]);
+
+  const handleAddEmployeeClick = () => {
+    if (currentTenantSeats > 0 && activeCount >= currentTenantSeats) {
+      setShowUpgradeModal(true);
+      return;
+    }
+    setShowAddModal(true);
+    setSaveError(null);
+    setOcrError(null);
+    setLimitReached(false);
+  };
 
   // Form state
   const [activeTab, setActiveTab] = useState('identificare'); // identificare, contract, evaluare
@@ -398,6 +421,9 @@ export default function EmployeesList({ tenant, themeColor }) {
       } else {
         const error = await res.json();
         setSaveError(error.error || 'Eroare la salvare. Verificați datele.');
+        if (error.code === 'SUBSCRIPTION_LIMIT_REACHED') {
+          setLimitReached(true);
+        }
       }
     } catch (err) {
       console.error(err);
@@ -608,7 +634,7 @@ export default function EmployeesList({ tenant, themeColor }) {
               <Download size={17} /> Exportă Date
             </button>
             <button 
-              onClick={() => { setShowAddModal(true); setSaveError(null); setOcrError(null); }}
+              onClick={handleAddEmployeeClick}
               className="px-4 py-2.5 text-sm rounded-full text-white font-bold shadow-sm transition-all flex items-center gap-2 shrink-0 cursor-pointer"
               style={{ backgroundColor: themeColor }}
             >
@@ -644,7 +670,7 @@ export default function EmployeesList({ tenant, themeColor }) {
               <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
                 employeeFilter === 'active' ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
               }`}>
-                {activeCount}
+                {activeCount} {currentTenantSeats > 0 ? `/ ${currentTenantSeats}` : ''}
               </span>
             </button>
 
@@ -843,7 +869,7 @@ export default function EmployeesList({ tenant, themeColor }) {
                       </div>
                       <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2">Nu s-au găsit înregistrări.</h3>
                       {!search && (
-                        <button onClick={() => { setShowAddModal(true); setSaveError(null); setOcrError(null); }} className="text-sm font-bold text-primary-600 dark:text-primary-400 hover:underline">
+                        <button onClick={handleAddEmployeeClick} className="text-sm font-bold text-primary-600 dark:text-primary-400 hover:underline">
                           Adaugă primul angajat
                         </button>
                       )}
@@ -1312,6 +1338,15 @@ export default function EmployeesList({ tenant, themeColor }) {
                     </div>
                     <div className="ml-3">
                       <p className="text-sm text-red-700 font-bold">{saveError}</p>
+                      {limitReached && (
+                        <button
+                          type="button"
+                          onClick={() => setShowUpgradeModal(true)}
+                          className="mt-2 px-3 py-1.5 rounded-full bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold transition-all shadow-xs cursor-pointer inline-flex items-center gap-1.5"
+                        >
+                          <Plus size={14} /> Mărește Locurile Abonamentului (Prorata)
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1763,6 +1798,22 @@ export default function EmployeesList({ tenant, themeColor }) {
           </div>
         </div>
       )}
+
+      {/* Modal Marire Locuri Prorata Stripe */}
+      <UpgradeSubscriptionModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        tenant={tenant}
+        currentSeats={currentTenantSeats || 10}
+        activeEmployees={activeCount}
+        onSuccess={(newSeats) => {
+          setCurrentTenantSeats(newSeats);
+          setShowUpgradeModal(false);
+          setShowAddModal(true);
+          setSaveError(null);
+          setLimitReached(false);
+        }}
+      />
     </div>
   );
 }

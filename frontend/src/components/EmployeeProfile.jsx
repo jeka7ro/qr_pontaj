@@ -4,8 +4,10 @@ import { QRCodeSVG } from 'qrcode.react';
 import { ArrowLeft, User, MapPin, Briefcase, Calendar, Clock, Banknote, Shield, History, Activity, Image as ImageIcon, Camera, FileText, Upload, Trash2, Download, Loader2, X, ArrowRight, Eye, CalendarDays, Hourglass, Printer, Copy, Check, Maximize2 } from 'lucide-react';
 import TimesheetReport from './TimesheetReport';
 import ConfirmModal from './ConfirmModal';
+import { useTranslation } from '../utils/i18n';
 
 const EmployeeProfile = ({ tenant, themeColor, employeeId, onClose }) => {
+  const { t, language } = useTranslation();
   const location = useLocation();
   const initialTab = new URLSearchParams(location.search).get('tab') || 'details';
   const { id: paramId } = useParams();
@@ -202,16 +204,16 @@ const EmployeeProfile = ({ tenant, themeColor, employeeId, onClose }) => {
       const resData = await res.json().catch(() => ({}));
 
       if (res.ok) {
-        setNotification({ type: 'success', text: 'Notele au fost salvate cu succes!' });
+        setNotification({ type: 'success', text: t('gradesSavedSuccess') || 'Notele au fost salvate cu succes!' });
         setTimeout(() => setNotification(null), 5000);
         fetchEmployeeData();
       } else {
-        setNotification({ type: 'error', text: `Eroare server: ${resData.error || res.statusText}` });
+        setNotification({ type: 'error', text: `${t('genericError') || 'Eroare'}: ${resData.error || res.statusText}` });
         setTimeout(() => setNotification(null), 8000);
       }
     } catch (err) {
       console.error(err);
-      setNotification({ type: 'error', text: 'Eroare conexiune: ' + err.message });
+      setNotification({ type: 'error', text: `${t('genericError') || 'Eroare'}: ` + err.message });
       setTimeout(() => setNotification(null), 8000);
     } finally {
       setSavingEval(false);
@@ -239,7 +241,7 @@ const EmployeeProfile = ({ tenant, themeColor, employeeId, onClose }) => {
   }
 
   if (!employee) {
-    return <div className="p-8 text-center text-slate-500 dark:text-slate-400 font-medium">Angajatul nu a fost găsit.</div>;
+    return <div className="p-8 text-center text-slate-500 dark:text-slate-400 font-medium">{t('employeeNotFound')}</div>;
   }
 
   const avatarSrc = employee.avatar_path ? ( employee.avatar_path?.startsWith('http') ? employee.avatar_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${employee.avatar_path}` ) : null;
@@ -261,20 +263,20 @@ const EmployeeProfile = ({ tenant, themeColor, employeeId, onClose }) => {
               }
             }}
             className="p-2 rounded-full bg-white border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 transition-colors cursor-pointer"
-            title={onClose ? "Închide profilul" : "Înapoi"}
+            title={onClose ? t('closeProfile') : (t('back') || 'Înapoi')}
           >
             {onClose ? <X size={20} /> : <ArrowLeft size={20} />}
           </button>
           <div>
             <h1 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight flex items-center gap-2 flex-wrap">
-              Profil Angajat
+              {t('profileTitle')}
               {employee && (
                 <span className="text-lg font-bold text-slate-500 dark:text-slate-400">
                   — {employee.first_name} {employee.last_name}
                 </span>
               )}
             </h1>
-            <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Dosar digital și istoric contract</p>
+            <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">{t('digitalFileAndHistory')}</p>
           </div>
         </div>
 
@@ -287,12 +289,12 @@ const EmployeeProfile = ({ tenant, themeColor, employeeId, onClose }) => {
               className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors shadow-2xs"
             >
               <Maximize2 size={13} />
-              <span>Deschide complet</span>
+              <span>{t('openFull')}</span>
             </Link>
             <button
               onClick={onClose}
               className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
-              title="Închide fereastra"
+              title={t('closeWindow')}
             >
               <X size={18} />
             </button>
@@ -312,31 +314,31 @@ const EmployeeProfile = ({ tenant, themeColor, employeeId, onClose }) => {
           onClick={() => setActiveTab('details')}
           className={`shrink-0 pb-3 sm:pb-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'details' ? 'border-primary-600 text-primary-600' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300'}`}
         >
-          Detalii Angajat
+          {t('employeeDetails')}
         </button>
         <button 
           onClick={() => setActiveTab('history')}
           className={`shrink-0 pb-3 sm:pb-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'history' ? 'border-primary-600 text-primary-600' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300'}`}
         >
-          Istoric Angajat
+          {t('employeeHistory')}
         </button>
         <button 
           onClick={() => setActiveTab('timesheets')}
           className={`shrink-0 pb-3 sm:pb-4 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'timesheets' ? 'border-primary-600 text-primary-600' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300'}`}
         >
-          <CalendarDays size={16} /> Istoric Pontaj
+          <CalendarDays size={16} /> {t('timesheetsHistory')}
         </button>
         <button 
           onClick={() => setActiveTab('evaluation')}
           className={`shrink-0 pb-3 sm:pb-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'evaluation' ? 'border-primary-600 text-primary-600' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300'}`}
         >
-          Evaluare Performanță
+          {t('performanceEvaluation')}
         </button>
         <button 
           onClick={() => setActiveTab('documents')}
           className={`shrink-0 pb-3 sm:pb-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'documents' ? 'border-primary-600 text-primary-600' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300'}`}
         >
-          Dosar Documente
+          {t('documentsFolder')}
           <span className="ml-2 px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10px]">{documents.length}</span>
         </button>
       </div>
@@ -383,11 +385,11 @@ const EmployeeProfile = ({ tenant, themeColor, employeeId, onClose }) => {
               <h2 className="text-xl font-bold text-slate-800 dark:text-white">{employee.first_name} {employee.last_name}</h2>
               <div className="flex flex-wrap items-center justify-center gap-2 mt-2">
                 <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-primary-50 dark:bg-primary-950/40 text-primary-600 dark:text-primary-400">
-                  <Briefcase size={12} className="mr-1.5" /> {employee.job_title || 'Fără funcție'}
+                  <Briefcase size={12} className="mr-1.5" /> {employee.job_title || t('noRoleAssigned')}
                 </span>
                 {employee.birth_date && calculateAge(employee.birth_date) !== null && (
                   <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                    <Hourglass size={12} className="mr-1.5 text-slate-400" /> {calculateAge(employee.birth_date)} ani
+                    <Hourglass size={12} className="mr-1.5 text-slate-400" /> {calculateAge(employee.birth_date)} {t('yearsOld')}
                   </span>
                 )}
               </div>
@@ -395,7 +397,7 @@ const EmployeeProfile = ({ tenant, themeColor, employeeId, onClose }) => {
                 type="button"
                 onClick={() => setShowQrModal(true)}
                 className="mt-4 bg-white dark:bg-slate-800 p-2.5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 hover:border-primary-400 dark:hover:border-primary-500 hover:shadow-md transition-all group flex flex-col items-center cursor-pointer"
-                title="Apasă pentru a deschide codul QR mărit"
+                title={t('enlargeQrTooltip')}
               >
                 <div className="bg-white p-1.5 rounded-xl">
                   <QRCodeSVG 
@@ -407,7 +409,7 @@ const EmployeeProfile = ({ tenant, themeColor, employeeId, onClose }) => {
                   />
                 </div>
                 <span className="flex items-center gap-1 text-[11px] text-primary-600 dark:text-primary-400 font-bold mt-2 group-hover:underline">
-                  <Maximize2 size={12} /> Mărește QR
+                  <Maximize2 size={12} /> {t('enlargeQrBtn')}
                 </span>
               </button>
             </div>
@@ -418,17 +420,17 @@ const EmployeeProfile = ({ tenant, themeColor, employeeId, onClose }) => {
                 <span className="font-bold text-slate-800 dark:text-white">{employee.cnp || '-'}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-slate-500 dark:text-slate-400 font-medium flex items-center"><User size={16} className="mr-2" /> Serie/Nr ID</span>
+                <span className="text-slate-500 dark:text-slate-400 font-medium flex items-center"><User size={16} className="mr-2" /> {t('idCardSeriesLabel')}</span>
                 <span className="font-bold text-slate-800 dark:text-white">{employee.id_card_series || '-'}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-slate-500 dark:text-slate-400 font-medium flex items-center"><Calendar size={16} className="mr-2" /> Data Nașterii</span>
-                <span className="font-bold text-slate-800 dark:text-white">{employee.birth_date ? new Date(employee.birth_date).toLocaleDateString('ro-RO') : '-'}</span>
+                <span className="text-slate-500 dark:text-slate-400 font-medium flex items-center"><Calendar size={16} className="mr-2" /> {t('birthDateLabel')}</span>
+                <span className="font-bold text-slate-800 dark:text-white">{employee.birth_date ? new Date(employee.birth_date).toLocaleDateString(language === 'ro' ? 'ro-RO' : language === 'fr' ? 'fr-FR' : language === 'nl' ? 'nl-NL' : 'en-US') : '-'}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-slate-500 dark:text-slate-400 font-medium flex items-center"><Hourglass size={16} className="mr-2" /> Vârstă</span>
+                <span className="text-slate-500 dark:text-slate-400 font-medium flex items-center"><Hourglass size={16} className="mr-2" /> {t('age') || 'Vârstă'}</span>
                 <span className="font-bold text-slate-800 dark:text-white">
-                  {employee.birth_date && calculateAge(employee.birth_date) !== null ? `${calculateAge(employee.birth_date)} ani` : '-'}
+                  {employee.birth_date && calculateAge(employee.birth_date) !== null ? `${calculateAge(employee.birth_date)} ${t('yearsOld')}` : '-'}
                 </span>
               </div>
             </div>
@@ -442,22 +444,22 @@ const EmployeeProfile = ({ tenant, themeColor, employeeId, onClose }) => {
             <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-100 dark:border-slate-700/50 shadow-sm">
               <div className="text-slate-400 mb-1"><Activity size={18} /></div>
               <div className="text-2xl font-black text-slate-800 dark:text-white">142h</div>
-              <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-1">Ore luna curentă</div>
+              <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-1">{t('hoursCurrentMonth')}</div>
             </div>
             <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-100 dark:border-slate-700/50 shadow-sm">
               <div className="text-slate-400 mb-1"><Calendar size={18} /></div>
               <div className="text-2xl font-black text-slate-800 dark:text-white">18</div>
-              <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-1">Zile pontate</div>
+              <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-1">{t('daysClocked')}</div>
             </div>
             <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-100 dark:border-slate-700/50 shadow-sm">
               <div className="text-blue-400 mb-1"><Shield size={18} /></div>
               <div className="text-2xl font-black text-slate-800 dark:text-white">10</div>
-              <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-1">Zile concediu ramase</div>
+              <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-1">{t('remainingLeaveDays')}</div>
             </div>
             <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-100 dark:border-slate-700/50 shadow-sm">
               <div className="text-red-400 mb-1"><User size={18} /></div>
               <div className="text-2xl font-black text-slate-800 dark:text-white">0</div>
-              <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-1">Absențe nemotivate</div>
+              <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-1">{t('unexcusedAbsences')}</div>
             </div>
           </div>
 
@@ -465,80 +467,76 @@ const EmployeeProfile = ({ tenant, themeColor, employeeId, onClose }) => {
           <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-100 dark:border-slate-700/50 shadow-sm">
             <h3 className="text-sm font-bold text-slate-800 dark:text-white mb-6 flex items-center border-b border-slate-100 dark:border-slate-700/50 pb-4">
               <MapPin size={18} className="mr-2 text-primary-500" /> 
-              Date de Contact
+              {t('contactDetails')}
             </h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <div>
-                <span className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Telefon</span>
+                <span className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">{t('phoneLabel')}</span>
                 <span className="text-sm sm:text-base font-bold text-slate-800 dark:text-white block truncate">
-                  {employee.phone || 'Nespecificat'}
+                  {employee.phone || t('notSpecified')}
                 </span>
               </div>
               <div className="min-w-0">
-                <span className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Email</span>
+                <span className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">{t('emailLabel')}</span>
                 <span className="text-sm sm:text-base font-bold text-slate-800 dark:text-white block truncate" title={employee.email}>
-                  {employee.email || 'Nespecificat'}
+                  {employee.email || t('notSpecified')}
                 </span>
               </div>
               <div>
-                <span className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Adresă (din C.I.)</span>
+                <span className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">{t('addressFromId')}</span>
                 <span className="text-sm sm:text-base font-bold text-slate-800 dark:text-white break-words">
-                  {employee.address || 'Nespecificat'}
+                  {employee.address || t('notSpecified')}
                 </span>
               </div>
             </div>
           </div>
-
-
 
           {/* Date Contractuale */}
           <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-100 dark:border-slate-700/50 shadow-sm">
             <h3 className="text-sm font-bold text-slate-800 dark:text-white mb-6 flex items-center border-b border-slate-100 dark:border-slate-700/50 pb-4">
               <Briefcase size={18} className="mr-2 text-primary-500" /> 
-              Date Contractuale
+              {t('contractualData')}
             </h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <span className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Data Angajării</span>
+                <span className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">{t('employmentDate')}</span>
                 <span className="text-base font-bold text-slate-800 dark:text-white">
-                  {employee.contract_start_date ? new Date(employee.contract_start_date).toLocaleDateString('ro-RO') : 'Nespecificat'}
+                  {employee.contract_start_date ? new Date(employee.contract_start_date).toLocaleDateString(language === 'ro' ? 'ro-RO' : language === 'fr' ? 'fr-FR' : language === 'nl' ? 'nl-NL' : 'en-US') : t('notSpecified')}
                 </span>
               </div>
               <div>
-                <span className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Salariu</span>
+                <span className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">{t('salaryLabel')}</span>
                 <div className="flex items-center">
                   <Banknote size={16} className="text-slate-400 mr-2" />
-                  <span className="text-base font-bold text-green-600">{employee.salary || 'Nespecificat'}</span>
+                  <span className="text-base font-bold text-green-600">{employee.salary || t('notSpecified')}</span>
                 </div>
               </div>
               <div>
-                <span className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Punct de Lucru</span>
+                <span className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">{t('workLocationLabel')}</span>
                 <div className="flex items-center">
                   <MapPin size={16} className="text-slate-400 mr-2" />
-                  <span className="text-base font-bold text-slate-800 dark:text-white">{employee.location_name || 'Nespecificat'}</span>
+                  <span className="text-base font-bold text-slate-800 dark:text-white">{employee.location_name || t('notSpecified')}</span>
                 </div>
               </div>
               <div className="md:col-span-2 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg border border-slate-100 dark:border-slate-700/50">
-                <span className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Notițe Contractuale</span>
+                <span className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{t('contractNotesLabel2')}</span>
                 <p className="text-sm text-slate-700 dark:text-slate-300 font-medium leading-relaxed">
-                  {employee.contract_notes || 'Nu există notițe adiționale.'}
+                  {employee.contract_notes || t('noContractNotes')}
                 </p>
               </div>
             </div>
           </div>
-
-
         </div>
-        </div>
+      </div>
       ) : activeTab === 'history' ? (
         <div className="space-y-6">
           {/* Timeline / Istoric */}
           <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-100 dark:border-slate-700/50 shadow-sm">
             <h3 className="text-sm font-bold text-slate-800 dark:text-white mb-6 flex items-center">
               <History size={18} className="mr-2 text-primary-500" /> 
-              Istoric Angajat
+              {t('employeeHistory')}
             </h3>
             
             <div className="relative pl-6 border-l-2 border-slate-100 dark:border-slate-700/50 space-y-8">
@@ -552,19 +550,19 @@ const EmployeeProfile = ({ tenant, themeColor, employeeId, onClose }) => {
                       {item.change_type}
                     </span>
                     <span className="text-xs font-bold text-slate-400">
-                      {new Date(item.created_at).toLocaleString('ro-RO')}
+                      {new Date(item.created_at).toLocaleString(language === 'en' ? 'en-US' : language === 'fr' ? 'fr-FR' : language === 'nl' ? 'nl-NL' : 'ro-RO')}
                     </span>
                   </div>
                   <div className="text-sm font-medium text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg border border-slate-100 dark:border-slate-700/50 inline-block">
                     {item.old_value && item.new_value ? (
-                      <span>Schimbat din <span className="font-bold line-through text-slate-400">{item.old_value}</span> în <span className="font-bold text-slate-800 dark:text-white">{item.new_value}</span></span>
+                      <span>{t('changedFrom')} <span className="font-bold line-through text-slate-400">{item.old_value}</span> {t('toVal')} <span className="font-bold text-slate-800 dark:text-white">{item.new_value}</span></span>
                     ) : (
-                      <span className="font-bold">{item.new_value || item.old_value || 'Actualizare înregistrată.'}</span>
+                      <span className="font-bold">{item.new_value || item.old_value || t('updateRecorded')}</span>
                     )}
                   </div>
                 </div>
               )) : (
-                <div className="text-sm font-bold text-slate-400">Nu există istoric înregistrat.</div>
+                <div className="text-sm font-bold text-slate-400">{t('noHistoryRecorded')}</div>
               )}
             </div>
           </div>
@@ -578,11 +576,11 @@ const EmployeeProfile = ({ tenant, themeColor, employeeId, onClose }) => {
           <div className="flex items-center justify-between mb-6 border-b border-slate-100 dark:border-slate-700/50 pb-4">
             <h3 className="text-sm font-bold text-slate-800 dark:text-white flex items-center">
               <Activity size={18} className="mr-2 text-primary-500" /> 
-              Evaluare Performanță
+              {t('performanceEvaluation')}
             </h3>
             <div className="flex items-center gap-3">
               <div className="text-right mr-2 hidden sm:block">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Nota Medie</span>
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">{t('averageGrade')}</span>
                 <span className="text-xl font-black text-primary-600">
                   {((parseInt(evalPunctuality) + parseInt(evalAttendance) + parseInt(evalAttitude) + parseInt(evalPerformance) + parseInt(evalReliability)) / 5).toFixed(1)}
                 </span>
@@ -590,21 +588,21 @@ const EmployeeProfile = ({ tenant, themeColor, employeeId, onClose }) => {
               <button 
                 onClick={handleSaveEvaluation}
                 disabled={savingEval}
-                className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-bold rounded-full transition-colors flex items-center"
+                className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-bold rounded-full transition-colors flex items-center cursor-pointer"
               >
                 {savingEval ? <Loader2 size={16} className="animate-spin mr-2" /> : null}
-                Salvează Notele
+                {t('saveGradesBtn')}
               </button>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[
-              { label: 'Punctualitate (Întârzie?)', value: evalPunctuality, setter: setEvalPunctuality },
-              { label: 'Prezență (Pleacă devreme?)', value: evalAttendance, setter: setEvalAttendance },
-              { label: 'Atitudine (Politicos?)', value: evalAttitude, setter: setEvalAttitude },
-              { label: 'Performanță (Calitate muncă)', value: evalPerformance, setter: setEvalPerformance },
-              { label: 'Seriozitate (De încredere?)', value: evalReliability, setter: setEvalReliability },
+              { label: t('evalPunctualityLabel'), value: evalPunctuality, setter: setEvalPunctuality },
+              { label: t('evalAttendanceLabel'), value: evalAttendance, setter: setEvalAttendance },
+              { label: t('evalAttitudeLabel'), value: evalAttitude, setter: setEvalAttitude },
+              { label: t('evalPerformanceLabel'), value: evalPerformance, setter: setEvalPerformance },
+              { label: t('evalReliabilityLabel'), value: evalReliability, setter: setEvalReliability },
             ].map((crit, idx) => (
               <div key={idx} className="flex flex-col gap-2 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg border border-slate-100 dark:border-slate-700/50">
                 <div className="flex justify-between items-center mb-1">
@@ -619,8 +617,8 @@ const EmployeeProfile = ({ tenant, themeColor, employeeId, onClose }) => {
                   className="w-full accent-primary-600 cursor-pointer"
                 />
                 <div className="flex justify-between text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">
-                  <span>1 (Slab)</span>
-                  <span>10 (Excelent)</span>
+                  <span>{t('evalPoor')}</span>
+                  <span>{t('evalExcellent')}</span>
                 </div>
               </div>
             ))}
@@ -632,14 +630,14 @@ const EmployeeProfile = ({ tenant, themeColor, employeeId, onClose }) => {
             <div>
               <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center">
                 <FileText size={22} className="mr-2 text-primary-500" /> 
-                Dosar Documente ({documents.length})
+                {t('documentsFolder')} ({documents.length})
               </h3>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Gestionează contractele, actele adiționale și adeverințele.</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{t('manageDocsSubtitle')}</p>
             </div>
             <div>
               <label className="cursor-pointer inline-flex items-center px-4 py-2 text-sm font-bold bg-primary-50 text-primary-600 rounded-lg hover:bg-primary-100 transition-colors">
                 {uploadingDoc ? <Loader2 size={18} className="animate-spin mr-2" /> : <Upload size={18} className="mr-2" />}
-                {uploadingDoc ? 'Se încarcă...' : 'Adaugă Document nou'}
+                {uploadingDoc ? t('loading') : t('addNewDoc')}
                 <input type="file" accept=".pdf,image/*" className="hidden" onChange={handleDocumentUpload} disabled={uploadingDoc} />
               </label>
             </div>
@@ -647,7 +645,7 @@ const EmployeeProfile = ({ tenant, themeColor, employeeId, onClose }) => {
 
           {/* Vizualizare Buletin Atașat (CNP) */}
           <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-100 dark:border-slate-700/50 shadow-sm mb-6">
-            <h3 className="text-sm font-bold text-slate-800 dark:text-white mb-4 flex items-center"><ImageIcon size={18} className="mr-2 text-primary-500" /> Document Identitate (CNP)</h3>
+            <h3 className="text-sm font-bold text-slate-800 dark:text-white mb-4 flex items-center"><ImageIcon size={18} className="mr-2 text-primary-500" /> {t('idDocumentCnp')}</h3>
             {idCardSrc ? (
               <a href={idCardSrc} target="_blank" rel="noreferrer" className="block w-64 overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700 hover:border-primary-400 transition-colors">
                 <img src={idCardSrc} alt="ID Card" className="w-full h-auto opacity-90 hover:opacity-100 transition-opacity" />
@@ -655,13 +653,13 @@ const EmployeeProfile = ({ tenant, themeColor, employeeId, onClose }) => {
             ) : (
               <div className="text-center p-6 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800/50 max-w-sm">
                 <ImageIcon size={24} className="mx-auto text-slate-400 mb-2" />
-                <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Nu există atașament</span>
-                <span className="text-xs text-slate-400 block mt-1">Încarcă cartea de identitate din meniul de editare angajat.</span>
+                <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">{t('noAttachment')}</span>
+                <span className="text-xs text-slate-400 block mt-1">{t('uploadIdInEdit')}</span>
               </div>
             )}
           </div>
 
-          <h3 className="text-sm font-bold text-slate-800 dark:text-white mb-4 flex items-center"><FileText size={18} className="mr-2 text-primary-500" /> Alte documente</h3>
+          <h3 className="text-sm font-bold text-slate-800 dark:text-white mb-4 flex items-center"><FileText size={18} className="mr-2 text-primary-500" /> {t('otherDocuments')}</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {documents.length > 0 ? documents.map((doc, index) => (
               <div key={doc.id} className="flex items-center justify-between p-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-primary-300 hover:shadow-md transition-all group cursor-pointer" onClick={() => setLightboxIndex(index)}>
@@ -672,18 +670,18 @@ const EmployeeProfile = ({ tenant, themeColor, employeeId, onClose }) => {
                   <div className="truncate">
                     <div className="text-sm font-bold text-slate-800 dark:text-white truncate">{doc.file_name}</div>
                     <div className="text-xs font-medium text-slate-400 mt-0.5">
-                      {new Date(doc.uploaded_at).toLocaleDateString('ro-RO')}
+                      {new Date(doc.uploaded_at).toLocaleDateString(language === 'en' ? 'en-US' : language === 'fr' ? 'fr-FR' : language === 'nl' ? 'nl-NL' : 'ro-RO')}
                     </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0 ml-2" onClick={e => e.stopPropagation()}>
-                  <button onClick={() => setLightboxIndex(index)} className="p-2 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-full transition-colors">
+                  <button onClick={() => setLightboxIndex(index)} className="p-2 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-full transition-colors cursor-pointer" title={t('view')}>
                     <Eye size={18} />
                   </button>
                   <button 
                     onClick={() => setDocToDelete(doc.id)}
-                    className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
-                    title="Șterge document"
+                    className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors cursor-pointer"
+                    title={t('delete')}
                   >
                     <Trash2 size={18} />
                   </button>
@@ -692,8 +690,8 @@ const EmployeeProfile = ({ tenant, themeColor, employeeId, onClose }) => {
             )) : (
               <div className="col-span-full text-center p-12 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800/50">
                 <FileText size={32} className="mx-auto text-slate-300 mb-3" />
-                <span className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Nu există documente</span>
-                <span className="text-sm text-slate-400 mt-2 block">Încarcă un contract de muncă sau alte acte pentru acest angajat.</span>
+                <span className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">{t('noDocuments')}</span>
+                <span className="text-sm text-slate-400 mt-2 block">{t('uploadContractPlaceholder')}</span>
               </div>
             )}
           </div>
@@ -705,7 +703,8 @@ const EmployeeProfile = ({ tenant, themeColor, employeeId, onClose }) => {
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/95 backdrop-blur-sm p-4 md:p-8">
           <button 
             onClick={() => setLightboxIndex(null)}
-            className="absolute top-4 right-4 md:top-8 md:right-8 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+            className="absolute top-4 right-4 md:top-8 md:right-8 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+            title={t('closeWindow')}
           >
             <X size={24} />
           </button>
@@ -714,7 +713,7 @@ const EmployeeProfile = ({ tenant, themeColor, employeeId, onClose }) => {
           {lightboxIndex > 0 && (
             <button 
               onClick={(e) => { e.stopPropagation(); setLightboxIndex(prev => prev - 1); }}
-              className="absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors z-10"
+              className="absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors z-10 cursor-pointer"
             >
               <ArrowLeft size={24} />
             </button>
@@ -724,7 +723,7 @@ const EmployeeProfile = ({ tenant, themeColor, employeeId, onClose }) => {
           {lightboxIndex < documents.length - 1 && (
             <button 
               onClick={(e) => { e.stopPropagation(); setLightboxIndex(prev => prev + 1); }}
-              className="absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors z-10"
+              className="absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors z-10 cursor-pointer"
             >
               <ArrowRight size={24} />
             </button>
@@ -738,7 +737,7 @@ const EmployeeProfile = ({ tenant, themeColor, employeeId, onClose }) => {
                 <h3 className="font-bold text-slate-800 dark:text-white truncate max-w-xs md:max-w-md">{documents[lightboxIndex].file_name}</h3>
               </div>
               <a href={( documents[lightboxIndex].file_path?.startsWith('http') ? documents[lightboxIndex].file_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${documents[lightboxIndex].file_path}` )} target="_blank" rel="noreferrer" className="flex items-center px-4 py-2 rounded-lg text-sm font-bold bg-primary-50 text-primary-600 hover:bg-primary-100 transition-colors">
-                <Download size={16} className="mr-2" /> Descarcă originalul
+                <Download size={16} className="mr-2" /> {t('downloadOriginal')}
               </a>
             </div>
             <div className="flex-1 bg-slate-200 dark:bg-slate-700 overflow-hidden flex justify-center items-center p-4">
@@ -746,9 +745,9 @@ const EmployeeProfile = ({ tenant, themeColor, employeeId, onClose }) => {
                  <object data={( documents[lightboxIndex].file_path?.startsWith('http') ? documents[lightboxIndex].file_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${documents[lightboxIndex].file_path}` )} type="application/pdf" className="w-full h-full rounded-lg shadow-sm bg-white">
                     <div className="p-12 text-center text-slate-500 dark:text-slate-400 flex flex-col items-center justify-center h-full bg-white rounded-lg">
                       <FileText size={48} className="text-slate-300 mb-4" />
-                      <p className="text-lg font-medium mb-4">Browserul (sau telefonul tău) nu suportă previzualizarea directă a PDF-urilor.</p>
+                      <p className="text-lg font-medium mb-4">{t('pdfPreviewNotSupported')}</p>
                       <a href={( documents[lightboxIndex].file_path?.startsWith('http') ? documents[lightboxIndex].file_path : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${documents[lightboxIndex].file_path}` )} className="px-6 py-3 bg-primary-600 text-white rounded-lg font-bold shadow-sm">
-                        Descarcă PDF-ul pentru a-l vizualiza
+                        {t('downloadPdfToView')}
                       </a>
                     </div>
                  </object>
@@ -764,8 +763,8 @@ const EmployeeProfile = ({ tenant, themeColor, employeeId, onClose }) => {
         isOpen={!!docToDelete}
         onClose={() => setDocToDelete(null)}
         onConfirm={confirmDeleteDocument}
-        title="Ștergere Document"
-        message="Ești sigur că vrei să ștergi acest document?"
+        title={t('deleteDocTitle')}
+        message={t('deleteDocMsg')}
       />
 
       {/* Large QR Badge Modal */}
@@ -795,7 +794,7 @@ const EmployeeProfile = ({ tenant, themeColor, employeeId, onClose }) => {
                 {employee.first_name} {employee.last_name}
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider mt-1">
-                {employee.job_title || 'Angajat'} &bull; #{employee.employee_code || `ROL${String(employee.id).padStart(3, '0')}`}
+                {employee.job_title || t('employee')} &bull; #{employee.employee_code || `ROL${String(employee.id).padStart(3, '0')}`}
               </p>
             </div>
 
@@ -811,7 +810,7 @@ const EmployeeProfile = ({ tenant, themeColor, employeeId, onClose }) => {
                 />
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-4">
-                Scanarea se face de către tableta kiosk-ului sau scannerul locației.
+                {t('qrScannedByTabletNote')}
               </p>
             </div>
 
@@ -824,7 +823,7 @@ const EmployeeProfile = ({ tenant, themeColor, employeeId, onClose }) => {
                   className="h-11 rounded-full bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <Download size={15} />
-                  <span>Descarcă PNG</span>
+                  <span>{t('downloadPngBtn')}</span>
                 </button>
                 <button
                   type="button"
@@ -832,7 +831,7 @@ const EmployeeProfile = ({ tenant, themeColor, employeeId, onClose }) => {
                   className="h-11 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <Printer size={15} />
-                  <span>Printează</span>
+                  <span>{t('print')}</span>
                 </button>
               </div>
 
@@ -853,12 +852,12 @@ const EmployeeProfile = ({ tenant, themeColor, employeeId, onClose }) => {
                 {copiedLink ? (
                   <>
                     <Check size={16} />
-                    <span>Link copiat în clipboard!</span>
+                    <span>{t('linkCopiedClipboard')}</span>
                   </>
                 ) : (
                   <>
                     <Copy size={16} />
-                    <span>Copiază Link Portal Angajat</span>
+                    <span>{t('copyEmployeePortalLink')}</span>
                   </>
                 )}
               </button>

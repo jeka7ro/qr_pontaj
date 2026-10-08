@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react';
-import { X, Camera, Upload } from 'lucide-react';
+import { X, Camera, Upload, Eye, EyeOff } from 'lucide-react';
 
 export default function ProfileModal({ isOpen, onClose, user, onSave }) {
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     nume: user?.nume || '',
     prenume: user?.prenume || '',
@@ -132,14 +133,24 @@ export default function ProfileModal({ isOpen, onClose, user, onSave }) {
 
           <div className="space-y-1">
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Parolă Nouă (Opțional)</label>
-            <input 
-              type="password" 
-              name="parola"
-              value={formData.parola}
-              onChange={handleChange}
-              placeholder="Lasă gol pentru a păstra parola actuală"
-              className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm"
-            />
+            <div className="relative">
+              <input 
+                type={showPassword ? "text" : "password"} 
+                name="parola"
+                value={formData.parola}
+                onChange={handleChange}
+                placeholder="Lasă gol pentru a păstra parola actuală"
+                className="w-full pl-4 pr-10 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                title={showPassword ? "Ascunde parola" : "Vezi parola"}
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
           </div>
 
           {/* Footer Actions */}

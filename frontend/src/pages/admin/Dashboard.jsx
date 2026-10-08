@@ -11,13 +11,15 @@ import {
   Trash2,
   Sun,
   Moon,
-  History
+  History,
+  Calculator
 } from 'lucide-react';
 import DataTable from '../../components/DataTable';
 import ProfileModal from '../../components/ProfileModal';
 import CreateTenantModal from '../../components/CreateTenantModal';
 import TenantAdminsModal from '../../components/TenantAdminsModal';
 import LoginLogs from './LoginLogs';
+import BillingCalculator from './BillingCalculator';
 import { resolveFaviconUrl } from '../../utils/favicon';
 
 export default function AdminDashboard() {
@@ -77,8 +79,9 @@ export default function AdminDashboard() {
 
   const navItems = [
     { name: 'Tenanți', path: '/admin/dashboard', icon: Building2 },
+    { name: 'Calcul Facturi', path: '/admin/billing', icon: Calculator },
     { name: 'Utilizatori Admin', path: '/admin/users', icon: Users },
-    { name: 'Jurnal Autentificări', path: '/admin/logs', icon: History },
+    { name: 'Jurnal & Intervenții', path: '/admin/logs', icon: Activity },
     { name: 'Setări Platformă', path: '/admin/settings', icon: Settings },
   ];
 
@@ -189,6 +192,7 @@ export default function AdminDashboard() {
           <Routes>
             <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
             <Route path="/dashboard" element={<TenantsList />} />
+            <Route path="/billing" element={<BillingCalculator />} />
             <Route path="/logs" element={<LoginLogs />} />
           </Routes>
         </main>
@@ -316,6 +320,21 @@ function TenantsList() {
       key: 'raza_gps', 
       label: 'Rază GPS',
       render: (row) => `${row.raza_gps}m`
+    },
+    {
+      key: 'billing',
+      label: 'Tarifare',
+      render: (row) => (
+        row.billing_per_employee ? (
+          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800/40">
+            {parseFloat(row.price_per_employee || 0).toFixed(2)} € / angajat ({row.active_employees_count || 0} activi)
+          </span>
+        ) : (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium text-slate-400 bg-slate-100 dark:bg-slate-800">
+            Standard / Fix
+          </span>
+        )
+      )
     },
     {
       key: 'actions',

@@ -2,8 +2,10 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { TabletSmartphone, Plus, Edit2, Trash2, MapPin, Search, ChevronLeft, ChevronRight, X, AlertCircle, ExternalLink, Lock, Unlock, Monitor, Smartphone , ScanLine} from 'lucide-react';
 import ConfirmModal from '../../components/ConfirmModal';
 import IpadGuideModal from '../../components/IpadGuideModal';
+import { useTranslation } from '../../utils/i18n';
 
 export default function QrSelector({ tenant, themeColor }) {
+  const { t } = useTranslation();
   const [kiosks, setKiosks] = useState([]);
   const [locations, setLocations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -45,8 +47,8 @@ export default function QrSelector({ tenant, themeColor }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(portalSettings)
       });
-      if (!res.ok) throw new Error('Eroare la salvare');
-      setPortalMsg({ type: 'success', text: 'Setările portalului au fost salvate!' });
+      if (!res.ok) throw new Error(t('saveError') || 'Eroare la salvare');
+      setPortalMsg({ type: 'success', text: t('portalSettingsSaved') || 'Setările portalului au fost salvate!' });
       setTimeout(() => setPortalMsg(null), 3000);
     } catch (err) {
       setPortalMsg({ type: 'error', text: err.message });
@@ -64,7 +66,7 @@ export default function QrSelector({ tenant, themeColor }) {
         fetch(`${apiUrl}/api/tenants/${tenant.id}/locations`, { cache: 'no-store' })
       ]);
 
-      if (!kRes.ok || !lRes.ok) throw new Error('Nu am putut încărca datele.');
+      if (!kRes.ok || !lRes.ok) throw new Error(t('dataLoadError') || 'Nu am putut încărca datele.');
 
       setKiosks(await kRes.json());
       setLocations(await lRes.json());
@@ -96,7 +98,7 @@ export default function QrSelector({ tenant, themeColor }) {
     setFormError(null);
 
     if (!formData.name || !formData.location_id) {
-      setFormError('Numele și Locația sunt obligatorii.');
+      setFormError(t('nameAndLocationRequired') || 'Numele și Locația sunt obligatorii.');
       return;
     }
 
@@ -115,7 +117,7 @@ export default function QrSelector({ tenant, themeColor }) {
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || 'A apărut o eroare.');
+        throw new Error(data.error || t('genericError') || 'A apărut o eroare.');
       }
 
       await fetchData();
@@ -134,7 +136,7 @@ export default function QrSelector({ tenant, themeColor }) {
         method: 'DELETE',
         cache: 'no-store'
       });
-      if (!res.ok) throw new Error('Nu s-a putut șterge Kiosk-ul.');
+      if (!res.ok) throw new Error(t('deleteError') || 'Nu s-a putut șterge Kiosk-ul.');
       await fetchData();
       setDeleteConfirmId(null);
     } catch (err) {
@@ -160,10 +162,10 @@ export default function QrSelector({ tenant, themeColor }) {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
           <div>
             <h2 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight flex items-center gap-2">
-              <Smartphone className="text-primary-500" size={24} /> Setări Legitimație Digitală
+              <Smartphone className="text-primary-500" size={24} /> {t('digitalBadgeSettings')}
             </h2>
             <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">
-              Personalizează ecranul pe care angajații îl folosesc pentru a scana (Portal Angajat).
+              {t('digitalBadgeDesc')}
             </p>
           </div>
           <button
@@ -172,7 +174,7 @@ export default function QrSelector({ tenant, themeColor }) {
             className="flex items-center gap-2 px-5 h-10 text-sm rounded-full text-white font-bold shadow-md transition-all hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50"
             style={{ backgroundColor: themeColor }}
           >
-            {savingPortal ? 'Se salvează...' : 'Salvează Setările'}
+            {savingPortal ? t('savingSettings') : t('saveSettingsBtn')}
           </button>
         </div>
 
@@ -185,7 +187,7 @@ export default function QrSelector({ tenant, themeColor }) {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">URL Imagine Fundal (Opțional)</label>
+            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{t('portalBgImageLabel')}</label>
             <input 
               type="url"
               value={portalSettings.portal_bg_image_url}
@@ -193,10 +195,10 @@ export default function QrSelector({ tenant, themeColor }) {
               placeholder="https://exemplu.com/fundal.jpg"
               className="w-full px-4 py-3 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:ring-2 focus:ring-primary-500 outline-none transition-all font-medium text-slate-700 dark:text-slate-300"
             />
-            <p className="text-xs text-slate-400 mt-2 ml-2">Lasă gol pentru a folosi doar culoarea.</p>
+            <p className="text-xs text-slate-400 mt-2 ml-2">{t('leaveEmptyForColor')}</p>
           </div>
           <div>
-            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Culoare Fundal Ecran</label>
+            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{t('screenBgColorLabel')}</label>
             <div className="flex items-center gap-2">
               <input 
                 type="color"
@@ -225,11 +227,11 @@ export default function QrSelector({ tenant, themeColor }) {
       {/* Header & Controls Kiosk */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
-          <h2 className="text-2xl font-black text-slate-800 dark:text-white dark:text-white tracking-tight flex items-center gap-2">
-            <TabletSmartphone className="text-primary-500" size={24} /> Tablete Kiosk
+          <h2 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight flex items-center gap-2">
+            <TabletSmartphone className="text-primary-500" size={24} /> {t('kiosksTabletsTitle')}
           </h2>
-          <p className="text-sm font-medium text-slate-500 dark:text-slate-400 dark:text-slate-400 mt-1">
-            Gestionează tabletele (Kiosk-urile) și setările lor de securitate.
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">
+            {t('kiosksTabletsSubtitle')}
           </p>
         </div>
 
@@ -239,7 +241,7 @@ export default function QrSelector({ tenant, themeColor }) {
             className="px-4 py-2.5 text-sm rounded-full font-bold border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm transition-all flex items-center gap-2"
           >
             <TabletSmartphone size={18} className="text-blue-500" />
-            <span>Ghid iPad (Acces Ghidat)</span>
+            <span>{t('ipadGuideBtn')}</span>
           </button>
 
           {!showAddForm && (
@@ -249,7 +251,7 @@ export default function QrSelector({ tenant, themeColor }) {
               style={{ backgroundColor: themeColor }}
             >
               <Plus size={18} />
-              Adaugă Kiosk
+              {t('addKioskBtn')}
             </button>
           )}
         </div>
@@ -259,7 +261,7 @@ export default function QrSelector({ tenant, themeColor }) {
         <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg flex items-start gap-3">
           <AlertCircle className="text-red-500 shrink-0 mt-0.5" size={20} />
           <div>
-            <h3 className="text-sm font-bold text-red-800">Eroare</h3>
+            <h3 className="text-sm font-bold text-red-800">{t('error') || 'Eroare'}</h3>
             <p className="text-sm text-red-700">{error}</p>
           </div>
         </div>
@@ -267,12 +269,12 @@ export default function QrSelector({ tenant, themeColor }) {
 
       {/* Formular Adăugare/Editare */}
       {showAddForm && (
-        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 dark:border-slate-700 overflow-hidden mb-8">
-          <div className="bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-800/50 px-6 py-4 border-b border-slate-100 dark:border-slate-700/50 dark:border-slate-700 flex items-center justify-between">
-            <h2 className="text-lg font-bold text-slate-800 dark:text-white dark:text-white">{editingId ? 'Editare Kiosk' : 'Kiosk Nou'}</h2>
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden mb-8">
+          <div className="bg-slate-50 dark:bg-slate-800/50 px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+            <h2 className="text-lg font-bold text-slate-800 dark:text-white">{editingId ? t('editKioskModalTitle') : t('newKioskModalTitle')}</h2>
             <button
               onClick={() => { setShowAddForm(false); setEditingId(null); setFormError(null); }}
-              className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:text-slate-300 dark:hover:text-slate-300 p-1 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-700 transition-colors"
+              className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 p-1 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
             >
               <X size={20} />
             </button>
@@ -283,32 +285,32 @@ export default function QrSelector({ tenant, themeColor }) {
             {locations.length === 0 ? (
               <div className="text-center p-6 bg-orange-50 border border-orange-200 rounded-lg">
                 <AlertCircle className="w-8 h-8 text-orange-500 mx-auto mb-2" />
-                <h3 className="font-bold text-orange-800 mb-1">Nu există Puncte de Lucru</h3>
-                <p className="text-sm text-orange-700">Pentru a crea un Kiosk, trebuie mai întâi să definești cel puțin un Punct de Lucru din meniul din stânga.</p>
+                <h3 className="font-bold text-orange-800 mb-1">{t('noLocationsAlert')}</h3>
+                <p className="text-sm text-orange-700">{t('noLocationsAlertDesc')}</p>
               </div>
             ) : (
               <form onSubmit={handleSave} className="space-y-4 max-w-2xl">
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-2">Nume Kiosk *</label>
+                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{t('kioskNameLabel')}</label>
                   <input
                     type="text"
                     required
                     placeholder="Ex: Tableta Intrare Principală"
-                    className="w-full px-4 py-3 rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm focus:ring-2 focus:ring-primary-500 outline-none transition-all font-medium text-slate-700 dark:text-slate-300 dark:text-slate-200"
+                    className="w-full px-4 py-3 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm focus:ring-2 focus:ring-primary-500 outline-none transition-all font-medium text-slate-700 dark:text-slate-200"
                     value={formData.name}
                     onChange={e => setFormData({ ...formData, name: e.target.value })}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-2">Punct de Lucru Alocat *</label>
+                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{t('kioskLocationLabel')}</label>
                   <select
                     required
-                    className="w-full px-4 py-3 rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm focus:ring-2 focus:ring-primary-500 outline-none transition-all font-medium text-slate-700 dark:text-slate-300 dark:text-slate-200 appearance-none"
+                    className="w-full px-4 py-3 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm focus:ring-2 focus:ring-primary-500 outline-none transition-all font-medium text-slate-700 dark:text-slate-200 appearance-none"
                     value={formData.location_id}
                     onChange={e => setFormData({ ...formData, location_id: e.target.value })}
                   >
-                    <option value="">-- Selectează Punctul de Lucru --</option>
+                    <option value="">{t('selectLocationOption')}</option>
                     {locations.map(loc => (
                       <option key={loc.id} value={loc.id}>{loc.name} {loc.address ? `(${loc.address})` : ''}</option>
                     ))}
@@ -317,19 +319,19 @@ export default function QrSelector({ tenant, themeColor }) {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-2">Titlu Kiosk</label>
+                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{t('kioskTitleLabel')}</label>
                     <input
                       type="text"
-                      className="w-full px-4 py-3 rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm focus:ring-2 focus:ring-primary-500 outline-none transition-all font-medium text-slate-700 dark:text-slate-300 dark:text-slate-200"
+                      className="w-full px-4 py-3 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm focus:ring-2 focus:ring-primary-500 outline-none transition-all font-medium text-slate-700 dark:text-slate-200"
                       value={formData.kiosk_title || 'Pontaj Digital'}
                       onChange={e => setFormData({ ...formData, kiosk_title: e.target.value })}
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-2">Subtitlu Kiosk</label>
+                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{t('kioskSubtitleLabel')}</label>
                     <textarea
                       rows="2"
-                      className="w-full px-4 py-2 rounded-2xl border border-slate-200 dark:border-slate-700 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm focus:ring-2 focus:ring-primary-500 outline-none transition-all font-medium text-slate-700 dark:text-slate-300 dark:text-slate-200 text-sm"
+                      className="w-full px-4 py-2 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm focus:ring-2 focus:ring-primary-500 outline-none transition-all font-medium text-slate-700 dark:text-slate-200 text-sm"
                       value={formData.kiosk_subtitle || 'Deschide camera telefonului și scanează codul QR pentru a înregistra ora de venire sau plecare.'}
                       onChange={e => setFormData({ ...formData, kiosk_subtitle: e.target.value })}
                     ></textarea>
@@ -338,12 +340,12 @@ export default function QrSelector({ tenant, themeColor }) {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-2">PIN Securitate Kiosk (4 cifre)</label>
+                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{t('kioskPinLabel')}</label>
                     <input
                       type="text"
                       maxLength={4}
-                      placeholder="Ex: 1234 (lăsați gol pt acces liber)"
-                      className="w-full px-4 py-3 rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm focus:ring-2 focus:ring-primary-500 outline-none transition-all font-medium text-slate-700 dark:text-slate-300 dark:text-slate-200"
+                      placeholder={t('kioskPinPlaceholder') || 'Ex: 1234'}
+                      className="w-full px-4 py-3 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm focus:ring-2 focus:ring-primary-500 outline-none transition-all font-medium text-slate-700 dark:text-slate-200"
                       value={formData.kiosk_pin || ''}
                       onChange={e => setFormData({ ...formData, kiosk_pin: e.target.value.replace(/[^0-9]/g, '') })}
                     />
@@ -360,28 +362,28 @@ export default function QrSelector({ tenant, themeColor }) {
                         className={`w-11 h-6 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 dark:border-slate-600 after:border after:rounded-lg after:h-5 after:w-5 after:transition-all ${!formData.kiosk_show_photo ? 'bg-slate-200 dark:bg-slate-700' : ''}`}
                         style={formData.kiosk_show_photo ? { backgroundColor: themeColor } : {}}
                       ></div>
-                      <span className="ml-3 text-sm font-bold text-slate-700 dark:text-slate-300 dark:text-slate-300">Afișează pozele pe Kiosk</span>
+                      <span className="ml-3 text-sm font-bold text-slate-700 dark:text-slate-300">{t('showPhotosOnKiosk')}</span>
                     </label>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-2">Orientare Afișaj Kiosk</label>
+                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{t('orientationLabel')}</label>
                     <select
-                      className="w-full px-4 py-3 rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm focus:ring-2 focus:ring-primary-500 outline-none transition-all font-medium text-slate-700 dark:text-slate-300 dark:text-slate-200 appearance-none"
+                      className="w-full px-4 py-3 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm focus:ring-2 focus:ring-primary-500 outline-none transition-all font-medium text-slate-700 dark:text-slate-200 appearance-none"
                       value={formData.kiosk_orientation}
                       onChange={e => setFormData({ ...formData, kiosk_orientation: e.target.value })}
                     >
-                      <option value="horizontal">Orizontal (Peisaj)</option>
-                      <option value="vertical">Vertical (Portret)</option>
+                      <option value="horizontal">{t('horizontalLandscape')}</option>
+                      <option value="vertical">{t('verticalPortrait')}</option>
                     </select>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-2">Culoare Timer</label>
+                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{t('timerColorLabel')}</label>
                     <div className="flex items-center gap-2">
                       <input
                         type="color"
@@ -398,12 +400,12 @@ export default function QrSelector({ tenant, themeColor }) {
                         type="button"
                         onClick={() => setFormData({ ...formData, kiosk_timer_color: '' })}
                         className="text-xs text-slate-500 dark:text-slate-400 hover:text-red-500"
-                      >Reset</button>
+                      >{t('reset') || 'Reset'}</button>
                     </div>
                   </div>
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wider">Culoare Fundal Ceas</label>
+                      <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t('timerBgColorLabel')}</label>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input
                           type="checkbox"
@@ -412,7 +414,7 @@ export default function QrSelector({ tenant, themeColor }) {
                           onChange={e => setFormData({ ...formData, kiosk_show_timer_bg: e.target.checked })}
                         />
                         <div
-                          className={`w-9 h-5 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 dark:border-slate-600 after:border after:rounded-lg after:h-4 after:w-4 after:transition-all ${formData.kiosk_show_timer_bg === false ? 'bg-slate-200 dark:bg-slate-700 dark:bg-slate-600' : ''}`}
+                          className={`w-9 h-5 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 dark:border-slate-600 after:border after:rounded-lg after:h-4 after:w-4 after:transition-all ${formData.kiosk_show_timer_bg === false ? 'bg-slate-200 dark:bg-slate-700' : ''}`}
                           style={formData.kiosk_show_timer_bg !== false ? { backgroundColor: themeColor } : {}}
                         ></div>
                       </label>
@@ -434,12 +436,12 @@ export default function QrSelector({ tenant, themeColor }) {
                           type="button"
                           onClick={() => setFormData({ ...formData, kiosk_timer_bg_color: '' })}
                           className="text-xs text-slate-500 dark:text-slate-400 hover:text-red-500"
-                        >Reset</button>
+                        >{t('reset') || 'Reset'}</button>
                       </div>
                     )}
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-2">Culoare Fundal Ecran</label>
+                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{t('screenBgColorLabel')}</label>
                     <div className="flex items-center gap-2">
                       <input
                         type="color"
@@ -456,12 +458,12 @@ export default function QrSelector({ tenant, themeColor }) {
                         type="button"
                         onClick={() => setFormData({ ...formData, kiosk_bg_color: '' })}
                         className="text-xs text-slate-500 dark:text-slate-400 hover:text-red-500"
-                      >Reset</button>
+                      >{t('reset') || 'Reset'}</button>
                     </div>
                   </div>
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wider">Culoare Fundal Logo</label>
+                      <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t('logoBgColorLabel')}</label>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input
                           type="checkbox"
@@ -470,7 +472,7 @@ export default function QrSelector({ tenant, themeColor }) {
                           onChange={e => setFormData({ ...formData, kiosk_show_logo_bg: e.target.checked })}
                         />
                         <div
-                          className={`w-9 h-5 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 dark:border-slate-600 after:border after:rounded-lg after:h-4 after:w-4 after:transition-all ${formData.kiosk_show_logo_bg === false ? 'bg-slate-200 dark:bg-slate-700 dark:bg-slate-600' : ''}`}
+                          className={`w-9 h-5 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 dark:border-slate-600 after:border after:rounded-lg after:h-4 after:w-4 after:transition-all ${formData.kiosk_show_logo_bg === false ? 'bg-slate-200 dark:bg-slate-700' : ''}`}
                           style={formData.kiosk_show_logo_bg !== false ? { backgroundColor: themeColor } : {}}
                         ></div>
                       </label>
@@ -492,12 +494,12 @@ export default function QrSelector({ tenant, themeColor }) {
                           type="button"
                           onClick={() => setFormData({ ...formData, kiosk_logo_bg: '' })}
                           className="text-xs text-slate-500 dark:text-slate-400 hover:text-red-500"
-                        >Reset</button>
+                        >{t('reset') || 'Reset'}</button>
                       </div>
                     )}
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-2">Mărime Logo ({formData.kiosk_logo_size || 1})</label>
+                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{t('logoSizeLabel')} ({formData.kiosk_logo_size || 1})</label>
                     <div className="flex items-center gap-4">
                       <input
                         type="range"
@@ -512,13 +514,13 @@ export default function QrSelector({ tenant, themeColor }) {
                     </div>
                   </div>
                   <div className="sm:col-span-2">
-                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-2">Poziție Logo (X / Y)</label>
-                    <div className="flex flex-col gap-4 bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 dark:border-slate-800">
+                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{t('logoPositionLabel')}</label>
+                    <div className="flex flex-col gap-4 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-200 dark:border-slate-700">
                       <div>
                         <div className="flex justify-between text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">
-                          <span>Stânga</span>
-                          <span>Orizontal: {formData.kiosk_logo_x ?? 5}%</span>
-                          <span>Dreapta</span>
+                          <span>{t('leftPos')}</span>
+                          <span>{t('horizontalPos')}: {formData.kiosk_logo_x ?? 5}%</span>
+                          <span>{t('rightPos')}</span>
                         </div>
                         <input
                           type="range"
@@ -533,9 +535,9 @@ export default function QrSelector({ tenant, themeColor }) {
                       </div>
                       <div>
                         <div className="flex justify-between text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">
-                          <span>Sus</span>
-                          <span>Vertical: {formData.kiosk_logo_y ?? 5}%</span>
-                          <span>Jos</span>
+                          <span>{t('topPos')}</span>
+                          <span>{t('verticalPos')}: {formData.kiosk_logo_y ?? 5}%</span>
+                          <span>{t('bottomPos')}</span>
                         </div>
                         <input
                           type="range"
@@ -556,16 +558,16 @@ export default function QrSelector({ tenant, themeColor }) {
                   <button
                     type="button"
                     onClick={() => { setShowAddForm(false); setEditingId(null); setFormError(null); }}
-                    className="px-5 h-10 text-sm flex items-center justify-center rounded-full font-bold text-slate-600 dark:text-slate-300 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 transition-colors"
+                    className="px-5 h-10 text-sm flex items-center justify-center rounded-full font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
                   >
-                    Anulează
+                    {t('cancel')}
                   </button>
                   <button
                     type="submit"
                     className="px-5 h-10 text-sm flex items-center justify-center rounded-full font-bold text-white shadow-md transition-all hover:-translate-y-0.5 active:translate-y-0"
                     style={{ backgroundColor: themeColor }}
                   >
-                    {editingId ? 'Salvează Modificările' : 'Adaugă Kiosk'}
+                    {editingId ? t('saveChangesBtn') : t('addKioskBtn')}
                   </button>
                 </div>
               </form>
@@ -586,14 +588,14 @@ export default function QrSelector({ tenant, themeColor }) {
               <div>
                 <div className="flex items-center gap-2">
                   <h4 className="text-sm font-bold text-slate-900 dark:text-white">
-                    Folosești un iPad sau tabletă la intrare?
+                    {t('bannerIpadTitle')}
                   </h4>
                   <span className="text-[10px] uppercase tracking-wider bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 px-2 py-0.5 rounded-full font-black">
-                    Recomandat
+                    {t('bannerIpadBadge')}
                   </span>
                 </div>
                 <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
-                  Activează <strong className="text-slate-800 dark:text-slate-200">Guided Access (Acces Ghidat)</strong> pentru a bloca iPad-ul strict pe ecranul cu codul QR. Angajații nu pot ieși din pagină, iar ecranul rămâne mereu pornit.
+                  {t('bannerIpadDesc')}
                 </p>
               </div>
             </div>
@@ -601,7 +603,7 @@ export default function QrSelector({ tenant, themeColor }) {
               onClick={() => setShowIpadGuide(true)}
               className="px-4 py-2.5 text-xs rounded-full font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-all whitespace-nowrap self-stretch sm:self-auto text-center shrink-0"
             >
-              Vezi Ghid în 3 Pași
+              {t('bannerIpadBtn')}
             </button>
           </div>
 
@@ -611,7 +613,7 @@ export default function QrSelector({ tenant, themeColor }) {
               <Search className="w-4 h-4 text-slate-400" style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', zIndex: 1 }} />
               <input
                 className="w-full h-12 pl-12 pr-6 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white shadow-sm outline-none focus:ring-2 focus:ring-primary-500 transition-all text-sm font-medium rounded-full"
-                placeholder="Caută kiosk sau locație..."
+                placeholder={t('searchKioskPlaceholder')}
                 value={search}
                 onChange={e => { setSearch(e.target.value); setPage(1); }}
               />
@@ -623,55 +625,57 @@ export default function QrSelector({ tenant, themeColor }) {
             </div>
           </div>
 
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 dark:border-slate-700">
-            <div className="p-4 border-b border-slate-100 dark:border-slate-700/50 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-800/50 rounded-t-2xl">
-              <div className="font-bold text-slate-700 dark:text-slate-300 dark:text-white">Total: {total} înregistrări</div>
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
+            <div className="p-4 border-b border-slate-100 dark:border-slate-700/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50 dark:bg-slate-800/50 rounded-t-2xl">
+              <div className="font-bold text-slate-700 dark:text-slate-300">
+                {t('total') || 'Total'}: {total} {t('recordsUnit') || 'înregistrări'}
+              </div>
             </div>
 
             <div className="overflow-x-auto min-h-[300px]">
               <table className="w-full text-left border-collapse min-w-[600px]">
                 <thead>
-                  <tr className="bg-slate-50 dark:bg-slate-800/50/50 dark:bg-slate-800/30 border-b border-slate-200 dark:border-slate-700 dark:border-slate-700">
-                    <th style={{ width: 50, textAlign: 'center' }} className="py-3 font-bold text-xs tracking-wider text-slate-500 dark:text-slate-400 dark:text-slate-400">Nr.</th>
-                    <th className="py-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 dark:text-slate-400">Kiosk</th>
-                    <th className="py-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 dark:text-slate-400">Locație Alocată</th>
-                    <th className="py-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 dark:text-slate-400">Setări</th>
-                    <th className="py-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 dark:text-slate-400 text-right">Acțiuni</th>
+                  <tr className="bg-slate-50 dark:bg-slate-800/30 border-b border-slate-200 dark:border-slate-700">
+                    <th style={{ width: 50, textAlign: 'center' }} className="py-3 font-bold text-xs tracking-wider text-slate-500 dark:text-slate-400">Nr.</th>
+                    <th className="py-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">Kiosk</th>
+                    <th className="py-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">{t('colAssignedLocation')}</th>
+                    <th className="py-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">{t('colSettings')}</th>
+                    <th className="py-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 text-right">{t('colActionsHeader')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                   {currentData.length > 0 ? (
                     currentData.map((kiosk, index) => (
-                      <tr key={kiosk.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50/80 dark:hover:bg-slate-700/50 transition-colors group">
-                        <td className="text-center text-slate-500 dark:text-slate-400 dark:text-slate-400 text-[13px]">
+                      <tr key={kiosk.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
+                        <td className="text-center text-slate-500 dark:text-slate-400 text-[13px]">
                           {(page - 1) * rowsPerPage + index + 1}
                         </td>
                         <td className="py-3 px-4">
-                          <div className="font-bold text-slate-800 dark:text-white dark:text-white flex items-center gap-2">
+                          <div className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
                             <TabletSmartphone size={16} className="text-primary-500" />
                             {kiosk.name}
                           </div>
                         </td>
-                        <td className="py-3 px-4 text-sm text-slate-600 dark:text-slate-300 dark:text-slate-300">
+                        <td className="py-3 px-4 text-sm text-slate-600 dark:text-slate-300">
                           {kiosk.location_name ? (
                             <span className="flex items-center gap-1">
                               <MapPin size={14} className="opacity-70" /> {kiosk.location_name}
                             </span>
                           ) : (
-                            <span className="text-slate-400 italic">Locație ștearsă</span>
+                            <span className="text-slate-400 italic">{t('locationDeleted')}</span>
                           )}
                         </td>
                         <td className="py-3 px-4">
                           <div className="flex gap-3">
                             {kiosk.kiosk_pin ? (
-                              <Lock size={16} className="text-amber-500" title="PIN Activ" />
+                              <Lock size={16} className="text-amber-500" title={t('pinActive')} />
                             ) : (
-                              <Unlock size={16} className="text-green-500" title="Fără PIN" />
+                              <Unlock size={16} className="text-green-500" title={t('noPin')} />
                             )}
                             {kiosk.kiosk_orientation === 'vertical' ? (
-                              <Smartphone size={16} className="text-slate-500 dark:text-slate-400 dark:text-slate-400" title="Portret" />
+                              <Smartphone size={16} className="text-slate-500 dark:text-slate-400" title={t('orientationPortrait')} />
                             ) : (
-                              <Monitor size={16} className="text-slate-500 dark:text-slate-400 dark:text-slate-400" title="Peisaj" />
+                              <Monitor size={16} className="text-slate-500 dark:text-slate-400" title={t('orientationLandscape')} />
                             )}
                           </div>
                         </td>
@@ -682,14 +686,14 @@ export default function QrSelector({ tenant, themeColor }) {
                                 <button
                                   onClick={() => openKiosk(kiosk.id, 'kiosk')}
                                   className="p-2 text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200 rounded-full transition-all"
-                                  title="Deschide Ecran QR Dinamic"
+                                  title={t('openDynamicQr')}
                                 >
                                   <TabletSmartphone size={16} />
                                 </button>
                                 <button
                                   onClick={() => openKiosk(kiosk.id, 'scanner')}
                                   className="p-2 text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm hover:text-emerald-600 hover:bg-emerald-50 hover:border-emerald-200 rounded-full transition-all"
-                                  title="Deschide Scaner Fizic"
+                                  title={t('openHardwareScanner')}
                                 >
                                   <ScanLine size={16} />
                                 </button>
@@ -698,7 +702,7 @@ export default function QrSelector({ tenant, themeColor }) {
                               <button
                                 onClick={() => openKiosk(kiosk.id)}
                                 className="p-2 text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200 rounded-full transition-all"
-                                title={kiosk.qr_mode === 'HARDWARE' ? "Deschide Scaner" : "Deschide Ecran Kiosk"}
+                                title={kiosk.qr_mode === 'HARDWARE' ? t('openScanner') : t('openKioskScreen')}
                               >
                                 {kiosk.qr_mode === 'HARDWARE' ? <ScanLine size={16} /> : <ExternalLink size={16} />}
                               </button>
@@ -729,14 +733,14 @@ export default function QrSelector({ tenant, themeColor }) {
                                 window.scrollTo({ top: 0, behavior: 'smooth' });
                               }}
                               className="p-2 text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm hover:text-primary-600 hover:bg-primary-50 hover:border-primary-200 rounded-full transition-all"
-                              title="Editează"
+                              title={t('edit')}
                             >
                               <Edit2 size={16} />
                             </button>
                             <button
                               onClick={() => setDeleteConfirmId(kiosk.id)}
                               className="p-2 text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm hover:text-red-600 hover:bg-red-50 hover:border-red-200 rounded-full transition-all"
-                              title="Șterge"
+                              title={t('delete')}
                             >
                               <Trash2 size={16} />
                             </button>
@@ -746,9 +750,9 @@ export default function QrSelector({ tenant, themeColor }) {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="5" className="py-12 text-center text-slate-500 dark:text-slate-400 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50/50 dark:bg-slate-900/20">
+                      <td colSpan="5" className="py-12 text-center text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/20">
                         <TabletSmartphone className="mx-auto h-12 w-12 text-slate-300 dark:text-slate-600 mb-3" />
-                        <p className="font-medium">Nu am găsit niciun Kiosk.</p>
+                        <p className="font-medium">{t('noKiosksFound')}</p>
                       </td>
                     </tr>
                   )}
@@ -760,19 +764,19 @@ export default function QrSelector({ tenant, themeColor }) {
             <div className="px-4 sm:px-5 py-3 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-50 dark:bg-slate-800/50 rounded-b-xl">
               <div className="flex flex-wrap items-center justify-between sm:justify-start w-full sm:w-auto gap-3 sm:gap-4">
                 <span className="whitespace-nowrap text-[13px] text-slate-500 dark:text-slate-400 font-bold">
-                  Afișează&nbsp;
+                  {t('show') || 'Afișează'}&nbsp;
                   <select value={rowsPerPage} onChange={e => { setRowsPerPage(Number(e.target.value)); setPage(1); }} className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-full px-2 py-0.5 outline-none dark:text-white">
                     <option value={10}>10</option>
                     <option value={15}>15</option>
                     <option value={25}>25</option>
                     <option value={50}>50</option>
-                    <option value={9999}>Toți</option>
+                    <option value={9999}>{t('allOption')}</option>
                   </select>
                 </span>
-                <span className="whitespace-nowrap text-[13px] text-slate-500 dark:text-slate-400">Total înregistrări: <strong className="text-slate-800 dark:text-white">{total}</strong></span>
+                <span className="whitespace-nowrap text-[13px] text-slate-500 dark:text-slate-400">{t('totalRecords') || 'Total înregistrări'}: <strong className="text-slate-800 dark:text-white">{total}</strong></span>
               </div>
               <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-2">
-                <span className="whitespace-nowrap text-[13px] text-slate-500 dark:text-slate-400 font-bold mr-2">Pagina {page} din {totalPages || 1}</span>
+                <span className="whitespace-nowrap text-[13px] text-slate-500 dark:text-slate-400 font-bold mr-2">{t('page') || 'Pagina'} {page} {t('of') || 'din'} {totalPages || 1}</span>
                 <button className="w-8 h-8 flex items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors shadow-sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}><ChevronLeft size={16} /></button>
                 <button className="w-8 h-8 flex items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors shadow-sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages}><ChevronRight size={16} /></button>
               </div>
@@ -785,8 +789,8 @@ export default function QrSelector({ tenant, themeColor }) {
         isOpen={!!deleteConfirmId}
         onClose={() => setDeleteConfirmId(null)}
         onConfirm={confirmDelete}
-        title="Ștergere Kiosk"
-        message="Ești sigur că vrei să ștergi acest Kiosk?"
+        title={t('deleteKioskConfirmTitle')}
+        message={t('deleteKioskConfirmMsg')}
       />
 
       <IpadGuideModal 
