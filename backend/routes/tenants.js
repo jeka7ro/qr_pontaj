@@ -371,12 +371,12 @@ router.get('/billing-summary', async (req, res) => {
           job_title: emp.job_title || 'Nespecificat',
           days_active: daysShown,
           days_in_month: daysInMonth,
-          rate_percent: days >= 15 ? 100 : 50,
-          amount_eur: days >= 15 ? price : (price * 0.5),
+          rate_percent: daysShown >= 15 ? 100 : 50,
+          amount_eur: daysShown >= 15 ? price : (price * 0.5),
           note
         };
 
-        if (days >= 15) {
+        if (daysShown >= 15) {
           fullRateEmployees.push(empData);
         } else {
           halfRateEmployees.push(empData);

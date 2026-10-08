@@ -158,8 +158,8 @@ router.get('/', async (req, res) => {
         const isCurrentMonth = (year === now.getFullYear() && month === (now.getMonth() + 1));
         const lastRealDay = isCurrentMonth ? Math.min(endDay, now.getDate()) : endDay;
         const daysShown = Math.max(1, Math.min(daysInMonth, lastRealDay - startDay + 1));
-        const ratePercent = days >= 15 ? 100 : 50;
-        const amountEur = days >= 15 ? price : (price * 0.5);
+        const ratePercent = daysShown >= 15 ? 100 : 50;
+        const amountEur = daysShown >= 15 ? price : (price * 0.5);
         const amountRon = isRomania ? parseFloat((amountEur * exchangeRate).toFixed(2)) : null;
 
         let note = isCurrentMonth
