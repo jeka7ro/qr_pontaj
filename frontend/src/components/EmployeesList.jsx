@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, UserPlus, Search, Edit2, Edit, KeyRound, Trash2, Loader2, ScanLine, Plus, Check, X, ChevronLeft, ChevronRight, MapPin, QrCode, Printer, Smartphone, Copy, Calendar, AlertTriangle, Square, CheckSquare, MinusSquare, Briefcase, Archive, RotateCcw, UserCheck, Download, FileSpreadsheet, FileText } from 'lucide-react';
+import { Users, UserPlus, Search, Edit2, Edit, KeyRound, Trash2, Loader2, ScanLine, Plus, Check, X, ChevronLeft, ChevronRight, MapPin, QrCode, Printer, Smartphone, Copy, Calendar, AlertTriangle, Square, CheckSquare, MinusSquare, Briefcase, Archive, RotateCcw, UserCheck, Download, FileSpreadsheet, FileText, MessageSquare } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { QRCodeSVG } from 'qrcode.react';
 import { extractTextFromImageOrPdf, cropFaceFromIdCard } from '../lib/pdfOcr';
@@ -1301,7 +1301,7 @@ export default function EmployeesList({ tenant, themeColor }) {
                 setCopiedLink(true);
                 setTimeout(() => setCopiedLink(false), 2000);
               }} 
-              className={`w-full px-5 h-10 text-sm rounded-full flex items-center justify-center gap-2 font-bold tracking-wide shadow-lg hover:opacity-90 transition-all ${
+              className={`w-full px-5 h-10 text-sm rounded-full flex items-center justify-center gap-2 font-bold tracking-wide shadow-lg hover:opacity-90 transition-all whitespace-nowrap shrink-0 ${
                 copiedLink 
                   ? 'bg-green-500 text-white dark:bg-green-600' 
                   : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900'
@@ -1313,6 +1313,32 @@ export default function EmployeesList({ tenant, themeColor }) {
                 <><Copy size={18} /> {L.copyLink}</>
               )}
             </button>
+
+            {qrEmployee.phone && (() => {
+              const cleanEmpPhone = String(qrEmployee.phone).replace(/[^0-9+]/g, '');
+              const waEmpPhone = cleanEmpPhone.startsWith('0') ? '4' + cleanEmpPhone : cleanEmpPhone.replace('+', '');
+              const empLoginLink = `${window.location.protocol}//${window.location.host}/login`;
+              const waEmpMsg = encodeURIComponent(
+                `Bună ziua, ${qrEmployee.first_name}!\n\n` +
+                `Iată linkul pentru pontaj și acces în portalul companiei ${tenant?.name || ''}:\n` +
+                `🔗 Portal: ${empLoginLink}\n` +
+                (qrEmployee.employee_code ? `🆔 Cod Angajat: ${qrEmployee.employee_code}\n` : '') +
+                (qrEmployee.pin_code ? `🔑 Cod PIN: ${qrEmployee.pin_code}\n` : '') +
+                `\nPoți folosi și codul QR generat pe ecran pentru pontaj rapid la Kiosk.`
+              );
+              return (
+                <a
+                  href={`https://wa.me/${waEmpPhone}?text=${waEmpMsg}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-full mt-2.5 px-5 h-10 text-sm rounded-full flex items-center justify-center gap-2 font-bold tracking-wide shadow-md bg-emerald-600 hover:bg-emerald-700 text-white transition-all whitespace-nowrap shrink-0"
+                  title="Trimite datele de conectare pe WhatsApp"
+                >
+                  <MessageSquare size={16} />
+                  <span>Trimite pe WhatsApp</span>
+                </a>
+              );
+            })()}
           </div>
         </div>
       )}

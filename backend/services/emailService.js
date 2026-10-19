@@ -54,9 +54,33 @@ function ensurePublicUrl(url, subdomain = null) {
 
 /**
  * Trimitere email generic prin Brevo
-
  */
 async function sendEmail({ to, subject, html, text, senderName }) {
+  const recipients = Array.isArray(to) ? to : [{ email: to }];
+
+  // REGULĂ STRICTĂ: Nu trimitem NICIODATĂ emailuri reale către adrese mock, test sau demo
+  const isMockAddress = (addr) => {
+    if (!addr) return true;
+    const lower = String(addr).toLowerCase().trim();
+    return (
+      lower.includes('example.com') ||
+      lower.includes('exemplu.ro') ||
+      lower.includes('test') ||
+      lower.includes('mock') ||
+      lower.includes('fake') ||
+      lower.includes('andrei.popescu') ||
+      lower.includes('demo') ||
+      lower.endsWith('.test') ||
+      lower.endsWith('.local')
+    );
+  };
+
+  const isMock = recipients.some(r => isMockAddress(typeof r === 'string' ? r : r.email));
+  if (isMock) {
+    console.log(`[EmailService] Adresă mock/test detectată (${JSON.stringify(recipients)}). Emailul NU este trimis către Brevo.`);
+    return { success: true, messageId: 'mock-suppressed-' + Date.now() };
+  }
+
   const apiKey = process.env.BREVO_API_KEY;
   const senderEmail = process.env.BREVO_SENDER_EMAIL || 'jeka7ro@gmail.com';
   const name = senderName || process.env.BREVO_SENDER_NAME || 'Smart QR';
@@ -71,7 +95,7 @@ async function sendEmail({ to, subject, html, text, senderName }) {
       name: name,
       email: senderEmail
     },
-    to: Array.isArray(to) ? to : [{ email: to }],
+    to: recipients,
     subject: subject,
     htmlContent: html,
     textContent: text || subject
@@ -387,11 +411,329 @@ async function sendPasswordChangedEmail({ to, userName, companyName, tenantLogo,
   return sendEmail({ to, subject, html, text, senderName });
 }
 
+/**
+ * Template Email: Date de conectare Cont Demo / Activare QrTime.ro
+ */
+async function sendDemoAccessEmail({ to, contactName, companyName, initialPassword, loginUrl, employeesCount, mode }) {
+  const name = contactName || 'Administrator';
+  const company = companyName || 'Companie Partener';
+  const isDemo = mode === 'demo';
+  const subject = isDemo 
+    ? `Date de conectare cont Demo QrTime.ro — ${company}`
+    : `Confirmare solicitare activare QrTime.ro — ${company}`;
+  const senderName = 'QrTime.ro';
+  const cleanLoginUrl = loginUrl || 'https://qrtime.ro/admin/login';
+
+  const html = `
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${subject}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color: #f8fafc; width: 100%;">
+    <tr>
+      <td align="center" style="padding: 40px 16px;">
+        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="max-width: 580px; background-color: #ffffff; border-radius: 20px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 10px 30px rgba(0,0,0,0.04);">
+          
+          <!-- Header QrTime.ro -->
+          <tr>
+            <td align="center" style="background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%); padding: 36px 24px; text-align: center;">
+              <div style="display: inline-block; background-color: #ffffff; border-radius: 12px; padding: 6px 14px; margin-bottom: 10px;">
+                <span style="font-size: 18px; font-weight: 900; color: #1d4ed8; letter-spacing: -0.5px;">QrTime<span style="color: #60a5fa;">.ro</span></span>
+              </div>
+              <div style="font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.85); letter-spacing: 2px; text-transform: uppercase;">
+                ${isDemo ? 'CONT DEMO ACTIVAT (10 ZILE GRATUIT)' : 'SOLICITARE ACTIVARE PLATFORMĂ'}
+              </div>
+            </td>
+          </tr>
+
+          <!-- Continut Principal -->
+          <tr>
+            <td style="padding: 36px 32px; color: #1e293b;">
+              <h1 style="font-size: 22px; font-weight: 800; margin-top: 0; margin-bottom: 10px; color: #0f172a; letter-spacing: -0.3px;">
+                Salut, ${name}!
+              </h1>
+              <p style="font-size: 14px; line-height: 1.65; color: #475569; margin: 0 0 24px 0;">
+                ${isDemo 
+                  ? `Contul tău demonstrativ pentru compania <strong>${company}</strong> este pregătit. Ai acces complet timp de 10 zile la toate funcționalitățile (pontaj QR pe tabletă, condică ITM Art. 119 și export SAGA).` 
+                  : `Am înregistrat solicitarea ta de abonament pentru compania <strong>${company}</strong> (${employeesCount || 10} angajați la 5 € / angajat / lună).`
+                }
+              </p>
+
+              <!-- Card Date Conectare -->
+              <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 14px; margin: 0 0 24px 0;">
+                <tr>
+                  <td style="padding: 20px 24px;">
+                    <div style="font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #2563eb; margin-bottom: 12px;">
+                      Datele tale de acces
+                    </div>
+                    <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td style="padding: 8px 0; font-size: 13px; color: #64748b; font-weight: 600; border-bottom: 1px solid #edf2f7; width: 40%;">Companie:</td>
+                        <td style="padding: 8px 0; font-size: 13px; color: #0f172a; font-weight: 700; text-align: right; border-bottom: 1px solid #edf2f7;">${company}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 8px 0; font-size: 13px; color: #64748b; font-weight: 600; border-bottom: 1px solid #edf2f7;">Email utilizator:</td>
+                        <td style="padding: 8px 0; font-size: 13px; color: #0f172a; font-weight: 700; text-align: right; border-bottom: 1px solid #edf2f7;">${to}</td>
+                      </tr>
+                      ${initialPassword ? `
+                      <tr>
+                        <td style="padding: 8px 0; font-size: 13px; color: #64748b; font-weight: 600; border-bottom: 1px solid #edf2f7;">Parolă temporară:</td>
+                        <td style="padding: 8px 0; font-size: 13px; color: #0f172a; font-weight: 700; text-align: right; border-bottom: 1px solid #edf2f7;">
+                          <span style="background-color: #e2e8f0; color: #0f172a; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 12px;">${initialPassword}</span>
+                        </td>
+                      </tr>
+                      ` : ''}
+                      <tr>
+                        <td style="padding: 8px 0; font-size: 13px; color: #64748b; font-weight: 600;">Status cont:</td>
+                        <td style="padding: 8px 0; font-size: 13px; color: #16a34a; font-weight: 700; text-align: right;">Activ (10 Zile Gratuite)</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Buton Actiune Directa -->
+              <div style="text-align: center; margin: 26px 0;">
+                <a href="${cleanLoginUrl}" target="_blank" style="display: inline-block; background: #2563eb; color: #ffffff !important; text-decoration: none; padding: 15px 36px; border-radius: 9999px; font-weight: 800; font-size: 14px; box-shadow: 0 6px 20px rgba(37,99,235,0.35);">
+                  Intră în Panoul de Administrare →
+                </a>
+              </div>
+
+              <!-- Conectare cu Google -->
+              <div style="background-color: #f1f5f9; border-radius: 12px; padding: 14px 18px; margin: 24px 0; font-size: 12px; color: #334155; line-height: 1.55;">
+                <strong>Autentificare rapidă cu Google:</strong> Te poți conecta oricând în aplicație și prin butonul <strong>„Continuă cu Google”</strong> folosind această adresă de email, fără a fi nevoie să reții parola.
+              </div>
+
+              <div style="font-size: 12px; color: #64748b; line-height: 1.5; margin-top: 20px;">
+                Ai întrebări sau dorești asistență la instalarea pe tabletele din locații? Echipa noastră te poate asista telefonic la <a href="tel:0757777712" style="color: #2563eb; font-weight: 700; text-decoration: none;">0757 77 77 12</a>.
+              </div>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td align="center" style="background-color: #f8fafc; padding: 20px 32px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #edf2f7; line-height: 1.6;">
+              QrTime.ro &bull; Pontaj Electronic QR pe Tabletă &amp; Conformitate Art. 119 Codul Muncii<br>
+              Ai primit acest mesaj deoarece ai solicitat accesul la platforma QrTime.ro.
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `;
+
+  const text = `Salut ${name},\n\nContul tau QrTime.ro pentru ${company} este gata.\nEmail: ${to}\n${initialPassword ? `Parola temporara: ${initialPassword}\n` : ''}\nAcceseaza panoul: ${cleanLoginUrl}\n\nTe poti conecta de asemenea direct cu Google folosind aceasta adresa de email.\n\nSuport: 0757 77 77 12\nQrTime.ro`;
+
+  return sendEmail({ to, subject, html, text, senderName });
+}
+
+/**
+ * Notificare alertă SuperAdmin: Înregistrare nouă / Lead sosit prin Landing Page
+ */
+async function sendLeadNotificationToAdmin({
+  companyName,
+  contactName,
+  phone,
+  anafPhone,
+  email,
+  cui,
+  address,
+  city,
+  county,
+  employeesCount,
+  mode,
+  subdomain,
+  notes,
+  initialPassword,
+  loginUrl
+}) {
+  const adminRecipient = process.env.ADMIN_NOTIFICATION_EMAIL || process.env.BREVO_SENDER_EMAIL || 'jeka7ro@gmail.com';
+  const cleanPhone = phone ? String(phone).replace(/[^0-9+]/g, '') : '';
+  const waPhone = cleanPhone.startsWith('0') ? '4' + cleanPhone : cleanPhone.replace('+', '');
+  const subject = `🔔 [Lead Nou ${mode === 'subscribe' ? 'ABONAMENT' : 'DEMO'}] ${companyName || 'Companie'} — ${contactName || 'Persoană'} (${phone || 'Fără telefon'})`;
+  const baseDomain = process.env.BASE_DOMAIN || 'qr.pontaj.app';
+  const superadminUrl = `https://${baseDomain}/admin/dashboard`;
+  const tenantUrl = loginUrl || (subdomain ? `https://${subdomain}.${baseDomain}/admin/login` : `https://qrpontaj.ro/login`);
+
+  const waLoginMessage = encodeURIComponent(
+    `Bună ziua, ${contactName || companyName}!\n\n` +
+    `Contul dvs. QR Pontaj pentru compania ${companyName} a fost configurat cu succes.\n\n` +
+    `🔗 Link de conectare: ${tenantUrl}\n` +
+    `📧 Email: ${email}\n` +
+    (initialPassword ? `🔑 Parolă inițială: ${initialPassword}\n\n` : '\n') +
+    `Vă rugăm să accesați linkul pentru a începe utilizarea platformei.`
+  );
+  const waDirectUrl = `https://wa.me/${waPhone}?text=${waLoginMessage}`;
+
+  const html = `
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="utf-8">
+  <title>${subject}</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #0f172a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color: #0f172a; padding: 40px 16px;">
+    <tr>
+      <td align="center">
+        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="max-width: 600px; background-color: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.3);">
+          
+          <!-- Header Alert -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 32px 28px; border-bottom: 3px solid #3b82f6;">
+              <div style="display: inline-block; background-color: ${mode === 'subscribe' ? '#10b981' : '#3b82f6'}; color: #ffffff; padding: 4px 12px; border-radius: 9999px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px;">
+                ${mode === 'subscribe' ? 'SOLICITARE ABONAMENT (5 € / angajat)' : 'SOLICITARE DEMO GRATUIT (10 ZILE)'}
+              </div>
+              <h1 style="color: #ffffff; font-size: 22px; font-weight: 800; margin: 0; letter-spacing: -0.5px;">
+                ${companyName || 'Companie Nouă'}
+              </h1>
+              <div style="color: #94a3b8; font-size: 13px; margin-top: 6px;">
+                Sosit prin formularul Landing Page (${new Date().toLocaleString('ro-RO', { timeZone: 'Europe/Bucharest' })})
+              </div>
+            </td>
+          </tr>
+
+          <!-- Detalii Lead -->
+          <tr>
+            <td style="padding: 32px 28px;">
+              <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 14px; margin-bottom: 24px;">
+                <tr>
+                  <td style="padding: 20px;">
+                    <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td style="padding: 8px 0; font-size: 13px; color: #64748b; font-weight: 600; width: 35%; border-bottom: 1px solid #e2e8f0;">Firma:</td>
+                        <td style="padding: 8px 0; font-size: 14px; color: #0f172a; font-weight: 800; border-bottom: 1px solid #e2e8f0;">${companyName}</td>
+                      </tr>
+                      ${cui ? `
+                      <tr>
+                        <td style="padding: 8px 0; font-size: 13px; color: #64748b; font-weight: 600; border-bottom: 1px solid #e2e8f0;">CUI / CIF:</td>
+                        <td style="padding: 8px 0; font-size: 13px; color: #0f172a; font-weight: 700; border-bottom: 1px solid #e2e8f0;">
+                          <span style="background: #e0e7ff; color: #3730a3; padding: 2px 8px; border-radius: 6px; font-weight: 800;">${cui}</span>
+                        </td>
+                      </tr>` : ''}
+                      <tr>
+                        <td style="padding: 8px 0; font-size: 13px; color: #64748b; font-weight: 600; border-bottom: 1px solid #e2e8f0;">Persoană Contact:</td>
+                        <td style="padding: 8px 0; font-size: 14px; color: #0f172a; font-weight: 700; border-bottom: 1px solid #e2e8f0;">${contactName || 'Nespecificat'}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 8px 0; font-size: 13px; color: #64748b; font-weight: 600; border-bottom: 1px solid #e2e8f0;">Telefon Direct (Client):</td>
+                        <td style="padding: 8px 0; font-size: 15px; color: #2563eb; font-weight: 800; border-bottom: 1px solid #e2e8f0;">
+                          ${phone ? `<a href="tel:${cleanPhone}" style="color: #2563eb; text-decoration: none;">📞 ${phone}</a>` : '<span style="color: #94a3b8;">Fără număr</span>'}
+                        </td>
+                      </tr>
+                      ${(anafPhone && anafPhone !== phone) ? `
+                      <tr>
+                        <td style="padding: 8px 0; font-size: 13px; color: #64748b; font-weight: 600; border-bottom: 1px solid #e2e8f0;">Telefon Opțional (ANAF):</td>
+                        <td style="padding: 8px 0; font-size: 13px; color: #0f172a; font-weight: 600; border-bottom: 1px solid #e2e8f0;">
+                          <a href="tel:${String(anafPhone).replace(/[^0-9+]/g, '')}" style="color: #475569; text-decoration: none;">🏛️ ${anafPhone}</a>
+                        </td>
+                      </tr>` : ''}
+                      <tr>
+                        <td style="padding: 8px 0; font-size: 13px; color: #64748b; font-weight: 600; border-bottom: 1px solid #e2e8f0;">Email:</td>
+                        <td style="padding: 8px 0; font-size: 13px; color: #0f172a; font-weight: 700; border-bottom: 1px solid #e2e8f0;">
+                          <a href="mailto:${email}" style="color: #2563eb; text-decoration: none;">✉️ ${email}</a>
+                        </td>
+                      </tr>
+                      ${initialPassword ? `
+                      <tr>
+                        <td style="padding: 8px 0; font-size: 13px; color: #64748b; font-weight: 600; border-bottom: 1px solid #e2e8f0;">Parolă Inițială:</td>
+                        <td style="padding: 8px 0; font-size: 13px; color: #0f172a; font-weight: 700; border-bottom: 1px solid #e2e8f0;">
+                          <span style="background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 6px; font-weight: 800;">${initialPassword}</span>
+                        </td>
+                      </tr>` : ''}
+                      <tr>
+                        <td style="padding: 8px 0; font-size: 13px; color: #64748b; font-weight: 600; border-bottom: 1px solid #e2e8f0;">Nr. Angajați:</td>
+                        <td style="padding: 8px 0; font-size: 14px; color: #0f172a; font-weight: 800; border-bottom: 1px solid #e2e8f0;">${employeesCount || 10} angajați</td>
+                      </tr>
+                      ${subdomain ? `
+                      <tr>
+                        <td style="padding: 8px 0; font-size: 13px; color: #64748b; font-weight: 600; border-bottom: 1px solid #e2e8f0;">Subdomeniu creat:</td>
+                        <td style="padding: 8px 0; font-size: 13px; color: #0f172a; font-weight: 700; border-bottom: 1px solid #e2e8f0;">
+                          <a href="${tenantUrl}" target="_blank" style="color: #2563eb; text-decoration: underline;">${subdomain}.${baseDomain}</a>
+                        </td>
+                      </tr>` : ''}
+                      ${(address || city) ? `
+                      <tr>
+                        <td style="padding: 8px 0; font-size: 13px; color: #64748b; font-weight: 600; border-bottom: 1px solid #e2e8f0;">Adresă Sediu:</td>
+                        <td style="padding: 8px 0; font-size: 13px; color: #0f172a; font-weight: 600; border-bottom: 1px solid #e2e8f0;">${[address, city, county].filter(Boolean).join(', ')}</td>
+                      </tr>` : ''}
+                      ${notes ? `
+                      <tr>
+                        <td style="padding: 8px 0; font-size: 13px; color: #64748b; font-weight: 600;">Mesaj / Detalii:</td>
+                        <td style="padding: 8px 0; font-size: 13px; color: #475569; font-style: italic;">${notes}</td>
+                      </tr>` : ''}
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Butoane Acțiune Rapidă -->
+              <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                <tr>
+                  ${phone ? `
+                  <td align="center" style="padding-right: 8px;">
+                    <a href="${waDirectUrl}" target="_blank" style="display: block; background-color: #22c55e; color: #ffffff; text-decoration: none; padding: 14px 20px; border-radius: 12px; font-weight: 800; font-size: 13px; text-align: center;">
+                      💬 Trimite Logare pe WhatsApp
+                    </a>
+                  </td>
+                  <td align="center" style="padding-left: 8px; padding-right: 8px;">
+                    <a href="tel:${cleanPhone}" style="display: block; background-color: #2563eb; color: #ffffff; text-decoration: none; padding: 14px 20px; border-radius: 12px; font-weight: 800; font-size: 13px; text-align: center;">
+                      📞 Apelează Acum
+                    </a>
+                  </td>
+                  ` : ''}
+                  <td align="center" style="padding-left: ${phone ? '8px' : '0'};">
+                    <a href="${superadminUrl}" target="_blank" style="display: block; background-color: #0f172a; color: #ffffff; text-decoration: none; padding: 14px 20px; border-radius: 12px; font-weight: 800; font-size: 13px; text-align: center;">
+                      🚀 Panou SuperAdmin
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td align="center" style="background-color: #f1f5f9; padding: 16px; font-size: 11px; color: #64748b;">
+              Notificare automată din sistemul QrTime.ro • Trimis către ${adminRecipient}
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `;
+
+  const text = `LEAD NOU QRTIME.RO\n\nCompanie: ${companyName}\nCUI: ${cui || '-'}\nContact: ${contactName}\nTelefon: ${phone}\nEmail: ${email}\nAngajati: ${employeesCount || 10}\nMod: ${mode}\nAdresa: ${address || '-'}\nSubdomeniu: ${subdomain}\n\nPanou: ${superadminUrl}`;
+
+  return sendEmail({
+    to: adminRecipient,
+    subject,
+    html,
+    text,
+    senderName: 'QrTime.ro Alertă'
+  });
+}
+
 module.exports = {
   sendEmail,
   sendWelcomeEmail,
   sendPasswordResetEmail,
   sendPasswordChangedEmail,
+  sendDemoAccessEmail,
+  sendLeadNotificationToAdmin,
   ensurePublicUrl
 };
+
 

@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { X, Settings, Coffee, Smartphone, Check, Loader2, AlertCircle, Image, Upload, Trash2 } from 'lucide-react';
+import { X, Settings, Coffee, Smartphone, Check, Loader2, AlertCircle, Image, Upload, Trash2, RotateCcw, Building2 } from 'lucide-react';
 import { useTranslation } from '../utils/i18n.jsx';
+
+const APP_DEFAULT_LOGO = '/logo_getapp_smartqr.jpg';
 
 export default function TenantSettingsModal({ isOpen, onClose, tenant, onUpdateTenant }) {
   const { t } = useTranslation();
+  const [logoUrl, setLogoUrl] = useState('');
+  const [uploadingLogo, setUploadingLogo] = useState(false);
   const [allowEmployeePortal, setAllowEmployeePortal] = useState(true);
   const [allowBreaks, setAllowBreaks] = useState(false);
   const [portalBgImageUrl, setPortalBgImageUrl] = useState('');
@@ -15,6 +19,7 @@ export default function TenantSettingsModal({ isOpen, onClose, tenant, onUpdateT
 
   useEffect(() => {
     if (tenant) {
+      setLogoUrl(tenant.logo_url || '');
       setAllowEmployeePortal(tenant.allow_employee_portal !== false);
       setAllowBreaks(Boolean(tenant.allow_breaks));
       setPortalBgImageUrl(tenant.portal_bg_image_url || '');
@@ -25,6 +30,33 @@ export default function TenantSettingsModal({ isOpen, onClose, tenant, onUpdateT
   }, [tenant, isOpen]);
 
   if (!isOpen) return null;
+
+  const handleLogoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingLogo(true);
+    setError(null);
+    try {
+      const apiUrl = `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}`;
+      const uploadData = new FormData();
+      uploadData.append('file', file);
+
+      const res = await fetch(`${apiUrl}/api/tenants/upload-branding`, {
+        method: 'POST',
+        body: uploadData
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Eroare la încărcarea logo-ului.');
+
+      setLogoUrl(data.url);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
 
   const handleBgUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -65,6 +97,7 @@ export default function TenantSettingsModal({ isOpen, onClose, tenant, onUpdateT
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          logo_url: logoUrl || null,
           allow_employee_portal: allowEmployeePortal,
           allow_breaks: allowBreaks,
           portal_bg_image_url: portalBgImageUrl,
@@ -90,6 +123,10 @@ export default function TenantSettingsModal({ isOpen, onClose, tenant, onUpdateT
   };
 
   const themeColor = tenant?.theme_color || '#ec094d';
+  const hasCustomLogo = Boolean(logoUrl && logoUrl !== APP_DEFAULT_LOGO);
+  const previewLogoSrc = hasCustomLogo
+    ? (logoUrl.startsWith('/uploads') ? `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${logoUrl}` : logoUrl)
+    : APP_DEFAULT_LOGO;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
@@ -129,6 +166,102 @@ export default function TenantSettingsModal({ isOpen, onClose, tenant, onUpdateT
               <span>{t('settingsSavedSuccess')}</span>
             </div>
           )}
+
+          {/* 0. Logo Companie (Default App Logo sau Personalizat) */}
+          <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 space-y-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 mt-0.5">
+                  <Building2 size={18} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">{t('companyLogoTitle')}</h3>
+                    {hasCustomLogo ? (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
+                        {t('customLogoActive')}
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300">
+                        Implicit (GetApp Smart QR)
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    {t('companyLogoDesc')}
+                  </p>
+                </div>
+              </div>
+
+              {hasCustomLogo && (
+                <button
+                  type="button"
+                  onClick={() => setLogoUrl('')}
+                  className="text-xs text-rose-500 hover:text-rose-600 font-bold flex items-center gap-1 cursor-pointer shrink-0 transition-colors"
+                  title={t('revertToAppLogo')}
+                >
+                  <RotateCcw size={13} />
+                  <span>{t('revertToAppLogo')}</span>
+                </button>
+              )}
+            </div>
+
+            {/* Card Preview Logo */}
+            <div className="flex items-center gap-4 p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-700/80">
+              <div className="h-14 w-14 rounded-xl bg-white dark:bg-slate-800 p-1 flex items-center justify-center shrink-0 border border-slate-200/80 dark:border-slate-700/80 shadow-xs overflow-hidden">
+                <img 
+                  src={previewLogoSrc} 
+                  alt="Logo Preview" 
+                  className="max-h-full max-w-full object-contain"
+                  onError={(e) => {
+                    if (!e.currentTarget.src.includes(APP_DEFAULT_LOGO)) {
+                      e.currentTarget.src = APP_DEFAULT_LOGO;
+                    }
+                  }}
+                />
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">
+                  {hasCustomLogo ? 'Logo oficial activ' : t('defaultAppLogoNote')}
+                </p>
+                <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 leading-relaxed">
+                  {hasCustomLogo 
+                    ? 'Logo-ul tău este afișat în panou, pe ecranul kiosk și în email-uri.' 
+                    : 'Tenanții noi folosesc logo-ul aplicației. Poți încărca oricând logo-ul oficial al firmei tale.'}
+                </p>
+              </div>
+
+              <label 
+                className="flex items-center justify-center gap-1.5 h-9 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer transition-colors text-xs font-semibold text-slate-700 dark:text-slate-200 shrink-0 shadow-xs active:scale-98"
+                title={t('uploadLogoBtn')}
+              >
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  className="hidden" 
+                  disabled={uploadingLogo}
+                  onChange={handleLogoUpload}
+                />
+                {uploadingLogo ? <Loader2 size={14} className="animate-spin text-slate-500" /> : <Upload size={14} className="text-slate-500" />}
+                <span>{uploadingLogo ? t('uploadingLogo') : (hasCustomLogo ? t('replaceLogoBtn') : t('uploadLogoBtn'))}</span>
+              </label>
+            </div>
+
+            {/* Direct URL Input */}
+            <div>
+              <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                {t('logoUrlLabel')}
+              </label>
+              <input
+                type="text"
+                value={logoUrl}
+                onChange={(e) => setLogoUrl(e.target.value)}
+                placeholder="https://site.ro/logo.png sau încarcă fișier de sus"
+                className="w-full px-3.5 h-9 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-primary-500/20 shadow-xs"
+              />
+            </div>
+          </div>
 
           {/* 1. Comutator ON/OFF: Acces Portal Angajați */}
           <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40">
@@ -278,7 +411,7 @@ export default function TenantSettingsModal({ isOpen, onClose, tenant, onUpdateT
                     value={portalBgColor} 
                     onChange={(e) => setPortalBgColor(e.target.value)}
                     placeholder="#020617"
-                    className="w-32 px-3 h-10 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono uppercase font-bold text-center focus:outline-none focus:ring-2 focus:ring-primary-500/20 shadow-xs"
+                    className="w-32 px-3 h-10 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white uppercase font-bold text-center focus:outline-none focus:ring-2 focus:ring-primary-500/20 shadow-xs"
                   />
                   <span className="text-[11px] text-slate-400 dark:text-slate-500">
                     {t('bgColorHelp')}

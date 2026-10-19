@@ -23,6 +23,7 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage });
 const supabase = require('../supabaseClient');
 const bnrService = require('../services/bnrService');
+const { lookupAnafCompany } = require('../services/anafService');
 
 const uploadToSupabase = async (file, folder = 'avatars') => {
   if (!file) return null;
@@ -219,6 +220,27 @@ router.get('/', async (req, res) => {
         COALESCE(t.billing_per_employee, false) as billing_per_employee,
         COALESCE(t.price_per_employee, 0)::numeric as price_per_employee,
         s.qr_mode as mod_qr, s.allowed_radius_meters as raza_gps, s.name as tip_modul,
+        t.vat_number as cui,
+        t.billing_address,
+        t.country_code,
+        t.subscription_status,
+        t.subscription_seats,
+        t.demo_expires_at,
+        t.registration_notes,
+        t.created_at,
+        COALESCE(t.contact_name, (
+          SELECT u.name FROM qrp_users u 
+          WHERE u.tenant_id = t.id AND u.role = 'TENANT_ADMIN' 
+          ORDER BY u.id ASC LIMIT 1
+        )) as contact_name,
+        COALESCE(t.contact_phone, '') as contact_phone,
+        COALESCE(t.anaf_phone, '') as anaf_phone,
+        COALESCE(t.reg_com, '') as reg_com,
+        COALESCE(t.contact_email, (
+          SELECT u.email FROM qrp_users u 
+          WHERE u.tenant_id = t.id AND u.role = 'TENANT_ADMIN' 
+          ORDER BY u.id ASC LIMIT 1
+        )) as contact_email,
         COALESCE((SELECT count(*)::int FROM qrp_employees e WHERE e.tenant_id = t.id AND (e.is_archived = false OR e.is_archived IS NULL)), 0) as active_employees_count
       FROM qrp_tenants t
       LEFT JOIN qrp_sites s ON s.tenant_id = t.id
@@ -492,7 +514,10 @@ router.post('/', async (req, res) => {
       country_code,
       allow_employee_portal,
       allow_breaks,
-      timezone
+      timezone,
+      cui,
+      vat_number,
+      billing_address
     } = req.body;
 
     // 1. Validare simplă
@@ -500,10 +525,27 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Nume locație, email și parola sunt obligatorii' });
     }
 
+    const rawVat = String(cui || vat_number || '').trim();
+    let finalVat = rawVat || null;
+    let finalAddress = billing_address || null;
+    let finalLocationName = nume_locatie;
+
+    // Interogare automată ANAF dacă este specificat CUI
+    if (rawVat) {
+      const anafData = await lookupAnafCompany(rawVat);
+      if (anafData) {
+        finalVat = anafData.cui;
+        if (!finalAddress) finalAddress = anafData.address;
+        if (!finalLocationName || finalLocationName === 'Noua Locatie' || finalLocationName === 'Companie Noua') {
+          finalLocationName = anafData.name;
+        }
+      }
+    }
+
     await client.query('BEGIN'); // Start transaction
 
     // 2. Inserare în qrp_tenants
-    const subdomain = nume_locatie.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const subdomain = finalLocationName.toLowerCase().replace(/[^a-z0-9]/g, '');
     const finalCountry = country_code === 'BE' ? 'BE' : 'RO';
     const finalTimezone = timezone || (finalCountry === 'BE' ? 'Europe/Brussels' : 'Europe/Bucharest');
     const finalCurrency = finalCountry === 'BE' ? 'EUR' : 'RON';
@@ -514,13 +556,13 @@ router.post('/', async (req, res) => {
       INSERT INTO qrp_tenants (
         name, logo_url, favicon_url, theme_color, subdomain, modules, 
         billing_per_employee, price_per_employee, country_code, timezone, 
-        currency, allow_employee_portal, allow_breaks
+        currency, allow_employee_portal, allow_breaks, vat_number, billing_address
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
       RETURNING id
     `;
     const tenantResult = await client.query(tenantQuery, [
-      nume_locatie,
+      finalLocationName,
       logo_url || null,
       sanitizeFaviconUrl(favicon_url),
       culoare_tema || '#2563EB',
@@ -532,7 +574,9 @@ router.post('/', async (req, res) => {
       finalTimezone,
       finalCurrency,
       finalAllowPortal,
-      finalAllowBreaks
+      finalAllowBreaks,
+      finalVat,
+      finalAddress
     ]);
     const tenantId = tenantResult.rows[0].id;
 
@@ -662,10 +706,10 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// PUT /api/tenants/:id/settings - Setări generale companie (Multi-country, Portal angajat ON/OFF, Pauze, Fundal Login/Portal)
+// PUT /api/tenants/:id/settings - Setări generale companie (Multi-country, Portal angajat ON/OFF, Pauze, Fundal Login/Portal, Logo)
 router.put('/:id/settings', async (req, res) => {
   try {
-    const { country_code, timezone, allow_employee_portal, allow_breaks, portal_bg_image_url, portal_bg_color } = req.body;
+    const { country_code, timezone, allow_employee_portal, allow_breaks, portal_bg_image_url, portal_bg_color, logo_url } = req.body;
     
     const validTz = timezone || (country_code === 'BE' ? 'Europe/Brussels' : 'Europe/Bucharest');
     const validCurrency = country_code === 'BE' ? 'EUR' : 'RON';
@@ -678,8 +722,9 @@ router.put('/:id/settings', async (req, res) => {
            allow_employee_portal = COALESCE($4, allow_employee_portal),
            allow_breaks = COALESCE($5, allow_breaks),
            portal_bg_image_url = CASE WHEN $6::boolean = true THEN $7 ELSE portal_bg_image_url END,
-           portal_bg_color = CASE WHEN $8::boolean = true THEN $9 ELSE portal_bg_color END
-       WHERE id = $10 RETURNING *`,
+           portal_bg_color = CASE WHEN $8::boolean = true THEN $9 ELSE portal_bg_color END,
+           logo_url = CASE WHEN $10::boolean = true THEN $11 ELSE logo_url END
+       WHERE id = $12 RETURNING *`,
       [
         country_code || null,
         timezone || (country_code ? validTz : null),
@@ -690,6 +735,8 @@ router.put('/:id/settings', async (req, res) => {
         portal_bg_image_url || null,
         portal_bg_color !== undefined,
         portal_bg_color || null,
+        logo_url !== undefined,
+        logo_url || null,
         req.params.id
       ]
     );
@@ -868,7 +915,14 @@ router.put('/:id', async (req, res) => {
       portal_bg_image_url,
       portal_bg_color,
       billing_per_employee,
-      price_per_employee
+      price_per_employee,
+      contact_name,
+      contact_phone,
+      contact_email,
+      cui,
+      vat_number,
+      billing_address,
+      subscription_status
     } = req.body;
 
     if (!nume_locatie) {
@@ -879,11 +933,29 @@ router.put('/:id', async (req, res) => {
 
     // 1. Update qrp_tenants
     const subdomain = nume_locatie.toLowerCase().replace(/[^a-z0-9]/g, '');
+    let finalVat = cui !== undefined ? cui : vat_number;
+    if (finalVat) finalVat = String(finalVat).trim();
+    let finalAddress = billing_address !== undefined ? billing_address : null;
+
+    if (finalVat && !finalAddress) {
+      const anafData = await lookupAnafCompany(finalVat);
+      if (anafData && anafData.address) {
+        finalAddress = anafData.address;
+        finalVat = anafData.cui;
+      }
+    }
+
     const tenantQuery = `
       UPDATE qrp_tenants 
       SET name = $1, subdomain = $2, logo_url = $3, favicon_url = $4, theme_color = $5, modules = $6, portal_bg_image_url = $7, portal_bg_color = $8,
-          billing_per_employee = $9, price_per_employee = $10
-      WHERE id = $11
+          billing_per_employee = $9, price_per_employee = $10,
+          contact_name = COALESCE($11, contact_name),
+          contact_phone = COALESCE($12, contact_phone),
+          contact_email = COALESCE($13, contact_email),
+          vat_number = COALESCE($14, vat_number),
+          billing_address = COALESCE($15, billing_address),
+          subscription_status = COALESCE($16, subscription_status)
+      WHERE id = $17
     `;
     await client.query(tenantQuery, [
       nume_locatie,
@@ -896,6 +968,12 @@ router.put('/:id', async (req, res) => {
       portal_bg_color || null,
       Boolean(billing_per_employee),
       price_per_employee ? parseFloat(price_per_employee) : 0.00,
+      contact_name || null,
+      contact_phone || null,
+      contact_email || null,
+      finalVat || null,
+      finalAddress || null,
+      subscription_status || null,
       req.params.id
     ]);
 
@@ -921,6 +999,55 @@ router.put('/:id', async (req, res) => {
     res.status(500).json({ error: error.message || 'Eroare la actualizarea tenant-ului' });
   } finally {
     client.release();
+  }
+});
+
+// POST /api/tenants/:id/sync-anaf - Sincronizare automată sediu social și date firmă din ANAF
+router.post('/:id/sync-anaf', async (req, res) => {
+  try {
+    const tenantId = req.params.id;
+    const { cui } = req.body || {};
+
+    const tRes = await pool.query('SELECT id, name, vat_number, billing_address FROM qrp_tenants WHERE id = $1', [tenantId]);
+    if (tRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Tenantul nu a fost găsit' });
+    }
+
+    const tenant = tRes.rows[0];
+    const targetCui = (cui || tenant.vat_number || '').trim();
+
+    if (!targetCui) {
+      return res.status(400).json({ error: 'Compania nu are specificat un CUI/CIF valid pentru interogare ANAF' });
+    }
+
+    const anafData = await lookupAnafCompany(targetCui);
+    if (!anafData) {
+      return res.status(404).json({ error: 'Compania nu a fost găsită în registrul oficial ANAF' });
+    }
+
+    const updateRes = await pool.query(`
+      UPDATE qrp_tenants
+      SET vat_number = $1,
+          billing_address = $2,
+          reg_com = COALESCE($3, reg_com),
+          anaf_phone = COALESCE($4, anaf_phone),
+          name = CASE WHEN (name IS NULL OR name = '' OR name ILIKE 'Companie%' OR name ILIKE 'Firma Mea%') THEN $5 ELSE name END
+      WHERE id = $6
+      RETURNING *
+    `, [anafData.cui, anafData.address, anafData.regCom || null, anafData.phone || null, anafData.name, tenantId]);
+
+    const updated = updateRes.rows[0];
+    res.json({
+      success: true,
+      message: 'Datele fiscale și sediul social au fost preluate cu succes din ANAF',
+      tenant: {
+        ...updated,
+        cui: updated.vat_number
+      }
+    });
+  } catch (error) {
+    console.error('Error syncing tenant with ANAF:', error);
+    res.status(500).json({ error: 'Eroare la sincronizarea cu registrul ANAF' });
   }
 });
 

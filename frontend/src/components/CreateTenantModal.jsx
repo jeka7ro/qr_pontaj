@@ -1,13 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { X, Upload, Copy, ExternalLink, Image as ImageIcon, Globe, Smartphone, Coffee, Eye, EyeOff } from 'lucide-react';
+import { X, Upload, Copy, ExternalLink, Image as ImageIcon, Globe, Smartphone, Coffee, Eye, EyeOff, CheckCircle2, RefreshCw, AlertCircle, Building } from 'lucide-react';
 import { resolveFaviconUrl } from '../utils/favicon';
 
-export default function CreateTenantModal({ onClose, onTenantCreated, editTenant = null }) {
+export default function CreateTenantModal({ onClose, onTenantCreated, editTenant = null, initialLead = null }) {
   const [showInitialPassword, setShowInitialPassword] = useState(false);
+  const [cuiLoading, setCuiLoading] = useState(false);
+  const [cuiVerified, setCuiVerified] = useState(null);
+  const [cuiError, setCuiError] = useState(null);
+
   const [formData, setFormData] = useState({
-    nume_locatie: '',
-    nume_admin: '',
-    tip_modul: 'Restaurant / HORECA',
+    nume_locatie: initialLead?.company_name || '',
+    cui: initialLead?.cui || '',
+    billing_address: initialLead?.address || '',
+    nume_admin: initialLead?.contact_person || '',
+    tip_modul: initialLead?.industry === 'Restaurante' ? 'Restaurant / HORECA' : 'General / Birouri',
     country_code: 'RO',
     timezone: 'Europe/Bucharest',
     allow_employee_portal: true,
@@ -17,7 +23,7 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
     portal_bg_image_url: '',
     portal_bg_color: '',
     culoare_tema: '#2563EB',
-    email_admin: '',
+    email_admin: initialLead?.email || '',
     parola_initiala: '',
     distanta_gps: '100',
     mod_qr: 'STATIC',
@@ -38,6 +44,71 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
       show_upsells: true
     }
   });
+
+  const handleCuiChange = async (val) => {
+    setFormData(prev => ({ ...prev, cui: val }));
+    setCuiError(null);
+    const digitsOnly = val.replace(/[^0-9]/g, '');
+    if (digitsOnly.length >= 6 && digitsOnly.length <= 10) {
+      setCuiLoading(true);
+      try {
+        const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
+        const res = await fetch(`${baseUrl}/api/company/lookup?cui=${digitsOnly}`);
+        const data = await res.json();
+        if (data.success && data.found && data.company) {
+          setFormData(prev => ({ 
+            ...prev, 
+            cui: String(data.company.cui),
+            nume_locatie: prev.nume_locatie && !prev.nume_locatie.startsWith('Companie') ? prev.nume_locatie : data.company.name,
+            billing_address: data.company.address || ''
+          }));
+          setCuiVerified(data.company);
+          setCuiError(null);
+        } else {
+          setCuiVerified(null);
+        }
+      } catch (e) {
+        // ignore
+      } finally {
+        setCuiLoading(false);
+      }
+    } else if (!val) {
+      setCuiVerified(null);
+    }
+  };
+
+  const handleManualCuiSearch = async () => {
+    const raw = formData.cui || '';
+    const digitsOnly = raw.replace(/[^0-9]/g, '');
+    if (!digitsOnly) {
+      setCuiError('Introdu codul fiscal format din cifre (ex: 45691500)');
+      return;
+    }
+    setCuiLoading(true);
+    setCuiError(null);
+    try {
+      const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
+      const res = await fetch(`${baseUrl}/api/company/lookup?cui=${digitsOnly}`);
+      const data = await res.json();
+      if (data.success && data.found && data.company) {
+        setFormData(prev => ({ 
+          ...prev, 
+          cui: String(data.company.cui),
+          nume_locatie: prev.nume_locatie && !prev.nume_locatie.startsWith('Companie') ? prev.nume_locatie : data.company.name,
+          billing_address: data.company.address || ''
+        }));
+        setCuiVerified(data.company);
+        setCuiError(null);
+      } else {
+        setCuiError('CUI-ul nu a fost găsit în registrul oficial ANAF');
+        setCuiVerified(null);
+      }
+    } catch (e) {
+      setCuiError('Eroare la interogarea serverului ANAF');
+    } finally {
+      setCuiLoading(false);
+    }
+  };
   
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingFavicon, setUploadingFavicon] = useState(false);
@@ -89,6 +160,8 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
     if (editTenant) {
       setFormData({
         nume_locatie: editTenant.nume || '',
+        cui: editTenant.cui || editTenant.vat_number || '',
+        billing_address: editTenant.billing_address || '',
         tip_modul: editTenant.tip_modul || 'Restaurant / HORECA',
         country_code: editTenant.country_code || 'RO',
         timezone: editTenant.timezone || (editTenant.country_code === 'BE' ? 'Europe/Brussels' : 'Europe/Bucharest'),
@@ -286,7 +359,7 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
                     }`}
                   >
                     <div className="text-base font-extrabold flex items-center gap-2">
-                      <span className="text-xl">🇷🇴</span> România
+                      <span className="px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 text-xs font-bold">RO</span> România
                     </div>
                     <div className="text-[11px] opacity-75 mt-1 font-medium">CNP obligatoriu, Fus Orar București, Export SAGA</div>
                   </button>
@@ -306,10 +379,74 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
                     }`}
                   >
                     <div className="text-base font-extrabold flex items-center gap-2">
-                      <span className="text-xl">🇧🇪</span> Belgia
+                      <span className="px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 text-xs font-bold">BE</span> Belgia
                     </div>
                     <div className="text-[11px] opacity-75 mt-1 font-medium">NISS, Fus Orar Bruxelles, Cerințe 2027, Pauze</div>
                   </button>
+                </div>
+              </div>
+
+              {/* Date Fiscale ANAF (CUI & Sediu Social) */}
+              <div className="p-4 rounded-2xl border border-blue-100 dark:border-blue-900/40 bg-blue-50/40 dark:bg-blue-950/20 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                    CUI / CIF Firmă (Căutare Automată ANAF)
+                  </label>
+                  {cuiLoading && (
+                    <span className="text-[11px] text-blue-600 dark:text-blue-400 font-bold flex items-center gap-1">
+                      <RefreshCw size={11} className="animate-spin" /> Verificare ANAF...
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    name="cui"
+                    value={formData.cui}
+                    onChange={(e) => handleCuiChange(e.target.value)}
+                    placeholder="ex: 45691500 sau RO45691500"
+                    className="flex-1 px-4 h-10 text-sm rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all font-bold"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleManualCuiSearch}
+                    disabled={cuiLoading}
+                    className="px-4 h-10 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    Caută ANAF
+                  </button>
+                </div>
+
+                {cuiError && (
+                  <div className="p-2.5 rounded-xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800/60 text-xs text-red-700 dark:text-red-300 font-semibold flex items-center gap-2">
+                    <AlertCircle size={14} className="shrink-0" />
+                    <span>{cuiError}</span>
+                  </div>
+                )}
+
+                {cuiVerified && (
+                  <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800/60 text-xs text-emerald-800 dark:text-emerald-300 font-semibold flex items-start gap-2">
+                    <CheckCircle2 size={15} className="shrink-0 mt-0.5" />
+                    <div>
+                      <div className="font-bold">{cuiVerified.name}</div>
+                      <div className="text-[11px] opacity-80 mt-0.5">{cuiVerified.address}</div>
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
+                    Adresă Sediu Social / Facturare (Preluată din ANAF)
+                  </label>
+                  <textarea
+                    name="billing_address"
+                    rows={2}
+                    value={formData.billing_address}
+                    onChange={handleChange}
+                    placeholder="Adresa sediului social este completată automat din ANAF..."
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-primary-500 font-medium resize-none"
+                  />
                 </div>
               </div>
 
@@ -665,7 +802,7 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
                             value={formData.portal_bg_color}
                             onChange={handleChange}
                             placeholder="#020617"
-                            className="w-32 px-3 h-10 text-xs rounded-full border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm font-mono uppercase font-bold text-center" 
+                            className="w-32 px-3 h-10 text-xs rounded-full border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all shadow-sm uppercase font-bold text-center" 
                           />
                           <span className="text-[11px] text-slate-400 dark:text-slate-500">
                             Nuanța de fundal pentru pagina de autentificare

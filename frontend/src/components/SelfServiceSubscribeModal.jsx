@@ -1,7 +1,169 @@
 import React, { useState } from 'react';
-import { X, Check, CreditCard, ShieldCheck, Users, Building, Mail, User, Sparkles, ArrowRight } from 'lucide-react';
+import { 
+  X, 
+  Check, 
+  CreditCard, 
+  ShieldCheck, 
+  Users, 
+  Building, 
+  Mail, 
+  User, 
+  Sparkles, 
+  ArrowRight,
+  Globe,
+  MapPin,
+  Lock,
+  FileCheck
+} from 'lucide-react';
 
-export default function SelfServiceSubscribeModal({ isOpen, onClose, initialTenant = null }) {
+const MODAL_I18N = {
+  fr: {
+    badge: "time.be • Formule Professionnelle",
+    title: "Commande en Ligne & Paiement Sécurisé",
+    seatsTitle: "Nombre d'employés sous contrat",
+    seatsSub: "Ajustable à tout moment avec calcul prorata automatique",
+    seatsUnit: "salariés",
+    rateLabel: "Tarif :",
+    ratePerSeat: "9,90 € HTVA / employé / mois",
+    perMonth: "/ mois",
+    vatNoteBe: "TVA 21% belge incluse sur facture",
+    vatNoteEu: "TVA 0% • Taxe inversée B2B intracommunautaire",
+    companyLabel: "Nom de l'entreprise (SRL / BV) *",
+    companyPlaceholder: "ex: Brasserie Grand-Place SRL",
+    countryLabel: "Pays d'enregistrement *",
+    emailLabel: "Email administrateur (facturation) *",
+    emailPlaceholder: "direction@entreprise.be",
+    adminNameLabel: "Nom du signataire / gérant",
+    adminNamePlaceholder: "ex: Jean-Luc Dupont",
+    vatLabel: "Numéro de TVA intracommunautaire",
+    vatPlaceholder: "ex: BE 0123.456.789",
+    addressLabel: "Adresse du siège social / Facturation",
+    addressPlaceholder: "ex: Rue de la Loi 16, 1000 Bruxelles",
+    subdomainLabel: "Adresse dédiée de votre borne",
+    subdomainPlaceholder: "nom-entreprise",
+    subdomainDomain: ".time.be",
+    benefitsTitle: "Inclus dans votre abonnement :",
+    benefit1: "Pointage illimité sur tablettes et smartphones",
+    benefit2: "Exports conformes SD Worx, Liantis, Securex",
+    benefit3: "Conforme droit social belge & CJUE C-55/18",
+    benefit4: "Facturation mensuelle sans engagement",
+    btnSubmit: "Payer en toute sécurité via Stripe",
+    securityNote: "Paiement sécurisé crypté SSL 256-bit par Stripe Inc. Annulation possible en 1 clic.",
+    errCompany: "Veuillez renseigner le nom de l'entreprise.",
+    errEmail: "Veuillez renseigner un email valide.",
+    errStripe: "Erreur lors de la création de la session Stripe.",
+  },
+  nl: {
+    badge: "time.be • Professionele Formule",
+    title: "Online Bestellen & Veilige Betaling",
+    seatsTitle: "Aantal gecontracteerde werknemers",
+    seatsSub: "Op elk moment aanpasbaar met automatische prorata-berekening",
+    seatsUnit: "medewerkers",
+    rateLabel: "Tarief :",
+    ratePerSeat: "€9.90 excl. btw / werknemer / maand",
+    perMonth: "/ maand",
+    vatNoteBe: "Belgische 21% btw inbegrepen op factuur",
+    vatNoteEu: "0% btw • Intracommunautaire btw-verlegging B2B",
+    companyLabel: "Bedrijfsnaam (BV / SRL) *",
+    companyPlaceholder: "ex: Brasserie Grand-Place BV",
+    countryLabel: "Land van registratie *",
+    emailLabel: "E-mailadres beheerder (facturatie) *",
+    emailPlaceholder: "directie@onderneming.be",
+    adminNameLabel: "Naam zaakvoerder / beheerder",
+    adminNamePlaceholder: "ex: Jan Van de Velde",
+    vatLabel: "Ondernemingsnummer / Btw-nummer",
+    vatPlaceholder: "ex: BE 0123.456.789",
+    addressLabel: "Maatschappelijke zetel / Factuuradres",
+    addressPlaceholder: "ex: Wetstraat 16, 1000 Brussel",
+    subdomainLabel: "Toegewezen adres voor uw kiosk",
+    subdomainPlaceholder: "uw-onderneming",
+    subdomainDomain: ".time.be",
+    benefitsTitle: "Inbegrepen in uw abonnement :",
+    benefit1: "Onbeperkt inklokken op tablets en smartphones",
+    benefit2: "Exports conform SD Worx, Liantis, Securex",
+    benefit3: "Conform Belgisch arbeidsrecht & HvJ-EU",
+    benefit4: "Maandelijkse facturatie zonder verplichting",
+    btnSubmit: "Veilig betalen via Stripe",
+    securityNote: "256-bit SSL-versleutelde betaling via Stripe Inc. Maandelijks opzegbaar.",
+    errCompany: "Gelieve de bedrijfsnaam in te vullen.",
+    errEmail: "Gelieve een geldig e-mailadres in te vullen.",
+    errStripe: "Fout bij aanmaken Stripe-sessie.",
+  },
+  en: {
+    badge: "time.be • Enterprise Plan",
+    title: "Online Order & Secure Checkout",
+    seatsTitle: "Contracted team members",
+    seatsSub: "Scale up or down anytime with prorated billing",
+    seatsUnit: "seats",
+    rateLabel: "Rate :",
+    ratePerSeat: "€9.90 excl. VAT / employee / month",
+    perMonth: "/ mo",
+    vatNoteBe: "Belgian 21% VAT included on invoice",
+    vatNoteEu: "0% VAT • EU B2B Reverse Charge",
+    companyLabel: "Company Name (BV / SRL) *",
+    companyPlaceholder: "e.g. Grand-Place Hospitality BV",
+    countryLabel: "Country of registration *",
+    emailLabel: "Billing administrator email *",
+    emailPlaceholder: "billing@company.be",
+    adminNameLabel: "Administrator / Manager name",
+    adminNamePlaceholder: "e.g. Jean Dupont",
+    vatLabel: "EU VAT Number",
+    vatPlaceholder: "e.g. BE 0123.456.789",
+    addressLabel: "Registered address / Invoicing",
+    addressPlaceholder: "e.g. Rue de la Loi 16, 1000 Brussels",
+    subdomainLabel: "Dedicated kiosk portal link",
+    subdomainPlaceholder: "my-company",
+    subdomainDomain: ".time.be",
+    benefitsTitle: "Included in your subscription :",
+    benefit1: "Unlimited clocking on iPads, tablets & phones",
+    benefit2: "1-click exports for SD Worx, Liantis, Securex",
+    benefit3: "SPF Employment & CJUE C-55/18 compliant",
+    benefit4: "Flexible monthly billing, cancel anytime",
+    btnSubmit: "Proceed to Secure Stripe Checkout",
+    securityNote: "256-bit SSL encrypted checkout powered by Stripe Inc. Cancel anytime in 1 click.",
+    errCompany: "Please enter your company name.",
+    errEmail: "Please enter a valid email address.",
+    errStripe: "Error creating Stripe Checkout session.",
+  },
+  ro: {
+    badge: "Plan Profesional",
+    title: "Comandă Online & Plată Securizată",
+    seatsTitle: "Număr de angajați contractați",
+    seatsSub: "Poți mări oricând numărul pe parcurs cu calcul prorata automat",
+    seatsUnit: "locuri",
+    rateLabel: "Tarif :",
+    ratePerSeat: "€9.90 / angajat / lună",
+    perMonth: "/ lună",
+    vatNoteBe: "TVA 21% inclus pe factură",
+    vatNoteEu: "TVA 0% • Taxare Inversă B2B",
+    companyLabel: "Nume Companie *",
+    companyPlaceholder: "ex: Brasserie Bruxelles SPRL",
+    countryLabel: "Țară de Înregistrare *",
+    emailLabel: "Email Administrator (Facturare) *",
+    emailPlaceholder: "admin@companie.be",
+    adminNameLabel: "Nume Administrator",
+    adminNamePlaceholder: "ex: Jean Dupont",
+    vatLabel: "Cod Fiscal / VAT ID",
+    vatPlaceholder: "ex: BE 0123.456.789",
+    addressLabel: "Adresă Sediu Social / Facturare",
+    addressPlaceholder: "ex: Rue de la Loi 16, 1000 Bruxelles",
+    subdomainLabel: "Adresă Portal Kiosk Dedicat",
+    subdomainPlaceholder: "subdomeniu",
+    subdomainDomain: ".pontaj.app",
+    benefitsTitle: "Ce include abonamentul :",
+    benefit1: "Pontaj nelimitat pe tablete și telefoane",
+    benefit2: "Exporturi conforme legislației muncii",
+    benefit3: "Conformitate legală CJUE și audit imuabil",
+    benefit4: "Facturare lunară flexibilă, fără angajament",
+    btnSubmit: "Plătește Securizat cu Stripe",
+    securityNote: "Plată securizată prin Stripe Inc. Poți anula sau modifica abonamentul în orice moment.",
+    errCompany: "Vă rugăm să introduceți denumirea companiei.",
+    errEmail: "Vă rugăm să introduceți o adresă de email validă.",
+    errStripe: "Eroare la crearea sesiunii Stripe Checkout.",
+  }
+};
+
+export default function SelfServiceSubscribeModal({ isOpen, onClose, initialTenant = null, lang = 'fr' }) {
   const [seats, setSeats] = useState(15);
   const [companyName, setCompanyName] = useState(initialTenant?.name || '');
   const [subdomain, setSubdomain] = useState(initialTenant?.subdomain || '');
@@ -12,6 +174,8 @@ export default function SelfServiceSubscribeModal({ isOpen, onClose, initialTena
   const [billingAddress, setBillingAddress] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  const m = MODAL_I18N[lang] || MODAL_I18N.fr;
 
   React.useEffect(() => {
     if (initialTenant) {
@@ -38,11 +202,11 @@ export default function SelfServiceSubscribeModal({ isOpen, onClose, initialTena
   const handleCheckout = async (e) => {
     e.preventDefault();
     if (!companyName.trim()) {
-      setError('Vă rugăm să introduceți denumirea companiei.');
+      setError(m.errCompany);
       return;
     }
     if (!adminEmail.trim()) {
-      setError('Vă rugăm să introduceți adresa de email a administratorului.');
+      setError(m.errEmail);
       return;
     }
 
@@ -69,14 +233,14 @@ export default function SelfServiceSubscribeModal({ isOpen, onClose, initialTena
 
       if (!res.ok) {
         const errJson = await res.json();
-        throw new Error(errJson.error || 'Eroare la crearea sesiunii Stripe Checkout');
+        throw new Error(errJson.error || m.errStripe);
       }
 
       const data = await res.json();
       if (data.url) {
         window.location.href = data.url;
       } else {
-        throw new Error('Nu s-a putut obține adresa de plată Stripe.');
+        throw new Error('Unable to redirect to Stripe.');
       }
     } catch (err) {
       setError(err.message);
@@ -85,56 +249,58 @@ export default function SelfServiceSubscribeModal({ isOpen, onClose, initialTena
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh] text-left">
         {/* Header Modal */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-200 bg-slate-50/80">
           <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-primary-600 dark:text-primary-400">
-              Configurator Abonament Recurent
-            </span>
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white mt-0.5">
-              TimeQR — Comandă Online & Plată Securizată
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[11px] font-bold">
+              <Sparkles size={12} />
+              <span>{m.badge}</span>
+            </div>
+            <h3 className="text-lg sm:text-xl font-black text-slate-900 mt-1 tracking-tight">
+              {m.title}
             </h3>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="w-9 h-9 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
+            className="w-10 h-10 rounded-full bg-white hover:bg-slate-200 border border-slate-300 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors cursor-pointer shadow-2xs"
           >
             <X size={18} />
           </button>
         </div>
 
-        {/* Corp Formular */}
-        <form onSubmit={handleCheckout} className="p-6 overflow-y-auto space-y-6">
+        {/* Form Body */}
+        <form onSubmit={handleCheckout} className="p-6 overflow-y-auto space-y-5 text-xs">
           {error && (
-            <div className="p-4 text-xs font-semibold text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/30 rounded-2xl border border-red-200 dark:border-red-900">
+            <div className="p-3.5 text-xs font-semibold text-red-700 bg-red-50 rounded-2xl border border-red-200">
               {error}
             </div>
           )}
 
-          {/* Calculator Locuri (Seats) */}
-          <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 space-y-4">
-            <div className="flex items-center justify-between">
+          {/* Calculator Seats Card */}
+          <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3.5">
+            <div className="flex items-center justify-between gap-3">
               <div>
-                <label className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <Users size={18} className="text-primary-600" />
-                  Număr de angajați contractați:
+                <label className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                  <Users size={17} className="text-blue-600" />
+                  <span>{m.seatsTitle}</span>
                 </label>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  Poți mări oricând numărul pe parcurs cu calcul prorata automat
+                <p className="text-xs text-slate-500 mt-0.5">
+                  {m.seatsSub}
                 </p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-full border border-slate-300 shadow-2xs">
                 <input
                   type="number"
                   min="1"
                   max="500"
                   value={seats}
                   onChange={(e) => setSeats(Math.max(1, parseInt(e.target.value, 10) || 1))}
-                  className="w-20 px-3 py-1.5 text-center text-base font-bold text-slate-900 dark:text-white bg-white dark:bg-slate-900 rounded-xl border border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-primary-500 outline-none"
+                  className="w-12 text-center text-sm font-black text-slate-900 outline-none"
                 />
-                <span className="text-xs font-bold text-slate-500">locuri</span>
+                <span className="text-xs font-bold text-slate-500">{m.seatsUnit}</span>
               </div>
             </div>
 
@@ -142,202 +308,209 @@ export default function SelfServiceSubscribeModal({ isOpen, onClose, initialTena
             <input
               type="range"
               min="1"
-              max="150"
+              max="100"
               value={seats}
               onChange={(e) => setSeats(parseInt(e.target.value, 10))}
-              className="w-full accent-primary-600 cursor-pointer"
+              className="w-full accent-blue-600 cursor-pointer"
             />
 
-            {/* Sume calculate */}
-            <div className="pt-3 border-t border-slate-200 dark:border-slate-700 flex flex-wrap items-center justify-between text-xs gap-3">
-              <span className="text-slate-600 dark:text-slate-400">
-                Tarif: <strong className="text-slate-900 dark:text-white">€{pricePerSeat.toFixed(2)}</strong> / angajat / lună
+            {/* Price Preview Row */}
+            <div className="pt-3 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2">
+              <span className="text-slate-600 font-medium">
+                {m.rateLabel} <strong className="text-slate-900 font-bold">{m.ratePerSeat}</strong>
               </span>
               <div className="text-right">
-                <span className="text-base font-black text-slate-900 dark:text-white">
-                  €{totalEur.toFixed(2)} <span className="text-xs font-semibold text-slate-500">/ lună</span>
+                <span className="text-lg font-black text-slate-900">
+                  €{totalEur.toFixed(2)} <span className="text-xs font-semibold text-slate-500">{m.perMonth}</span>
                 </span>
-                <span className="block text-[11px] text-slate-400">
-                  {countryCode === 'RO'
-                    ? `(cu TVA 21%: €${totalWithTvaEur.toFixed(2)})`
-                    : `(TVA 0% • Taxare Inversă B2B)`}
+                <span className="block text-[11px] text-emerald-700 font-semibold">
+                  {countryCode === 'BE' ? m.vatNoteBe : m.vatNoteEu}
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Date Companie */}
+          {/* Symmetrical, Pixel-Perfect Input Rows */}
+          {/* Row 1: Company Name & Country */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 block mb-1.5">
-                Nume Companie *
+              <label className="h-5 flex items-center text-xs font-semibold text-slate-700 mb-1.5 truncate">
+                {m.companyLabel}
               </label>
-              <div className="flex items-center h-11 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus-within:ring-2 focus-within:ring-primary-500">
-                <Building size={16} className="text-slate-400 mr-2 shrink-0" />
+              <div className="flex items-center h-11 px-3.5 rounded-2xl border border-slate-300 bg-white shadow-2xs focus-within:ring-2 focus-within:ring-blue-600 focus-within:border-blue-600 transition-all">
+                <Building size={16} className="text-slate-400 mr-2.5 shrink-0" />
                 <input
                   type="text"
                   required
-                  placeholder="ex: Brasserie Bruxelles SPRL"
+                  placeholder={m.companyPlaceholder}
                   value={companyName}
                   onChange={(e) => handleCompanyNameChange(e.target.value)}
-                  className="w-full text-sm bg-transparent dark:text-white outline-none"
+                  className="w-full text-sm font-medium text-slate-900 placeholder-slate-400 bg-transparent outline-none"
                 />
               </div>
             </div>
 
             <div>
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 block mb-1.5">
-                Țară de Înregistrare
+              <label className="h-5 flex items-center text-xs font-semibold text-slate-700 mb-1.5 truncate">
+                {m.countryLabel}
               </label>
-              <select
-                value={countryCode}
-                onChange={(e) => setCountryCode(e.target.value)}
-                className="w-full h-11 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-semibold dark:text-white outline-none cursor-pointer focus:ring-2 focus:ring-primary-500"
-              >
-                <option value="BE">Belgia (BE) — Europe/Brussels (EUR)</option>
-                <option value="FR">Franța (FR) — Europe/Paris (EUR)</option>
-                <option value="NL">Olanda (NL) — Europe/Amsterdam (EUR)</option>
-                <option value="DE">Germania (DE) — Europe/Berlin (EUR)</option>
-                <option value="LU">Luxemburg (LU) — Europe/Luxembourg (EUR)</option>
-                <option value="RO">România (RO) — Europe/Bucharest (EUR)</option>
-              </select>
+              <div className="flex items-center h-11 px-3.5 rounded-2xl border border-slate-300 bg-white shadow-2xs focus-within:ring-2 focus-within:ring-blue-600 focus-within:border-blue-600 transition-all">
+                <Globe size={16} className="text-slate-400 mr-2.5 shrink-0" />
+                <select
+                  value={countryCode}
+                  onChange={(e) => setCountryCode(e.target.value)}
+                  className="w-full text-sm font-medium text-slate-900 bg-transparent outline-none cursor-pointer"
+                >
+                  <option value="BE">Belgique / België (BE)</option>
+                  <option value="FR">France (FR)</option>
+                  <option value="NL">Nederland (NL)</option>
+                  <option value="LU">Luxembourg (LU)</option>
+                  <option value="DE">Deutschland (DE)</option>
+                </select>
+              </div>
             </div>
           </div>
 
+          {/* Row 2: Billing Email & Admin Name */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 block mb-1.5">
-                Email Administrator (pentru facturi Stripe) *
+              <label className="h-5 flex items-center text-xs font-semibold text-slate-700 mb-1.5 truncate">
+                {m.emailLabel}
               </label>
-              <div className="flex items-center h-11 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus-within:ring-2 focus-within:ring-primary-500">
-                <Mail size={16} className="text-slate-400 mr-2 shrink-0" />
+              <div className="flex items-center h-11 px-3.5 rounded-2xl border border-slate-300 bg-white shadow-2xs focus-within:ring-2 focus-within:ring-blue-600 focus-within:border-blue-600 transition-all">
+                <Mail size={16} className="text-slate-400 mr-2.5 shrink-0" />
                 <input
                   type="email"
                   required
-                  placeholder="admin@companie.be"
+                  placeholder={m.emailPlaceholder}
                   value={adminEmail}
                   onChange={(e) => setAdminEmail(e.target.value)}
-                  className="w-full text-sm bg-transparent dark:text-white outline-none"
+                  className="w-full text-sm font-medium text-slate-900 placeholder-slate-400 bg-transparent outline-none"
                 />
               </div>
             </div>
 
             <div>
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 block mb-1.5">
-                Nume Administrator
+              <label className="h-5 flex items-center text-xs font-semibold text-slate-700 mb-1.5 truncate">
+                {m.adminNameLabel}
               </label>
-              <div className="flex items-center h-11 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus-within:ring-2 focus-within:ring-primary-500">
-                <User size={16} className="text-slate-400 mr-2 shrink-0" />
+              <div className="flex items-center h-11 px-3.5 rounded-2xl border border-slate-300 bg-white shadow-2xs focus-within:ring-2 focus-within:ring-blue-600 focus-within:border-blue-600 transition-all">
+                <User size={16} className="text-slate-400 mr-2.5 shrink-0" />
                 <input
                   type="text"
-                  placeholder="ex: Jean Dupont"
+                  placeholder={m.adminNamePlaceholder}
                   value={adminName}
                   onChange={(e) => setAdminName(e.target.value)}
-                  className="w-full text-sm bg-transparent dark:text-white outline-none"
+                  className="w-full text-sm font-medium text-slate-900 placeholder-slate-400 bg-transparent outline-none"
                 />
               </div>
             </div>
           </div>
 
-          {/* Cod TVA & Adresa Facturare Sediu */}
+          {/* Row 3: VAT ID & Billing Address */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
-                  Cod TVA / VAT ID {countryCode !== 'RO' && '* (B2B)'}
+              <div className="h-5 flex items-center justify-between mb-1.5">
+                <label className="text-xs font-semibold text-slate-700 truncate">
+                  {m.vatLabel}
                 </label>
-                {countryCode !== 'RO' && (
-                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full">
-                    Reverse Charge 0%
-                  </span>
-                )}
+                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                  B2B
+                </span>
               </div>
-              <div className="flex items-center h-11 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus-within:ring-2 focus-within:ring-primary-500">
-                <ShieldCheck size={16} className="text-slate-400 mr-2 shrink-0" />
+              <div className="flex items-center h-11 px-3.5 rounded-2xl border border-slate-300 bg-white shadow-2xs focus-within:ring-2 focus-within:ring-blue-600 focus-within:border-blue-600 transition-all">
+                <ShieldCheck size={16} className="text-slate-400 mr-2.5 shrink-0" />
                 <input
                   type="text"
-                  placeholder={countryCode === 'BE' ? 'BE 0123.456.789' : 'Cod Fiscal / TVA'}
+                  placeholder={m.vatPlaceholder}
                   value={vatNumber}
                   onChange={(e) => setVatNumber(e.target.value.toUpperCase())}
-                  className="w-full text-sm font-semibold bg-transparent dark:text-white outline-none"
+                  className="w-full text-sm font-medium text-slate-900 placeholder-slate-400 bg-transparent outline-none"
                 />
               </div>
-              <span className="text-[10px] text-slate-400 mt-1 block">
-                {countryCode !== 'RO' 
-                  ? 'Firmele din UE înregistrate în VIES beneficiază de 0% TVA (Taxare inversă).' 
-                  : 'Pentru România se aplică cota standard de 21% TVA.'}
-              </span>
             </div>
 
             <div>
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 block mb-1.5">
-                Adresă Sediu Social / Facturare
+              <label className="h-5 flex items-center text-xs font-semibold text-slate-700 mb-1.5 truncate">
+                {m.addressLabel}
               </label>
-              <div className="flex items-center h-11 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus-within:ring-2 focus-within:ring-primary-500">
+              <div className="flex items-center h-11 px-3.5 rounded-2xl border border-slate-300 bg-white shadow-2xs focus-within:ring-2 focus-within:ring-blue-600 focus-within:border-blue-600 transition-all">
+                <MapPin size={16} className="text-slate-400 mr-2.5 shrink-0" />
                 <input
                   type="text"
-                  placeholder="ex: Rue de la Loi 16, 1000 Bruxelles"
+                  placeholder={m.addressPlaceholder}
                   value={billingAddress}
                   onChange={(e) => setBillingAddress(e.target.value)}
-                  className="w-full text-sm bg-transparent dark:text-white outline-none"
+                  className="w-full text-sm font-medium text-slate-900 placeholder-slate-400 bg-transparent outline-none"
                 />
               </div>
-              <span className="text-[10px] text-slate-400 mt-1 block">
-                Adresa fiscală a sediului ce va fi inclusă pe factură.
-              </span>
             </div>
           </div>
 
-          {/* Subdomeniu alocat */}
+          {/* Subdomain Input */}
           <div>
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 block mb-1.5">
-              Adresă Portal Dedicat Kiosk
+            <label className="h-5 flex items-center text-xs font-semibold text-slate-700 mb-1.5 truncate">
+              {m.subdomainLabel}
             </label>
-            <div className="flex items-center h-11 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80">
+            <div className="flex items-center h-11 px-3.5 rounded-2xl border border-slate-300 bg-slate-50 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-600 focus-within:border-blue-600 transition-all">
               <input
                 type="text"
                 value={subdomain}
                 onChange={(e) => setSubdomain(e.target.value.toLowerCase().replace(/[^a-z0-9]/g, ''))}
-                className="w-full text-sm font-semibold bg-transparent dark:text-white outline-none"
-                placeholder="subdomeniu"
+                className="w-full text-sm font-semibold text-slate-900 outline-none bg-transparent placeholder-slate-400"
+                placeholder={m.subdomainPlaceholder}
               />
-              <span className="text-xs font-bold text-slate-400 shrink-0 select-none">.pontaj.app</span>
+              <span className="text-xs font-bold text-slate-500 shrink-0 select-none bg-slate-200 px-2 py-0.5 rounded-full ml-2">
+                {countryCode === 'BE' ? '.time.be' : '.pontaj.app'}
+              </span>
             </div>
           </div>
 
-          {/* Avantaje incluse */}
-          <div className="p-4 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-900/40 text-xs text-emerald-900 dark:text-emerald-300 space-y-1.5">
-            <div className="font-bold flex items-center gap-1.5">
-              <ShieldCheck size={16} className="text-emerald-600" />
-              Ce include abonamentul Stripe:
+          {/* Unified Benefits Banner */}
+          <div className="p-4 rounded-2xl bg-blue-50/70 border border-blue-200 text-xs text-blue-900 space-y-1.5">
+            <div className="font-bold flex items-center gap-1.5 text-blue-800">
+              <ShieldCheck size={16} className="text-blue-600" />
+              <span>{m.benefitsTitle}</span>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-[11px] text-emerald-800 dark:text-emerald-400">
-              <span>• Conformitate completă normele 2027</span>
-              <span>• Calcul prorata automat la adăugare angajați</span>
-              <span>• Portal client Stripe pentru facturi fiscale</span>
-              <span>• Backup automat al bazei de date de 2x/zi</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-[11px] text-slate-700">
+              <span className="flex items-center gap-1.5">
+                <Check size={13} className="text-emerald-600 shrink-0" />
+                {m.benefit1}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Check size={13} className="text-emerald-600 shrink-0" />
+                {m.benefit2}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Check size={13} className="text-emerald-600 shrink-0" />
+                {m.benefit3}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Check size={13} className="text-emerald-600 shrink-0" />
+                {m.benefit4}
+              </span>
             </div>
           </div>
 
-          {/* Buton Plata */}
+          {/* Single-Line, Pill-Shaped Rounded Button (rounded-full) */}
           <div className="pt-2">
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-12 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white font-bold text-sm rounded-full shadow-lg shadow-primary-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full h-12 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold text-sm rounded-full shadow-lg shadow-blue-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 whitespace-nowrap"
             >
               {loading ? (
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
               ) : (
                 <>
-                  <CreditCard size={18} />
-                  <span>Plătește Securizat cu Stripe (€{totalEur.toFixed(2)}/lună)</span>
+                  <Lock size={16} />
+                  <span className="whitespace-nowrap">{m.btnSubmit} (€{totalEur.toFixed(2)}/mois)</span>
                   <ArrowRight size={16} />
                 </>
               )}
             </button>
-            <p className="text-[11px] text-center text-slate-400 mt-2">
-              Plată securizată prin Stripe Inc. Poți anula sau modifica abonamentul în orice moment.
+            <p className="text-[11px] text-center text-slate-500 mt-2 font-medium">
+              {m.securityNote}
             </p>
           </div>
         </form>

@@ -7,6 +7,47 @@ const pool = require('../db');
 const sseClients = {};
 const adminSseClients = {};
 
+// In-memory cache for fast lookup of consumed One-Time QR Tokens (backed by qrp_used_qr_tokens in DB)
+const usedQRTokens = new Map();
+
+// Periodic cleanup of expired tokens (every 5 minutes, clears tokens older than 10 minutes)
+setInterval(async () => {
+  const tenMinutesAgo = Date.now() - 10 * 60 * 1000;
+  for (const [key, timestamp] of usedQRTokens.entries()) {
+    if (timestamp < tenMinutesAgo) {
+      usedQRTokens.delete(key);
+    }
+  }
+  try {
+    await pool.query("DELETE FROM qrp_used_qr_tokens WHERE used_at < NOW() - INTERVAL '10 minutes'");
+  } catch (err) {
+    // Silent catch
+  }
+}, 5 * 60 * 1000);
+
+async function isQrTokenConsumed(tokenKey) {
+  if (usedQRTokens.has(tokenKey)) return true;
+  try {
+    const res = await pool.query('SELECT 1 FROM qrp_used_qr_tokens WHERE token_key = $1', [tokenKey]);
+    if (res.rows.length > 0) {
+      usedQRTokens.set(tokenKey, Date.now());
+      return true;
+    }
+  } catch (err) {
+    console.warn('[QR Security] Error checking consumed token in DB:', err.message);
+  }
+  return false;
+}
+
+async function markQrTokenConsumed(tokenKey) {
+  usedQRTokens.set(tokenKey, Date.now());
+  try {
+    await pool.query('INSERT INTO qrp_used_qr_tokens (token_key) VALUES ($1) ON CONFLICT DO NOTHING', [tokenKey]);
+  } catch (err) {
+    console.warn('[QR Security] Error storing consumed token in DB:', err.message);
+  }
+}
+
 
 // SSE Endpoint for Admin Dashboard
 router.get('/admin-stream/:tenantId', (req, res) => {
@@ -166,7 +207,26 @@ async function describeLoginFailureInner(employee_code, tenant_id) {
 
 // Verificare status (Intrat/Ieșit) inainte de a ponta
 router.post('/status', async (req, res) => {
-  const { employee_code, pin_code, tenant_id, kiosk_id } = req.body;
+  const { employee_code, pin_code, tenant_id, kiosk_id, ts, otp } = req.body;
+
+  // 1. Validare expirare cod QR dinamic dacă este furnizat timestamp
+  if (ts) {
+    const nowSec = Math.floor(Date.now() / 1000);
+    const parsedTs = parseInt(ts, 10);
+    if (!isNaN(parsedTs) && (nowSec - parsedTs > 75 || parsedTs - nowSec > 45)) {
+      return res.status(400).json({ error: 'Codul QR a expirat. Te rugăm să scanezi din nou codul curent afișat pe ecran.' });
+    }
+  }
+
+  // 2. Validare One-Time Token (Single-Use Nonce / OTP)
+  const tokenKey = (otp && typeof otp === 'string' && otp.trim()) ? `${tenant_id}_${kiosk_id || 'loc'}_${otp.trim()}` : null;
+  if (tokenKey) {
+    const alreadyUsed = await isQrTokenConsumed(tokenKey);
+    if (alreadyUsed) {
+      return res.status(400).json({ error: 'Acest cod QR a fost deja utilizat pentru un pontaj. Te rugăm să scanezi noul cod afișat pe ecranul din locație.' });
+    }
+  }
+
   try {
     const empResult = await pool.query(
       'SELECT id, first_name, last_name, avatar_path, is_archived FROM qrp_employees WHERE employee_code = $1 AND pin_code = $2 AND tenant_id = $3',
@@ -275,23 +335,43 @@ router.post('/status', async (req, res) => {
 
 // Inregistrare pontaj
 router.post('/', async (req, res) => {
-  const { employee_code, pin_code, tenant_id, kiosk_id, type, ts } = req.body;
+  const { employee_code, pin_code, tenant_id, kiosk_id, type, ts, otp } = req.body;
 
-  // Validare expirare cod QR dacă a fost trimis timestamp-ul (tolerant la decalaje de ceas ale tabletelor până la 15 minute)
+  // 1. Validare expirare cod QR dacă a fost trimis timestamp-ul (tolerant la decalaje de ceas de până la 75s)
   if (ts) {
     const nowSec = Math.floor(Date.now() / 1000);
     const parsedTs = parseInt(ts, 10);
-    if (!isNaN(parsedTs) && (nowSec - parsedTs > 900 || parsedTs - nowSec > 300)) {
+    if (!isNaN(parsedTs) && (nowSec - parsedTs > 75 || parsedTs - nowSec > 45)) {
       await logScanEvent({
         tenant_id,
         kiosk_id,
         employee_code,
         action_type: type,
         status: 'REJECTED',
-        failure_reason: 'Cod QR expirat (decalaj timestamp tabletă/telefon)',
+        failure_reason: 'Cod QR expirat (depășit 75 secunde)',
         req
       });
-      return res.status(400).json({ error: 'Codul QR a expirat. Te rugăm să scanezi din nou noul cod afișat pe ecran.' });
+      return res.status(400).json({ error: 'Codul QR a expirat. Te rugăm să scanezi din nou codul curent afișat pe ecranul din locație.' });
+    }
+  }
+
+  // 2. Validare One-Time Token (Single-Use Nonce / OTP) împotriva trimiterii link-ului pe WhatsApp
+  const tokenKey = (otp && typeof otp === 'string' && otp.trim()) ? `${tenant_id}_${kiosk_id || 'loc'}_${otp.trim()}` : null;
+  if (tokenKey) {
+    const alreadyUsed = await isQrTokenConsumed(tokenKey);
+    if (alreadyUsed) {
+      await logScanEvent({
+        tenant_id,
+        kiosk_id,
+        employee_code,
+        action_type: type,
+        status: 'REJECTED',
+        failure_reason: 'Cod QR deja utilizat (link trimis mai departe / refolosit)',
+        req
+      });
+      return res.status(400).json({ 
+        error: 'Acest cod QR a fost deja utilizat pentru un pontaj. Te rugăm să scanezi noul cod afișat pe ecranul din locație.' 
+      });
     }
   }
 
@@ -479,6 +559,11 @@ router.post('/', async (req, res) => {
         [tenant_id, employee.id, type, location_id]
       );
       newTimesheet = tsResult.rows[0];
+
+      // 3b. Marcare token QR de unică folosință ca și consumat
+      if (tokenKey) {
+        await markQrTokenConsumed(tokenKey);
+      }
     } catch (insertErr) {
       console.error("Eroare la inserare in qrp_timesheets:", insertErr);
       throw insertErr;

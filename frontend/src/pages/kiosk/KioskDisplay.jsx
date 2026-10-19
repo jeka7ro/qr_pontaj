@@ -47,6 +47,7 @@ export default function KioskDisplay() {
 
   // Anti-standby state
   const wakeLockRef = useRef(null);
+  const serverTimeOffsetRef = useRef(0);
 
   // 1. Incarcare date Tenant pentru branding (logo, culori) cu auto-retry si cache offline
   useEffect(() => {
@@ -134,14 +135,23 @@ export default function KioskDisplay() {
         baseUrl = 'https://qr-pontaj.up.railway.app';
       }
       
-      const ts = Math.floor(Date.now() / 1000); // Unix timestamp in seconds
-      const payload = `${baseUrl}/scan?t=${tenantId}&k=${kioskId}&ts=${ts}`;
+      const syncedNow = Date.now() + (serverTimeOffsetRef.current || 0);
+      const ts = Math.floor(syncedNow / 1000); // Unix timestamp in seconds
+      const otp = Math.random().toString(36).substring(2, 10);
+      const payload = `${baseUrl}/scan?t=${tenantId}&k=${kioskId}&ts=${ts}&otp=${otp}`;
       setQrPayload(payload);
 
       // Fetch kiosk settings silently
       try {
         const apiUrl = `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}`;
         const kiosksRes = await fetch(`${apiUrl}/api/tenants/${tenantId}/kiosks`, { cache: 'no-store' });
+        const dateHeader = kiosksRes.headers.get('date');
+        if (dateHeader) {
+          const sTime = new Date(dateHeader).getTime();
+          if (!isNaN(sTime)) {
+            serverTimeOffsetRef.current = sTime - Date.now();
+          }
+        }
         if (kiosksRes.ok) {
           const kiosksData = await kiosksRes.json();
           const myKiosk = kiosksData.find(k => k.id === parseInt(kioskId));

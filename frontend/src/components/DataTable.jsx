@@ -358,7 +358,7 @@ export default function DataTable({
                 )}
                 {expandable && <th className="px-3 py-3 w-10"></th>}
                 {/* Coloana Nr. Crt. */}
-                <th className="w-[50px] text-center px-3 py-3 text-slate-800 dark:text-white dark:text-slate-300 text-sm font-bold uppercase tracking-wider">
+                <th className="w-10 text-center px-2 py-2.5 text-slate-800 dark:text-white dark:text-slate-300 text-xs font-bold uppercase tracking-wider whitespace-nowrap">
                   {t('rowNumber')}
                 </th>
 
@@ -370,7 +370,7 @@ export default function DataTable({
                       onClick={() =>
                         col.sortable !== false ? handleSort(col.key) : null
                       }
-                      className={`px-4 py-3 text-slate-800 dark:text-white dark:text-slate-300 text-sm font-bold uppercase tracking-wider ${col.sortable !== false ? "cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 dark:hover:bg-slate-700/50" : ""}`}
+                      className={`px-3 py-2.5 text-slate-800 dark:text-white dark:text-slate-300 text-xs font-bold uppercase tracking-wider whitespace-nowrap ${col.sortable !== false ? "cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 dark:hover:bg-slate-700/50" : ""}`}
                     >
                       <div className="flex items-center space-x-1">
                         <span>{col.label}</span>
@@ -409,7 +409,7 @@ export default function DataTable({
                       >
                         {selectable && (
                           <td
-                            className="pl-4 pr-2 py-3 text-center"
+                            className="pl-3 pr-1 py-2 text-center"
                             onClick={(e) => e.stopPropagation()}
                           >
                             <input
@@ -421,15 +421,15 @@ export default function DataTable({
                           </td>
                         )}
                         {expandable && (
-                          <td className="px-3 py-3 text-center text-slate-400">
+                          <td className="px-2 py-2 text-center text-slate-400">
                             {isExpanded ? (
-                              <ChevronDown size={16} />
+                              <ChevronDown size={14} />
                             ) : (
-                              <ChevronRight size={16} />
+                              <ChevronRight size={14} />
                             )}
                           </td>
                         )}
-                        <td className="px-3 py-3 text-center text-slate-500 dark:text-slate-400 font-medium text-[13px]">
+                        <td className="px-2 py-2 text-center text-slate-500 dark:text-slate-400 font-medium text-xs whitespace-nowrap">
                           {startIndex + rowIndex + 1}
                         </td>
                         {columns
@@ -437,7 +437,7 @@ export default function DataTable({
                           .map((col, colIdx) => (
                             <td
                               key={colIdx}
-                              className="px-4 py-3 text-slate-800 dark:text-white dark:text-slate-200 font-medium"
+                              className={`px-3 py-2 text-slate-800 dark:text-white dark:text-slate-200 text-xs sm:text-sm font-medium ${col.wrap ? '' : 'whitespace-nowrap'}`}
                             >
                               {col.render
                                 ? col.render(row)

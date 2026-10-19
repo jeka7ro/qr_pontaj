@@ -32,6 +32,11 @@ export default function AdminLogin() {
   const [rememberMe, setRememberMe] = useState(isRemembered);
 
   const [email, setEmail] = useState(() => {
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlEmail = urlParams.get('email');
+      if (urlEmail && urlEmail.includes('@')) return urlEmail.trim();
+    } catch {}
     if (!isRemembered) return '';
     if (lockedTenant) {
       return localStorage.getItem(`saved_admin_email_${lockedTenant}`) || '';
@@ -114,6 +119,15 @@ export default function AdminLogin() {
 
     if (lockedTenant) {
       fetchBranding({ subdomain: lockedTenant });
+      return;
+    }
+
+    // Dacă este furnizat email în URL (ex: link WhatsApp / Email notificare)
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlEmail = urlParams.get('email');
+    if (urlEmail && urlEmail.includes('@')) {
+      lastFetchedEmailRef.current = urlEmail.toLowerCase().trim();
+      fetchBranding({ email: urlEmail });
       return;
     }
 

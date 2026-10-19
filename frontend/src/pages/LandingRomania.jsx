@@ -1,0 +1,1229 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import {
+  QrCode,
+  Clock,
+  ShieldCheck,
+  ChevronRight,
+  ChevronDown,
+  X,
+  CreditCard,
+  ScanLine,
+  FileSpreadsheet,
+  Check,
+  Search,
+  ArrowRight,
+  AlertCircle,
+  Sparkles,
+  RefreshCw,
+  CheckCircle2,
+  Phone,
+  Sun,
+  CloudSun,
+  MapPin,
+  Play,
+  Pause,
+  Volume2,
+  VolumeX,
+  Maximize2,
+  Tv,
+  Monitor,
+  Tablet,
+  Smartphone,
+  Laptop,
+  Layers,
+  FileText,
+  Building2,
+  Users,
+  LogIn,
+  LogOut,
+  UserCheck,
+  RotateCcw
+} from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
+
+export default function LandingRomania() {
+  const navigate = useNavigate();
+
+  // State Modale și Formular Demo / Abonament
+  const [isSubscribeModalOpen, setIsSubscribeModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState('demo'); // 'demo' | 'subscribe'
+  const [subForm, setSubForm] = useState({
+    contactName: '',
+    email: '',
+    companyName: '',
+    phone: '',
+    anafPhone: '',
+    cui: '',
+    address: '',
+    city: '',
+    county: '',
+    regCom: '',
+    employeesCount: '5-20',
+    notes: ''
+  });
+  const [cuiLoading, setCuiLoading] = useState(false);
+  const [cuiError, setCuiError] = useState(null);
+  const [companyVerified, setCompanyVerified] = useState(null);
+  const [isSubmittingForm, setIsSubmittingForm] = useState(false);
+  const [subSubmitted, setSubSubmitted] = useState(false);
+  const [assignedTempPassword, setAssignedTempPassword] = useState(null);
+
+  // Ceas Digital Live și Dată
+  const [currentTime, setCurrentTime] = useState(new Date());
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const timeFormatted = currentTime.toLocaleTimeString('ro-RO', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  });
+
+  const dateFormatted = currentTime.toLocaleDateString('ro-RO', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  });
+
+  // Vreme și Locație Vizitator
+  const [weatherInfo, setWeatherInfo] = useState({
+    city: 'București',
+    temp: '21°C',
+    condition: 'Însorit'
+  });
+
+  useEffect(() => {
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+      let detectedCity = 'București';
+      let lat = 44.4323;
+      let lon = 26.1063;
+
+      if (tz.includes('Cluj')) { detectedCity = 'Cluj-Napoca'; lat = 46.77; lon = 23.60; }
+      else if (tz.includes('Timisoara')) { detectedCity = 'Timișoara'; lat = 45.75; lon = 21.22; }
+      else if (tz.includes('Iasi')) { detectedCity = 'Iași'; lat = 47.16; lon = 27.58; }
+      else if (tz.includes('Brasov')) { detectedCity = 'Brașov'; lat = 45.65; lon = 25.60; }
+      else if (tz.includes('Constanta')) { detectedCity = 'Constanța'; lat = 44.18; lon = 28.63; }
+      else if (tz.includes('Craiova')) { detectedCity = 'Craiova'; lat = 44.33; lon = 23.79; }
+
+      fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.current) {
+            const temp = Math.round(data.current.temperature_2m);
+            setWeatherInfo({
+              city: detectedCity,
+              temp: `${temp}°C`,
+              condition: temp > 18 ? 'Plăcut' : 'Răcoros'
+            });
+          }
+        })
+        .catch(() => {});
+    } catch (e) {}
+  }, []);
+
+  // Simulator Kiosk Interactiv
+  const [simMode, setSimMode] = useState('intrare'); // 'intrare' | 'iesire'
+  const [simScanning, setSimScanning] = useState(false);
+  const [simResult, setSimResult] = useState(null);
+  const [simCountdown, setSimCountdown] = useState(15);
+  const [simEmpIndex, setSimEmpIndex] = useState(0);
+
+  const simEmployees = [
+    { name: 'Elena Rusu', role: 'Manager Sală', id: 'RO-1102', img: '/media/emp-elena.jpg' },
+    { name: 'Andrei Popescu', role: 'Bucătar Șef', id: 'RO-4011', img: '/media/emp-andrei.jpg' },
+    { name: 'Ioan Mihai', role: 'Barman', id: 'RO-1378', img: '/media/emp-ioan.jpg' },
+    { name: 'Maria Ionescu', role: 'Ospătar Principal', id: 'RO-1456', img: '/media/emp-maria.jpg' }
+  ];
+
+  useEffect(() => {
+    const iv = setInterval(() => {
+      setSimCountdown(prev => (prev <= 1 ? 15 : prev - 1));
+    }, 1000);
+    return () => clearInterval(iv);
+  }, []);
+
+  const handleSimulateScan = () => {
+    if (simScanning) return;
+    setSimScanning(true);
+    setSimResult(null);
+    setTimeout(() => {
+      setSimResult(simEmployees[simEmpIndex]);
+      setSimScanning(false);
+      setSimEmpIndex(prev => (prev + 1) % simEmployees.length);
+    }, 1200);
+  };
+
+  const handleResetSim = () => {
+    setSimResult(null);
+    setSimScanning(false);
+  };
+
+  // Tabloul de Bord - Switcher Tab-uri Reale
+  const [activeDashboardTab, setActiveDashboardTab] = useState('presences');
+  const dashboardTabs = [
+    { id: 'presences', label: 'Prezențe Live & Foto', img: '/ro_dash_presences.png' },
+    { id: 'reports', label: 'Condică ITM & SAGA', img: '/ro_dash_reports.png' },
+    { id: 'overview', label: 'Panou General', img: '/ro_dash_overview.png' }
+  ];
+
+  // Video Player State
+  const videoRef = useRef(null);
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+  const [isVideoMuted, setIsVideoMuted] = useState(true);
+
+  const toggleVideoPlay = () => {
+    if (!videoRef.current) return;
+    if (videoRef.current.paused) {
+      videoRef.current.play();
+      setIsVideoPlaying(true);
+    } else {
+      videoRef.current.pause();
+      setIsVideoPlaying(false);
+    }
+  };
+
+  const toggleVideoMute = () => {
+    if (!videoRef.current) return;
+    videoRef.current.muted = !videoRef.current.muted;
+    setIsVideoMuted(videoRef.current.muted);
+  };
+
+
+  // Căutare CUI ANAF
+  const handleCuiChange = (e) => {
+    const val = e.target.value;
+    setSubForm(prev => ({ ...prev, cui: val }));
+    const digitsOnly = val.replace(/[^0-9]/g, '');
+    if (digitsOnly.length >= 6 && digitsOnly.length <= 10) {
+      handleAutoCuiSearch(digitsOnly);
+    } else {
+      setCompanyVerified(null);
+    }
+  };
+
+  const handleAutoCuiSearch = async (cuiDigits) => {
+    setCuiLoading(true);
+    setCuiError(null);
+    try {
+      const res = await fetch(`/api/company/lookup?cui=${cuiDigits}`);
+      const data = await res.json();
+      if (data.success && data.found && data.company) {
+        setSubForm(prev => ({ 
+          ...prev, 
+          companyName: data.company.name || prev.companyName,
+          address: data.company.address || prev.address,
+          city: data.company.city || prev.city,
+          county: data.company.county || prev.county,
+          regCom: data.company.regCom || prev.regCom,
+          anafPhone: data.company.phone || '',
+          phone: prev.phone || ''
+        }));
+        setCompanyVerified(data.company);
+        setCuiError(null);
+      } else {
+        setCompanyVerified(null);
+      }
+    } catch (e) {
+      console.warn('ANAF search warning:', e);
+    } finally {
+      setCuiLoading(false);
+    }
+  };
+
+  const handleFormSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmittingForm(true);
+
+    try {
+      const res = await fetch('/api/auth/demo-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contactName: subForm.contactName,
+          email: subForm.email,
+          companyName: subForm.companyName,
+          phone: subForm.phone,
+          anafPhone: subForm.anafPhone || companyVerified?.phone || '',
+          cui: subForm.cui,
+          address: subForm.address || companyVerified?.address || '',
+          city: subForm.city || companyVerified?.city || '',
+          county: subForm.county || companyVerified?.county || '',
+          employeesCount: subForm.employeesCount,
+          mode: modalMode
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.token && data.user) {
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('user', JSON.stringify(data.user));
+        }
+        if (data.tempPassword) {
+          setAssignedTempPassword(data.tempPassword);
+        }
+      }
+    } catch (err) {
+      console.warn('Eroare apel demo-request API:', err);
+    } finally {
+      setIsSubmittingForm(false);
+      setSubSubmitted(true);
+    }
+  };
+
+  useEffect(() => {
+    document.title = 'QrTime.ro — Pontaj QR Dinamic pe Orice Ecran';
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans antialiased selection:bg-blue-600 selection:text-white">
+      {/* 1. Header de Navigație Simplificat */}
+      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-6">
+          <Link to="/" className="flex items-center gap-2.5 group cursor-pointer focus:outline-none shrink-0">
+            <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-sm shadow-blue-500/20 group-hover:scale-105 transition-transform">
+              <QrCode size={20} strokeWidth={2.4} />
+            </div>
+            <span className="text-xl font-black text-slate-900 tracking-tight leading-none">
+              QrTime<span className="text-blue-600">.ro</span>
+            </span>
+          </Link>
+
+          <nav className="hidden md:flex items-center gap-1 text-xs font-bold text-slate-600">
+            <a href="#video" className="px-3.5 py-1.5 rounded-full hover:bg-slate-100 hover:text-slate-900 transition-colors whitespace-nowrap shrink-0">
+              Prezentare Video
+            </a>
+            <a href="#simulator" className="px-3.5 py-1.5 rounded-full hover:bg-slate-100 hover:text-slate-900 transition-colors whitespace-nowrap shrink-0">
+              Simulator Kiosk
+            </a>
+            <a href="#dashboard" className="px-3.5 py-1.5 rounded-full hover:bg-slate-100 hover:text-slate-900 transition-colors whitespace-nowrap shrink-0">
+              Panou Live &amp; SAGA
+            </a>
+            <a href="#tarife" className="px-3.5 py-1.5 rounded-full hover:bg-slate-100 hover:text-slate-900 transition-colors whitespace-nowrap shrink-0 text-blue-600">
+              Tarif 5.00 € / angajat
+            </a>
+          </nav>
+
+          <div className="flex items-center gap-2.5 shrink-0">
+            <a
+              href="tel:0757777712"
+              className="hidden lg:flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-blue-600 px-3 py-1.5 rounded-full hover:bg-slate-100 transition-colors whitespace-nowrap shrink-0"
+            >
+              <Phone size={13} className="text-blue-600" />
+              <span>0757 77 77 12</span>
+            </a>
+            <Link
+              to="/admin/login"
+              className="text-xs font-bold text-slate-600 hover:text-slate-900 px-3 h-9 rounded-full hover:bg-slate-100 transition-colors flex items-center whitespace-nowrap shrink-0"
+            >
+              Autentificare
+            </Link>
+            <button
+              type="button"
+              onClick={() => {
+                setModalMode('demo');
+                setIsSubscribeModalOpen(true);
+                setSubSubmitted(false);
+              }}
+              className="px-4 h-9 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-full shadow-sm shadow-blue-500/25 transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0"
+            >
+              <Sparkles size={13} />
+              <span>Activează Demo (10 Zile)</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* 2. HERO PRINCIPAL: IMPACT VIZUAL + BENEFICII CLARE */}
+      <section id="hero" className="pt-10 pb-16 bg-gradient-to-b from-white via-slate-50 to-slate-100 border-b border-slate-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+            
+            {/* Stânga: Text + CTAs + Beneficii rapide */}
+            <div className="lg:col-span-6 space-y-4">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-blue-200 bg-blue-50 text-xs font-bold text-blue-600 whitespace-nowrap shrink-0">
+                <ShieldCheck size={14} className="text-blue-600" />
+                <span>100% Conform Art. 119 Codul Muncii</span>
+              </div>
+
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-tight">
+                Pontaj cu <span className="text-blue-600">QR Dinamic</span>.<br />Intrare și ieșire sub 1 secundă.
+              </h1>
+
+              <p className="text-sm sm:text-base text-slate-600 leading-relaxed max-w-xl">
+                Pui o tabletă sau un Smart TV pe perete. Salariații scanează codul QR cu telefonul — codul se schimbă la 15 secunde, deci <strong>nu poate fi trimis colegilor</strong>. Condica ITM și exportul SAGA se fac automat.
+              </p>
+
+              <div className="flex flex-wrap items-center gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setModalMode('demo');
+                    setIsSubscribeModalOpen(true);
+                    setSubSubmitted(false);
+                  }}
+                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-full shadow-lg shadow-blue-500/25 transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap shrink-0"
+                >
+                  <Sparkles size={16} />
+                  <span>Testează Gratuit 10 Zile</span>
+                  <span className="opacity-75 font-normal ml-1">| 5.00 € / angajat</span>
+                </button>
+
+                <a
+                  href="#video"
+                  className="px-5 py-3 border border-slate-300 hover:border-blue-600 hover:text-blue-600 text-slate-700 text-sm font-bold rounded-full bg-white hover:bg-slate-50 transition-all flex items-center gap-2 whitespace-nowrap shrink-0"
+                >
+                  <Play size={16} className="text-blue-600" />
+                  <span>Vezi Video Demo</span>
+                </a>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-slate-600 pt-2">
+                <div className="flex items-center gap-1.5 whitespace-nowrap shrink-0">
+                  <CheckCircle2 size={15} className="text-emerald-500" />
+                  <span>Fără card bancar</span>
+                </div>
+                <div className="flex items-center gap-1.5 whitespace-nowrap shrink-0">
+                  <CheckCircle2 size={15} className="text-emerald-500" />
+                  <span>Gata în 5 minute</span>
+                </div>
+                <div className="flex items-center gap-1.5 whitespace-nowrap shrink-0">
+                  <CheckCircle2 size={15} className="text-emerald-500" />
+                  <span>Export SAGA &amp; Condică ITM</span>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-1.5 pt-2">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mr-1 whitespace-nowrap shrink-0">
+                  Pe orice ecran:
+                </span>
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-white rounded-full text-xs font-semibold text-slate-700 border border-slate-200 shadow-2xs whitespace-nowrap shrink-0">
+                  <Tablet size={13} className="text-blue-600" /> Tabletă
+                </span>
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-white rounded-full text-xs font-semibold text-slate-700 border border-slate-200 shadow-2xs whitespace-nowrap shrink-0">
+                  <Tv size={13} className="text-blue-600" /> Smart TV
+                </span>
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-white rounded-full text-xs font-semibold text-slate-700 border border-slate-200 shadow-2xs whitespace-nowrap shrink-0">
+                  <Monitor size={13} className="text-blue-600" /> Monitor PC
+                </span>
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-white rounded-full text-xs font-semibold text-slate-700 border border-slate-200 shadow-2xs whitespace-nowrap shrink-0">
+                  <Laptop size={13} className="text-blue-600" /> Laptop
+                </span>
+              </div>
+            </div>
+
+            {/* Dreapta: Fotografie Scanare Kiosk + Badge-uri Plutitoare */}
+            <div className="lg:col-span-6">
+              <div className="relative rounded-2xl overflow-hidden shadow-2xl border-2 border-slate-800 bg-slate-950 aspect-[4/3] group">
+                <img
+                  src="/media/hero-scan.jpg"
+                  alt="Angajată scanează codul QR dinamic de pe tabletă"
+                  className="w-full h-full object-cover group-hover:scale-101 transition-transform duration-500"
+                />
+
+                {/* Badge Plutitor Dreapta Sus */}
+                <div className="absolute top-4 right-4 bg-slate-900/90 text-white backdrop-blur-md rounded-2xl border border-white/20 px-3.5 py-2 shadow-xl flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <div className="text-left">
+                    <p className="text-[10px] uppercase tracking-wider text-blue-300 font-bold whitespace-nowrap shrink-0">QR Dinamic</p>
+                    <p className="text-xs font-black text-white whitespace-nowrap shrink-0">Se schimbă la 15s</p>
+                  </div>
+                </div>
+
+                {/* Card Plutitor Stânga Jos: Elena Rusu Intrare Validată */}
+                <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200 p-3 flex items-center gap-3 max-w-[270px]">
+                  <div className="relative w-12 h-12 rounded-full overflow-hidden ring-3 ring-emerald-500 shrink-0">
+                    <img
+                      src="/media/emp-elena.jpg"
+                      alt="Poză profil Elena Rusu"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="text-left overflow-hidden">
+                    <p className="text-[10px] font-black text-emerald-600 uppercase tracking-wide whitespace-nowrap shrink-0">Intrare Înregistrată</p>
+                    <p className="text-xs font-bold text-slate-900 truncate">Bine ai venit, Elena!</p>
+                    <p className="text-[11px] text-slate-500 whitespace-nowrap shrink-0">08:00:15 • Kiosk Intrare</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* 3. SECȚIUNE VIDEO PREZENTARE — DARK LUXURY (#video) */}
+      <section id="video" className="py-20 bg-[#0b1220] text-white border-b border-slate-800">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-2xl mx-auto mb-10">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 text-xs font-bold mb-3 border border-blue-500/20 whitespace-nowrap shrink-0">
+              <Play size={13} className="text-blue-400" />
+              <span>Video Prezentare Oficial</span>
+            </div>
+            <h2 className="text-2xl sm:text-4xl font-black tracking-tight text-white mb-3">
+              Vezi pontajul real în 8 secunde
+            </h2>
+            <p className="text-sm sm:text-base text-slate-400 leading-relaxed">
+              Salariatul intră, scanează codul QR dinamic de pe tabletă cu telefonul și ecranul confirmă instant pontajul cu poza lui.
+            </p>
+          </div>
+
+          {/* Player Video 16:9 Mare */}
+          <div className="relative aspect-video rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl shadow-blue-900/40 ring-1 ring-white/10 bg-slate-900 max-w-5xl mx-auto group">
+            <video
+              ref={videoRef}
+              src="/media/qrtime-demo.mp4"
+              poster="/media/qrtime-demo-poster.jpg"
+              className="w-full h-full object-cover bg-black cursor-pointer"
+              playsInline
+              loop
+              muted={isVideoMuted}
+              onPlay={() => setIsVideoPlaying(true)}
+              onPause={() => setIsVideoPlaying(false)}
+              onClick={toggleVideoPlay}
+            />
+
+            {/* Buton Mare Play dacă e pe pauză */}
+            {!isVideoPlaying && (
+              <div
+                onClick={toggleVideoPlay}
+                className="absolute inset-0 flex items-center justify-center bg-gradient-to-t from-black/80 via-black/30 to-transparent cursor-pointer group"
+              >
+                <button
+                  type="button"
+                  aria-label="Pornește video"
+                  className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-blue-600 hover:bg-blue-500 flex items-center justify-center shadow-2xl shadow-blue-500/50 group-hover:scale-105 transition-transform cursor-pointer"
+                >
+                  <Play size={36} className="text-white translate-x-1" fill="white" />
+                </button>
+                <div className="absolute bottom-6 left-6 text-left pointer-events-none">
+                  <span className="block text-xs uppercase tracking-widest text-blue-300 font-bold whitespace-nowrap shrink-0">
+                    QrTime.ro • Prezentare
+                  </span>
+                  <span className="block text-lg sm:text-xl font-black text-white whitespace-nowrap shrink-0">
+                    Intrare în tură cu scanare QR
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Controale discrete când rulează */}
+            {isVideoPlaying && (
+              <div className="absolute bottom-4 inset-x-4 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+                <div className="flex items-center gap-2 pointer-events-auto bg-black/75 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/15 shadow-lg">
+                  <button
+                    type="button"
+                    onClick={toggleVideoPlay}
+                    className="p-1.5 rounded-full bg-white/20 hover:bg-white/30 text-white transition-all cursor-pointer whitespace-nowrap shrink-0"
+                    title="Pauză"
+                  >
+                    <Pause size={14} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={toggleVideoMute}
+                    className="p-1.5 rounded-full bg-white/20 hover:bg-white/30 text-white transition-all cursor-pointer whitespace-nowrap shrink-0"
+                    title={isVideoMuted ? "Activează Sunet" : "Oprește Sunet"}
+                  >
+                    {isVideoMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
+                  </button>
+                  <span className="text-[11px] text-white/90 font-medium ml-1">
+                    {isVideoMuted ? "Sunet oprit" : "Sunet activ"}
+                  </span>
+                </div>
+
+                <div className="pointer-events-auto bg-black/75 backdrop-blur-md p-1.5 rounded-full border border-white/15 shadow-lg">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (videoRef.current?.requestFullscreen) {
+                        videoRef.current.requestFullscreen();
+                      }
+                    }}
+                    className="p-1.5 rounded-full bg-white/20 hover:bg-white/30 text-white transition-all cursor-pointer whitespace-nowrap shrink-0"
+                    title="Ecran Complet"
+                  >
+                    <Maximize2 size={14} />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Cele 2 Carduri Mari: Scanare la Intrare & Scanare la Ieșire */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-12 max-w-5xl mx-auto">
+            {/* Card Intrare */}
+            <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden aspect-[4/3] group border border-white/10 shadow-xl">
+              <img
+                src="/media/kiosk-welcome.jpg"
+                alt="Scanare la intrare"
+                className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-700"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-transparent" />
+              <div className="absolute top-4 left-4">
+                <span className="inline-flex items-center gap-1.5 bg-emerald-600 text-white text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap shrink-0 shadow-md">
+                  <LogIn size={13} />
+                  <span>SCANARE LA INTRARE</span>
+                </span>
+              </div>
+              <div className="absolute bottom-0 p-6 text-left">
+                <h3 className="text-xl sm:text-2xl font-black text-white mb-1.5">Începe tura</h3>
+                <p className="text-slate-200 text-xs sm:text-sm leading-relaxed max-w-md">
+                  Un ecran la intrare. Salariatul scanează cu telefonul, iar ora exactă de începere se salvează instantaneu în condica ITM.
+                </p>
+              </div>
+            </div>
+
+            {/* Card Ieșire */}
+            <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden aspect-[4/3] group border border-white/10 shadow-xl">
+              <img
+                src="/media/exit-scan.jpg"
+                alt="Scanare la ieșire"
+                className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-700"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-transparent" />
+              <div className="absolute top-4 left-4">
+                <span className="inline-flex items-center gap-1.5 bg-amber-600 text-white text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap shrink-0 shadow-md">
+                  <LogOut size={13} />
+                  <span>SCANARE LA IEȘIRE</span>
+                </span>
+              </div>
+              <div className="absolute bottom-0 p-6 text-left">
+                <h3 className="text-xl sm:text-2xl font-black text-white mb-1.5">Termină tura</h3>
+                <p className="text-slate-200 text-xs sm:text-sm leading-relaxed max-w-md">
+                  Un ecran la ieșire. La final de program scanează din nou și orele lucrate se calculează automat, pregătite pentru SAGA.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Banner Anti-fraudă */}
+          <div className="mt-8 flex items-center justify-center gap-3 text-slate-300 text-xs sm:text-sm bg-white/5 rounded-2xl px-6 py-3.5 ring-1 ring-white/10 max-w-3xl mx-auto text-center">
+            <ShieldCheck size={20} className="text-blue-400 shrink-0" />
+            <span>
+              <strong className="text-white">QR dinamic anti-fraudă:</strong> codul se schimbă la fiecare 15 secunde — o captură de ecran trimisă pe WhatsApp nu funcționează.
+            </span>
+          </div>
+
+        </div>
+      </section>
+
+      {/* 4. SECȚIUNE SIMULATOR LIVE INTERACTIV (#simulator) */}
+      <section id="simulator" className="py-16 bg-slate-50 border-b border-slate-200">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-blue-200 bg-blue-50 text-xs font-bold text-blue-600 mb-3 whitespace-nowrap shrink-0">
+            <RotateCcw size={13} className="text-blue-600" />
+            <span>Demonstrație Live Interactivă</span>
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight mb-2">
+            Testează Kiosk-ul Live Chiar Acum
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-600 max-w-lg mx-auto mb-8">
+            Apasă „Simulează Scanare” pentru a vedea exact ce apare pe ecranul tabletei când un salariat scanează.
+          </p>
+
+          {/* Rama Tabletei Kiosk */}
+          <div className="max-w-md mx-auto bg-slate-900 rounded-3xl p-3 shadow-2xl border-2 border-slate-800 text-left">
+            {/* Bara de sus a tabletei */}
+            <div className="flex items-center justify-between px-3 py-2 border-b border-slate-800 mb-2">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center text-white">
+                  <QrCode size={16} />
+                </div>
+                <span className="text-white font-bold text-xs">QrTime.ro Kiosk</span>
+              </div>
+              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[11px] font-bold border border-emerald-500/30 whitespace-nowrap shrink-0">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span>ONLINE</span>
+              </div>
+            </div>
+
+            {/* Ecranul Kiosk-ului */}
+            <div className="bg-white rounded-2xl overflow-hidden p-4 text-center">
+              {/* Selector Intrare / Ieșire */}
+              <div className="flex bg-slate-100 p-1 rounded-full mb-4 border border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => { setSimMode('intrare'); handleResetSim(); }}
+                  className={`flex-1 py-1.5 rounded-full text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 ${
+                    simMode === 'intrare'
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <LogIn size={13} />
+                  <span>INTRARE</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setSimMode('iesire'); handleResetSim(); }}
+                  className={`flex-1 py-1.5 rounded-full text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 ${
+                    simMode === 'iesire'
+                      ? 'bg-amber-600 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <LogOut size={13} />
+                  <span>IEȘIRE</span>
+                </button>
+              </div>
+
+              {!simResult ? (
+                <div>
+                  {/* Ceas digital live */}
+                  <div className="flex items-center justify-center gap-1.5 text-slate-400 text-xs mb-1">
+                    <Clock size={13} />
+                    <span>ORA LIVE</span>
+                  </div>
+                  <div className="text-3xl font-black text-slate-900 tracking-tight mb-4">
+                    {timeFormatted}
+                  </div>
+
+                  {/* QR Code cu animație laser */}
+                  <div className="relative w-44 h-44 mx-auto mb-4 p-2 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-center overflow-hidden">
+                    <QRCodeSVG
+                      value={`https://qrtime.ro/scan?kiosk=demo&mode=${simMode}&t=${simCountdown}`}
+                      size={144}
+                      level="M"
+                      includeMargin={false}
+                    />
+
+                    {/* Laser Scanner Sweep Animation */}
+                    {simScanning && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-emerald-500/10">
+                        <div className="w-36 h-36 border-2 border-emerald-500 rounded-xl animate-pulse" />
+                        <div className="absolute left-2 right-2 h-0.5 bg-emerald-500 shadow-md shadow-emerald-500/50 animate-bounce" />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Countdown Timer */}
+                  <div className="flex items-center justify-center gap-2 mb-4">
+                    <span className="text-[11px] text-slate-500">Reîmprospătare QR</span>
+                    <div className="w-20 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-blue-600 rounded-full transition-all duration-1000"
+                        style={{ width: `${(simCountdown / 15) * 100}%` }}
+                      />
+                    </div>
+                    <span className="text-[11px] font-bold text-blue-600">{simCountdown}s</span>
+                  </div>
+
+                  {/* Buton Simulează Scanare */}
+                  <button
+                    type="button"
+                    onClick={handleSimulateScan}
+                    disabled={simScanning}
+                    className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-full shadow-md shadow-blue-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 whitespace-nowrap shrink-0"
+                  >
+                    {simScanning ? (
+                      <>
+                        <RefreshCw size={14} className="animate-spin" />
+                        <span>Se scanează codul...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Simulează Scanare</span>
+                        <ArrowRight size={14} />
+                      </>
+                    )}
+                  </button>
+                </div>
+              ) : (
+                /* Card Confirmare Scanare Reușită */
+                <div className="py-2">
+                  <div className="relative w-24 h-24 mx-auto mb-3 rounded-full overflow-hidden ring-4 ring-emerald-500 shadow-xl">
+                    <img
+                      src={simResult.img}
+                      alt={simResult.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+
+                  <h3 className="text-lg font-black text-slate-900">
+                    {simMode === 'intrare' ? 'Bine ai venit,' : 'La revedere,'} {simResult.name}!
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    {simResult.role} • ID: {simResult.id}
+                  </p>
+
+                  <div className={`mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap shrink-0 ${
+                    simMode === 'intrare'
+                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                      : 'bg-amber-50 text-amber-700 border border-amber-200'
+                  }`}>
+                    <UserCheck size={14} />
+                    <span>{simMode === 'intrare' ? 'Intrare' : 'Ieșire'} înregistrată la {timeFormatted}</span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleResetSim}
+                    className="mt-4 w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-full transition-all flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0"
+                  >
+                    <RotateCcw size={13} />
+                    <span>Scanare Nouă (Alt Angajat)</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Salariați de Test */}
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+            <span className="text-xs text-slate-500 mr-1">Salariați de test:</span>
+            {simEmployees.map((emp, idx) => (
+              <button
+                key={emp.id}
+                type="button"
+                onClick={() => {
+                  setSimEmpIndex(idx);
+                  setSimResult(emp);
+                }}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white hover:bg-slate-100 rounded-full text-xs font-semibold text-slate-700 border border-slate-200 shadow-2xs transition-colors cursor-pointer whitespace-nowrap shrink-0"
+              >
+                <img src={emp.img} alt={emp.name} className="w-4 h-4 rounded-full object-cover" />
+                <span>{emp.name}</span>
+              </button>
+            ))}
+          </div>
+
+        </div>
+      </section>
+
+      {/* 5. SECȚIUNE DEDICATĂ: PANOU ADMIN & RAPOARTE SAGA (#dashboard) */}
+      <section id="dashboard" className="py-14 bg-white border-b border-slate-200">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-800 text-xs font-bold mb-3 border border-blue-200 whitespace-nowrap shrink-0">
+              <FileSpreadsheet size={14} className="text-blue-600" />
+              <span>Panou de Control &amp; Analitică în Timp Real</span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+              Tablou de Bord &amp; Evidență Live per Punct de Lucru
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-xl mx-auto">
+              Urmărești prezențele cu poză la scanare și generezi rapoartele oficiale pentru ITM și fișierul XML pentru SAGA.
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            {/* Switcher Tab-uri Reale */}
+            <div className="max-w-md mx-auto bg-slate-100 p-1 rounded-full border border-slate-200 flex gap-1">
+              {dashboardTabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveDashboardTab(tab.id)}
+                  className={`flex-1 py-1.5 px-3 rounded-full text-xs font-bold transition-all whitespace-nowrap shrink-0 cursor-pointer ${
+                    activeDashboardTab === tab.id
+                      ? 'bg-blue-600 text-white shadow-xs'
+                      : 'text-slate-700 hover:text-slate-900 hover:bg-white/80'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Fereastră Browser Mare, Centrată și Elegantă */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
+              <div className="px-4 py-2.5 bg-slate-100 border-b border-slate-200 flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-red-400" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
+                </div>
+                <div className="px-3 py-0.5 rounded-full bg-white text-[11px] font-semibold text-slate-500 border border-slate-200">
+                  app.qrtime.ro/admin/timesheets
+                </div>
+                <div className="w-8" />
+              </div>
+
+              <div className="p-2 sm:p-4 bg-slate-50">
+                <img
+                  src={dashboardTabs.find(t => t.id === activeDashboardTab)?.img || '/ro_dash_presences.png'}
+                  alt="Panou de pontaj"
+                  className="w-full h-auto rounded-xl shadow-xs border border-slate-200"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 3. SECȚIUNE: 3 AVANTAJE RAPIDE — ZERO TEXT INUTIL */}
+      <section id="ecrane" className="py-12 bg-white border-b border-slate-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {/* Card 1: Orice Ecran */}
+            <div className="bg-slate-50 rounded-2xl p-5 border border-slate-200 shadow-2xs hover:shadow-sm transition-shadow">
+              <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mb-3">
+                <Tv size={20} />
+              </div>
+              <h3 className="text-base font-black text-slate-900 mb-1">
+                Deschizi pe Orice Ecran
+              </h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Tabletă iPad, Android, Smart TV pe perete sau laptop vechi. Fără să cumperi aparate speciale.
+              </p>
+            </div>
+
+            {/* Card 2: QR Dinamic & Poză */}
+            <div className="bg-slate-50 rounded-2xl p-5 border border-slate-200 shadow-2xs hover:shadow-sm transition-shadow">
+              <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-3">
+                <RefreshCw size={20} />
+              </div>
+              <h3 className="text-base font-black text-slate-900 mb-1">
+                Cod QR Dinamic la 5s & Poză
+              </h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Codul se schimbă continuu. Nu poate fi trimis pe WhatsApp, iar la scanare apare poza angajatului.
+              </p>
+            </div>
+
+            {/* Card 3: ITM & SAGA */}
+            <div className="bg-slate-50 rounded-2xl p-5 border border-slate-200 shadow-2xs hover:shadow-sm transition-shadow">
+              <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center mb-3">
+                <FileSpreadsheet size={20} />
+              </div>
+              <h3 className="text-base font-black text-slate-900 mb-1">
+                Condică ITM & Export SAGA
+              </h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Calcul automat pentru ore de noapte și weekend. Fișier XML gata de import în modulul de salarii.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 6. SECȚIUNE TARIF & CONVERSIE DIRECTĂ (#tarife) */}
+      <section id="tarife" className="py-16 bg-white border-b border-slate-200">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-800 text-xs font-bold mb-3 border border-blue-200 whitespace-nowrap shrink-0">
+            <CreditCard size={14} className="text-blue-600" />
+            <span>Preț Clar & Transparent</span>
+          </div>
+
+          <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight mb-2">
+            Un Singur Tarif Simplu, Fără Costuri Ascunse
+          </h2>
+          <p className="text-slate-600 text-sm sm:text-base max-w-xl mx-auto mb-8">
+            Plătești doar pentru salariații activi. Terminale Kiosk nelimitate pe oricâte ecrane ai nevoie.
+          </p>
+
+          {/* Card Preț */}
+          <div className="max-w-md mx-auto bg-gradient-to-b from-white to-slate-50 rounded-2xl border-2 border-blue-600 shadow-xl p-8 relative">
+            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-blue-600 text-white text-xs font-bold uppercase tracking-wider whitespace-nowrap shrink-0 shadow-sm">
+              Totul Inclus • Fără Taxe de Instalare
+            </div>
+
+            <div className="my-4">
+              <span className="text-5xl font-black text-slate-900 tracking-tight">5.00 €</span>
+              <span className="text-slate-500 font-semibold text-sm ml-1.5 whitespace-nowrap shrink-0">/ angajat / lună</span>
+            </div>
+
+            <p className="text-xs text-slate-500 mb-6">
+              Primele 10 zile sunt complet gratuite, fără obligații și fără card bancar.
+            </p>
+
+            <ul className="text-left space-y-3 text-xs font-semibold text-slate-700 mb-8 max-w-xs mx-auto">
+              <li className="flex items-center gap-2">
+                <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+                <span>Terminale Kiosk nelimitate pe orice ecran</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+                <span>Cod QR dinamic cu poză salariat la scanare</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+                <span>Export automat Condică ITM conform Art. 119</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+                <span>Export fișier SAGA Salarii la un singur click</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+                <span>Calcul automat ore de noapte și weekend</span>
+              </li>
+            </ul>
+
+            <button
+              type="button"
+              onClick={() => {
+                setModalMode('demo');
+                setIsSubscribeModalOpen(true);
+                setSubSubmitted(false);
+              }}
+              className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-full shadow-lg shadow-blue-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap shrink-0"
+            >
+              <Sparkles size={16} />
+              <span>Începe Perioada de Test (10 Zile)</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* 6. Footer Curat */}
+      <footer className="py-10 bg-slate-900 text-slate-400 text-xs border-t border-slate-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-xs">
+              QR
+            </div>
+            <span className="font-bold text-white text-sm">QrTime.ro</span>
+            <span>• Pontaj Electronic QR pe Orice Ecran</span>
+          </div>
+
+          <div className="flex items-center gap-6 flex-wrap">
+            <Link to="/contabil" className="text-emerald-400 hover:text-emerald-300 font-bold transition-colors whitespace-nowrap shrink-0">
+              Portal Contabili (SAGA)
+            </Link>
+            <a href="tel:0757777712" className="hover:text-white transition-colors flex items-center gap-1.5 whitespace-nowrap shrink-0">
+              <Phone size={13} className="text-blue-400" />
+              <span>0757 77 77 12</span>
+            </a>
+            <Link to="/login" className="hover:text-white transition-colors whitespace-nowrap shrink-0">
+              Autentificare Admin
+            </Link>
+          </div>
+        </div>
+      </footer>
+
+      {/* MODAL SOLICITARE DEMO 10 ZILE / ABONAMENT CU CĂUTARE AUTOMATĂ CUI ANAF */}
+      {isSubscribeModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
+          <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh]">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                  <Sparkles size={16} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-800">
+                    {modalMode === 'demo' ? 'Activează Cont Demo Gratuit (10 Zile)' : 'Abonament QrTime (5 € / angajat)'}
+                  </h3>
+                  <p className="text-[11px] text-slate-500">Completare automată a datelor firmei prin CUI ANAF</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsSubscribeModalOpen(false)}
+                className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors shrink-0 cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto">
+              {!subSubmitted ? (
+                <form onSubmit={handleFormSubmit} className="space-y-4">
+                  {/* CUI ANAF Input */}
+                  <div>
+                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1 flex items-center justify-between">
+                      <span>Cod Fiscal (CUI / CIF)</span>
+                      {cuiLoading && (
+                        <span className="text-[10px] text-blue-600 font-semibold flex items-center gap-1">
+                          <RefreshCw size={10} className="animate-spin" /> Verificare ANAF...
+                        </span>
+                      )}
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={subForm.cui}
+                      onChange={handleCuiChange}
+                      placeholder="Ex: 42322117 (introdu CUI-ul firmei)..."
+                      className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-xs font-semibold"
+                    />
+                    {companyVerified && (
+                      <div className="mt-2 p-3.5 bg-emerald-50/80 border border-emerald-200 rounded-2xl text-xs space-y-2 text-left animate-fade-in shadow-xs">
+                        <div className="flex items-center justify-between gap-2 border-b border-emerald-200/60 pb-2">
+                          <div className="flex items-center gap-1.5 font-black text-emerald-950 min-w-0">
+                            <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+                            <span className="truncate">{companyVerified.name}</span>
+                          </div>
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 whitespace-nowrap shrink-0 border border-emerald-200">
+                            {companyVerified.isVatPayer ? 'Plătitor TVA' : 'Neplătitor TVA'}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 text-[11px]">
+                          <div>
+                            <span className="text-slate-400 block text-[10px] font-semibold uppercase">CUI / CIF</span>
+                            <span className="font-bold text-slate-800">
+                              {companyVerified.isVatPayer ? `RO ${companyVerified.cui}` : companyVerified.cui}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 block text-[10px] font-semibold uppercase">Reg. Comerțului</span>
+                            <span className="font-bold text-slate-800 truncate block">
+                              {companyVerified.regCom || 'Nespecificat'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {companyVerified.address && (
+                          <div className="pt-1.5 border-t border-emerald-200/60 flex items-start gap-1.5 text-[11px] text-slate-700">
+                            <MapPin size={13} className="text-emerald-600 shrink-0 mt-0.5" />
+                            <div className="min-w-0">
+                              <span className="text-slate-400 block text-[10px] font-semibold uppercase">Sediu Social Oficial</span>
+                              <span className="font-medium leading-tight block text-slate-800">{companyVerified.address}</span>
+                            </div>
+                          </div>
+                        )}
+
+                        {companyVerified.phone && (
+                          <div className="pt-1.5 border-t border-emerald-200/60 flex items-center justify-between text-[10px] text-slate-600">
+                            <span className="text-slate-400 font-semibold uppercase">Telefon Fiscal ANAF (Opțional):</span>
+                            <span className="font-semibold text-slate-700">{companyVerified.phone}</span>
+                          </div>
+                        )}
+
+                        {companyVerified.status && (
+                          <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1">
+                            <span className="flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
+                              <span>Stare fiscală: <strong className="text-slate-700">{companyVerified.status}</strong></span>
+                            </span>
+                            {companyVerified.city && (
+                              <span className="font-medium text-slate-600 truncate">{companyVerified.city}</span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Nume Companie */}
+                  <div>
+                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1 block">
+                      Nume Companie
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={subForm.companyName}
+                      onChange={(e) => setSubForm(prev => ({ ...prev, companyName: e.target.value }))}
+                      placeholder="Numele firmei..."
+                      className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-xs"
+                    />
+                  </div>
+
+                  {/* Sediu Social / Adresă */}
+                  <div>
+                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1 block">
+                      Sediu Social / Adresă Firmă
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={subForm.address}
+                        onChange={(e) => setSubForm(prev => ({ ...prev, address: e.target.value }))}
+                        placeholder="Adresă sediu social din ANAF..."
+                        className="w-full pl-9 pr-4 h-10 text-sm rounded-full border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-xs"
+                      />
+                      <MapPin size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1 block">
+                        Nume Contact
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={subForm.contactName}
+                        onChange={(e) => setSubForm(prev => ({ ...prev, contactName: e.target.value }))}
+                        placeholder="Numele dvs...."
+                        className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1 block">
+                        Telefon Mobil Direct (Principal)
+                      </label>
+                      <input
+                        type="tel"
+                        required
+                        value={subForm.phone}
+                        onChange={(e) => setSubForm(prev => ({ ...prev, phone: e.target.value }))}
+                        placeholder="07xxxxxxxx (numărul tău direct)..."
+                        className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-xs"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1 block">
+                      Email Oficial
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      value={subForm.email}
+                      onChange={(e) => setSubForm(prev => ({ ...prev, email: e.target.value }))}
+                      placeholder="contact@firma.ro..."
+                      className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-xs"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isSubmittingForm}
+                    className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-full shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap shrink-0 mt-2 disabled:opacity-50"
+                  >
+                    {isSubmittingForm ? (
+                      <>
+                        <RefreshCw size={14} className="animate-spin" />
+                        <span>Se configurează contul demo...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles size={14} />
+                        <span>Activează Contul Demo (10 Zile Gratuit)</span>
+                      </>
+                    )}
+                  </button>
+                </form>
+              ) : (
+                <div className="text-center py-6 space-y-4">
+                  <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
+                    <CheckCircle2 size={24} />
+                  </div>
+                  <h4 className="text-lg font-black text-slate-900">Contul Demo a Fost Activat!</h4>
+                  <p className="text-xs text-slate-600 max-w-xs mx-auto">
+                    Am configurat instanța pentru <strong className="text-slate-800">{subForm.companyName}</strong>. Ai acces complet 10 zile gratuit.
+                  </p>
+                  {assignedTempPassword && (
+                    <div className="p-3 bg-slate-100 rounded-xl text-xs text-slate-700 font-semibold max-w-xs mx-auto">
+                      Parolă temporară generată: <strong className="text-blue-600">{assignedTempPassword}</strong>
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsSubscribeModalOpen(false);
+                      navigate('/admin/login');
+                    }}
+                    className="px-6 h-10 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-full shadow-sm transition-all whitespace-nowrap shrink-0"
+                  >
+                    Mergi la Autentificare
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

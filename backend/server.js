@@ -27,6 +27,9 @@ app.use('/api/employee', require('./routes/employee'));
 app.use('/api/admin', require('./routes/adminLogs'));
 app.use('/api/billing/deviz', require('./routes/billingDeviz'));
 app.use('/api/stripe', require('./routes/stripeBilling'));
+app.use('/api/company', require('./routes/companyLookup'));
+app.use('/api/admin/harvey', require('./routes/harveyRoutes'));
+app.use('/api/accountants', require('./routes/accountantPartners'));
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'QR Pontaj API is running' });

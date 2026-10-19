@@ -899,7 +899,7 @@ export default function BillingCalculator() {
                     ) : (
                       modalPaginatedEmployees.map((emp, i) => (
                         <tr key={emp.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                          <td className="px-4 py-2 text-slate-400 font-mono text-xs text-center">
+                          <td className="px-4 py-2 text-slate-400 font-semibold text-xs text-center">
                             {(modalPage - 1) * (modalRowsPerPage === 9999 ? modalTotal : modalRowsPerPage) + i + 1}
                           </td>
                           <td className="px-4 py-2 font-semibold text-slate-900 dark:text-white">

@@ -166,8 +166,17 @@ export default function GdprConsentBanner() {
     return () => window.removeEventListener('open-gdpr-modal', handleOpen);
   }, []);
 
-  // Pe tablete Kiosk (/kiosk/*) nu afișăm bannerul pentru a păstra ecranul 100% curat și rapid
-  if (location.pathname.startsWith('/kiosk')) {
+  // Pe tablete Kiosk (/kiosk/*) și pe site-ul Belgia (/be sau domenii time.be/qrtime.be) nu afișăm bannerul cu Art. 119
+  if (
+    location.pathname.startsWith('/kiosk') ||
+    location.pathname.startsWith('/be') ||
+    (typeof window !== 'undefined' && (
+      window.location.hostname === 'time.be' ||
+      window.location.hostname === 'www.time.be' ||
+      window.location.hostname === 'qrtime.be' ||
+      window.location.hostname === 'www.qrtime.be'
+    ))
+  ) {
     return null;
   }
 

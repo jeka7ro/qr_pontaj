@@ -21,3 +21,37 @@ test_utc_dates.js
 test.html
 update_pro_badges.js
 backend/test_schema.js
+
+# Sensitive Backups & Client Contracts
+backend/backups/
+/*.pdf
+/*.mp4
+/*_preview.png
+/*_preview.jpg
+/*_preview_*.png
+/contract_preview_*.png
+/dash_*.png
+/dashboard_*.png
+/video_*.png
+/video_*.jpg
+/ro_*.png
+/pdf_aurora_*.png
+/pdf_dark_*.png
+/pdf_pro_*.png
+/pdf_v2_*.png
+/qrtime_*.png
+/sushihan_*.png
+/top_viewport_preview.png
+/updated_settings_modal.png
+/settings_modal_preview.png
+/simulator_*.png
+/ecrane_preview.png
+/hero_section.png
+/harvey_*.png
+/root_page_preview.png
+/login_preview.png
+/modal_password_eye_preview.png
+/kiosk_sequence_preview.png
+/presentation_video.html
+/QrTime - landing-html/
+

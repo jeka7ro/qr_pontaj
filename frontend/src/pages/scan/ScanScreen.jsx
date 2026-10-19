@@ -8,6 +8,7 @@ export default function ScanScreen() {
   const [kioskId, setKioskId] = useState(() => searchParams.get('k') || searchParams.get('kioskId') || null);
   const tsParam = searchParams.get('ts');
   const ts = tsParam ? parseInt(tsParam, 10) : Math.floor(Date.now() / 1000);
+  const otpParam = searchParams.get('otp') || searchParams.get('nonce') || '';
 
   const [tenant, setTenant] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -179,7 +180,8 @@ export default function ScanScreen() {
           employee_code: employeeCode,
           pin_code: pinCode,
           type: actionType,
-          ts
+          ts,
+          otp: otpParam
         })
       });
 
@@ -225,7 +227,9 @@ export default function ScanScreen() {
               tenant_id: tenantId,
               kiosk_id: kioskId,
               employee_code: employeeCode,
-              pin_code: pinCode
+              pin_code: pinCode,
+              ts,
+              otp: otpParam
             })
           });
           const data = await res.json();
@@ -236,9 +240,12 @@ export default function ScanScreen() {
               locationName: data.location_name,
               allowBreaks: !!data.allowBreaks
             });
+            setError(null);
+          } else if (data.error) {
+            setError(data.error);
           }
         } catch (e) {
-          // Silent fail for status check, let the main scan handle errors
+          // Silent fail for status check network glitches
         } finally {
           setCheckingStatus(false);
         }

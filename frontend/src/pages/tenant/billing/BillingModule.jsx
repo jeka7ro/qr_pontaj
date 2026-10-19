@@ -357,7 +357,7 @@ export default function BillingModule({ tenant, themeColor }) {
                 ) : (
                   currentRows.map((invoice, index) => (
                     <tr key={invoice.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-colors">
-                      <td className="py-3 px-4 text-center text-slate-400 font-mono text-xs">
+                      <td className="py-3 px-4 text-center text-slate-400 font-semibold text-xs">
                         {(safePage - 1) * rowsPerPage + index + 1}
                       </td>
                       <td className="py-3 px-4 font-bold text-slate-900 dark:text-white text-sm">

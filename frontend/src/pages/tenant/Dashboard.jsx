@@ -270,24 +270,22 @@ export default function TenantDashboard() {
           {sidebarCollapsed ? (
             /* Collapsed State: Logo 100% centrat, fără nicio tăiere */
             <div className="flex items-center justify-center w-full relative">
-              {tenant.logo_url ? (
-                <div 
-                  onClick={toggleSidebarCollapsed}
-                  className="h-10 w-10 shrink-0 bg-slate-800 dark:bg-transparent rounded-lg flex items-center justify-center p-1 shadow-sm border border-slate-700/50 cursor-pointer hover:ring-2 hover:ring-primary-500 transition-all" 
-                  title={`${tenant.name} — Apasă pentru a extinde meniul`}
-                >
-                  <img src={tenant.logo_url} alt={tenant.name} className="max-h-full max-w-full object-contain drop-shadow-sm" />
-                </div>
-              ) : (
-                <div 
-                  onClick={toggleSidebarCollapsed}
-                  className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold shrink-0 text-xs cursor-pointer hover:ring-2 hover:ring-primary-500 transition-all shadow-sm"
-                  style={{ backgroundColor: themeColor }}
-                  title={`${tenant.name} — Apasă pentru a extinde meniul`}
-                >
-                  {tenant.name.substring(0, 2).toUpperCase()}
-                </div>
-              )}
+              <div 
+                onClick={toggleSidebarCollapsed}
+                className="h-10 w-10 shrink-0 bg-white dark:bg-slate-800 rounded-xl flex items-center justify-center p-1 shadow-xs border border-slate-200/80 dark:border-slate-700/80 cursor-pointer hover:ring-2 hover:ring-primary-500 transition-all overflow-hidden" 
+                title={`${tenant.name} — Apasă pentru a extinde meniul`}
+              >
+                <img 
+                  src={tenant.logo_url || '/logo_getapp_smartqr.jpg'} 
+                  alt={tenant.name} 
+                  className="max-h-full max-w-full object-contain" 
+                  onError={(e) => {
+                    if (!e.currentTarget.src.includes('/logo_getapp_smartqr.jpg')) {
+                      e.currentTarget.src = '/logo_getapp_smartqr.jpg';
+                    }
+                  }}
+                />
+              </div>
               {/* Buton discret plutitor pe marginea sidebar-ului */}
               <button 
                 onClick={toggleSidebarCollapsed}
@@ -301,19 +299,18 @@ export default function TenantDashboard() {
             /* Expanded State: Logo complet + Nume stânga, Butoane acțiuni dreapta */
             <>
               <div className="flex items-center gap-3 overflow-hidden min-w-0">
-                {tenant.logo_url ? (
-                  <div className="h-10 w-10 shrink-0 bg-slate-800 dark:bg-transparent rounded-lg flex items-center justify-center p-1 shadow-sm border border-slate-700/50" title={tenant.name}>
-                    <img src={tenant.logo_url} alt={tenant.name} className="max-h-full max-w-full object-contain drop-shadow-sm" />
-                  </div>
-                ) : (
-                  <div 
-                    className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold shrink-0 text-xs shadow-sm"
-                    style={{ backgroundColor: themeColor }}
-                    title={tenant.name}
-                  >
-                    {tenant.name.substring(0, 2).toUpperCase()}
-                  </div>
-                )}
+                <div className="h-10 w-10 shrink-0 bg-white dark:bg-slate-800 rounded-xl flex items-center justify-center p-1 shadow-xs border border-slate-200/80 dark:border-slate-700/80 overflow-hidden" title={tenant.name}>
+                  <img 
+                    src={tenant.logo_url || '/logo_getapp_smartqr.jpg'} 
+                    alt={tenant.name} 
+                    className="max-h-full max-w-full object-contain" 
+                    onError={(e) => {
+                      if (!e.currentTarget.src.includes('/logo_getapp_smartqr.jpg')) {
+                        e.currentTarget.src = '/logo_getapp_smartqr.jpg';
+                      }
+                    }}
+                  />
+                </div>
                 <span className="font-bold text-slate-800 dark:text-white truncate" title={tenant.name}>{tenant.name}</span>
               </div>
 
@@ -491,8 +488,7 @@ export default function TenantDashboard() {
               <div className="w-5 h-5 flex items-center justify-center shrink-0">
                 <CalendarDays size={18} />
               </div>
-              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} flex-1 text-left truncate`}>{t('leaveRequests')}</span>
-              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide shrink-0`} style={{ backgroundColor: themeColor }}>PRO</span>
+              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} truncate`}>{t('leaveRequests')}</span>
             </Link>
           )}
 
@@ -508,8 +504,7 @@ export default function TenantDashboard() {
               <div className="w-5 h-5 flex items-center justify-center shrink-0">
                 <FileSpreadsheet size={18} />
               </div>
-              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} flex-1 text-left truncate`}>{t('sagaExport')}</span>
-              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide shrink-0`} style={{ backgroundColor: themeColor }}>PRO</span>
+              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} truncate`}>{t('sagaExport')}</span>
             </Link>
           )}
 
@@ -525,8 +520,7 @@ export default function TenantDashboard() {
               <div className="w-5 h-5 flex items-center justify-center shrink-0">
                 <Map size={18} />
               </div>
-              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} flex-1 text-left truncate`}>{t('geofence')}</span>
-              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide shrink-0`} style={{ backgroundColor: themeColor }}>PRO</span>
+              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} truncate`}>{t('geofence')}</span>
             </Link>
           )}
           
@@ -542,8 +536,7 @@ export default function TenantDashboard() {
               <div className="w-5 h-5 flex items-center justify-center shrink-0">
                 <Globe size={18} />
               </div>
-              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} flex-1 text-left truncate`}>{t('offlineMode')}</span>
-              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide shrink-0`} style={{ backgroundColor: themeColor }}>PRO</span>
+              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} truncate`}>{t('offlineMode')}</span>
             </Link>
           )}
 
@@ -559,8 +552,7 @@ export default function TenantDashboard() {
               <div className="w-5 h-5 flex items-center justify-center shrink-0">
                 <CreditCard size={18} />
               </div>
-              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} flex-1 text-left truncate`}>{t('billing')}</span>
-              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide shrink-0`} style={{ backgroundColor: themeColor }}>PRO</span>
+              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} truncate`}>{t('billing')}</span>
             </Link>
           )}
 
@@ -576,8 +568,7 @@ export default function TenantDashboard() {
               <div className="w-5 h-5 flex items-center justify-center shrink-0">
                 <BookOpenCheck size={18} />
               </div>
-              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} flex-1 text-left truncate`}>{t('revisal')}</span>
-              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide shrink-0`} style={{ backgroundColor: themeColor }}>PRO</span>
+              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} truncate`}>{t('revisal')}</span>
             </Link>
           )}
 
@@ -593,8 +584,7 @@ export default function TenantDashboard() {
               <div className="w-5 h-5 flex items-center justify-center shrink-0">
                 <Calculator size={18} />
               </div>
-              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} flex-1 text-left truncate`}>{t('erp')}</span>
-              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide shrink-0`} style={{ backgroundColor: themeColor }}>PRO</span>
+              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} truncate`}>{t('erp')}</span>
             </Link>
           )}
 
@@ -610,8 +600,7 @@ export default function TenantDashboard() {
               <div className="w-5 h-5 flex items-center justify-center shrink-0">
                 <ScanFace size={18} />
               </div>
-              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} flex-1 text-left truncate`}>{t('faceRecognition')}</span>
-              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide shrink-0`} style={{ backgroundColor: themeColor }}>PRO</span>
+              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} truncate`}>{t('faceRecognition')}</span>
             </Link>
           )}
 
@@ -627,8 +616,7 @@ export default function TenantDashboard() {
               <div className="w-5 h-5 flex items-center justify-center shrink-0">
                 <MessageSquare size={18} />
               </div>
-              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} flex-1 text-left truncate`}>{t('whatsappAlerts')}</span>
-              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide shrink-0`} style={{ backgroundColor: themeColor }}>PRO</span>
+              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} truncate`}>{t('whatsappAlerts')}</span>
             </Link>
           )}
 
@@ -644,8 +632,7 @@ export default function TenantDashboard() {
               <div className="w-5 h-5 flex items-center justify-center shrink-0">
                 <Wrench size={18} />
               </div>
-              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} flex-1 text-left truncate`}>{t('assets')}</span>
-              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} text-[9px] font-black px-2 py-0.5 rounded-full text-white shadow-sm tracking-wide shrink-0`} style={{ backgroundColor: themeColor }}>PRO</span>
+              <span className={`${sidebarCollapsed ? 'md:hidden' : ''} truncate`}>{t('assets')}</span>
             </Link>
           )}
 
@@ -1081,7 +1068,10 @@ export default function TenantDashboard() {
         onClose={() => setSettingsModalOpen(false)}
         tenant={tenant}
         onUpdateTenant={(updated) => {
-          setTenantInfo(prev => ({ ...prev, ...updated }));
+          setTenantInfo(prev => ({ 
+            ...prev, 
+            tenant: { ...(prev?.tenant || {}), ...updated } 
+          }));
         }}
       />
 

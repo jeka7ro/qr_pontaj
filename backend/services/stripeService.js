@@ -3,7 +3,7 @@ const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SEC
 const db = require('../db');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
-const { sendWelcomeEmail } = require('./emailService');
+const { sendWelcomeEmail, sendLeadNotificationToAdmin } = require('./emailService');
 
 /**
  * Creeaza o sesiune de Stripe Checkout pentru abonare per-seat
@@ -222,14 +222,16 @@ async function handleWebhookEvent(event) {
             billing_per_employee, price_per_employee,
             stripe_customer_id, stripe_subscription_id,
             subscription_seats, subscription_status,
-            vat_number, vat_status, billing_address
+            vat_number, vat_status, billing_address,
+            contact_name, contact_email
           ) VALUES (
             $1, $2, $3, $4, $5,
             $6, $7,
             $8, $9,
             $10, $11,
             $12, $13,
-            $14, $15, $16
+            $14, $15, $16,
+            $17, $18
           ) RETURNING id
         `, [
           companyName,
@@ -247,7 +249,9 @@ async function handleWebhookEvent(event) {
           'ACTIVE',
           vatNumber || null,
           vatStatus,
-          billingAddress || null
+          billingAddress || null,
+          adminName || companyName,
+          adminEmail
         ]);
 
         const createdTenantId = newTenantRes.rows[0].id;
@@ -280,6 +284,20 @@ async function handleWebhookEvent(event) {
             initialPassword: tempPassword,
             subdomain: subdomain
           }).catch(err => console.error('[StripeWebhook] Eroare trimitere email bun venit:', err?.message || err));
+
+          // Alertă instantanee SuperAdmin pentru noua subscripție Stripe
+          sendLeadNotificationToAdmin({
+            companyName,
+            contactName: adminName,
+            phone: '',
+            email: adminEmail,
+            cui: vatNumber,
+            address: billingAddress,
+            employeesCount: seats,
+            mode: 'subscribe',
+            subdomain,
+            notes: 'Abonament Stripe plătit cu succes'
+          }).catch(err => console.error('[StripeWebhook] Eroare notificare admin:', err?.message || err));
         }
       }
       break;

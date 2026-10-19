@@ -2,6 +2,7 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --color-primary-50: var(--color-primary-light);
   --color-primary-600: var(--color-primary);
   --color-primary-700: var(--color-primary-hover);
@@ -12,7 +13,25 @@
   --color-primary: #2563EB;
   --color-primary-hover: #1D4ED8;
   --color-primary-light: #EFF6FF;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* REGULĂ STRICTĂ: Butoane, pastile și badge-uri NICIODATĂ pe 2 rânduri */
+button,
+[role="button"],
+.btn,
+.badge,
+.pill,
+.whitespace-nowrap {
+  white-space: nowrap !important;
+}
+
 
 input[type="color"] {
   -webkit-appearance: none;

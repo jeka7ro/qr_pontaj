@@ -1,0 +1,1457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GetApp Smart QR — Commercial Video Presentation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: #020617;
+      color: #f8fafc;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      overflow-x: hidden;
+    }
+
+    .app-header {
+      width: 100%;
+      max-width: 1200px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-title {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+      color: #ffffff;
+    }
+
+    .brand-sub {
+      font-size: 12px;
+      color: #94a3b8;
+      font-weight: 500;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    /* Language Selector Toggle */
+    .lang-toggle-group {
+      display: inline-flex;
+      background: rgba(30, 41, 59, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 30px;
+      padding: 3px;
+      gap: 2px;
+    }
+
+    .lang-toggle-btn {
+      background: none;
+      border: none;
+      color: #94a3b8;
+      font-size: 11.5px;
+      font-weight: 800;
+      padding: 5px 12px;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .lang-toggle-btn:hover {
+      color: #ffffff;
+    }
+
+    .lang-toggle-btn.active {
+      background: #2563eb;
+      color: #ffffff;
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4);
+    }
+
+    .btn-record {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      color: #ffffff;
+      border: none;
+      padding: 8px 18px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);
+      transition: all 0.2s;
+    }
+
+    .btn-record:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(239, 68, 68, 0.5);
+    }
+
+    .rec-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #ffffff;
+      animation: pulse-dot 1.5s infinite;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    /* Video Frame (16:9 Cinema Aspect Ratio) */
+    .video-container {
+      width: 100%;
+      max-width: 1200px;
+      aspect-ratio: 16 / 9;
+      background: #0f172a;
+      border-radius: 18px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.1);
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Scene Container */
+    .scene-viewport {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .scene {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      visibility: hidden;
+      transform: scale(0.98) translateY(12px);
+      transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.7s;
+      padding: 44px 56px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      background: radial-gradient(circle at 50% 10%, #1e293b 0%, #0f172a 100%);
+    }
+
+    .scene.active {
+      opacity: 1;
+      visibility: visible;
+      transform: scale(1) translateY(0);
+    }
+
+    /* Scene Elements */
+    .scene-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(37, 99, 235, 0.2);
+      border: 1px solid rgba(96, 165, 250, 0.4);
+      color: #93c5fd;
+      font-size: 11.5px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 5px 14px;
+      border-radius: 30px;
+      margin-bottom: 12px;
+      width: fit-content;
+    }
+
+    .scene-title {
+      font-size: 34px;
+      font-weight: 900;
+      line-height: 1.18;
+      letter-spacing: -1px;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+
+    .scene-subtitle {
+      font-size: 15px;
+      color: #94a3b8;
+      line-height: 1.5;
+      max-width: 800px;
+    }
+
+    /* Scene 1: The Problem */
+    .cards-problem {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-top: 24px;
+    }
+
+    .card-problem {
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: 14px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      backdrop-filter: blur(8px);
+    }
+
+    .problem-tag {
+      color: #f87171;
+      font-weight: 800;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .problem-head {
+      font-size: 18px;
+      font-weight: 800;
+      color: #ffffff;
+    }
+
+    .problem-desc {
+      font-size: 13px;
+      color: #94a3b8;
+      line-height: 1.45;
+    }
+
+    /* Scene 2: Solution Tablet */
+    .solution-layout {
+      display: grid;
+      grid-template-columns: 1fr 1.15fr;
+      gap: 36px;
+      align-items: center;
+      margin-top: 14px;
+    }
+
+    .kiosk-mockup {
+      background: #000000;
+      border-radius: 18px;
+      border: 4px solid #334155;
+      padding: 8px;
+      box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.9), 0 0 25px rgba(37, 99, 235, 0.25);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .kiosk-mockup img {
+      width: 100%;
+      height: 250px;
+      object-fit: cover;
+      border-radius: 12px;
+      display: block;
+    }
+
+    .scan-beam {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, transparent 0%, #38bdf8 50%, transparent 100%);
+      box-shadow: 0 0 15px #38bdf8;
+      animation: scan-move 2.5s infinite ease-in-out;
+    }
+
+    @keyframes scan-move {
+      0% { top: 10%; opacity: 0; }
+      15% { opacity: 1; }
+      85% { opacity: 1; }
+      100% { top: 90%; opacity: 0; }
+    }
+
+    .feature-bullets {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .bullet-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      background: rgba(30, 41, 59, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 12px 16px;
+      border-radius: 10px;
+    }
+
+    .bullet-icon {
+      background: #2563eb;
+      color: #ffffff;
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+
+    .bullet-text strong {
+      display: block;
+      font-size: 14px;
+      color: #ffffff;
+      margin-bottom: 2px;
+    }
+
+    .bullet-text span {
+      font-size: 12.5px;
+      color: #94a3b8;
+    }
+
+    /* Scene 3: Dashboard & Shifts */
+    .dashboard-layout {
+      display: grid;
+      grid-template-columns: 1.25fr 1fr;
+      gap: 32px;
+      align-items: center;
+      margin-top: 14px;
+    }
+
+    .dashboard-mockup {
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      overflow: hidden;
+      box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.9);
+      background: #0f172a;
+    }
+
+    .dashboard-mockup img {
+      width: 100%;
+      height: 250px;
+      object-fit: cover;
+      object-position: top;
+      display: block;
+    }
+
+    .shift-toggle-box {
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.15) 0%, rgba(16, 185, 129, 0.15) 100%);
+      border: 1px solid rgba(96, 165, 250, 0.4);
+      border-radius: 14px;
+      padding: 18px 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .toggle-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .toggle-badge {
+      background: #10b981;
+      color: #ffffff;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 6px;
+      letter-spacing: 0.5px;
+    }
+
+    .toggle-ui {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #1e293b;
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1px solid #334155;
+    }
+
+    .switch-pill {
+      width: 44px;
+      height: 24px;
+      background: #2563eb;
+      border-radius: 12px;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .switch-circle {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      width: 20px;
+      height: 20px;
+      background: #ffffff;
+      border-radius: 50%;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    /* Scene 4: Timesheets & GDPR */
+    .payroll-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 28px;
+      margin-top: 18px;
+    }
+
+    .payroll-card {
+      background: rgba(30, 41, 59, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 14px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .payroll-card img {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      object-position: top;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    /* Scene 5: Pricing & Steps */
+    .pricing-view {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 36px;
+      align-items: center;
+      margin-top: 14px;
+    }
+
+    .steps-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .step-card {
+      background: rgba(30, 41, 59, 0.5);
+      border-left: 4px solid #2563eb;
+      border-radius: 0 10px 10px 0;
+      padding: 12px 18px;
+    }
+
+    .step-card.s2 { border-left-color: #10b981; }
+    .step-card.s3 { border-left-color: #8b5cf6; }
+
+    .step-num {
+      font-size: 11px;
+      font-weight: 800;
+      color: #93c5fd;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+
+    .step-name {
+      font-size: 15px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 2px;
+    }
+
+    .step-desc {
+      font-size: 12px;
+      color: #94a3b8;
+    }
+
+    .pricing-card-lg {
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.2) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border: 1.5px solid #3b82f6;
+      border-radius: 18px;
+      padding: 28px;
+      text-align: center;
+      box-shadow: 0 20px 40px -10px rgba(37, 99, 235, 0.3);
+    }
+
+    .plan-badge {
+      display: inline-block;
+      background: #2563eb;
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 12px;
+    }
+
+    .plan-price {
+      font-size: 48px;
+      font-weight: 900;
+      color: #ffffff;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .plan-unit {
+      font-size: 13px;
+      color: #94a3b8;
+      font-weight: 600;
+      margin-bottom: 14px;
+    }
+
+    .plan-min {
+      font-size: 11.5px;
+      color: #60a5fa;
+      background: rgba(37, 99, 235, 0.2);
+      padding: 6px 12px;
+      border-radius: 6px;
+      display: inline-block;
+      margin-bottom: 12px;
+    }
+
+    /* Scene 6: CTA */
+    .cta-view {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      height: 100%;
+      gap: 16px;
+    }
+
+    .cta-logo {
+      height: 64px;
+      width: auto;
+      object-fit: contain;
+      border-radius: 8px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    }
+
+    .cta-btn-demo {
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+      color: #ffffff;
+      font-weight: 800;
+      font-size: 16px;
+      padding: 14px 36px;
+      border-radius: 12px;
+      text-decoration: none;
+      box-shadow: 0 8px 24px rgba(37, 99, 235, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      transition: all 0.2s;
+    }
+
+    .cta-contacts {
+      display: flex;
+      gap: 24px;
+      font-size: 13px;
+      color: #cbd5e1;
+      margin-top: 10px;
+    }
+
+    .cta-contacts strong {
+      color: #ffffff;
+    }
+
+    /* Subtitles Bar */
+    .subtitles-bar {
+      position: absolute;
+      bottom: 60px;
+      left: 56px;
+      right: 56px;
+      text-align: center;
+      pointer-events: none;
+      z-index: 50;
+    }
+
+    .subtitles-text {
+      display: inline-block;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 8px 20px;
+      border-radius: 10px;
+      font-size: 14.5px;
+      font-weight: 600;
+      color: #ffffff;
+      line-height: 1.4;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      transition: all 0.3s;
+    }
+
+    /* Video Player Controls */
+    .video-controls {
+      height: 52px;
+      background: rgba(15, 23, 42, 0.95);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      gap: 16px;
+      z-index: 100;
+    }
+
+    .ctrl-btn {
+      background: none;
+      border: none;
+      color: #ffffff;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 700;
+      padding: 6px 12px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.15s;
+    }
+
+    .ctrl-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .time-display {
+      font-size: 12px;
+      font-weight: 600;
+      color: #94a3b8;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .timeline-progress {
+      flex: 1;
+      height: 6px;
+      background: #334155;
+      border-radius: 3px;
+      position: relative;
+      cursor: pointer;
+    }
+
+    .timeline-fill {
+      height: 100%;
+      background: #2563eb;
+      border-radius: 3px;
+      width: 0%;
+      transition: width 0.1s linear;
+    }
+
+    .scene-markers {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      justify-content: space-between;
+      pointer-events: none;
+    }
+
+    .scene-marker {
+      width: 2px;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .scene-nav-pills {
+      display: flex;
+      gap: 6px;
+    }
+
+    .nav-pill {
+      background: rgba(255, 255, 255, 0.08);
+      border: none;
+      color: #94a3b8;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .nav-pill.active {
+      background: #2563eb;
+      color: #ffffff;
+    }
+
+    .recording-notice {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: rgba(239, 68, 68, 0.9);
+      color: #ffffff;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      display: none;
+      align-items: center;
+      gap: 6px;
+      z-index: 200;
+      box-shadow: 0 4px 14px rgba(239, 68, 68, 0.5);
+    }
+  </style>
+</head>
+<body>
+
+  <header class="app-header">
+    <div class="brand">
+      <img src="logo_getapp_smartqr.jpg" alt="GetApp" style="height: 38px; border-radius: 6px;">
+      <div>
+        <div class="brand-title">GetApp Smart QR — Commercial Video Presentation</div>
+        <div class="brand-sub" id="headerTagline">Synchronized Multi-Language Presentation (60s Edition)</div>
+      </div>
+    </div>
+    
+    <div class="top-actions">
+      <!-- Language Selector Toggle: ENG | FR | NL -->
+      <div class="lang-toggle-group" role="group" aria-label="Language Selector">
+        <button class="lang-toggle-btn active" id="langBtn_en" onclick="setVideoLanguage('en')">ENG</button>
+        <button class="lang-toggle-btn" id="langBtn_fr" onclick="setVideoLanguage('fr')">FR</button>
+        <button class="lang-toggle-btn" id="langBtn_nl" onclick="setVideoLanguage('nl')">NL</button>
+      </div>
+
+      <button class="btn-record" id="btnExportVideo" onclick="toggleExportRecording()">
+        <span class="rec-dot"></span>
+        <span id="recordBtnLabel">Export Video (WebM / MP4)</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Video Cinema Display -->
+  <main class="video-container" id="videoContainer">
+    <div class="recording-notice" id="recordingNotice">
+      <span class="rec-dot"></span> RECORDING IN PROGRESS...
+    </div>
+
+    <div class="scene-viewport">
+      
+      <!-- SCENE 1: The Problem -->
+      <section class="scene active" id="scene1">
+        <div>
+          <div class="scene-badge" id="s1_badge">The Attendance Bottleneck</div>
+          <h1 class="scene-title" id="s1_title">Manual Paper Sheets. Lost Badges.<br>Hours Wasted Every Month.</h1>
+          <p class="scene-subtitle" id="s1_sub">Traditional time tracking creates attendance friction, payroll calculation disputes, and legal non-compliance.</p>
+        </div>
+        
+        <div class="cards-problem">
+          <div class="card-problem">
+            <span class="problem-tag" id="s1_c1_tag">High Friction</span>
+            <h3 class="problem-head" id="s1_c1_head">Paper Sign-In Sheets</h3>
+            <p class="problem-desc" id="s1_c1_desc">Unreadable handwriting, missing entries, and falsified arrival times without any audit trail.</p>
+          </div>
+          <div class="card-problem">
+            <span class="problem-tag" id="s1_c2_tag">High Cost</span>
+            <h3 class="problem-head" id="s1_c2_head">Lost RFID Keycards</h3>
+            <p class="problem-desc" id="s1_c2_desc">Constant re-issuing expenses, proxy badge scanning, and expensive proprietary wall readers.</p>
+          </div>
+          <div class="card-problem">
+            <span class="problem-tag" id="s1_c3_tag">HR Headache</span>
+            <h3 class="problem-head" id="s1_c3_head">Manual Payroll Tallies</h3>
+            <p class="problem-desc" id="s1_c3_desc">Days spent manually calculating day, night, and overtime hours in error-prone spreadsheets.</p>
+          </div>
+        </div>
+        <div></div>
+      </section>
+
+      <!-- SCENE 2: The Solution (Tablet Kiosk) -->
+      <section class="scene" id="scene2">
+        <div>
+          <div class="scene-badge" id="s2_badge">Next-Gen Architecture</div>
+          <h1 class="scene-title" id="s2_title">Meet GetApp Smart QR.<br>Sub-1 Second Check-In on Any Tablet.</h1>
+          <p class="scene-subtitle" id="s2_sub">Turn any standard iPad or Android device into an intelligent, secure, 24/7 attendance terminal.</p>
+        </div>
+
+        <div class="solution-layout">
+          <div class="feature-bullets">
+            <div class="bullet-item">
+              <div class="bullet-icon">&#10003;</div>
+              <div class="bullet-text">
+                <strong id="s2_b1_title">Dynamic Encrypted QR Codes</strong>
+                <span id="s2_b1_desc">Refreshes every 15 seconds to completely eliminate buddy punching and proxy scanning.</span>
+              </div>
+            </div>
+            <div class="bullet-item">
+              <div class="bullet-icon">&#10003;</div>
+              <div class="bullet-text">
+                <strong id="s2_b2_title">No Proprietary Hardware</strong>
+                <span id="s2_b2_desc">Runs smoothly on any commercial tablet. Zero expensive equipment maintenance.</span>
+              </div>
+            </div>
+            <div class="bullet-item">
+              <div class="bullet-icon">&#10003;</div>
+              <div class="bullet-text">
+                <strong id="s2_b3_title">24/7 Smart Anti-Standby</strong>
+                <span id="s2_b3_desc">Embedded keep-awake technology prevents screen shutdown at reception or entrance gates.</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="kiosk-mockup">
+            <div class="scan-beam"></div>
+            <img src="screenshot_kiosk_display.png" alt="Tablet Kiosk">
+          </div>
+        </div>
+        <div></div>
+      </section>
+
+      <!-- SCENE 3: Real-Time Dashboard & Auto-Close Shifts -->
+      <section class="scene" id="scene3">
+        <div>
+          <div class="scene-badge" id="s3_badge">Live Operations</div>
+          <h1 class="scene-title" id="s3_title">Live Attendance Oversight<br>& Automated Shift Closing.</h1>
+          <p class="scene-subtitle" id="s3_sub">Instant visibility across all locations with intelligent shift automation.</p>
+        </div>
+
+        <div class="dashboard-layout">
+          <div class="dashboard-mockup">
+            <img src="screenshot_dashboard.png" alt="Real-Time Dashboard">
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+            <div class="shift-toggle-box">
+              <div class="toggle-header">
+                <strong style="color: #ffffff; font-size: 14px;" id="s3_box_title">Shift Auto-Close Feature</strong>
+                <span class="toggle-badge" id="s3_box_badge">ACTIVE</span>
+              </div>
+              <p style="font-size: 12.5px; color: #cbd5e1; line-height: 1.4;" id="s3_box_desc">
+                Automatically closes open shifts at the scheduled end time if an employee forgets to clock out.
+              </p>
+              <div class="toggle-ui">
+                <div class="switch-pill">
+                  <div class="switch-circle"></div>
+                </div>
+                <span style="font-size: 12.5px; font-weight: 700; color: #ffffff;" id="s3_toggle_label">Auto-Close Shift: Enabled (Yes)</span>
+              </div>
+            </div>
+
+            <div class="bullet-item">
+              <div class="bullet-icon">&#10003;</div>
+              <div class="bullet-text">
+                <strong id="s3_b1_title">Interactive Status Donut Chart</strong>
+                <span id="s3_b1_desc">Click directly on Present or Absent segments to filter the live employee roster instantly.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div></div>
+      </section>
+
+      <!-- SCENE 4: Timesheets & GDPR -->
+      <section class="scene" id="scene4">
+        <div>
+          <div class="scene-badge" id="s4_badge">Compliance & Privacy</div>
+          <h1 class="scene-title" id="s4_title">Certified Timesheets in 1 Click.<br>100% Strict EU GDPR Protection.</h1>
+          <p class="scene-subtitle" id="s4_sub">Automate complex labor calculations while safeguarding sensitive employee privacy.</p>
+        </div>
+
+        <div class="payroll-grid">
+          <div class="payroll-card">
+            <h3 style="font-size: 16px; font-weight: 800; color: #ffffff;" id="s4_c1_title">Automated Timesheet Calculations</h3>
+            <img src="screenshot_timesheets.png" alt="Timesheets">
+            <p style="font-size: 12px; color: #94a3b8; line-height: 1.45;" id="s4_c1_desc">
+              Automatic breakdown of regular, night, weekend, and overtime hours. Ready for instant export to SAGA, ERP, or Excel.
+            </p>
+          </div>
+
+          <div class="payroll-card" style="border-color: rgba(16, 185, 129, 0.3);">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <h3 style="font-size: 16px; font-weight: 800; color: #ffffff;" id="s4_c2_title">Zero Biometric Liabilities</h3>
+              <span style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 4px;">GDPR ART. 5</span>
+            </div>
+            <img src="screenshot_employees.png" alt="Employee Management">
+            <p style="font-size: 12px; color: #94a3b8; line-height: 1.45;" id="s4_c2_desc">
+              No invasive facial scans or fingerprints. Uses rotating dynamic tokens and private numeric PINs with 256-bit encryption.
+            </p>
+          </div>
+        </div>
+        <div></div>
+      </section>
+
+      <!-- SCENE 5: Fast Deployment & Pricing -->
+      <section class="scene" id="scene5">
+        <div>
+          <div class="scene-badge" id="s5_badge">Deployment & Pricing</div>
+          <h1 class="scene-title" id="s5_title">Deploy in 15 Minutes.<br>Simple, Predictable Subscription.</h1>
+          <p class="scene-subtitle" id="s5_sub">Zero upfront setup fees, no expensive servers, and no multi-year lock-in.</p>
+        </div>
+
+        <div class="pricing-view">
+          <div class="steps-list">
+            <div class="step-card">
+              <div class="step-num" id="s5_st1_num">Step 1 — 2 Minutes</div>
+              <div class="step-name" id="s5_st1_name">Import Employee Roster</div>
+              <div class="step-desc" id="s5_st1_desc">Upload your team via Excel. Digital QR badges and PINs are issued automatically.</div>
+            </div>
+            <div class="step-card s2">
+              <div class="step-num" id="s5_st2_num">Step 2 — 3 Minutes</div>
+              <div class="step-name" id="s5_st2_name">Activate Kiosk Tablet</div>
+              <div class="step-desc" id="s5_st2_desc">Open the secure web terminal on your tablet. No app store installation required.</div>
+            </div>
+            <div class="step-card s3">
+              <div class="step-num" id="s5_st3_num">Step 3 — Go Live</div>
+              <div class="step-name" id="s5_st3_name">Automated Attendance</div>
+              <div class="step-desc" id="s5_st3_desc">Staff clock in and out instantly. Payroll metrics compile in real time.</div>
+            </div>
+          </div>
+
+          <div class="pricing-card-lg">
+            <span class="plan-badge">Smart Monthly Plan</span>
+            <div class="plan-price">15 €</div>
+            <div class="plan-unit" id="s5_unit">per active employee / month</div>
+            <div class="plan-min" id="s5_min">Minimum 150 € / month / company</div>
+            <p style="font-size: 11.5px; color: #94a3b8; line-height: 1.4;" id="s5_footnote">
+              Unlimited tablets, live monitoring, shift planner, and automated payroll exports included.
+            </p>
+          </div>
+        </div>
+        <div></div>
+      </section>
+
+      <!-- SCENE 6: Call To Action -->
+      <section class="scene" id="scene6">
+        <div class="cta-view">
+          <img src="logo_getapp_smartqr.jpg" alt="GetApp Smart QR" class="cta-logo">
+          <div class="scene-badge" style="margin-bottom: 0;" id="s6_badge">14-Day Full Feature Free Trial</div>
+          <h1 class="scene-title" style="font-size: 38px; margin-bottom: 0;" id="s6_title">Upgrade Your Attendance Today.</h1>
+          <p class="scene-subtitle" style="font-size: 16px; max-width: 650px;" id="s6_sub">
+            Experience effortless digital time & attendance with zero risk. No credit card required.
+          </p>
+          <a href="mailto:contact@getapp.ro" class="cta-btn-demo" id="s6_btn">Request Your Free Demo</a>
+          <div class="cta-contacts">
+            <span>Web: <strong>www.getapp.ro</strong></span>
+            <span>Tel: <strong>+40 757 77 77 12</strong></span>
+            <span>Email: <strong>contact@getapp.ro</strong></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Live Subtitles -->
+      <div class="subtitles-bar">
+        <div class="subtitles-text" id="subtitlesText">
+          Still tracking employee attendance with manual paper sheets, lost keycards, or cumbersome hardware?
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Controls Bar -->
+    <div class="video-controls">
+      <button class="ctrl-btn" id="btnPlayPause" onclick="togglePlayPause()">Pause</button>
+      <button class="ctrl-btn" onclick="restartVideo()">Restart</button>
+      
+      <div class="time-display" id="timeDisplay">00:00 / 01:10</div>
+
+      <div class="timeline-progress" id="timelineBar" onclick="seekVideo(event)">
+        <div class="timeline-fill" id="timelineFill"></div>
+        <div class="scene-markers">
+          <div class="scene-marker" style="left: 0%;"></div>
+          <div class="scene-marker" style="left: 16.6%;"></div>
+          <div class="scene-marker" style="left: 33.3%;"></div>
+          <div class="scene-marker" style="left: 50%;"></div>
+          <div class="scene-marker" style="left: 66.6%;"></div>
+          <div class="scene-marker" style="left: 83.3%;"></div>
+        </div>
+      </div>
+
+      <div class="scene-nav-pills">
+        <button class="nav-pill active" id="pill1" onclick="goToScene(1)">1: Problem</button>
+        <button class="nav-pill" id="pill2" onclick="goToScene(2)">2: Kiosk</button>
+        <button class="nav-pill" id="pill3" onclick="goToScene(3)">3: Shifts</button>
+        <button class="nav-pill" id="pill4" onclick="goToScene(4)">4: Timesheets</button>
+        <button class="nav-pill" id="pill5" onclick="goToScene(5)">5: Pricing</button>
+        <button class="nav-pill" id="pill6" onclick="goToScene(6)">6: CTA</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- Audio Elements -->
+  <audio id="audioScene1" preload="auto"></audio>
+  <audio id="audioScene2" preload="auto"></audio>
+  <audio id="audioScene3" preload="auto"></audio>
+  <audio id="audioScene4" preload="auto"></audio>
+  <audio id="audioScene5" preload="auto"></audio>
+  <audio id="audioScene6" preload="auto"></audio>
+
+  <script>
+    // Multi-Language Content Definitions
+    const videoData = {
+      en: {
+        tagline: "Synchronized Multi-Language Presentation (60s Edition)",
+        audio: [
+          "assets/video_audio/scene1_problem.m4a",
+          "assets/video_audio/scene2_solution.m4a",
+          "assets/video_audio/scene3_dashboard.m4a",
+          "assets/video_audio/scene4_payroll.m4a",
+          "assets/video_audio/scene5_pricing.m4a",
+          "assets/video_audio/scene6_cta.m4a"
+        ],
+        subtitles: [
+          "Still tracking employee attendance with manual paper sheets, lost keycards, or cumbersome hardware? It is slow, prone to errors, and costs your company thousands every month.",
+          "Meet GetApp Smart QR: the modern time and attendance platform that turns any standard tablet into a smart entrance kiosk. Fast, seamless, and foolproof.",
+          "Monitor your entire workforce across all branches in real time. Filter active shifts directly from interactive charts, schedule daily plans, and let intelligent automated shift closing handle end-of-day sign-outs automatically.",
+          "At month-end, export certified timesheets ready for payroll in seconds. And because we use rotating encrypted QR codes and private PINs instead of facial or fingerprint scans, your organization remains 100% GDPR compliant with zero privacy liabilities.",
+          "No upfront hardware costs. No complicated server setups. Deploy in just 15 minutes for only 15 euros per employee per month with our Smart plan.",
+          "Upgrade your company attendance today. Visit www.getapp.ro to claim your 14-day free trial. Smart attendance starts here."
+        ],
+        pills: ["1: Problem", "2: Kiosk", "3: Shifts", "4: Timesheets", "5: Pricing", "6: CTA"],
+        texts: {
+          s1_badge: "The Attendance Bottleneck",
+          s1_title: "Manual Paper Sheets. Lost Badges.<br>Hours Wasted Every Month.",
+          s1_sub: "Traditional time tracking creates attendance friction, payroll calculation disputes, and legal non-compliance.",
+          s1_c1_tag: "High Friction", s1_c1_head: "Paper Sign-In Sheets", s1_c1_desc: "Unreadable handwriting, missing entries, and falsified arrival times without any audit trail.",
+          s1_c2_tag: "High Cost", s1_c2_head: "Lost RFID Keycards", s1_c2_desc: "Constant re-issuing expenses, proxy badge scanning, and expensive proprietary wall readers.",
+          s1_c3_tag: "HR Headache", s1_c3_head: "Manual Payroll Tallies", s1_c3_desc: "Days spent manually calculating day, night, and overtime hours in error-prone spreadsheets.",
+          
+          s2_badge: "Next-Gen Architecture",
+          s2_title: "Meet GetApp Smart QR.<br>Sub-1 Second Check-In on Any Tablet.",
+          s2_sub: "Turn any standard iPad or Android device into an intelligent, secure, 24/7 attendance terminal.",
+          s2_b1_title: "Dynamic Encrypted QR Codes", s2_b1_desc: "Refreshes every 15 seconds to completely eliminate buddy punching and proxy scanning.",
+          s2_b2_title: "No Proprietary Hardware", s2_b2_desc: "Runs smoothly on any commercial tablet. Zero expensive equipment maintenance.",
+          s2_b3_title: "24/7 Smart Anti-Standby", s2_b3_desc: "Embedded keep-awake technology prevents screen shutdown at reception or entrance gates.",
+
+          s3_badge: "Live Operations",
+          s3_title: "Live Attendance Oversight<br>& Automated Shift Closing.",
+          s3_sub: "Instant visibility across all locations with intelligent shift automation.",
+          s3_box_title: "Shift Auto-Close Feature", s3_box_badge: "ACTIVE",
+          s3_box_desc: "Automatically closes open shifts at the scheduled end time if an employee forgets to clock out.",
+          s3_toggle_label: "Auto-Close Shift: Enabled (Yes)",
+          s3_b1_title: "Interactive Status Donut Chart", s3_b1_desc: "Click directly on Present or Absent segments to filter the live employee roster instantly.",
+
+          s4_badge: "Compliance & Privacy",
+          s4_title: "Certified Timesheets in 1 Click.<br>100% Strict EU GDPR Protection.",
+          s4_sub: "Automate complex labor calculations while safeguarding sensitive employee privacy.",
+          s4_c1_title: "Automated Timesheet Calculations", s4_c1_desc: "Automatic breakdown of regular, night, weekend, and overtime hours. Ready for instant export to SAGA, ERP, or Excel.",
+          s4_c2_title: "Zero Biometric Liabilities", s4_c2_desc: "No invasive facial scans or fingerprints. Uses rotating dynamic tokens and private numeric PINs with 256-bit encryption.",
+
+          s5_badge: "Deployment & Pricing",
+          s5_title: "Deploy in 15 Minutes.<br>Simple, Predictable Subscription.",
+          s5_sub: "Zero upfront setup fees, no expensive servers, and no multi-year lock-in.",
+          s5_st1_num: "Step 1 — 2 Minutes", s5_st1_name: "Import Employee Roster", s5_st1_desc: "Upload your team via Excel. Digital QR badges and PINs are issued automatically.",
+          s5_st2_num: "Step 2 — 3 Minutes", s5_st2_name: "Activate Kiosk Tablet", s5_st2_desc: "Open the secure web terminal on your tablet. No app store installation required.",
+          s5_st3_num: "Step 3 — Go Live", s5_st3_name: "Automated Attendance", s5_st3_desc: "Staff clock in and out instantly. Payroll metrics compile in real time.",
+          s5_unit: "per active employee / month", s5_min: "Minimum 150 € / month / company",
+          s5_footnote: "Unlimited tablets, live monitoring, shift planner, and automated payroll exports included.",
+
+          s6_badge: "14-Day Full Feature Free Trial",
+          s6_title: "Upgrade Your Attendance Today.",
+          s6_sub: "Experience effortless digital time & attendance with zero risk. No credit card required.",
+          s6_btn: "Request Your Free Demo"
+        }
+      },
+
+      fr: {
+        tagline: "Présentation Commerciale Synchronisée Multilingue (Édition 60s)",
+        audio: [
+          "assets/video_audio/scene1_fr.m4a",
+          "assets/video_audio/scene2_fr.m4a",
+          "assets/video_audio/scene3_fr.m4a",
+          "assets/video_audio/scene4_fr.m4a",
+          "assets/video_audio/scene5_fr.m4a",
+          "assets/video_audio/scene6_fr.m4a"
+        ],
+        subtitles: [
+          "Vous suivez encore les présences avec des feuilles papier, des badges perdus ou du matériel coûteux ? C'est lent, source d'erreurs et cela coûte des milliers d'euros chaque mois.",
+          "Découvrez GetApp Smart QR : la solution moderne qui transforme toute tablette standard en borne d'entrée intelligente. Rapide, fluide et sans fraude.",
+          "Suivez vos équipes sur tous vos sites en temps réel. Filtrez les présences directement depuis les graphiques et laissez la clôture automatique des shifts finaliser les départs.",
+          "En fin de mois, exportez vos feuilles d'heures certifiées en un clic. Et avec nos codes QR dynamiques chiffrés, vous êtes 100 % conforme au RGPD sans données biométriques.",
+          "Aucun coût matériel propriétaire. Déployez en seulement 15 minutes pour 15 euros par employé et par mois avec le forfait Smart.",
+          "Modernisez votre pointage dès aujourd'hui. Rendez-vous sur www.getapp.ro pour profiter de 14 jours d'essai gratuit."
+        ],
+        pills: ["1: Problème", "2: Borne", "3: Shifts", "4: Pointage", "5: Tarifs", "6: Démo"],
+        texts: {
+          s1_badge: "Le Défi du Pointage",
+          s1_title: "Feuilles Papier. Badges Perdus.<br>Des Heures Perdues Chaque Mois.",
+          s1_sub: "Le suivi d'heures traditionnel crée des litiges de paie, des retards administratifs et des risques juridiques.",
+          s1_c1_tag: "Friction", s1_c1_head: "Registres Papier", s1_c1_desc: "Écritures illisibles, signatures manquantes et pointages approximatifs sans aucune traçabilité.",
+          s1_c2_tag: "Coûts Élevés", s1_c2_head: "Badges RFID Égarés", s1_c2_desc: "Frais de réémission récurrents, prêts de badges entre collègues et lecteurs coûteux.",
+          s1_c3_tag: "Casse-Tête RH", s1_c3_head: "Calculs de Paie Manuels", s1_c3_desc: "Des journées entières passées à calculer les heures de nuit, de week-end et supplémentaires.",
+          
+          s2_badge: "Architecture Nouvelle Génération",
+          s2_title: "Découvrez GetApp Smart QR.<br>Pointage en Moins d'Une Seconde.",
+          s2_sub: "Transformez n'importe quelle tablette iPad ou Android en borne d'accès sécurisée et active 24h/24.",
+          s2_b1_title: "Codes QR Dynamiques Chiffrés", s2_b1_desc: "Actualisation toutes les 15 secondes pour éliminer totalement la fraude et les photos.",
+          s2_b2_title: "Aucun Matériel Propriétaire", s2_b2_desc: "Fonctionne sur tablette standard du commerce. Zéro coût de maintenance spécifique.",
+          s2_b3_title: "Système Anti-Veille 24/7", s2_b3_desc: "Maintien permanent de l'écran allumé à l'accueil et aux entrées du personnel.",
+
+          s3_badge: "Supervision En Direct",
+          s3_title: "Contrôle des Présences en Direct<br>& Clôture Automatique des Shifts.",
+          s3_sub: "Visibilité totale multi-sites et automatisation intelligente des fins de postes.",
+          s3_box_title: "Clôture Automatique du Shift", s3_box_badge: "ACTIF",
+          s3_box_desc: "Clôture automatiquement le shift ouvert à l'heure prévue si l'employé oublie de badger à la sortie.",
+          s3_toggle_label: "Clôture Automatique : Activée (Oui)",
+          s3_b1_title: "Graphique Donut Interactif", s3_b1_desc: "Cliquez directement sur Présents ou Absents pour filtrer l'effectif en direct.",
+
+          s4_badge: "Conformité & Confidentialité",
+          s4_title: "Feuilles d'Heures en 1 Clic.<br>100 % Conforme au RGPD Européen.",
+          s4_sub: "Automatisez les calculs d'heures tout en protégeant les données de vos salariés.",
+          s4_c1_title: "Calcul Automatisé des Heures", s4_c1_desc: "Ventilation automatique : heures normales, de nuit, dimanche et majorations. Export Excel & ERP instantané.",
+          s4_c2_title: "Zéro Risque Biométrique", s4_c2_desc: "Aucune reconnaissance faciale ni empreinte. Utilise des QR dynamiques et codes PIN sécurisés SSL 256 bits.",
+
+          s5_badge: "Déploiement & Tarification",
+          s5_title: "Opérationnel en 15 Minutes.<br>Abonnement Simple et Prédictible.",
+          s5_sub: "Zéro frais d'installation, aucun serveur coûteux et sans engagement pluriannuel.",
+          s5_st1_num: "Étape 1 — 2 Minutes", s5_st1_name: "Importez Vos Salariés", s5_st1_desc: "Téléchargez votre fichier Excel. Les badges QR et codes PIN sont générés automatiquement.",
+          s5_st2_num: "Étape 2 — 3 Minutes", s5_st2_name: "Activez la Tablette", s5_st2_desc: "Ouvrez l'application web sécurisée sur votre tablette. Aucune installation complexe.",
+          s5_st3_num: "Étape 3 — C'est Parti", s5_st3_name: "Pointage Automatique", s5_st3_desc: "Vos équipes badgent à l'arrivée et au départ. Tout se calcule automatiquement.",
+          s5_unit: "par salarié actif / mois", s5_min: "Minimum 150 € / mois / entreprise",
+          s5_footnote: "Bornes illimitées, supervision en direct, planning et exports de paie inclus.",
+
+          s6_badge: "Essai Gratuit de 14 Jours Sans Engagement",
+          s6_title: "Modernisez Votre Gestion Dès Aujourd'hui.",
+          s6_sub: "Testez la simplicité du pointage digital sans carte bancaire ni frais initiaux.",
+          s6_btn: "Demander une Démonstration Gratuite"
+        }
+      },
+
+      nl: {
+        tagline: "Gesynchroniseerde Meertalige Presentatie (60s Editie)",
+        audio: [
+          "assets/video_audio/scene1_nl.m4a",
+          "assets/video_audio/scene2_nl.m4a",
+          "assets/video_audio/scene3_nl.m4a",
+          "assets/video_audio/scene4_nl.m4a",
+          "assets/video_audio/scene5_nl.m4a",
+          "assets/video_audio/scene6_nl.m4a"
+        ],
+        subtitles: [
+          "Registreert u de aanwezigheid nog met papieren lijsten of verloren pasjes? Dit kost veel tijd, leidt tot fouten en kost uw bedrijf maandelijks duizenden euro's.",
+          "Ontdek GetApp Smart QR: het moderne platform dat van elke standaard tablet een slimme aanwezigheidskiosk maakt. Snel, veilig en betrouwbaar.",
+          "Beheer uw personeel overal in real-time. Filter direct via interactieve grafieken en laat de automatische shift-afsluiting vergeten uitklokkingen afronden.",
+          "Exporteer aan het einde van de maand gecertificeerde urenstaten in één klik. Volledig AVG-conform, zonder invasieve biometrie.",
+          "Geen dure hardware nodig. Binnen 15 minuten operationeel voor slechts 15 euro per medewerker per maand met het Smart-abonnement.",
+          "Upgrade uw tijdregistratie vandaag nog. Bezoek www.getapp.ro en start uw gratis proefperiode van 14 dagen."
+        ],
+        pills: ["1: Probleem", "2: Kiosk", "3: Shifts", "4: Urenstaten", "5: Tarieven", "6: Demo"],
+        texts: {
+          s1_badge: "Aanwezigheidsknelpunten",
+          s1_title: "Papieren Lijsten. Kwijtgeraakte Pasjes.<br>Uren Verlies Elke Maand.",
+          s1_sub: "Traditionele registratie leidt tot loonfouten, administratieve frustraties en juridische risico's.",
+          s1_c1_tag: "Frictie", s1_c1_head: "Papieren Aftekenlijsten", s1_c1_desc: "Onleesbare handschriften, ontbrekende regels en onnauwkeurige tijden zonder auditspoor.",
+          s1_c2_tag: "Hoge Kosten", s1_c2_head: "Verloren RFID-Pasjes", s1_c2_desc: "Voortdurende vervangingskosten, pasjes doorgeven aan collega's en dure kaartlezers.",
+          s1_c3_tag: "HR-Kopzorgen", s1_c3_head: "Handmatige Salarisberekening", s1_c3_desc: "Urenlang ploegen in spreadsheets om dag-, nacht- en overuren handmatig uit te rekenen.",
+
+          s2_badge: "Moderne Architectuur",
+          s2_title: "Ontdek GetApp Smart QR.<br>Inklokken binnen 1 Seconde.",
+          s2_sub: "Verander elke standaard iPad of Android-tablet in een veilige 24/7 aanwezigheidskiosk.",
+          s2_b1_title: "Dynamische Gecodeerde QR-Codes", s2_b1_desc: "Vernieuwt elke 15 seconden om buddy-punching en foto-fraude volledig uit te sluiten.",
+          s2_b2_title: "Geen Merkeigen Hardware", s2_b2_desc: "Draait soepel op standaard tablets. Zéro dure onderhoudskosten.",
+          s2_b3_title: "24/7 Slimme Anti-Standby", s2_b3_desc: "Voorkomt automatisch dat de tablet in slaapstand valt bij de receptie of ingang.",
+
+          s3_badge: "Live Controle",
+          s3_title: "Real-Time Aanwezigheidstoezicht<br>& Automatische Shift-Afsluiting.",
+          s3_sub: "Direct overzicht over alle bedrijfslocaties met slimme ploegendienst-automatisering.",
+          s3_box_title: "Automatische Shift-Afsluiting", s3_box_badge: "ACTIEF",
+          s3_box_desc: "Sluit automatisch openstaande shifts af bij het geplande einduur als een medewerker vergeet uit te klokken.",
+          s3_toggle_label: "Automatisch Afsluiten: Actief (Ja)",
+          s3_b1_title: "Interactieve Donut Grafiek", s3_b1_desc: "Klik rechtstreeks op Aanwezig of Afwezig om de personeelslijst direct te filteren.",
+
+          s4_badge: "AVG & Privacybescherming",
+          s4_title: "Gecertificeerde Urenstaten in 1 Klik.<br>100% Strikte EU AVG-Conformiteit.",
+          s4_sub: "Automatiseer arbeidsberekeningen terwijl de privacy van medewerkers gewaarborgd blijft.",
+          s4_c1_title: "Automatische Urenberekening", s4_c1_desc: "Directe uitsplitsing van reguliere uren, nacht-, weekend- en overuren. Exporteer direct naar Excel & ERP.",
+          s4_c2_title: "Geen Biometrische Risico's", s4_c2_desc: "Geen gezichtsherkenning of vingerafdrukken. Maakt gebruik van dynamische QR-tokens en pincodes met 256-bit encryptie.",
+
+          s5_badge: "Implementatie & Tarieven",
+          s5_title: "Binnen 15 Minuten Operationeel.<br>Helder en Transparant Abonnement.",
+          s5_sub: "Geen opstartkosten, geen dure serverlicenties en geen langdurige contractverplichtingen.",
+          s5_st1_num: "Stap 1 — 2 Minuten", s5_st1_name: "Personeel Importeren", s5_st1_desc: "Upload uw Excel-bestand. Digitale QR-badges en pincodes worden direct gegenereerd.",
+          s5_st2_num: "Stap 2 — 3 Minuten", s5_st2_name: "Tablet Activeren", s5_st2_desc: "Open de beveiligde webkiosk op uw tablet. Direct klaar voor gebruik.",
+          s5_st3_num: "Stap 3 — Live Gaan", s5_st3_name: "Automatisch Registreren", s5_st3_desc: "Medewerkers scannen bij aankomst en vertrek. Alles wordt automatisch verwerkt.",
+          s5_unit: "per actieve medewerker / maand", s5_min: "Minimaal 150 € / maand / bedrijf",
+          s5_footnote: "Onbeperkt aantal tablets, live monitoring, shiftplanner en exports inbegrepen.",
+
+          s6_badge: "14 Dagen Volledig Gratis Uitproberen",
+          s6_title: "Upgrade Uw Tijdregistratie Vandaag Nog.",
+          s6_sub: "Ervaar het gemak van digitale aanwezigheid zonder enig risico. Geen creditcard vereist.",
+          s6_btn: "Vraag Uw Gratis Demo Aan"
+        }
+      }
+    };
+
+    let currentLang = 'en';
+    const scenes = [
+      { id: 1, duration: 11 },
+      { id: 2, duration: 11 },
+      { id: 3, duration: 14 },
+      { id: 4, duration: 16 },
+      { id: 5, duration: 11 },
+      { id: 6, duration: 10 }
+    ];
+
+    let currentSceneIdx = 0;
+    let isPlaying = false;
+    let sceneTimer = null;
+    let progressInterval = null;
+    let elapsedTime = 0;
+    const totalDuration = scenes.reduce((acc, s) => acc + s.duration, 0);
+
+    function setVideoLanguage(lang) {
+      if (!videoData[lang]) return;
+      currentLang = lang;
+      
+      // Update toggle buttons
+      document.querySelectorAll('.lang-toggle-btn').forEach(b => b.classList.remove('active'));
+      const activeBtn = document.getElementById(`langBtn_${lang}`);
+      if (activeBtn) activeBtn.classList.add('active');
+
+      // Update text in DOM
+      const data = videoData[lang];
+      document.getElementById('headerTagline').textContent = data.tagline;
+
+      for (const [key, val] of Object.entries(data.texts)) {
+        const el = document.getElementById(key);
+        if (el) {
+          if (val.includes('<br>')) {
+            el.innerHTML = val;
+          } else {
+            el.textContent = val;
+          }
+        }
+      }
+
+      // Update pills
+      data.pills.forEach((p, i) => {
+        const pillEl = document.getElementById(`pill${i + 1}`);
+        if (pillEl) pillEl.textContent = p;
+      });
+
+      // Update audio sources
+      data.audio.forEach((src, i) => {
+        const aud = document.getElementById(`audioScene${i + 1}`);
+        if (aud) {
+          const wasPlaying = !aud.paused;
+          aud.src = src;
+          aud.load();
+          if (wasPlaying && isPlaying && currentSceneIdx === i) {
+            aud.play().catch(e => console.log('Audio switch play:', e));
+          }
+        }
+      });
+
+      // Update current subtitle
+      document.getElementById('subtitlesText').textContent = data.subtitles[currentSceneIdx];
+    }
+
+    function formatTime(sec) {
+      const m = Math.floor(sec / 60);
+      const s = Math.floor(sec % 60);
+      return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+
+    function updateSceneDisplay(idx) {
+      document.querySelectorAll('.scene').forEach((sc, i) => {
+        if (i === idx) {
+          sc.classList.add('active');
+        } else {
+          sc.classList.remove('active');
+        }
+      });
+
+      document.querySelectorAll('.nav-pill').forEach((btn, i) => {
+        if (i === idx) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+
+      document.getElementById('subtitlesText').textContent = videoData[currentLang].subtitles[idx];
+    }
+
+    function playScene(idx) {
+      stopAllAudios();
+      currentSceneIdx = idx;
+      updateSceneDisplay(idx);
+
+      const aud = document.getElementById(`audioScene${idx + 1}`);
+      if (aud) {
+        aud.currentTime = 0;
+        aud.play().catch(e => console.log('Audio autoplay policy:', e));
+      }
+
+      clearTimeout(sceneTimer);
+      sceneTimer = setTimeout(() => {
+        if (currentSceneIdx < scenes.length - 1) {
+          playScene(currentSceneIdx + 1);
+        } else {
+          pauseVideo();
+        }
+      }, scenes[idx].duration * 1000);
+    }
+
+    function stopAllAudios() {
+      for (let i = 1; i <= 6; i++) {
+        const aud = document.getElementById(`audioScene${i}`);
+        if (aud) {
+          aud.pause();
+          aud.currentTime = 0;
+        }
+      }
+    }
+
+    function togglePlayPause() {
+      if (isPlaying) {
+        pauseVideo();
+      } else {
+        startVideo();
+      }
+    }
+
+    function startVideo() {
+      isPlaying = true;
+      document.getElementById('btnPlayPause').textContent = 'Pause';
+      playScene(currentSceneIdx);
+
+      clearInterval(progressInterval);
+      progressInterval = setInterval(() => {
+        let timeAcc = 0;
+        for (let i = 0; i < currentSceneIdx; i++) {
+          timeAcc += scenes[i].duration;
+        }
+        const curAudio = document.getElementById(`audioScene${currentSceneIdx + 1}`);
+        const curOffset = curAudio ? curAudio.currentTime : 0;
+        elapsedTime = Math.min(totalDuration, timeAcc + curOffset);
+
+        const pct = (elapsedTime / totalDuration) * 100;
+        document.getElementById('timelineFill').style.width = pct + '%';
+        document.getElementById('timeDisplay').textContent = `${formatTime(elapsedTime)} / ${formatTime(totalDuration)}`;
+      }, 100);
+    }
+
+    function pauseVideo() {
+      isPlaying = false;
+      document.getElementById('btnPlayPause').textContent = 'Play';
+      clearTimeout(sceneTimer);
+      clearInterval(progressInterval);
+      const curAudio = document.getElementById(`audioScene${currentSceneIdx + 1}`);
+      if (curAudio) curAudio.pause();
+    }
+
+    function restartVideo() {
+      pauseVideo();
+      elapsedTime = 0;
+      currentSceneIdx = 0;
+      document.getElementById('timelineFill').style.width = '0%';
+      document.getElementById('timeDisplay').textContent = `00:00 / ${formatTime(totalDuration)}`;
+      startVideo();
+    }
+
+    function goToScene(sceneNum) {
+      pauseVideo();
+      currentSceneIdx = sceneNum - 1;
+      let timeAcc = 0;
+      for (let i = 0; i < currentSceneIdx; i++) {
+        timeAcc += scenes[i].duration;
+      }
+      elapsedTime = timeAcc;
+      document.getElementById('timelineFill').style.width = ((elapsedTime / totalDuration) * 100) + '%';
+      document.getElementById('timeDisplay').textContent = `${formatTime(elapsedTime)} / ${formatTime(totalDuration)}`;
+      startVideo();
+    }
+
+    function seekVideo(e) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const pos = (e.clientX - rect.left) / rect.width;
+      const targetSec = pos * totalDuration;
+
+      let acc = 0;
+      for (let i = 0; i < scenes.length; i++) {
+        if (targetSec >= acc && targetSec < acc + scenes[i].duration) {
+          currentSceneIdx = i;
+          break;
+        }
+        acc += scenes[i].duration;
+      }
+      goToScene(currentSceneIdx + 1);
+    }
+
+    // MediaRecorder Video Export
+    let mediaRecorder = null;
+    let recordedChunks = [];
+    let isRecording = false;
+
+    async function toggleExportRecording() {
+      if (isRecording) {
+        stopRecording();
+        return;
+      }
+
+      try {
+        const stream = await navigator.mediaDevices.getDisplayMedia({
+          video: { frameRate: 30, displaySurface: "browser" },
+          audio: true
+        });
+
+        recordedChunks = [];
+        mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm; codecs=vp9' });
+
+        mediaRecorder.ondataavailable = e => {
+          if (e.data.size > 0) recordedChunks.push(e.data);
+        };
+
+        mediaRecorder.onstop = () => {
+          const blob = new Blob(recordedChunks, { type: 'video/webm' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.style.display = 'none';
+          a.href = url;
+          a.download = `GetApp_Smart_QR_Commercial_Video_${currentLang.toUpperCase()}.webm`;
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => {
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+          }, 100);
+
+          document.getElementById('recordingNotice').style.display = 'none';
+          document.getElementById('recordBtnLabel').textContent = 'Export Video (WebM / MP4)';
+          isRecording = false;
+        };
+
+        isRecording = true;
+        document.getElementById('recordingNotice').style.display = 'flex';
+        document.getElementById('recordBtnLabel').textContent = 'Stop & Save Video';
+
+        mediaRecorder.start();
+        restartVideo();
+
+        setTimeout(() => {
+          if (isRecording) stopRecording();
+        }, (totalDuration + 1) * 1000);
+
+      } catch (err) {
+        console.warn('Display Media capture was dismissed or failed, fallback to local playback:', err);
+      }
+    }
+
+    function stopRecording() {
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+      }
+    }
+
+    // Initialize with default language
+    window.addEventListener('load', () => {
+      setVideoLanguage('en');
+      startVideo();
+    });
+  </script>
+</body>
+</html>
