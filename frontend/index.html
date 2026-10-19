@@ -128,6 +128,21 @@
         });
       })();
     </script>
+    <script>
+      // Curatare automata parametru tehnic _v din bara de adrese pentru URL 100% curat
+      (function () {
+        try {
+          if (window.history && window.history.replaceState) {
+            var u = new URL(window.location.href);
+            if (u.searchParams.has('_v')) {
+              u.searchParams.delete('_v');
+              var cleanUrl = u.pathname + (u.search ? u.search : '') + (u.hash || '');
+              window.history.replaceState(null, '', cleanUrl);
+            }
+          }
+        } catch (e) {}
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
     <script>
