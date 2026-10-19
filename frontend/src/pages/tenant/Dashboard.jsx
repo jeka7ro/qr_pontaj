@@ -270,22 +270,33 @@ export default function TenantDashboard() {
           {sidebarCollapsed ? (
             /* Collapsed State: Logo 100% centrat, fără nicio tăiere */
             <div className="flex items-center justify-center w-full relative">
-              <div 
-                onClick={toggleSidebarCollapsed}
-                className="h-10 w-10 shrink-0 bg-white dark:bg-slate-800 rounded-xl flex items-center justify-center p-1 shadow-xs border border-slate-200/80 dark:border-slate-700/80 cursor-pointer hover:ring-2 hover:ring-primary-500 transition-all overflow-hidden" 
-                title={`${tenant.name} — Apasă pentru a extinde meniul`}
-              >
-                <img 
-                  src={tenant.logo_url || '/logo_getapp_smartqr.jpg'} 
-                  alt={tenant.name} 
-                  className="max-h-full max-w-full object-contain" 
-                  onError={(e) => {
-                    if (!e.currentTarget.src.includes('/logo_getapp_smartqr.jpg')) {
-                      e.currentTarget.src = '/logo_getapp_smartqr.jpg';
-                    }
-                  }}
-                />
-              </div>
+              {tenant.logo_url ? (
+                <div 
+                  onClick={toggleSidebarCollapsed}
+                  className="h-10 w-10 shrink-0 bg-slate-900 dark:bg-slate-950 rounded-xl flex items-center justify-center p-1.5 shadow-sm border border-slate-800 dark:border-slate-800 cursor-pointer hover:ring-2 hover:ring-primary-500 transition-all overflow-hidden" 
+                  title={`${tenant.name} — Apasă pentru a extinde meniul`}
+                >
+                  <img 
+                    src={tenant.logo_url} 
+                    alt={tenant.name} 
+                    className="max-h-full max-w-full object-contain drop-shadow-sm" 
+                    onError={(e) => {
+                      if (!e.currentTarget.src.includes('/logo_getapp_smartqr.jpg')) {
+                        e.currentTarget.src = '/logo_getapp_smartqr.jpg';
+                      }
+                    }}
+                  />
+                </div>
+              ) : (
+                <div 
+                  onClick={toggleSidebarCollapsed}
+                  className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold shrink-0 text-xs cursor-pointer hover:ring-2 hover:ring-primary-500 transition-all shadow-sm"
+                  style={{ backgroundColor: themeColor }}
+                  title={`${tenant.name} — Apasă pentru a extinde meniul`}
+                >
+                  {tenant.name ? tenant.name.substring(0, 2).toUpperCase() : 'QR'}
+                </div>
+              )}
               {/* Buton discret plutitor pe marginea sidebar-ului */}
               <button 
                 onClick={toggleSidebarCollapsed}
@@ -299,18 +310,28 @@ export default function TenantDashboard() {
             /* Expanded State: Logo complet + Nume stânga, Butoane acțiuni dreapta */
             <>
               <div className="flex items-center gap-3 overflow-hidden min-w-0">
-                <div className="h-10 w-10 shrink-0 bg-white dark:bg-slate-800 rounded-xl flex items-center justify-center p-1 shadow-xs border border-slate-200/80 dark:border-slate-700/80 overflow-hidden" title={tenant.name}>
-                  <img 
-                    src={tenant.logo_url || '/logo_getapp_smartqr.jpg'} 
-                    alt={tenant.name} 
-                    className="max-h-full max-w-full object-contain" 
-                    onError={(e) => {
-                      if (!e.currentTarget.src.includes('/logo_getapp_smartqr.jpg')) {
-                        e.currentTarget.src = '/logo_getapp_smartqr.jpg';
-                      }
-                    }}
-                  />
-                </div>
+                {tenant.logo_url ? (
+                  <div className="h-10 w-10 shrink-0 bg-slate-900 dark:bg-slate-950 rounded-xl flex items-center justify-center p-1.5 shadow-sm border border-slate-800 dark:border-slate-800 overflow-hidden" title={tenant.name}>
+                    <img 
+                      src={tenant.logo_url} 
+                      alt={tenant.name} 
+                      className="max-h-full max-w-full object-contain drop-shadow-sm" 
+                      onError={(e) => {
+                        if (!e.currentTarget.src.includes('/logo_getapp_smartqr.jpg')) {
+                          e.currentTarget.src = '/logo_getapp_smartqr.jpg';
+                        }
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <div 
+                    className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold shrink-0 text-xs shadow-sm"
+                    style={{ backgroundColor: themeColor }}
+                    title={tenant.name}
+                  >
+                    {tenant.name ? tenant.name.substring(0, 2).toUpperCase() : 'QR'}
+                  </div>
+                )}
                 <span className="font-bold text-slate-800 dark:text-white truncate" title={tenant.name}>{tenant.name}</span>
               </div>
 
@@ -684,7 +705,6 @@ export default function TenantDashboard() {
         {/* Desktop Header Bar with Language Selector */}
         <header className="hidden md:flex h-16 bg-white dark:bg-slate-800 border-b border-slate-200/80 dark:border-slate-700/80 items-center justify-between px-6 shrink-0 z-10 transition-colors">
           <div className="flex items-center gap-3">
-            <span className="font-bold text-slate-800 dark:text-white text-base tracking-tight">{tenant.name}</span>
           </div>
 
           <div className="flex items-center gap-3">
