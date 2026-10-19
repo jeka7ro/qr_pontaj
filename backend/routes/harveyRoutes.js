@@ -58,7 +58,7 @@ router.get('/stats', checkAdmin, async (req, res) => {
 // GET /api/admin/harvey/leads
 router.get('/leads', checkAdmin, async (req, res) => {
   try {
-    const { status, search, country, city } = req.query;
+    const { status, search, country, city, industry } = req.query;
     let query = 'SELECT * FROM sales_leads';
     const conditions = ["email IS NOT NULL AND email != ''"];
     const params = [];
@@ -78,9 +78,14 @@ router.get('/leads', checkAdmin, async (req, res) => {
       conditions.push(`LOWER(city) LIKE $${params.length}`);
     }
 
+    if (industry && industry !== 'all') {
+      params.push(`%${industry.toLowerCase().trim()}%`);
+      conditions.push(`LOWER(industry) LIKE $${params.length}`);
+    }
+
     if (search && search.trim()) {
       params.push(`%${search.trim().toLowerCase()}%`);
-      conditions.push(`(LOWER(company_name) LIKE $${params.length} OR LOWER(city) LIKE $${params.length} OR LOWER(COALESCE(email, '')) LIKE $${params.length})`);
+      conditions.push(`(LOWER(company_name) LIKE $${params.length} OR LOWER(city) LIKE $${params.length} OR LOWER(COALESCE(email, '')) LIKE $${params.length} OR LOWER(COALESCE(industry, '')) LIKE $${params.length})`);
     }
 
     if (conditions.length > 0) {

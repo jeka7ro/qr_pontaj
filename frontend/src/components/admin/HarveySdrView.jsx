@@ -25,7 +25,9 @@ import {
   CheckSquare,
   Square,
   Upload,
-  ShieldCheck
+  ShieldCheck,
+  Tag,
+  X
 } from 'lucide-react';
 import HarveySearchModal, { 
   FlagRO, 
@@ -74,6 +76,7 @@ export default function HarveySdrView({ onConvertToTenant }) {
   const [statusFilter, setStatusFilter] = useState('all');
   const [countryFilter, setCountryFilter] = useState('all');
   const [cityFilter, setCityFilter] = useState('all');
+  const [industryFilter, setIndustryFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   // Paginare
@@ -143,8 +146,88 @@ export default function HarveySdrView({ onConvertToTenant }) {
       .filter((l) => countryFilter === 'all' || (l.country || 'RO').toUpperCase() === countryFilter.toUpperCase())
       .map((l) => l.city)
       .filter(Boolean);
-    return Array.from(new Set(list));
+    return Array.from(new Set(list)).sort();
   }, [leads, countryFilter]);
+
+  // Numărătoare și listă dinamică a domeniilor / industriilor căutate
+  const industryCounts = useMemo(() => {
+    const counts = {};
+    for (const l of leads) {
+      const leadCountry = (l.country || 'RO').toUpperCase();
+      const matchesCountry = countryFilter === 'all' || leadCountry === countryFilter.toUpperCase();
+      const leadCity = (l.city || '').toLowerCase();
+      const matchesCity = cityFilter === 'all' || leadCity.includes(cityFilter.toLowerCase());
+
+      if (matchesCountry && matchesCity) {
+        const ind = (l.industry && l.industry.trim()) || 'Alte Domenii';
+        counts[ind] = (counts[ind] || 0) + 1;
+      }
+    }
+    return counts;
+  }, [leads, countryFilter, cityFilter]);
+
+  const availableIndustries = useMemo(() => {
+    return Object.keys(industryCounts).sort((a, b) => (industryCounts[b] || 0) - (industryCounts[a] || 0));
+  }, [industryCounts]);
+
+  // Stiluri vizuale clare per domeniu (fără culori robotizate, estetică SaaS)
+  const getIndustryBadgeStyle = (industry) => {
+    const ind = (industry || '').toLowerCase();
+    if (ind.includes('restauran') || ind.includes('bar') || ind.includes('cafene') || ind.includes('pizzeri') || ind.includes('fast food')) {
+      return {
+        bg: 'bg-amber-50 dark:bg-amber-950/60',
+        text: 'text-amber-700 dark:text-amber-300',
+        border: 'border-amber-200 dark:border-amber-800'
+      };
+    }
+    if (ind.includes('conta') || ind.includes('saga') || ind.includes('audit') || ind.includes('expert')) {
+      return {
+        bg: 'bg-indigo-50 dark:bg-indigo-950/60',
+        text: 'text-indigo-700 dark:text-indigo-300',
+        border: 'border-indigo-200 dark:border-indigo-800'
+      };
+    }
+    if (ind.includes('hotel') || ind.includes('pensiun') || ind.includes('cazare') || ind.includes('horeca') || ind.includes('resort')) {
+      return {
+        bg: 'bg-emerald-50 dark:bg-emerald-950/60',
+        text: 'text-emerald-700 dark:text-emerald-300',
+        border: 'border-emerald-200 dark:border-emerald-800'
+      };
+    }
+    if (ind.includes('curat') || ind.includes('cleaning')) {
+      return {
+        bg: 'bg-teal-50 dark:bg-teal-950/60',
+        text: 'text-teal-700 dark:text-teal-300',
+        border: 'border-teal-200 dark:border-teal-800'
+      };
+    }
+    if (ind.includes('clinic') || ind.includes('medic') || ind.includes('stomatolog') || ind.includes('farmac')) {
+      return {
+        bg: 'bg-rose-50 dark:bg-rose-950/60',
+        text: 'text-rose-700 dark:text-rose-300',
+        border: 'border-rose-200 dark:border-rose-800'
+      };
+    }
+    if (ind.includes('construc') || ind.includes('instal') || ind.includes('santier') || ind.includes('electric')) {
+      return {
+        bg: 'bg-blue-50 dark:bg-blue-950/60',
+        text: 'text-blue-700 dark:text-blue-300',
+        border: 'border-blue-200 dark:border-blue-800'
+      };
+    }
+    if (ind.includes('salon') || ind.includes('frizer') || ind.includes('barber') || ind.includes('beauty')) {
+      return {
+        bg: 'bg-pink-50 dark:bg-pink-950/60',
+        text: 'text-pink-700 dark:text-pink-300',
+        border: 'border-pink-200 dark:border-pink-800'
+      };
+    }
+    return {
+      bg: 'bg-slate-100 dark:bg-slate-800',
+      text: 'text-slate-700 dark:text-slate-300',
+      border: 'border-slate-200 dark:border-slate-700'
+    };
+  };
 
   // Filtrare lead-uri
   const filteredLeads = useMemo(() => {
@@ -166,6 +249,9 @@ export default function HarveySdrView({ onConvertToTenant }) {
       const leadCity = (lead.city || '').toLowerCase();
       const matchesCity = cityFilter === 'all' || leadCity.includes(cityFilter.toLowerCase());
 
+      const leadIndustry = (lead.industry && lead.industry.trim()) || 'Alte Domenii';
+      const matchesIndustry = industryFilter === 'all' || leadIndustry === industryFilter;
+
       const q = searchQuery.toLowerCase().trim();
       const matchesSearch =
         !q ||
@@ -174,9 +260,9 @@ export default function HarveySdrView({ onConvertToTenant }) {
         (lead.email && lead.email.toLowerCase().includes(q)) ||
         (lead.industry && lead.industry.toLowerCase().includes(q));
 
-      return matchesStatus && matchesCountry && matchesCity && matchesSearch;
+      return matchesStatus && matchesCountry && matchesCity && matchesIndustry && matchesSearch;
     });
-  }, [leads, statusFilter, countryFilter, cityFilter, searchQuery]);
+  }, [leads, statusFilter, countryFilter, cityFilter, industryFilter, searchQuery]);
 
   // Paginare date
   const totalItems = filteredLeads.length;
@@ -469,6 +555,20 @@ export default function HarveySdrView({ onConvertToTenant }) {
               </select>
             )}
 
+            {/* Dropdown Domeniu / Nișă */}
+            <select
+              value={industryFilter}
+              onChange={(e) => { setIndustryFilter(e.target.value); setCurrentPage(1); }}
+              className="h-9 px-3 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 outline-none cursor-pointer max-w-[170px] truncate shrink-0"
+            >
+              <option value="all">Toate Domeniile ({leads.length})</option>
+              {availableIndustries.map((ind) => (
+                <option key={ind} value={ind}>
+                  {ind} ({industryCounts[ind] || 0})
+                </option>
+              ))}
+            </select>
+
             {/* CTA Caută Companii Noi */}
             <button
               onClick={() => setIsSearchModalOpen(true)}
@@ -525,6 +625,109 @@ export default function HarveySdrView({ onConvertToTenant }) {
             </button>
           </div>
         </div>
+
+        {/* Rândul 1.5: Filtre Rapide Domenii / Căutări (Chips orizontale pe un singur rând) */}
+        {availableIndustries.length > 0 && (
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-1 border-t border-slate-100 dark:border-slate-700/60">
+            <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider whitespace-nowrap shrink-0 mr-1 flex items-center gap-1">
+              <Filter size={12} className="text-slate-400" /> Căutări:
+            </span>
+            <button
+              type="button"
+              onClick={() => { setIndustryFilter('all'); setCurrentPage(1); }}
+              className={`px-3 h-7 rounded-full text-xs font-bold transition-all whitespace-nowrap shrink-0 cursor-pointer flex items-center gap-1.5 ${
+                industryFilter === 'all'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'
+              }`}
+            >
+              <span>Toate</span>
+              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
+                industryFilter === 'all' ? 'bg-white/20 text-white' : 'bg-black/5 dark:bg-white/10'
+              }`}>
+                {leads.length}
+              </span>
+            </button>
+
+            {availableIndustries.map((ind) => {
+              const isSelected = industryFilter === ind;
+              const badgeStyle = getIndustryBadgeStyle(ind);
+              return (
+                <button
+                  key={ind}
+                  type="button"
+                  onClick={() => { setIndustryFilter(isSelected ? 'all' : ind); setCurrentPage(1); }}
+                  className={`px-3 h-7 rounded-full text-xs font-bold transition-all whitespace-nowrap shrink-0 cursor-pointer border flex items-center gap-1.5 ${
+                    isSelected
+                      ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                      : `${badgeStyle.bg} ${badgeStyle.text} ${badgeStyle.border} hover:opacity-90`
+                  }`}
+                >
+                  <Tag size={11} className={isSelected ? 'text-white' : ''} />
+                  <span>{ind}</span>
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
+                    isSelected ? 'bg-white/20 text-white' : 'bg-black/5 dark:bg-white/10'
+                  }`}>
+                    {industryCounts[ind] || 0}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Bară sumară filtre active cu buton de reset */}
+        {(industryFilter !== 'all' || cityFilter !== 'all' || countryFilter !== 'all' || searchQuery || statusFilter !== 'all') && (
+          <div className="flex items-center gap-2 flex-wrap pt-2 border-t border-slate-100 dark:border-slate-700/60">
+            <span className="text-[11px] font-bold text-slate-400">Filtre active:</span>
+            {industryFilter !== 'all' && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border border-blue-200 dark:border-blue-800 whitespace-nowrap shrink-0">
+                Domeniu: {industryFilter}
+                <button type="button" onClick={() => setIndustryFilter('all')} className="hover:text-blue-900 cursor-pointer">
+                  <X size={12} />
+                </button>
+              </span>
+            )}
+            {cityFilter !== 'all' && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700 whitespace-nowrap shrink-0">
+                Oraș: {cityFilter}
+                <button type="button" onClick={() => setCityFilter('all')} className="hover:text-slate-900 cursor-pointer">
+                  <X size={12} />
+                </button>
+              </span>
+            )}
+            {countryFilter !== 'all' && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700 whitespace-nowrap shrink-0">
+                Țară: {COUNTRY_NAMES[countryFilter] || countryFilter}
+                <button type="button" onClick={() => setCountryFilter('all')} className="hover:text-slate-900 cursor-pointer">
+                  <X size={12} />
+                </button>
+              </span>
+            )}
+            {searchQuery && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700 whitespace-nowrap shrink-0">
+                Căutare: "{searchQuery}"
+                <button type="button" onClick={() => setSearchQuery('')} className="hover:text-slate-900 cursor-pointer">
+                  <X size={12} />
+                </button>
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                setIndustryFilter('all');
+                setCityFilter('all');
+                setCountryFilter('all');
+                setStatusFilter('all');
+                setSearchQuery('');
+                setCurrentPage(1);
+              }}
+              className="text-xs font-bold text-red-600 dark:text-red-400 hover:underline cursor-pointer whitespace-nowrap shrink-0 ml-auto"
+            >
+              Resetează toate filtrele
+            </button>
+          </div>
+        )}
 
         {/* Rândul 2: Status Tabs curate */}
         <div className="flex items-center justify-between pt-2.5 border-t border-slate-100 dark:border-slate-700/60">
@@ -675,21 +878,29 @@ export default function HarveySdrView({ onConvertToTenant }) {
                               </a>
                             )}
                           </div>
-                          <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mt-0.5 flex-wrap">
-                            <span className="font-semibold text-slate-700 dark:text-slate-200">
+                          <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mt-1 flex-wrap">
+                            <span className="font-semibold text-slate-700 dark:text-slate-200 whitespace-nowrap shrink-0">
                               {lead.country && lead.country !== 'RO' ? `${lead.country} • ` : ''}{lead.city || 'România'}
                             </span>
                             {lead.industry && (
-                              <>
-                                <span className="text-slate-300 dark:text-slate-600">•</span>
-                                <span className="capitalize">{lead.industry}</span>
-                              </>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setIndustryFilter(lead.industry);
+                                  setCurrentPage(1);
+                                }}
+                                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border transition-all hover:scale-105 cursor-pointer whitespace-nowrap shrink-0 ${getIndustryBadgeStyle(lead.industry).bg} ${getIndustryBadgeStyle(lead.industry).text} ${getIndustryBadgeStyle(lead.industry).border}`}
+                                title={`Filtrează rapid doar companiile din: ${lead.industry}`}
+                              >
+                                <Tag size={10} />
+                                <span>{lead.industry}</span>
+                              </button>
                             )}
                             {lead.cui && (
-                              <>
-                                <span className="text-slate-300 dark:text-slate-600">•</span>
-                                <span>CUI: {lead.cui}</span>
-                              </>
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 whitespace-nowrap shrink-0">
+                                CUI: {lead.cui}
+                              </span>
                             )}
                           </div>
                         </div>
@@ -840,7 +1051,7 @@ export default function HarveySdrView({ onConvertToTenant }) {
       <HarveySearchModal
         isOpen={isSearchModalOpen}
         onClose={() => setIsSearchModalOpen(false)}
-        onSearchComplete={(newLeads, message, searchedCountry, searchedCities) => {
+        onSearchComplete={(newLeads, message, searchedCountry, searchedCities, searchedNiches) => {
           if (searchedCountry) {
             setCountryFilter(searchedCountry);
           }
@@ -848,6 +1059,11 @@ export default function HarveySdrView({ onConvertToTenant }) {
             setCityFilter(searchedCities[0]);
           } else {
             setCityFilter('all');
+          }
+          if (searchedNiches && searchedNiches.length > 0) {
+            setIndustryFilter(searchedNiches[0]);
+          } else {
+            setIndustryFilter('all');
           }
           setStatusFilter('all');
           setSearchQuery('');

@@ -542,7 +542,7 @@ export default function HarveySearchModal({ isOpen, onClose, onSearchComplete })
       }
 
       if (onSearchComplete) {
-        onSearchComplete(data.leads, data.message, finalCountry, [finalCity]);
+        onSearchComplete(data.leads, data.message, finalCountry, [finalCity], finalNiches);
       }
       onClose();
     } catch (err) {
