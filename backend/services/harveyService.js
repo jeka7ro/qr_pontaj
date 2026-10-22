@@ -483,7 +483,7 @@ Vă propunem un parteneriat prin care eliminați definitiv condicile pe hârtie 
 
 Ce vă oferim pentru cabinetul dvs.:
 • Export 1-Click direct în SAGA Salarii: atât log de pontaj detaliat, cât și centralizator lunar cu ore normale, ore de noapte (22:00-06:00), weekend și suplimentare calculate automat;
-• Clienții dvs. folosesc o simplă tabletă sau telefon la intrare pentru pontaj QR securizat conform Art. 119 Codul Muncii;
+• Clienții dvs. folosesc o simplă tabletă sau telefon la intrare pentru pontaj QR securizat, rapid și automatizat;
 • Acces gratuit pentru cabinetul dvs. la panoul centralizator + comision recurent de 20% lunar pentru fiecare client activ recomandat.
 
 Condiții pentru clienți:
@@ -503,16 +503,16 @@ Web: https://pontaj.app`;
     return { subject, body, aiHook: hook };
   }
 
-  let subject = `Pontaj digital QR și evidență ITM — ${companyName}`;
-  let hook = `Evidență exactă a orelor pe tabletă, condică conformă Art. 119 și export direct în SAGA Salarii.`;
+  let subject = `Pontaj digital QR`;
+  let hook = `Evidență exactă a orelor pe tabletă, foi de prezență automate și export direct în SAGA Salarii / Excel.`;
   let body = `Bună ziua,
 
 Vă contactez scurt în legătură cu gestionarea prezenței și evidența orelor de muncă pentru echipa ${companyName}.
 
-În contextul cerințelor prevăzute de Art. 119 din Codul Muncii și al timpului consumat lunar cu centralizarea foilor de prezență, vă propunem o soluție simplă prin Pontaj.app:
+Pentru a simplifica evidența orelor de muncă și a elimina timpul consumat lunar cu centralizarea manuală a foilor de prezență, vă propunem o soluție simplă prin Pontaj.app:
 
 • Terminal Kiosk pe tabletă la intrare: salariații scanează codul QR dinamic în sub o secundă, fără aparate biometrice costisitoare (soluție cloud, folosiți orice tabletă existentă; tableta și/sau suportul digital nu sunt oferite de noi și sunt în responsabilitatea clientului);
-• Condică de prezență conformă Art. 119: înregistrează automat orele exacte de intrare și ieșire, gata oricând pentru controlul ITM;
+• Foaie de prezență digitală automată: înregistrează automat orele exacte de intrare și ieșire, minut cu minut, fără erori;
 • Integrare directă cu SAGA Salarii și Excel: calcul automat pentru orele de zi, de noapte și de weekend, cu export 1-Click direct în contabilitate.
 
 Condiții comerciale:
@@ -533,15 +533,13 @@ Telefon / WhatsApp: ${senderPhone}
 Web: https://pontaj.app`;
 
   if (pitchFocus === 'itm_compliance') {
-    subject = `Evidență pontaj conformă Art. 119 ITM — ${companyName}`;
-    hook = 'Conformitate strictă Art. 119 Codul Muncii și protecție la controlul ITM fără condici pe hârtie.';
+    subject = `Pontaj digital QR`;
+    hook = 'Evidență exactă a orelor fără foi pe hârtie și fără calcule manuale.';
     body = `Bună ziua,
 
-Conform Art. 119 din Codul Muncii, fiecare angajator are obligația legală de a ține la locul de muncă evidența orelor de începere și sfârșit ale fiecărui salariat, cu ora exactă.
-
-Vă propunem Pontaj.app — soluția digitală care elimină riscul amenzilor ITM și condicile pe hârtie pentru ${companyName}:
+Pentru a simplifica evidența orelor de muncă și a scăpa definitiv de condicile pe hârtie, vă propunem Pontaj.app pentru echipa ${companyName}:
 • Pontaj securizat pe tabletă sau smartphone cu cod QR dinamic și minut exact;
-• Rapoarte de control generate instant în formatul solicitat de inspectorii de muncă;
+• Rapoarte clare generate instant pentru prezența zilnică;
 • Export automat 1-Click în SAGA Salarii și Excel pentru contabilitate.
 
 Condiții:
@@ -567,7 +565,7 @@ Web: https://pontaj.app`;
 Vă propunem transformarea oricărei tablete obișnuite într-un terminal inteligent de pontaj la intrarea în ${companyName}, prin Kiosk Pontaj.app:
 • Angajații scanează codul de pe telefon sau ecran în 2 secunde;
 • Prezența și orele exacte sunt transmise în timp real în panoul de management;
-• Generare automată a condicii legale ITM și export direct în SAGA Salarii / Excel la sfârșit de lună.
+• Generare automată a foilor de prezență și export direct în SAGA Salarii / Excel la sfârșit de lună.
 
 Condiții:
 • 15 zile de testare gratuită completă;
@@ -617,7 +615,7 @@ async function generateClaudePitch({ companyName, industry, city, website, notes
     ro: {
       langName: 'Română',
       brand: 'Pontaj.app (https://pontaj.app)',
-      context: 'Piața din România. Focus pe pontaj rapid prin QR dinamic și kiosk pe tabletă, eliminarea condicii pe hârtie, conformitate la controlul ITM conform Art. 119 Codul Muncii și export direct SAGA Salarii / Excel.'
+      context: 'Piața din România. Focus pe pontaj rapid prin QR dinamic și kiosk pe tabletă, eliminarea foilor pe hârtie și export direct SAGA Salarii / Excel.'
     }
   };
 
@@ -642,8 +640,8 @@ Cerințe stricte pentru email:
 2. Stil: Direct, profesionist, comercial fără bullshit. ESTE STRICT INTERZISĂ folosirea de introduceri de complezență siropoase sau false ("din respect pentru timpul dvs.", "urmărim activitatea dvs.", "ne-am gândit că", etc.). Treci direct la propunerea de valoare.
 3. Lungime: scurt, între 70 și 120 cuvinte.
 4. Structură clară:
-   - Propunerea directă a soluției smart de pontaj QR.
-   - Puncte forte: fără hardware scump (orice tabletă/telefon la intrare), conformitate legală (Art. 119 ITM în RO), export instant pentru contabilitate (SAGA Salarii / Excel în RO, sau secretariat social în BE/FR).
+   - Propunerea directă a soluției smart de pontaj QR. Subiectul emailului TREBUIE să fie scurt și curat: "Pontaj digital QR". Fără "ITM", fără "Art. 119", fără texte lungi.
+   - Puncte forte: fără hardware scump (orice tabletă/telefon la intrare), eliminarea condicilor pe hârtie, export instant pentru contabilitate (SAGA Salarii / Excel în RO, sau secretariat social în BE/FR).
    - Condiții comerciale clare: 15 zile test gratuit complet fără card bancar, tarif transparent de 5.00 € / angajat / lună (minim 50 € / lună / firmă, reduceri de volum de la 50 angajați la 4.50 € și de la 100 angajați la 4.00 €). Menționează clar că tableta și/sau suportul digital nu sunt oferite de noi și sunt în responsabilitatea clientului (soluție 100% software în cloud).
    - Call to action clar: link direct către platformă sau răspuns la email / telefon.
    - OBLIGATORIU: Semnătură completă la finalul emailului cu:

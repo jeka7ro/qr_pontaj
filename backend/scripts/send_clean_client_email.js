@@ -4,16 +4,16 @@ const { sendEmail } = require('../services/emailService');
 (async () => {
   const recipient = process.argv[2] || process.env.ADMIN_NOTIFICATION_EMAIL || 'jeka7ro@gmail.com';
   
-  const subject = 'Pontaj digital QR & condică ITM';
+  const subject = 'Pontaj digital QR';
 
   const textContent = `Buna ziua,
 
 Va contactez in legatura cu simplificarea gestiunii prezentei si evidenta orelor de munca pentru echipa companiei dvs.
 
-In contextul cerintelor prevazute de Art. 119 din Codul Muncii si al timpului consumat lunar cu centralizarea foilor de prezenta, Pontaj.app elimina complet condicile pe hartie:
+Pentru a simplifica evidenta orelor de munca si a elimina timpul consumat lunar cu hartiile, Pontaj.app inlocuieste complet condicile traditionale:
 
 • Terminal Kiosk pe tableta la intrare: salariatii scaneaza codul QR dinamic in sub o secunda, fara aparate biometrice costisitoare (solutie 100% cloud, folositi orice tableta existenta; tableta si/sau suportul digital nu sunt oferite de noi si sunt in responsabilitatea clientului).
-• Condica de prezenta conforma Art. 119: inregistreaza automat orele exacte de intrare si iesire, minut cu minut, gata oricand pentru controlul ITM.
+• Foaie de prezenta digitala automata: inregistreaza automat orele exacte de intrare si iesire, minut cu minut, fara erori.
 • Integrare directa cu SAGA Salarii si Excel: calcul automat pentru orele de zi, de noapte (22:00 - 06:00), weekend si suplimentare, cu export 1-Click in contabilitate.
 
 Scaneaza codul QR cu camera telefonului sau acceseaza direct:
@@ -83,7 +83,7 @@ Web: https://qr.pontaj.app`;
                 Va contactez in legatura cu simplificarea gestiunii prezentei si evidenta orelor de munca pentru echipa companiei dvs.
               </p>
               <p style="font-size: 14px; margin: 0 0 20px 0; color: #334155; line-height: 1.6;">
-                In contextul cerintelor prevazute de <strong>Art. 119 din Codul Muncii</strong> si al timpului consumat lunar cu centralizarea foilor de prezenta, <strong>Pontaj.app</strong> elimina complet condicile pe hartie:
+                Pentru a simplifica evidenta orelor de munca si a elimina timpul consumat lunar cu hartiile, <strong>Pontaj.app</strong> inlocuieste complet condicile traditionale:
               </p>
 
               <!-- Poza din Video: Barbat care scaneaza QR-ul de pe tableta montata la intrare -->
@@ -110,7 +110,7 @@ Web: https://qr.pontaj.app`;
                         <strong>Terminal Kiosk pe tableta la intrare:</strong> salariatii scaneaza codul QR dinamic in sub o secunda, fara aparate biometrice costisitoare (solutie 100% cloud, folositi orice tableta existenta; tableta si/sau suportul digital nu sunt oferite de noi si sunt in responsabilitatea clientului).
                       </li>
                       <li style="margin-bottom: 10px;">
-                        <strong>Condica de prezenta conforma Art. 119:</strong> inregistreaza automat orele exacte de intrare si iesire, gata oricand pentru controlul ITM.
+                        <strong>Foaie de prezenta digitala automata:</strong> inregistreaza minut cu minut orele exacte de intrare si iesire, fara erori si fara condici pe hartie.
                       </li>
                       <li>
                         <strong>Integrare directa cu SAGA Salarii si Excel:</strong> calcul automat pentru orele de zi, de noapte (22:00 - 06:00), weekend si suplimentare, cu export 1-Click in contabilitate.
