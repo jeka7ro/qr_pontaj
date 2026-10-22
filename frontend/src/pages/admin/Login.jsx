@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { KeyRound, Mail, Eye, EyeOff, Loader2, CheckCircle2, AlertCircle, X, Send, Clock, ShieldCheck, Lock } from 'lucide-react';
+import { KeyRound, Mail, Eye, EyeOff, Loader2, CheckCircle2, AlertCircle, X, Send, Clock, ShieldCheck, Lock, QrCode } from 'lucide-react';
 import { updatePageFavicon } from '../../utils/favicon';
 import LanguageToggle from '../../components/LanguageToggle';
 
@@ -317,11 +317,11 @@ export default function AdminLogin() {
           </div>
         ) : (
           <div className="flex flex-col items-center">
-            <div className="w-16 h-16 rounded-3xl bg-primary-600 text-white flex items-center justify-center shadow-xl shadow-primary-500/25 mb-4 border border-white/10">
-              <KeyRound size={28} />
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center shadow-xl shadow-blue-500/25 mb-4 border border-white/20">
+              <QrCode size={32} />
             </div>
             <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-              QR Pontaj
+              Pontaj<span className="text-blue-600">.app</span>
             </h1>
             <p className="mt-1 text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
               Autentificare Platformă
