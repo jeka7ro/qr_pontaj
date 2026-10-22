@@ -1555,11 +1555,6 @@ const harveyService = {
                       </tr>
                     </table>
                   </td>
-                  <td align="right" valign="middle">
-                    <span style="background: rgba(255,255,255,0.08); color: #93c5fd; font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 9999px; display: inline-block; white-space: nowrap; letter-spacing: 0.3px;">
-                      Art. 119 ITM
-                    </span>
-                  </td>
                 </tr>
               </table>
             </td>
