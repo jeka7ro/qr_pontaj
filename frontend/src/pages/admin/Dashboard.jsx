@@ -6,6 +6,7 @@ import {
   Settings, 
   LogOut, 
   Menu,
+  QrCode,
   MapPin,
   Pencil,
   Trash2,
@@ -142,7 +143,19 @@ export default function AdminDashboard() {
         <div className={`h-16 flex items-center ${sidebarOpen ? 'justify-between px-5' : 'justify-center px-2'} border-b border-slate-200 dark:border-slate-700 shrink-0`}>
           {sidebarOpen ? (
             <>
-              <span className="font-bold text-lg text-slate-800 dark:text-white truncate">SaaS Admin</span>
+              <Link to="/admin/dashboard" className="flex items-center gap-2.5 overflow-hidden group">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/25 shrink-0">
+                  <QrCode size={18} />
+                </div>
+                <div className="flex flex-col">
+                  <span className="font-black text-base text-slate-900 dark:text-white tracking-tight leading-none">
+                    Pontaj<span className="text-blue-600">.app</span>
+                  </span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mt-0.5">
+                    Admin
+                  </span>
+                </div>
+              </Link>
               <button 
                 onClick={() => setSidebarOpen(false)} 
                 className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors cursor-pointer"
@@ -152,13 +165,11 @@ export default function AdminDashboard() {
               </button>
             </>
           ) : (
-            <button 
-              onClick={() => setSidebarOpen(true)} 
-              className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors cursor-pointer"
-              title="Extinde meniul"
-            >
-              <Menu size={20} />
-            </button>
+            <div className="flex flex-col items-center">
+              <Link to="/admin/dashboard" className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/25 shrink-0" title="Pontaj.app">
+                <QrCode size={20} />
+              </Link>
+            </div>
           )}
         </div>
         
@@ -213,7 +224,14 @@ export default function AdminDashboard() {
             >
               <Menu size={22} />
             </button>
-            <span className="font-bold text-lg text-slate-800 dark:text-white">SaaS Admin</span>
+            <Link to="/admin/dashboard" className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-xs shrink-0">
+                <QrCode size={16} />
+              </div>
+              <span className="font-black text-base text-slate-900 dark:text-white tracking-tight">
+                Pontaj<span className="text-blue-600">.app</span>
+              </span>
+            </Link>
           </div>
           
           <div className="flex items-center gap-3 md:gap-5 ml-auto">
@@ -278,7 +296,7 @@ export default function AdminDashboard() {
   );
 }
 
-function TenantDetailsModal({ tenant, onClose, onTenantUpdated }) {
+function TenantDetailsModal({ tenant, onClose, onTenantUpdated, onManageAdmins }) {
   if (!tenant) return null;
 
   const [activeTenant, setActiveTenant] = useState(tenant);
@@ -403,24 +421,24 @@ function TenantDetailsModal({ tenant, onClose, onTenantUpdated }) {
         </div>
 
         {/* Quick Action Buttons */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 my-5">
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 my-5">
           {activeTenant.contact_phone ? (
             <>
               <a
                 href={`tel:${cleanPhone}`}
-                className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs transition-colors"
+                className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs transition-colors whitespace-nowrap"
               >
-                <Phone size={14} />
+                <Phone size={14} className="shrink-0" />
                 <span>Apelează</span>
               </a>
               <a
                 href={waUrlWithLogin}
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-colors"
+                className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-colors whitespace-nowrap"
                 title="Trimite link de logare pe WhatsApp"
               >
-                <MessageSquare size={14} />
+                <MessageSquare size={14} className="shrink-0" />
                 <span>WhatsApp Logare</span>
               </a>
             </>
@@ -432,11 +450,20 @@ function TenantDetailsModal({ tenant, onClose, onTenantUpdated }) {
           {activeTenant.contact_email && (
             <a
               href={`mailto:${activeTenant.contact_email}`}
-              className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs transition-colors"
+              className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs transition-colors whitespace-nowrap"
             >
-              <Mail size={14} />
+              <Mail size={14} className="shrink-0" />
               <span>Email</span>
             </a>
+          )}
+          {onManageAdmins && (
+            <button
+              onClick={() => onManageAdmins(activeTenant)}
+              className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs transition-colors cursor-pointer whitespace-nowrap border border-slate-200 dark:border-slate-700"
+            >
+              <ShieldCheck size={14} className="shrink-0 text-blue-600" />
+              <span>Admini</span>
+            </button>
           )}
         </div>
 
@@ -930,13 +957,6 @@ function TenantsList({ defaultTab = 'tenants' }) {
             <Eye size={13} strokeWidth={2.2} />
           </button>
           <button 
-            className="w-7 h-7 flex items-center justify-center rounded-full border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer shrink-0"
-            onClick={() => setSelectedTenantForAdmins(row)}
-            title="Gestionează Admini"
-          >
-            <Users size={13} strokeWidth={2} />
-          </button>
-          <button 
             className="w-7 h-7 flex items-center justify-center rounded-full border border-slate-200 dark:border-slate-700 hover:bg-primary-50 hover:text-primary-600 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer shrink-0"
             onClick={() => {
               setSelectedTenantForEdit(row);
@@ -1035,6 +1055,10 @@ function TenantsList({ defaultTab = 'tenants' }) {
         tenant={selectedTenantForDetails}
         onClose={() => setSelectedTenantForDetails(null)}
         onTenantUpdated={fetchTenants}
+        onManageAdmins={(t) => {
+          setSelectedTenantForDetails(null);
+          setSelectedTenantForAdmins(t);
+        }}
       />
     </>
   );
