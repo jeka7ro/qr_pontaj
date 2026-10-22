@@ -2,9 +2,9 @@ require('dotenv').config();
 const { sendEmail } = require('../services/emailService');
 
 (async () => {
-  const recipient = process.env.ADMIN_NOTIFICATION_EMAIL || 'jeka7ro@gmail.com';
+  const recipient = process.argv[2] || process.env.ADMIN_NOTIFICATION_EMAIL || 'jeka7ro@gmail.com';
   
-  const subject = 'Pontaj digital QR si evidenta ITM pentru compania dvs. — Pontaj.app';
+  const subject = 'Pontaj digital QR & condică ITM';
 
   const textContent = `Buna ziua,
 
@@ -37,46 +37,50 @@ Web: https://qr.pontaj.app`;
   <title>${subject}</title>
 </head>
 <body style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b; line-height: 1.6;">
-  <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color: #f1f5f9; padding: 32px 16px;">
+  <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color: #f1f5f9; padding: 24px 12px;">
     <tr>
       <td align="center">
         <table width="100%" border="0" cellpadding="0" cellspacing="0" style="max-width: 580px; background-color: #ffffff; border-radius: 20px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.06); text-align: left;">
           
-          <!-- Header cu Logo Pontaj.app Perfect Centrat -->
+          <!-- Header Modern, Compact si Aerisit cu Logo Pontaj.app (Fara Text Redundant) -->
           <tr>
-            <td style="background: #0f172a; padding: 28px 32px; border-bottom: 3px solid #2563eb;">
-              <table border="0" cellpadding="0" cellspacing="0" style="margin-bottom: 18px;">
+            <td style="background: #0f172a; padding: 16px 24px; border-bottom: 3px solid #2563eb;">
+              <table width="100%" border="0" cellpadding="0" cellspacing="0">
                 <tr>
-                  <!-- Patrat Logo Albastru cu QR Centrat Geometric -->
-                  <td style="vertical-align: middle; padding-right: 12px;">
-                    <table border="0" cellpadding="0" cellspacing="0" style="width: 42px; height: 42px; border-collapse: collapse;">
+                  <td style="vertical-align: middle;">
+                    <table border="0" cellpadding="0" cellspacing="0">
                       <tr>
-                        <td align="center" valign="middle" style="width: 42px; height: 42px; background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%); background-color: #2563eb; border-radius: 12px; text-align: center; vertical-align: middle; padding: 0; margin: 0; font-size: 0; line-height: 0; box-shadow: 0 4px 12px rgba(37,99,235,0.4);">
-                          <img 
-                            src="https://images.weserv.nl/?url=api.iconify.design/lucide/qr-code.svg?color=%2523ffffff&w=48&h=48&output=png" 
-                            width="22" 
-                            height="22" 
-                            alt="QR" 
-                            style="display: block; margin: 0 auto; padding: 0; border: 0; width: 22px; height: 22px;" 
-                          />
+                        <!-- Patrat Logo Albastru cu QR Centrat Geometric -->
+                        <td style="vertical-align: middle; padding-right: 10px;">
+                          <table border="0" cellpadding="0" cellspacing="0" style="width: 36px; height: 36px; border-collapse: collapse;">
+                            <tr>
+                              <td align="center" valign="middle" style="width: 36px; height: 36px; background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%); background-color: #2563eb; border-radius: 10px; text-align: center; vertical-align: middle; padding: 0; margin: 0; font-size: 0; line-height: 0; box-shadow: 0 4px 10px rgba(37,99,235,0.4);">
+                                <img 
+                                  src="https://images.weserv.nl/?url=api.iconify.design/lucide/qr-code.svg?color=%2523ffffff&w=48&h=48&output=png" 
+                                  width="20" 
+                                  height="20" 
+                                  alt="QR" 
+                                  style="display: block; margin: 0 auto; padding: 0; border: 0; width: 20px; height: 20px;" 
+                                />
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                        <td style="vertical-align: middle;">
+                          <span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 20px; font-weight: 900; color: #ffffff; letter-spacing: -0.4px; line-height: 1;">
+                            Pontaj<span style="color: #3b82f6;">.app</span>
+                          </span>
                         </td>
                       </tr>
                     </table>
                   </td>
-                  <td style="vertical-align: middle;">
-                    <span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 24px; font-weight: 900; color: #ffffff; letter-spacing: -0.5px; line-height: 1;">
-                      Pontaj<span style="color: #3b82f6;">.app</span>
+                  <td align="right" style="vertical-align: middle;">
+                    <span style="background: rgba(255,255,255,0.08); color: #93c5fd; font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 9999px; display: inline-block; white-space: nowrap; letter-spacing: 0.3px;">
+                      Art. 119 ITM
                     </span>
                   </td>
                 </tr>
               </table>
-
-              <h1 style="color: #ffffff; font-size: 20px; font-weight: 800; margin: 0 0 6px 0; letter-spacing: -0.3px; line-height: 1.3;">
-                Pontaj digital QR si evidenta orelor de munca
-              </h1>
-              <div style="color: #94a3b8; font-size: 13px;">
-                Solutie 100% digitala pe orice ecran &bull; Conformitate ITM Art. 119
-              </div>
             </td>
           </tr>
 

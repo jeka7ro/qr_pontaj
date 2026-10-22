@@ -1530,46 +1530,38 @@ const harveyService = {
       <td align="center" style="padding: 30px 14px;">
         <table width="100%" border="0" cellpadding="0" cellspacing="0" style="max-width: 600px; background-color: #ffffff; border-radius: 20px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 10px 30px rgba(0,0,0,0.06);">
           
-          <!-- Header Executive Dark Gradient (Identic Landing) -->
+          <!-- Header Executive Dark Gradient Compact (Identic Landing) -->
           <tr>
-            <td style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 32px 28px; text-align: left;">
+            <td style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 18px 24px; text-align: left; border-bottom: 3px solid #2563eb;">
               <table width="100%" cellpadding="0" cellspacing="0" border="0">
                 <tr>
                   <td valign="middle">
                     <table cellpadding="0" cellspacing="0" border="0">
                       <tr>
-                        <td align="center" valign="middle" style="width: 40px; height: 40px; background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%); border-radius: 12px; text-align: center; vertical-align: middle; box-shadow: 0 4px 12px rgba(37,99,235,0.35); border: 1px solid rgba(255,255,255,0.18); padding: 0; margin: 0; font-size: 0; line-height: 0;">
+                        <td align="center" valign="middle" style="width: 36px; height: 36px; background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%); border-radius: 10px; text-align: center; vertical-align: middle; box-shadow: 0 4px 12px rgba(37,99,235,0.35); border: 1px solid rgba(255,255,255,0.18); padding: 0; margin: 0; font-size: 0; line-height: 0;">
                           <img 
                             src="https://images.weserv.nl/?url=api.iconify.design/lucide/qr-code.svg?color=%2523ffffff&w=48&h=48&output=png" 
-                            width="22" 
-                            height="22" 
+                            width="20" 
+                            height="20" 
                             alt="QR"
-                            style="display: block; margin: 0 auto; width: 22px; height: 22px; border: 0;"
+                            style="display: block; margin: 0 auto; width: 20px; height: 20px; border: 0;"
                           />
                         </td>
-                        <td style="padding-left: 12px;">
-                          <div style="font-size: 20px; font-weight: 900; color: #ffffff; letter-spacing: -0.5px; line-height: 1.1;">
+                        <td style="padding-left: 10px;">
+                          <div style="font-size: 20px; font-weight: 900; color: #ffffff; letter-spacing: -0.4px; line-height: 1;">
                             Pontaj<span style="color: #60a5fa;">.app</span>
                           </div>
-                          <div style="font-size: 10px; font-weight: 700; color: #94a3b8; letter-spacing: 1px; text-transform: uppercase; margin-top: 3px;">PLATFORMĂ DIGITALĂ DE PONTAJ</div>
                         </td>
                       </tr>
                     </table>
                   </td>
                   <td align="right" valign="middle">
-                    ${isTest ? '<span style="background: #ef4444; color: #ffffff; font-size: 10px; font-weight: 800; padding: 4px 10px; border-radius: 9999px; display: inline-block; white-space: nowrap; letter-spacing: 0.5px;">TEST</span>' : ''}
+                    <span style="background: rgba(255,255,255,0.08); color: #93c5fd; font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 9999px; display: inline-block; white-space: nowrap; letter-spacing: 0.3px;">
+                      Art. 119 ITM
+                    </span>
                   </td>
                 </tr>
               </table>
-
-              <div style="margin-top: 26px;">
-                <div style="color: #ffffff; font-size: 21px; font-weight: 800; line-height: 1.3; letter-spacing: -0.4px;">
-                  Evidență ore salariați &amp; Export SAGA fără hârtii
-                </div>
-                <div style="color: #94a3b8; font-size: 13.5px; margin-top: 6px; font-weight: 500;">
-                  Soluție dedicată pentru <strong style="color: #f8fafc;">${companyName}</strong>
-                </div>
-              </div>
             </td>
           </tr>
 
