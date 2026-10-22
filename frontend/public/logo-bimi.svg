@@ -1,0 +1,24 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' width='512' height='512'>
+  <defs>
+    <linearGradient id='grad' x1='0%' y1='0%' x2='100%' y2='100%'>
+      <stop offset='0%' stop-color='#2563eb' />
+      <stop offset='100%' stop-color='#4f46e5' />
+    </linearGradient>
+  </defs>
+  <rect width='512' height='512' rx='110' fill='url(#grad)' />
+  <g transform='translate(96, 96) scale(13.333)' stroke='#ffffff' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'>
+    <!-- Lucide QR Code Icon -->
+    <rect width='5' height='5' x='3' y='3' rx='1'/>
+    <rect width='5' height='5' x='16' y='3' rx='1'/>
+    <rect width='5' height='5' x='3' y='16' rx='1'/>
+    <path d='M21 16h-3a2 2 0 0 0-2 2v3'/>
+    <path d='M21 21v.01'/>
+    <path d='M12 7v3a2 2 0 0 1-2 2H7'/>
+    <path d='M3 12h.01'/>
+    <path d='M12 3h.01'/>
+    <path d='M12 16v.01'/>
+    <path d='M16 12h1'/>
+    <path d='M21 12v.01'/>
+    <path d='M12 21v-1'/>
+  </g>
+</svg>
