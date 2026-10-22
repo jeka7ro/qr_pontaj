@@ -82,8 +82,8 @@ async function sendEmail({ to, subject, html, text, senderName }) {
   }
 
   const apiKey = process.env.BREVO_API_KEY;
-  const senderEmail = process.env.BREVO_SENDER_EMAIL || 'jeka7ro@gmail.com';
-  const name = senderName || process.env.BREVO_SENDER_NAME || 'Smart QR';
+  const senderEmail = process.env.BREVO_SENDER_EMAIL || 'contact@pontaj.app';
+  const name = senderName || process.env.BREVO_SENDER_NAME || 'Smart QR Pontaj';
 
   if (!apiKey) {
     console.error('[EmailService] Lipseste BREVO_API_KEY in .env!');
@@ -446,7 +446,7 @@ async function sendDemoAccessEmail({ to, contactName, companyName, initialPasswo
                 <span style="font-size: 18px; font-weight: 900; color: #1d4ed8; letter-spacing: -0.5px;">QrTime<span style="color: #60a5fa;">.ro</span></span>
               </div>
               <div style="font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.85); letter-spacing: 2px; text-transform: uppercase;">
-                ${isDemo ? 'CONT DEMO ACTIVAT (10 ZILE GRATUIT)' : 'SOLICITARE ACTIVARE PLATFORMĂ'}
+                ${isDemo ? 'CONT DEMO ACTIVAT (15 ZILE GRATUIT)' : 'SOLICITARE ACTIVARE PLATFORMĂ'}
               </div>
             </td>
           </tr>
@@ -459,7 +459,7 @@ async function sendDemoAccessEmail({ to, contactName, companyName, initialPasswo
               </h1>
               <p style="font-size: 14px; line-height: 1.65; color: #475569; margin: 0 0 24px 0;">
                 ${isDemo 
-                  ? `Contul tău demonstrativ pentru compania <strong>${company}</strong> este pregătit. Ai acces complet timp de 10 zile la toate funcționalitățile (pontaj QR pe tabletă, condică ITM Art. 119 și export SAGA).` 
+                  ? `Contul tău demonstrativ pentru compania <strong>${company}</strong> este pregătit. Ai acces complet timp de 15 zile la toate funcționalitățile (pontaj QR pe tabletă, condică ITM Art. 119 și export SAGA).` 
                   : `Am înregistrat solicitarea ta de abonament pentru compania <strong>${company}</strong> (${employeesCount || 10} angajați la 5 € / angajat / lună).`
                 }
               </p>
@@ -490,7 +490,7 @@ async function sendDemoAccessEmail({ to, contactName, companyName, initialPasswo
                       ` : ''}
                       <tr>
                         <td style="padding: 8px 0; font-size: 13px; color: #64748b; font-weight: 600;">Status cont:</td>
-                        <td style="padding: 8px 0; font-size: 13px; color: #16a34a; font-weight: 700; text-align: right;">Activ (10 Zile Gratuite)</td>
+                        <td style="padding: 8px 0; font-size: 13px; color: #16a34a; font-weight: 700; text-align: right;">Activ (15 Zile Gratuite)</td>
                       </tr>
                     </table>
                   </td>
@@ -550,6 +550,8 @@ async function sendLeadNotificationToAdmin({
   city,
   county,
   employeesCount,
+  planName,
+  planPrice,
   mode,
   subdomain,
   notes,
@@ -559,17 +561,18 @@ async function sendLeadNotificationToAdmin({
   const adminRecipient = process.env.ADMIN_NOTIFICATION_EMAIL || process.env.BREVO_SENDER_EMAIL || 'jeka7ro@gmail.com';
   const cleanPhone = phone ? String(phone).replace(/[^0-9+]/g, '') : '';
   const waPhone = cleanPhone.startsWith('0') ? '4' + cleanPhone : cleanPhone.replace('+', '');
-  const subject = `🔔 [Lead Nou ${mode === 'subscribe' ? 'ABONAMENT' : 'DEMO'}] ${companyName || 'Companie'} — ${contactName || 'Persoană'} (${phone || 'Fără telefon'})`;
+  const priceDisplay = planPrice ? `${planPrice} €` : '5.00 €';
+  const subject = `[Lead Nou ${mode === 'subscribe' ? 'ABONAMENT' : 'DEMO'}] ${companyName || 'Companie'} (${employeesCount || 10} ang. • ${priceDisplay}) — ${contactName || 'Persoană'} (${phone || 'Fără tel'})`;
   const baseDomain = process.env.BASE_DOMAIN || 'qr.pontaj.app';
   const superadminUrl = `https://${baseDomain}/admin/dashboard`;
-  const tenantUrl = loginUrl || (subdomain ? `https://${subdomain}.${baseDomain}/admin/login` : `https://qrpontaj.ro/login`);
+  const tenantUrl = loginUrl || (subdomain ? `https://${subdomain}.${baseDomain}/admin/login` : `https://qr.pontaj.app/login`);
 
   const waLoginMessage = encodeURIComponent(
     `Bună ziua, ${contactName || companyName}!\n\n` +
-    `Contul dvs. QR Pontaj pentru compania ${companyName} a fost configurat cu succes.\n\n` +
-    `🔗 Link de conectare: ${tenantUrl}\n` +
-    `📧 Email: ${email}\n` +
-    (initialPassword ? `🔑 Parolă inițială: ${initialPassword}\n\n` : '\n') +
+    `Contul dvs. Pontaj.app pentru compania ${companyName} a fost configurat cu succes.\n\n` +
+    `Link de conectare: ${tenantUrl}\n` +
+    `Email: ${email}\n` +
+    (initialPassword ? `Parolă inițială: ${initialPassword}\n\n` : '\n') +
     `Vă rugăm să accesați linkul pentru a începe utilizarea platformei.`
   );
   const waDirectUrl = `https://wa.me/${waPhone}?text=${waLoginMessage}`;
@@ -591,7 +594,7 @@ async function sendLeadNotificationToAdmin({
           <tr>
             <td style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 32px 28px; border-bottom: 3px solid #3b82f6;">
               <div style="display: inline-block; background-color: ${mode === 'subscribe' ? '#10b981' : '#3b82f6'}; color: #ffffff; padding: 4px 12px; border-radius: 9999px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px;">
-                ${mode === 'subscribe' ? 'SOLICITARE ABONAMENT (5 € / angajat)' : 'SOLICITARE DEMO GRATUIT (10 ZILE)'}
+                ${mode === 'subscribe' ? 'SOLICITARE ABONAMENT (5 € / angajat)' : 'SOLICITARE DEMO GRATUIT (15 ZILE)'}
               </div>
               <h1 style="color: #ffffff; font-size: 22px; font-weight: 800; margin: 0; letter-spacing: -0.5px;">
                 ${companyName || 'Companie Nouă'}
@@ -627,20 +630,20 @@ async function sendLeadNotificationToAdmin({
                       <tr>
                         <td style="padding: 8px 0; font-size: 13px; color: #64748b; font-weight: 600; border-bottom: 1px solid #e2e8f0;">Telefon Direct (Client):</td>
                         <td style="padding: 8px 0; font-size: 15px; color: #2563eb; font-weight: 800; border-bottom: 1px solid #e2e8f0;">
-                          ${phone ? `<a href="tel:${cleanPhone}" style="color: #2563eb; text-decoration: none;">📞 ${phone}</a>` : '<span style="color: #94a3b8;">Fără număr</span>'}
+                          ${phone ? `<a href="tel:${cleanPhone}" style="color: #2563eb; text-decoration: none;">${phone}</a>` : '<span style="color: #94a3b8;">Fără număr</span>'}
                         </td>
                       </tr>
                       ${(anafPhone && anafPhone !== phone) ? `
                       <tr>
                         <td style="padding: 8px 0; font-size: 13px; color: #64748b; font-weight: 600; border-bottom: 1px solid #e2e8f0;">Telefon Opțional (ANAF):</td>
                         <td style="padding: 8px 0; font-size: 13px; color: #0f172a; font-weight: 600; border-bottom: 1px solid #e2e8f0;">
-                          <a href="tel:${String(anafPhone).replace(/[^0-9+]/g, '')}" style="color: #475569; text-decoration: none;">🏛️ ${anafPhone}</a>
+                          <a href="tel:${String(anafPhone).replace(/[^0-9+]/g, '')}" style="color: #475569; text-decoration: none;">${anafPhone}</a>
                         </td>
                       </tr>` : ''}
                       <tr>
                         <td style="padding: 8px 0; font-size: 13px; color: #64748b; font-weight: 600; border-bottom: 1px solid #e2e8f0;">Email:</td>
                         <td style="padding: 8px 0; font-size: 13px; color: #0f172a; font-weight: 700; border-bottom: 1px solid #e2e8f0;">
-                          <a href="mailto:${email}" style="color: #2563eb; text-decoration: none;">✉️ ${email}</a>
+                          <a href="mailto:${email}" style="color: #2563eb; text-decoration: none;">${email}</a>
                         </td>
                       </tr>
                       ${initialPassword ? `
@@ -653,6 +656,18 @@ async function sendLeadNotificationToAdmin({
                       <tr>
                         <td style="padding: 8px 0; font-size: 13px; color: #64748b; font-weight: 600; border-bottom: 1px solid #e2e8f0;">Nr. Angajați:</td>
                         <td style="padding: 8px 0; font-size: 14px; color: #0f172a; font-weight: 800; border-bottom: 1px solid #e2e8f0;">${employeesCount || 10} angajați</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 8px 0; font-size: 13px; color: #64748b; font-weight: 600; border-bottom: 1px solid #e2e8f0;">Pachet / Tarif Ales:</td>
+                        <td style="padding: 8px 0; font-size: 13px; color: #166534; font-weight: 800; border-bottom: 1px solid #e2e8f0;">
+                          ${planName || 'Standard'} &nbsp;&bull;&nbsp; <span style="background: #dcfce7; color: #15803d; padding: 2px 8px; border-radius: 6px;">${planPrice ? planPrice + ' €' : '5.00 €'} / angajat / lună</span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 8px 0; font-size: 13px; color: #64748b; font-weight: 600; border-bottom: 1px solid #e2e8f0;">Venit Estimat / Lună:</td>
+                        <td style="padding: 8px 0; font-size: 15px; color: #0f172a; font-weight: 900; border-bottom: 1px solid #e2e8f0;">
+                          ${Math.max(50, Math.round((parseInt(employeesCount, 10) || 10) * (parseFloat(planPrice) || 5.00)))} € / lună (minim 50 €)
+                        </td>
                       </tr>
                       ${subdomain ? `
                       <tr>
@@ -682,18 +697,18 @@ async function sendLeadNotificationToAdmin({
                   ${phone ? `
                   <td align="center" style="padding-right: 8px;">
                     <a href="${waDirectUrl}" target="_blank" style="display: block; background-color: #22c55e; color: #ffffff; text-decoration: none; padding: 14px 20px; border-radius: 12px; font-weight: 800; font-size: 13px; text-align: center;">
-                      💬 Trimite Logare pe WhatsApp
+                      Trimite Logare pe WhatsApp
                     </a>
                   </td>
                   <td align="center" style="padding-left: 8px; padding-right: 8px;">
                     <a href="tel:${cleanPhone}" style="display: block; background-color: #2563eb; color: #ffffff; text-decoration: none; padding: 14px 20px; border-radius: 12px; font-weight: 800; font-size: 13px; text-align: center;">
-                      📞 Apelează Acum
+                      Apelează Acum
                     </a>
                   </td>
                   ` : ''}
                   <td align="center" style="padding-left: ${phone ? '8px' : '0'};">
                     <a href="${superadminUrl}" target="_blank" style="display: block; background-color: #0f172a; color: #ffffff; text-decoration: none; padding: 14px 20px; border-radius: 12px; font-weight: 800; font-size: 13px; text-align: center;">
-                      🚀 Panou SuperAdmin
+                      Panou SuperAdmin
                     </a>
                   </td>
                 </tr>
@@ -704,7 +719,7 @@ async function sendLeadNotificationToAdmin({
           <!-- Footer -->
           <tr>
             <td align="center" style="background-color: #f1f5f9; padding: 16px; font-size: 11px; color: #64748b;">
-              Notificare automată din sistemul QrTime.ro • Trimis către ${adminRecipient}
+              Notificare automată din sistemul Pontaj.app • Trimis către ${adminRecipient}
             </td>
           </tr>
         </table>
@@ -715,14 +730,14 @@ async function sendLeadNotificationToAdmin({
 </html>
   `;
 
-  const text = `LEAD NOU QRTIME.RO\n\nCompanie: ${companyName}\nCUI: ${cui || '-'}\nContact: ${contactName}\nTelefon: ${phone}\nEmail: ${email}\nAngajati: ${employeesCount || 10}\nMod: ${mode}\nAdresa: ${address || '-'}\nSubdomeniu: ${subdomain}\n\nPanou: ${superadminUrl}`;
+  const text = `LEAD NOU PONTAJ.APP\n\nCompanie: ${companyName}\nCUI: ${cui || '-'}\nContact: ${contactName}\nTelefon: ${phone}\nEmail: ${email}\nAngajati: ${employeesCount || 10}\nMod: ${mode}\nAdresa: ${address || '-'}\nSubdomeniu: ${subdomain}\n\nPanou: ${superadminUrl}`;
 
   return sendEmail({
     to: adminRecipient,
     subject,
     html,
     text,
-    senderName: 'QrTime.ro Alertă'
+    senderName: 'Pontaj.app Notificări'
   });
 }
 

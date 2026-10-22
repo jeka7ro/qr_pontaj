@@ -344,6 +344,8 @@ router.post('/demo-request', async (req, res) => {
       anafPhone,
       cui, 
       employeesCount, 
+      planName,
+      planPrice,
       mode, 
       address, 
       city, 
@@ -369,10 +371,23 @@ router.post('/demo-request', async (req, res) => {
     const finalCompanyName = anafData?.name || (companyName || '').trim() || `Companie ${contactName || cleanEmail.split('@')[0]}`;
     const cleanAddress = anafData?.address || address || (city ? `${city}, ${county || ''}` : '') || null;
     const finalPhone = cleanPhone; // Numărul de contact de bază este cel introdus de client
-    const seats = parseInt(employeesCount, 10) || 10;
+    
+    // Calculăm numărul de angajați și tariful per salariat corespunzător volumului
+    const parsedSeats = parseInt(employeesCount, 10);
+    const seats = (!isNaN(parsedSeats) && parsedSeats > 0) ? parsedSeats : 10;
+    
+    let pricePerEmployee = 5.00;
+    if (seats >= 100) {
+      pricePerEmployee = 4.00;
+    } else if (seats >= 50) {
+      pricePerEmployee = 4.50;
+    }
+
     const isDemo = mode !== 'subscribe';
     const subStatus = isDemo ? 'DEMO' : 'PENDING_SUBSCRIPTION';
     const tempPassword = 'Demo' + Math.floor(1000 + Math.random() * 9000) + '!';
+    const saltRounds = 10;
+    const passwordHash = await bcrypt.hash(tempPassword, saltRounds);
 
     await client.query('BEGIN');
 
@@ -388,22 +403,44 @@ router.post('/demo-request', async (req, res) => {
       userId = existingUser.id;
       tenantId = existingUser.tenant_id;
 
+      // Actualizăm întotdeauna parola cu noua parolă temporară generată, pentru ca accesul să funcționeze garantat
+      await client.query('UPDATE qrp_users SET password_hash = $1, name = COALESCE($2, name) WHERE id = $3', [
+        passwordHash,
+        contactName || finalCompanyName,
+        userId
+      ]);
+
       if (tenantId) {
         const tRes = await client.query('SELECT subdomain FROM qrp_tenants WHERE id = $1', [tenantId]);
         finalSubdomain = tRes.rows[0]?.subdomain || 'smartqr';
 
         await client.query(`
           UPDATE qrp_tenants 
-          SET contact_name = COALESCE($1, contact_name),
-              contact_phone = COALESCE($2, contact_phone),
-              anaf_phone = COALESCE($3, anaf_phone),
-              contact_email = COALESCE($4, contact_email),
-              vat_number = COALESCE($5, vat_number),
-              billing_address = COALESCE($6, billing_address),
-              registration_notes = COALESCE($7, registration_notes),
-              subscription_seats = COALESCE($8, subscription_seats)
-          WHERE id = $9
-        `, [contactName, cleanPhone || null, cleanAnafPhone || null, cleanEmail, cleanCui, cleanAddress, notes, seats, tenantId]);
+          SET name = COALESCE($1, name),
+              contact_name = COALESCE($2, contact_name),
+              contact_phone = COALESCE($3, contact_phone),
+              anaf_phone = COALESCE($4, anaf_phone),
+              contact_email = COALESCE($5, contact_email),
+              vat_number = COALESCE($6, vat_number),
+              billing_address = COALESCE($7, billing_address),
+              registration_notes = COALESCE($8, registration_notes),
+              subscription_seats = $9,
+              price_per_employee = $10,
+              demo_expires_at = GREATEST(demo_expires_at, NOW() + INTERVAL '15 days')
+          WHERE id = $11
+        `, [
+          finalCompanyName,
+          contactName,
+          cleanPhone || null,
+          cleanAnafPhone || null,
+          cleanEmail,
+          cleanCui,
+          cleanAddress,
+          notes,
+          seats,
+          pricePerEmployee,
+          tenantId
+        ]);
       }
     } else {
       // 2. Generăm subdomeniu unic
@@ -426,7 +463,7 @@ router.post('/demo-request', async (req, res) => {
       }
 
       // 3. Inserare în qrp_tenants
-      const demoExpiresAt = new Date(Date.now() + 10 * 24 * 60 * 60 * 1000);
+      const demoExpiresAt = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000);
       const defaultModules = {
         billing: true,
         leaves: true,
@@ -470,7 +507,7 @@ router.post('/demo-request', async (req, res) => {
         notes || null,
         subStatus,
         seats,
-        5.00,
+        pricePerEmployee,
         true,
         demoExpiresAt,
         defaultModules,
@@ -492,8 +529,6 @@ router.post('/demo-request', async (req, res) => {
       `, [tenantId, 'Punct Principal', 'STATIC', 100]);
 
       // 5. Inserare administrator companie
-      const saltRounds = 10;
-      const passwordHash = await bcrypt.hash(tempPassword, saltRounds);
       const userInsertRes = await client.query(`
         INSERT INTO qrp_users (tenant_id, email, password_hash, role, name, created_at)
         VALUES ($1, $2, $3, $4, $5, NOW())
@@ -540,6 +575,8 @@ router.post('/demo-request', async (req, res) => {
       city: city || '',
       county: county || '',
       employeesCount: seats,
+      planName: planName || (seats >= 100 ? '100+ angajați (4.00 €)' : seats >= 50 ? '50-99 angajați (4.50 €)' : '1-49 angajați (5.00 €)'),
+      planPrice: pricePerEmployee,
       mode: mode || 'demo',
       subdomain: finalSubdomain,
       notes: notes || '',
@@ -652,7 +689,7 @@ router.post('/google', async (req, res) => {
         VALUES (
           $1, $2, $3, $4,
           'DEMO', 10, 5.00, true,
-          NOW() + INTERVAL '10 days', $5, 'RO', 'Europe/Bucharest', 'RON', '#2563EB',
+          NOW() + INTERVAL '15 days', $5, 'RO', 'Europe/Bucharest', 'RON', '#2563EB',
           true, true, '/logo_getapp_smartqr.jpg', '/logo_getapp_smartqr.jpg', NOW()
         )
         RETURNING id

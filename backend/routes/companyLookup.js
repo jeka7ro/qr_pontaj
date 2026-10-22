@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { lookupAnafCompany } = require('../services/anafService');
 
-// GET /api/company/lookup?cui=42322117
+// GET /api/company/lookup?cui=12345678
 router.get('/lookup', async (req, res) => {
   try {
     const rawCui = req.query.cui || req.query.query || '';

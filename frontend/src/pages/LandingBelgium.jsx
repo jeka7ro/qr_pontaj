@@ -1998,7 +1998,7 @@ export default function LandingBelgium() {
                                     fontSize="10"
                                     fontWeight="bold"
                                   >
-                                    ★ {p.count} pers.
+                                    {p.count} pers.
                                   </text>
                                 </>
                               )}

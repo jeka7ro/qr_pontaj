@@ -1321,9 +1321,9 @@ export default function EmployeesList({ tenant, themeColor }) {
               const waEmpMsg = encodeURIComponent(
                 `Bună ziua, ${qrEmployee.first_name}!\n\n` +
                 `Iată linkul pentru pontaj și acces în portalul companiei ${tenant?.name || ''}:\n` +
-                `🔗 Portal: ${empLoginLink}\n` +
-                (qrEmployee.employee_code ? `🆔 Cod Angajat: ${qrEmployee.employee_code}\n` : '') +
-                (qrEmployee.pin_code ? `🔑 Cod PIN: ${qrEmployee.pin_code}\n` : '') +
+                `Portal: ${empLoginLink}\n` +
+                (qrEmployee.employee_code ? `Cod Angajat: ${qrEmployee.employee_code}\n` : '') +
+                (qrEmployee.pin_code ? `Cod PIN: ${qrEmployee.pin_code}\n` : '') +
                 `\nPoți folosi și codul QR generat pe ecran pentru pontaj rapid la Kiosk.`
               );
               return (

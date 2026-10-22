@@ -8,8 +8,10 @@ async function migrate() {
       CREATE TABLE IF NOT EXISTS sales_settings (
         id SERIAL PRIMARY KEY,
         anthropic_api_key TEXT,
+        google_places_api_key TEXT,
         sender_name VARCHAR(100) DEFAULT 'Smart QR Pontaj',
         sender_email VARCHAR(255) DEFAULT 'jeka7ro@gmail.com',
+        sender_phone VARCHAR(50) DEFAULT '+40 757 77 77 12',
         daily_send_limit INT DEFAULT 25,
         default_pitch VARCHAR(100) DEFAULT 'pontaj_digital',
         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -21,8 +23,8 @@ async function migrate() {
     const settingsCheck = await db.query('SELECT id FROM sales_settings LIMIT 1');
     if (settingsCheck.rows.length === 0) {
       await db.query(`
-        INSERT INTO sales_settings (sender_name, sender_email, daily_send_limit, default_pitch)
-        VALUES ('Smart QR Pontaj', 'jeka7ro@gmail.com', 25, 'pontaj_digital');
+        INSERT INTO sales_settings (sender_name, sender_email, sender_phone, daily_send_limit, default_pitch)
+        VALUES ('Smart QR Pontaj', 'jeka7ro@gmail.com', '+40 757 77 77 12', 25, 'pontaj_digital');
       `);
     }
 

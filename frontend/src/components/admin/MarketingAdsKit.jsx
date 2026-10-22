@@ -36,7 +36,7 @@ const CAMPAIGNS = [
     },
     hook: 'Control ITM vineri seară la ora 22:30? Ospătarii și bucătarii tăi au semnat condica azi?',
     headline: 'Scapă de condica pe hârtie • Export 1-Click în SAGA Salarii',
-    description: 'Soluție de pontaj pe tabletă prin cod QR pentru HORECA. Conform Art. 119 Codul Muncii. Test gratuit 10 zile.',
+    description: 'Soluție de pontaj pe tabletă prin cod QR pentru HORECA. Conform Art. 119 Codul Muncii. Test gratuit 15 zile.',
     primaryText: `9 din 10 restaurante din România riscă sancțiuni de până la 10.000 lei conform Art. 119 din Codul Muncii din cauza condicii pe hârtie nesemnate sau completate retroactiv.
 
 Cu QR Pontaj, transformi orice tabletă într-un terminal inteligent la intrarea personalului:
@@ -45,12 +45,12 @@ Cu QR Pontaj, transformi orice tabletă într-un terminal inteligent la intrarea
 3. La final de lună, contabilul descarcă fișierul de import pentru SAGA Salarii într-un singur click.
 
 Fără echipamente scumpe, fără cartele pierdute. Doar 5 € / salariat / lună.
-Testează gratuit timp de 10 zile, fără obligații și fără card bancar.`,
+Testează gratuit timp de 15 zile, fără obligații și fără card bancar.`,
     videoScript: [
       { time: '0 - 3s', visual: 'Teanc de foi de pontaj mâzgălite, tăiate cu un simbol de stop roșu.', voice: 'Încă mai aduni foi de pontaj pătate de cafea la sfârșit de lună?' },
       { time: '3 - 8s', visual: 'Ospătarul atinge tableta de la intrare, scanează QR-ul cu telefonul, ecranul confirmă verde.', voice: 'Angajații tăi scanează în 1 secundă. Condica conform Art. 119 este gata la secundă.' },
       { time: '8 - 12s', visual: 'Managerul apasă butonul Export SAGA Salarii în dashboard.', voice: 'La final de lună, exportul intră direct în SAGA Salarii cu 1-Click.' },
-      { time: '12 - 15s', visual: 'Ecran final cu tableta Kiosk și oferta 5 € / om / lună.', voice: 'Testează gratuit 10 zile pe qrpontaj.ro. Simplu, legal, rapid.' }
+      { time: '12 - 15s', visual: 'Ecran final cu tableta Kiosk și oferta 5 € / om / lună.', voice: 'Testează gratuit 15 zile pe qr.pontaj.app. Simplu, legal, rapid.' }
     ]
   },
   {
@@ -77,12 +77,12 @@ QR Pontaj aduce ordinea pe șantiere:
 • Datele ajung în timp real la sediu, fără să mai aștepți foile de la maiștri.
 • Raport lunar complet cu ore suplimentare și export direct pentru contabilitate (SAGA Salarii).
 
-Cost fix: 5 € / angajat / lună. Testează gratuit 10 zile pe șantierele tale.`,
+Cost fix: 5 € / angajat / lună. Testează gratuit 15 zile pe șantierele tale.`,
     videoScript: [
       { time: '0 - 3s', visual: 'Muncitor în echipament de protecție pe șantier la prima oră a dimineții.', voice: 'Știi exact cine a ajuns azi la lucru pe șantier?' },
       { time: '3 - 8s', visual: 'Muncitorul scanează codul QR de pe panoul din container cu telefonul.', voice: 'Fiecare pontare salvează locația GPS și ora exactă. Fără cartele pierdute.' },
       { time: '8 - 12s', visual: 'Inginerul vede pe telefon lista live de prezență pe fiecare șantier.', voice: 'Ai control total în timp real direct din birou.' },
-      { time: '12 - 15s', visual: 'Logo QR Pontaj cu textul: 5 € / om / lună • Test gratuit 10 zile.', voice: 'Începe acum fără costuri de instalare pe qrpontaj.ro.' }
+      { time: '12 - 15s', visual: 'Logo QR Pontaj cu textul: 5 € / om / lună • Test gratuit 15 zile.', voice: 'Începe acum fără costuri de instalare pe qr.pontaj.app.' }
     ]
   },
   {
@@ -113,7 +113,7 @@ Fără niciun cost pentru cabinetul tău. Creează-ți contul gratuit de partene
       { time: '0 - 3s', visual: 'Contabil la birou copleșit de dosare și foi de prezență.', voice: 'Câte zile pierzi la sfârșit de lună bătând manual pontajele în SAGA?' },
       { time: '3 - 8s', visual: 'Portalul de contabilitate cu lista firmelor și butonul mare Descărcare SAGA.', voice: 'Cu Portalul Gratuit QR Pontaj, descarci fișierele de import SAGA la un singur click.' },
       { time: '8 - 12s', visual: 'Calculul comisionului de 20% lunar per client activ.', voice: 'Rezolvi calvarul pontajului și primești 20% comision recurent în fiecare lună.' },
-      { time: '12 - 15s', visual: 'Pagina de înregistrare contabili qrpontaj.ro/contabil.', voice: 'Înscrie-te gratuit în rețeaua partenerilor pe qrpontaj.ro/contabil.' }
+      { time: '12 - 15s', visual: 'Pagina de înregistrare contabili qr.pontaj.app/contabil.', voice: 'Înscrie-te gratuit în rețeaua partenerilor pe qr.pontaj.app/contabil.' }
     ]
   }
 ];
@@ -409,14 +409,14 @@ export default function MarketingAdsKit() {
                 {currentCampaign.description}
               </div>
               <span className="px-3 py-1 rounded-full bg-emerald-500 text-white font-bold text-[11px] whitespace-nowrap shrink-0 shadow-sm">
-                5 € / angajat / lună • Test 10 zile gratuit
+                5 € / angajat / lună • Test 15 zile gratuit
               </span>
             </div>
 
             {/* Bară CTA Reclamă */}
             <div className="p-3 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
               <div>
-                <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">qrpontaj.ro</div>
+                <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">qr.pontaj.app</div>
                 <div className="text-xs font-bold text-slate-900 dark:text-white truncate max-w-[200px]">
                   {currentCampaign.headline}
                 </div>

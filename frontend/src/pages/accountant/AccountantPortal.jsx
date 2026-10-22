@@ -564,7 +564,7 @@ export default function AccountantPortal() {
                     type="text"
                     value={clientCui}
                     onChange={(e) => setClientCui(e.target.value)}
-                    placeholder="Ex: 42322117"
+                    placeholder="Ex: 12345678"
                     className="flex-1 px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:border-emerald-500 dark:text-white"
                   />
                   <button

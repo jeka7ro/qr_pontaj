@@ -205,7 +205,7 @@ export default function AdminDashboard() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
         <header className="h-16 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-4 md:px-8 shrink-0 z-10 transition-colors">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 md:hidden">
             <button 
               onClick={() => setSidebarOpen(!sidebarOpen)} 
               className="p-2 -ml-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors cursor-pointer"
@@ -213,7 +213,7 @@ export default function AdminDashboard() {
             >
               <Menu size={22} />
             </button>
-            <span className="font-bold text-lg text-slate-800 dark:text-white md:hidden">SaaS Admin</span>
+            <span className="font-bold text-lg text-slate-800 dark:text-white">SaaS Admin</span>
           </div>
           
           <div className="flex items-center gap-3 md:gap-5 ml-auto">
@@ -356,13 +356,13 @@ function TenantDetailsModal({ tenant, onClose, onTenantUpdated }) {
   if (hostname.startsWith('www.')) hostname = hostname.replace('www.', '');
   const port = window.location.port ? `:${window.location.port}` : '';
   const adminUrl = `https://${activeTenant.subdomain}.pontaj.app/admin/login`;
-  const universalLoginUrl = `https://qrpontaj.ro/login?tenant=${activeTenant.subdomain}${activeTenant.contact_email ? `&email=${encodeURIComponent(activeTenant.contact_email)}` : ''}`;
+  const universalLoginUrl = `https://qr.pontaj.app/login?tenant=${activeTenant.subdomain}${activeTenant.contact_email ? `&email=${encodeURIComponent(activeTenant.contact_email)}` : ''}`;
 
   const waLoginMessage = encodeURIComponent(
     `Bună ziua, ${activeTenant.contact_name || activeTenant.nume}!\n\n` +
-    `Iată linkul de conectare la panoul dvs. de administrare QR Pontaj:\n` +
-    `🔗 Link: ${universalLoginUrl}\n` +
-    (activeTenant.contact_email ? `📧 Email: ${activeTenant.contact_email}\n` : '') +
+    `Iată linkul de conectare la panoul dvs. de administrare Pontaj.app:\n` +
+    `Link: ${universalLoginUrl}\n` +
+    (activeTenant.contact_email ? `Email: ${activeTenant.contact_email}\n` : '') +
     `\nAplicația este configurată și pregătită pentru compania dvs.`
   );
   const waUrlWithLogin = `https://wa.me/${waPhone}?text=${waLoginMessage}`;
@@ -374,12 +374,12 @@ function TenantDetailsModal({ tenant, onClose, onTenantUpdated }) {
         <div className="flex items-start justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black tracking-wider uppercase ${
+              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black tracking-wider uppercase whitespace-nowrap shrink-0 ${
                 isDemo 
                   ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300' 
                   : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300'
               }`}>
-                {activeTenant.subscription_status || 'DEMO (10 Zile)'}
+                {activeTenant.subscription_status || 'DEMO (15 Zile)'}
               </span>
               {activeTenant.cui && (
                 <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold">
@@ -751,12 +751,12 @@ function TenantsList({ defaultTab = 'tenants' }) {
           return <span className="text-slate-400 text-xs italic">Nespecificat</span>;
         }
 
-        const loginUrl = `https://qrpontaj.ro/login?tenant=${row.subdomain}${row.contact_email ? `&email=${encodeURIComponent(row.contact_email)}` : ''}`;
+        const loginUrl = `https://qr.pontaj.app/login?tenant=${row.subdomain}${row.contact_email ? `&email=${encodeURIComponent(row.contact_email)}` : ''}`;
         const waRowMessage = encodeURIComponent(
           `Bună ziua, ${row.contact_name || row.nume}!\n\n` +
-          `Iată linkul de conectare la panoul dvs. de administrare QR Pontaj:\n` +
-          `🔗 Link: ${loginUrl}\n` +
-          (row.contact_email ? `📧 Email: ${row.contact_email}\n` : '') +
+          `Iată linkul de conectare la panoul dvs. de administrare Pontaj.app:\n` +
+          `Link: ${loginUrl}\n` +
+          (row.contact_email ? `Email: ${row.contact_email}\n` : '') +
           `\nAplicația este configurată și pregătită pentru compania dvs.`
         );
         const waRowUrl = `https://wa.me/${waPhone}?text=${waRowMessage}`;
@@ -964,27 +964,6 @@ function TenantsList({ defaultTab = 'tenants' }) {
   return (
     <>
       {/* Selector Tab: doar când suntem în lista de Tenanți */}
-      {activeTab === 'tenants' && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
-          <div className="flex items-center gap-2">
-            <h1 className="text-lg font-bold text-slate-800 dark:text-white">Tenanți Activi &amp; Trial</h1>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-              {data.length} conturi
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Link
-              to="/admin/harvey"
-              className="flex items-center gap-1.5 px-4 h-9 text-xs rounded-full bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-blue-900/60 text-blue-600 dark:text-blue-400 font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 border border-blue-200 dark:border-blue-800"
-            >
-              <Sparkles size={14} className="shrink-0" />
-              <span>Prospectare Harvey ({harveyCount} companii)</span>
-            </Link>
-          </div>
-        </div>
-      )}
-
       {activeTab === 'harvey' ? (
         <HarveySdrView 
           onConvertToTenant={(lead) => {
@@ -995,18 +974,21 @@ function TenantsList({ defaultTab = 'tenants' }) {
         />
       ) : (
         <DataTable 
-          title="Tenanți & Înregistrări Landing"
+          title="Tenanți Activi & Trial"
           data={data}
           columns={columns}
           searchPlaceholder="Caută după companie, contact, telefon, CUI..."
           headerActions={
             <div className="flex items-center gap-2">
+              <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 whitespace-nowrap shrink-0">
+                {data.length} conturi
+              </span>
               <button
                 onClick={() => setActiveTab('harvey')}
-                className="flex items-center gap-1.5 px-4 py-2.5 text-xs rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold transition-all cursor-pointer whitespace-nowrap shrink-0"
+                className="flex items-center gap-1.5 px-3.5 py-2 text-xs rounded-full bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-blue-900/60 text-blue-600 dark:text-blue-400 font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 border border-blue-200 dark:border-blue-800"
               >
-                <Sparkles size={14} className="text-primary-600 dark:text-primary-400 shrink-0" />
-                <span>Harvey AI (SDR)</span>
+                <Sparkles size={14} className="shrink-0" />
+                <span>Harvey AI ({harveyCount})</span>
               </button>
               <button 
                 onClick={() => {
@@ -1014,7 +996,7 @@ function TenantsList({ defaultTab = 'tenants' }) {
                   setInitialLeadForCreate(null);
                   setIsModalOpen(true);
                 }}
-                className="flex items-center px-4 py-2.5 text-xs rounded-full bg-primary-600 hover:bg-primary-700 text-white font-bold shadow-xs transition-all cursor-pointer whitespace-nowrap shrink-0"
+                className="flex items-center px-4 py-2 text-xs rounded-full bg-primary-600 hover:bg-primary-700 text-white font-bold shadow-xs transition-all cursor-pointer whitespace-nowrap shrink-0"
               >
                 Adaugă Tenant Manual
               </button>

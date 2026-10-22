@@ -134,7 +134,7 @@ export default function HarveyAddLeadModal({ isOpen, onClose, onLeadAdded }) {
                 type="text"
                 value={cui}
                 onChange={(e) => setCui(e.target.value)}
-                placeholder="Ex: 42322117"
+                placeholder="Ex: 12345678"
                 className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none transition-all shadow-xs"
               />
               <button

@@ -49,21 +49,42 @@ export default function HarveyAnafLookupModal({ isOpen, onClose, onImportComplet
 
     setLoading(true);
     try {
-      const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
-      const res = await fetch(`${baseUrl}/api/admin/harvey/anaf-batch`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cuis: uniqueCuis })
-      });
+      let res;
+      try {
+        // Încercare 1: Cale relativă (proxy Vite / producție)
+        res = await fetch('/api/admin/harvey/anaf-batch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cuis: uniqueCuis })
+        });
+      } catch (proxyErr) {
+        // Încercare 2: Fallback pe baseUrl explicit
+        const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
+        res = await fetch(`${baseUrl}/api/admin/harvey/anaf-batch`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cuis: uniqueCuis })
+        });
+      }
 
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.message || 'Eroare la interogarea serviciului ANAF.');
+      let data = null;
+      try {
+        data = await res.json();
+      } catch (parseErr) {
+        throw new Error(`Răspuns invalid de la server (HTTP ${res.status}). Serverul ANAF poate fi temporar ocupat.`);
+      }
+
+      if (!res.ok || !data?.success) {
+        throw new Error(data?.message || 'Eroare la interogarea serviciului oficial ANAF. Reîncercați.');
       }
 
       setResults(data);
       // Selectăm automat toate companiile găsite
-      setSelectedIndices(data.found.map((_, i) => i));
+      setSelectedIndices((data.found || []).map((_, i) => i));
+
+      if ((data.found || []).length === 0 && (data.notFound || []).length > 0) {
+        setError(`Codurile CUI introduse (${data.notFound.join(', ')}) nu au fost găsite în registrul oficial ANAF.`);
+      }
     } catch (err) {
       setError(err.message);
     } finally {

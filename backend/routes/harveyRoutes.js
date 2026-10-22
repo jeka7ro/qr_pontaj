@@ -105,7 +105,7 @@ router.get('/leads', checkAdmin, async (req, res) => {
 // POST /api/admin/harvey/search — Căutare companii reale pe baza nișei, orașului și țării
 router.post('/search', checkAdmin, async (req, res) => {
   try {
-    const { niche, city, niches, cities, country, limit, mapCenter, bbox } = req.body;
+    const { niche, city, niches, cities, country, limit, mapCenter, bbox, googlePlacesApiKey } = req.body;
     const leads = await harveyService.searchRealLeads({
       niche: niche || 'restaurante',
       city: city || 'București',
@@ -114,20 +114,34 @@ router.post('/search', checkAdmin, async (req, res) => {
       country: country || 'RO',
       limit: parseInt(limit, 10) || 20,
       mapCenter,
-      bbox
+      bbox,
+      googlePlacesApiKey
     });
 
-    let message = `Au fost identificate și salvate ${leads.length} companii noi cu email verificat.`;
+    const isGoogle = leads.some(l => l.source === 'google_places');
+    let message = isGoogle 
+      ? `Au fost identificate și salvate ${leads.length} companii noi prin Google Places API.`
+      : `Au fost identificate și salvate ${leads.length} companii noi cu date verificate.`;
     let responseLeads = leads;
 
     if (leads.length === 0) {
       const requestedLimit = parseInt(limit, 10) || 20;
-      const existingRes = await db.query(
-        "SELECT * FROM sales_leads WHERE email IS NOT NULL AND email != '' AND country = $1 ORDER BY created_at DESC LIMIT $2",
-        [(country || 'RO').toUpperCase(), requestedLimit]
-      );
+      const targetCities = Array.isArray(cities) && cities.length > 0 ? cities : (city ? [city] : []);
+      let query = "SELECT * FROM sales_leads WHERE email IS NOT NULL AND email != '' AND country = $1";
+      const params = [(country || 'RO').toUpperCase()];
+
+      if (targetCities.length > 0) {
+        query += " AND (LOWER(city) = ANY($2::text[]) OR EXISTS (SELECT 1 FROM unnest($2::text[]) AS tc WHERE LOWER(sales_leads.city) LIKE '%' || LOWER(tc) || '%'))";
+        params.push(targetCities.map(c => c.toLowerCase()));
+      }
+      query += ` ORDER BY created_at DESC LIMIT $${params.length + 1}`;
+      params.push(requestedLimit);
+
+      const existingRes = await db.query(query, params);
       responseLeads = existingRes.rows;
-      message = 'Companiile din această zonă existau deja în listă și au fost reîncărcate.';
+      message = responseLeads.length > 0
+        ? 'Companiile din această zonă existau deja în listă și au fost reîncărcate.'
+        : 'Nu au fost găsite companii noi în zona specificată.';
     }
 
     res.json({
@@ -319,6 +333,19 @@ router.post('/leads/:id/send', checkAdmin, async (req, res) => {
   }
 });
 
+// POST /api/admin/harvey/leads/:id/test-send — Trimite test către adresa administratorului
+router.post('/leads/:id/test-send', checkAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { testEmail } = req.body;
+    const result = await harveyService.sendTestLeadEmail(id, testEmail);
+    res.json({ success: true, message: `Email de test trimis cu succes către ${result.recipient}!`, recipient: result.recipient });
+  } catch (err) {
+    console.error('Eroare trimitere email test lead:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // POST /api/admin/harvey/leads/:id/convert — Conversie lead în tenant
 router.post('/leads/:id/convert', checkAdmin, async (req, res) => {
   try {
@@ -375,6 +402,10 @@ router.post('/anaf-batch', checkAdmin, async (req, res) => {
     }
 
     const { found, notFound } = await lookupAnafBatch(cuis);
+    const settings = await harveyService.getSettings();
+    const contactEmail = settings.sender_email || 'contact@pontaj.app';
+    const contactPhone = settings.sender_phone || '+40 757 77 77 12';
+    const contactName = settings.sender_name || 'Echipa QR Pontaj';
 
     // Îmbogățim fiecare companie găsită cu un pitch personalizat adaptat nișei/CAEN-ului
     const enriched = found.map(company => {
@@ -385,20 +416,20 @@ router.post('/anaf-batch', checkAdmin, async (req, res) => {
       let nicheCategory = 'General B2B';
       let hook = `Bună ziua, echipă ${name},`;
       let pitchSubject = `Optimizare pontaj salariați și export SAGA — ${name}`;
-      let pitchBody = `Bună ziua,\n\nAm remarcat activitatea companiei ${name} din ${city}. În contextul cerințelor stricte ale Codului Muncii (Art. 119) privind evidența orelor de muncă, vă propunem o soluție modernă de pontaj prin cod QR pe tabletă sau mobil, la doar 5 € / salariat / lună.\n\nPrincipalele avantaje pentru ${name}:\n1. Condică de prezență generată automat, fără semnături pe hârtie.\n2. Export 1-Click direct compatibil cu softul de salarii SAGA.\n3. Fără hardware dedicat costisitor: funcționează pe orice tabletă sau smartphone.\n\nPuteți testa gratuit platforma timp de 10 zile, fără obligații sau date bancare: https://qrpontaj.ro/ro?ref=anaf\n\nDacă doriți un demo rapid de 5 minute, vă rog să-mi răspundeți la acest email.\n\nCu respect,\nEchipa QR Pontaj\ncontact@qrpontaj.ro | +40 700 000 000`;
+      let pitchBody = `Bună ziua,\n\nAm remarcat activitatea companiei ${name} din ${city}. În contextul cerințelor stricte ale Codului Muncii (Art. 119) privind evidența orelor de muncă, vă propunem o soluție modernă de pontaj prin cod QR pe tabletă sau mobil, la 5 € / salariat / lună (minim 50 € / lună / firmă, cu reduceri de volum de la 50 angajați la 4.50 € și de la 100 angajați la 4.00 €).\n\nPrincipalele avantaje pentru ${name}:\n1. Condică de prezență generată automat, fără semnături pe hârtie.\n2. Export 1-Click direct compatibil cu softul de salarii SAGA.\n3. Fără hardware dedicat: funcționează pe orice tabletă sau smartphone (notă: tableta și/sau suportul digital nu sunt oferite de noi, fiind în responsabilitatea clientului — soluție 100% cloud).\n\nPuteți testa gratuit platforma timp de 15 zile, fără obligații sau date bancare: https://qr.pontaj.app/ro?ref=anaf\n\nDacă doriți un demo rapid sau detalii, ne puteți contacta telefonic la ${contactPhone} sau puteți răspunde direct la acest email.\n\nCu respect,\n${contactName}\nEmail: ${contactEmail}\nTelefon / WhatsApp: ${contactPhone}\nWeb: https://qr.pontaj.app`;
 
       if (caen?.startsWith('56') || caen?.startsWith('55') || /restaurant|cafenea|hotel|catering|bar|pizza|pensiune/i.test(name)) {
         nicheCategory = 'HORECA & Restaurante';
         pitchSubject = `Pontaj digital pe tabletă și export SAGA pentru ${name}`;
-        pitchBody = `Bună ziua,\n\nEchipa din HORECA lucrează în ture, iar la final de lună condica pe hârtie cu semnături mâzgălite creează haos la calculul salariilor și riscuri la controalele ITM.\n\nPentru ${name}, QR Pontaj oferă:\n• Kiosk pe tabletă la intrare: ospătarii și bucătarii scanează în 1 secundă codul QR personal.\n• Evidență impecabilă conform Art. 119 (ore de zi, ore de noapte, weekend).\n• 1-Click Export în SAGA Salarii pentru contabilul dvs.\n• Cost: doar 5 € / om / lună, fără comisioane ascunse.\n\nTestați gratuit 10 zile pe https://qrpontaj.ro/ro\n\nCu stimă,\nEchipa QR Pontaj`;
+        pitchBody = `Bună ziua,\n\nEchipa din HORECA lucrează în ture, iar la final de lună condica pe hârtie cu semnături mâzgălite creează haos la calculul salariilor și riscuri la controalele ITM.\n\nPentru ${name}, QR Pontaj oferă:\n• Kiosk pe tabletă la intrare: ospătarii și bucătarii scanează în 1 secundă codul QR personal.\n• Evidență impecabilă conform Art. 119 (ore de zi, ore de noapte, weekend).\n• 1-Click Export în SAGA Salarii pentru contabilul dvs.\n• Cost: 5 € / om / lună (minim 50 € / firmă, reduceri de la 50 angajați - 4.50 € și 100 angajați - 4.00 €).\n• Echipamente: tableta și/sau suportul digital nu sunt oferite de noi, fiind în responsabilitatea clientului (soluție 100% software în cloud).\n\nTestați gratuit 15 zile pe https://qr.pontaj.app/ro\n\nPentru întrebări sau asistență, ne puteți contacta telefonic la ${contactPhone} sau prin email.\n\nCu stimă,\n${contactName}\nEmail: ${contactEmail}\nTelefon / WhatsApp: ${contactPhone}\nWeb: https://qr.pontaj.app`;
       } else if (caen?.startsWith('41') || caen?.startsWith('42') || caen?.startsWith('43') || /construct|instal|constructii|edilitare|antrepriza/i.test(name)) {
         nicheCategory = 'Construcții & Șantiere';
         pitchSubject = `Pontaj șantiere cu GPS și export SAGA — ${name}`;
-        pitchBody = `Bună ziua,\n\nPentru șantierele și echipele din teren ale ${name}, știți cât de greu este să colectați foile de prezență de la maiștri fără erori.\n\nCu QR Pontaj:\n• Muncitorii se pontează prin QR pe telefon sau pe o tabletă montată în containerul de șantier.\n• Geolocație GPS la fiecare pontare (știi sigur că sunt pe șantier).\n• Fără hârtii pierdute: datele ajung instant în birou și se exportă în SAGA.\n\nTestați gratuit 10 zile pe https://qrpontaj.ro/ro\n\nCu respect,\nEchipa QR Pontaj`;
+        pitchBody = `Bună ziua,\n\nPentru șantierele și echipele din teren ale ${name}, știți cât de greu este să colectați foile de prezență de la maiștri fără erori.\n\nCu QR Pontaj:\n• Muncitorii se pontează prin QR pe telefon sau pe o tabletă montată în containerul de șantier.\n• Geolocație GPS la fiecare pontare (știi sigur că sunt pe șantier).\n• Fără hârtii pierdute: datele ajung instant în birou și se exportă în SAGA.\n• Tarif: 5 € / om / lună (minim 50 € / firmă, reduceri de la 50 angajați - 4.50 € și 100 angajați - 4.00 €).\n• Echipamente: tableta și/sau suportul digital nu sunt oferite de noi, fiind în responsabilitatea clientului (soluție 100% software în cloud).\n\nTestați gratuit 15 zile pe https://qr.pontaj.app/ro\n\nPentru detalii rapide, ne puteți suna la ${contactPhone} sau puteți răspunde la acest email.\n\nCu respect,\n${contactName}\nEmail: ${contactEmail}\nTelefon / WhatsApp: ${contactPhone}\nWeb: https://qr.pontaj.app`;
       } else if (caen?.startsWith('6920') || /contab|audit|expert|consult/i.test(name)) {
         nicheCategory = 'Contabilitate & SAGA';
         pitchSubject = `Parteneriat Portal Gratuit Contabili + Export 1-Click SAGA`;
-        pitchBody = `Bună ziua,\n\nȘtim cât timp pierdeți la sfârșit de lună cerșind pontajele pe hârtie de la clienții dvs. pentru a le introduce manual în SAGA Salarii.\n\nVă punem la dispoziție Portalul Gratuit pentru Contabili QR Pontaj:\n1. Primiți pontajele clienților gata calculate conform legii.\n2. Descărcați fișierele de import SAGA într-un singur click.\n3. Comision recurent de 20% lunar pe viață pentru fiecare firmă recomandată.\n\nAccesați portalul gratuit: https://qrpontaj.ro/contabil\n\nCu stimă,\nEchipa QR Pontaj`;
+        pitchBody = `Bună ziua,\n\nȘtim cât timp pierdeți la sfârșit de lună cerșind pontajele pe hârtie de la clienții dvs. pentru a le introduce manual în SAGA Salarii.\n\nVă punem la dispoziție Portalul Gratuit pentru Contabili QR Pontaj:\n1. Primiți pontajele clienților gata calculate conform legii.\n2. Descărcați fișierele de import SAGA într-un singur click.\n3. Comision recurent de 20% lunar pe viață pentru fiecare firmă recomandată.\n\nAccesați portalul gratuit: https://qr.pontaj.app/contabil\n\nDacă doriți activarea contului, ne puteți contacta telefonic la ${contactPhone} sau prin email.\n\nCu stimă,\n${contactName}\nEmail: ${contactEmail}\nTelefon / WhatsApp: ${contactPhone}\nWeb: https://qr.pontaj.app`;
       }
 
       return {

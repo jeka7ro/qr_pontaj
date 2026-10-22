@@ -12,7 +12,8 @@ import {
   Globe, 
   Crosshair, 
   RotateCcw,
-  Navigation
+  Navigation,
+  Key
 } from 'lucide-react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -242,7 +243,7 @@ const COUNTRY_DEFAULT_COORDS = {
 export default function HarveySearchModal({ isOpen, onClose, onSearchComplete }) {
   const [selectedCountry, setSelectedCountry] = useState('RO');
   const [customCountry, setCustomCountry] = useState('');
-  const [selectedCity, setSelectedCity] = useState('București');
+  const [selectedCities, setSelectedCities] = useState(['București']);
   const [customCity, setCustomCity] = useState('');
   const [selectedNiches, setSelectedNiches] = useState(['Hoteluri & Pensiuni', 'Restaurante']);
   const [customNiche, setCustomNiche] = useState('');
@@ -250,6 +251,68 @@ export default function HarveySearchModal({ isOpen, onClose, onSearchComplete })
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [successInfo, setSuccessInfo] = useState(null);
+
+  // Google Places API State
+  const [hasGooglePlacesKey, setHasGooglePlacesKey] = useState(false);
+  const [googlePlacesApiKey, setGooglePlacesApiKey] = useState('');
+  const [showGoogleKeyInput, setShowGoogleKeyInput] = useState(false);
+  const [savingGoogleKey, setSavingGoogleKey] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const fetchSettings = async () => {
+      try {
+        let res;
+        try {
+          res = await fetch('/api/admin/harvey/settings');
+        } catch (e) {
+          const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
+          res = await fetch(`${baseUrl}/api/admin/harvey/settings`);
+        }
+        const data = await res.json();
+        if (data.success && data.settings) {
+          setHasGooglePlacesKey(data.settings.has_google_places_key);
+          if (data.settings.google_places_api_key) {
+            setGooglePlacesApiKey(data.settings.google_places_api_key);
+          }
+        }
+      } catch (err) {}
+    };
+    fetchSettings();
+  }, [isOpen]);
+
+  const handleSaveGoogleKey = async () => {
+    if (!googlePlacesApiKey.trim()) return;
+    setSavingGoogleKey(true);
+    try {
+      let res;
+      try {
+        res = await fetch('/api/admin/harvey/settings', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ googlePlacesApiKey: googlePlacesApiKey.trim() })
+        });
+      } catch (e) {
+        const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
+        res = await fetch(`${baseUrl}/api/admin/harvey/settings`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ googlePlacesApiKey: googlePlacesApiKey.trim() })
+        });
+      }
+      const data = await res.json();
+      if (data.success) {
+        setHasGooglePlacesKey(true);
+        setShowGoogleKeyInput(false);
+        setSuccessInfo('Cheia Google Places API a fost salvată! Se vor căuta firme oficiale din Google Maps.');
+        setTimeout(() => setSuccessInfo(null), 4000);
+      }
+    } catch (e) {
+      setError('Eroare la salvarea cheii Google: ' + e.message);
+    } finally {
+      setSavingGoogleKey(false);
+    }
+  };
 
   // Map state & toggle
   const [showMap, setShowMap] = useState(false);
@@ -368,21 +431,46 @@ export default function HarveySearchModal({ isOpen, onClose, onSearchComplete })
     setSelectedCountry(c);
     const countryObj = COUNTRIES_LIST.find((item) => item.code === c);
     const defaultCity = countryObj ? countryObj.defaultCity : 'Alt Oraș';
-    setSelectedCity(defaultCity);
+    setSelectedCities([defaultCity]);
     setCustomCity('');
     setIsMapMoved(false);
   };
 
-  const handleCitySelect = (city) => {
-    setSelectedCity(city);
-    setIsMapMoved(false);
+  const toggleCity = (city) => {
+    setSelectedCities((prev) => {
+      if (prev.includes(city)) {
+        if (prev.length === 1 && !customCity.trim()) return prev;
+        return prev.filter((c) => c !== city);
+      } else {
+        return [...prev, city];
+      }
+    });
+
+    const cityKey = city.toLowerCase();
+    const coords = CITY_COORDS[cityKey];
+    if (coords && mapInstanceRef.current) {
+      mapInstanceRef.current.flyTo([coords.lat, coords.lon], 13, { duration: 0.8 });
+      setMapCenter(coords);
+      setIsMapMoved(false);
+    }
+  };
+
+  const selectAllCities = () => {
+    const all = currentCitiesList.filter((c) => c !== 'Alt Oraș');
+    if (selectedCities.length >= all.length) {
+      const countryObj = COUNTRIES_LIST.find((item) => item.code === selectedCountry);
+      setSelectedCities([countryObj ? countryObj.defaultCity : currentCitiesList[0]]);
+    } else {
+      setSelectedCities(all);
+    }
   };
 
   // Inițializare și sincronizare hartă Leaflet (doar dacă showMap este activ)
   useEffect(() => {
     if (!isOpen || !showMap) return;
 
-    const cityKey = (selectedCity === 'Alt Oraș' && customCity.trim() ? customCity.trim() : selectedCity).toLowerCase();
+    const primaryCity = selectedCities[0] || 'București';
+    const cityKey = (primaryCity === 'Alt Oraș' && customCity.trim() ? customCity.trim().split(',')[0].trim() : primaryCity).toLowerCase();
     const fallbackCoords = COUNTRY_DEFAULT_COORDS[selectedCountry] || COUNTRY_DEFAULT_COORDS.RO;
     const coords = CITY_COORDS[cityKey] || fallbackCoords;
     const targetLat = coords ? coords.lat : fallbackCoords.lat;
@@ -398,9 +486,9 @@ export default function HarveySearchModal({ isOpen, onClose, onSearchComplete })
           zoomControl: false,
         });
 
-        // CartoDB Voyager tiles (stil curat modern similar cu Google Maps)
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-          attribution: '&copy; OpenStreetMap &copy; CARTO',
+        // OpenStreetMap standard tiles (complet gratuit, rapid, fără watermark sau API key)
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>',
           maxZoom: 19
         }).addTo(map);
 
@@ -431,7 +519,7 @@ export default function HarveySearchModal({ isOpen, onClose, onSearchComplete })
     }, 150);
 
     return () => clearTimeout(timer);
-  }, [isOpen, showMap, selectedCity, selectedCountry]);
+  }, [isOpen, showMap, selectedCountry]);
 
   // Curățare instanță Leaflet când se ascunde harta
   useEffect(() => {
@@ -452,7 +540,8 @@ export default function HarveySearchModal({ isOpen, onClose, onSearchComplete })
   }, []);
 
   const handleRecenter = () => {
-    const cityKey = (selectedCity === 'Alt Oraș' && customCity.trim() ? customCity.trim() : selectedCity).toLowerCase();
+    const primaryCity = selectedCities[0] || 'București';
+    const cityKey = (primaryCity === 'Alt Oraș' && customCity.trim() ? customCity.trim().split(',')[0].trim() : primaryCity).toLowerCase();
     const fallbackCoords = COUNTRY_DEFAULT_COORDS[selectedCountry] || COUNTRY_DEFAULT_COORDS.RO;
     const coords = CITY_COORDS[cityKey] || fallbackCoords;
     if (coords && mapInstanceRef.current) {
@@ -494,14 +583,23 @@ export default function HarveySearchModal({ isOpen, onClose, onSearchComplete })
       finalNiches.push(customNiche.trim());
     }
 
-    let finalCity = selectedCity;
-    if (selectedCity === 'Alt Oraș') {
-      if (!customCity.trim()) {
+    let finalCities = selectedCities.filter((c) => c !== 'Alt Oraș');
+    if (selectedCities.includes('Alt Oraș')) {
+      if (!customCity.trim() && finalCities.length === 0) {
         setError('Specificați numele orașului dorit.');
         setLoading(false);
         return;
       }
-      finalCity = customCity.trim();
+      if (customCity.trim()) {
+        const extras = customCity.split(',').map((c) => c.trim()).filter(Boolean);
+        finalCities = [...finalCities, ...extras];
+      }
+    }
+
+    if (finalCities.length === 0) {
+      setError('Selectați cel puțin un oraș.');
+      setLoading(false);
+      return;
     }
 
     if (finalNiches.length === 0) {
@@ -521,32 +619,54 @@ export default function HarveySearchModal({ isOpen, onClose, onSearchComplete })
     }
 
     try {
-      const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
-      const res = await fetch(`${baseUrl}/api/admin/harvey/search`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          niches: finalNiches,
-          city: finalCity,
-          cities: [finalCity],
-          country: finalCountry,
-          limit: Number(limit),
-          mapCenter: effectiveCoords,
-          bbox: effectiveBbox
-        })
-      });
+      const payload = {
+        niches: finalNiches,
+        city: finalCities[0] || 'București',
+        cities: finalCities,
+        country: finalCountry,
+        limit: Number(limit),
+        mapCenter: effectiveCoords,
+        bbox: effectiveBbox,
+        googlePlacesApiKey: googlePlacesApiKey || undefined
+      };
 
-      const data = await res.json();
+      let res;
+      try {
+        res = await fetch('/api/admin/harvey/search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      } catch (proxyErr) {
+        const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
+        res = await fetch(`${baseUrl}/api/admin/harvey/search`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      }
+
+      let data = {};
+      try {
+        data = await res.json();
+      } catch (jsonErr) {
+        // Răspuns non-JSON sau corupt
+      }
+
       if (!res.ok || !data.success) {
-        throw new Error(data.message || 'Căutarea nu a putut fi finalizată.');
+        throw new Error(data.message || `Eroare server (${res.status}): Căutarea nu a putut fi finalizată.`);
       }
 
       if (onSearchComplete) {
-        onSearchComplete(data.leads, data.message, finalCountry, [finalCity], finalNiches);
+        onSearchComplete(data.leads, data.message, finalCountry, finalCities, finalNiches);
       }
       onClose();
     } catch (err) {
-      setError(err.message || 'A apărut o eroare la scanare.');
+      if (err.name === 'TypeError' && err.message.toLowerCase().includes('fetch')) {
+        setError('Eroare de conexiune: Serverul backend (port 5001) nu răspunde. Asigurați-vă că este pornit.');
+      } else {
+        setError(err.message || 'A apărut o eroare la scanare.');
+      }
     } finally {
       setLoading(false);
     }
@@ -562,58 +682,105 @@ export default function HarveySearchModal({ isOpen, onClose, onSearchComplete })
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
       <div className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[92vh]">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary-50 dark:bg-primary-950/50 text-primary-600 dark:text-primary-400 flex items-center justify-center shrink-0">
-              <Sparkles size={20} />
+        {/* Header Compact */}
+        <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-full bg-primary-50 dark:bg-primary-950/50 text-primary-600 dark:text-primary-400 flex items-center justify-center shrink-0">
+              <Sparkles size={16} />
             </div>
-            <div>
-              <h3 className="text-base font-bold text-slate-800 dark:text-white">
-                Căutare Companii Reale pe Hartă
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Alege <span className="font-bold text-primary-600 dark:text-primary-400">Țara</span>, <span className="font-bold text-primary-600 dark:text-primary-400">Orașul</span> și explorează direct pe <span className="font-bold text-primary-600 dark:text-primary-400">Hartă</span> cu «Caută în această zonă»
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-sm font-bold text-slate-800 dark:text-white leading-tight truncate">
+                  Căutare Companii Reale pe Hartă
+                </h3>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap shrink-0 ${
+                  hasGooglePlacesKey 
+                    ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800' 
+                    : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
+                }`}>
+                  {hasGooglePlacesKey ? 'Google Places Activ' : 'OpenStreetMap'}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowGoogleKeyInput(prev => !prev)}
+                  className="text-[11px] font-bold text-primary-600 hover:text-primary-700 dark:text-primary-400 flex items-center gap-1 cursor-pointer whitespace-nowrap shrink-0"
+                  title="Configurează cheia Google Places API"
+                >
+                  <Key size={11} />
+                  <span>{hasGooglePlacesKey ? 'Cheie API' : '+ Cheie Google'}</span>
+                </button>
+              </div>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                Alege țara, orașele și nișa pentru a extrage lead-uri
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0 cursor-pointer"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0 cursor-pointer ml-2"
           >
-            <X size={18} />
+            <X size={16} />
           </button>
         </div>
 
+        {/* Bară compactă configurare cheie Google Places (doar la click) */}
+        {showGoogleKeyInput && (
+          <div className="px-5 py-2 bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 flex items-center gap-2 animate-fade-in text-xs">
+            <input
+              type="password"
+              value={googlePlacesApiKey}
+              onChange={(e) => setGooglePlacesApiKey(e.target.value)}
+              placeholder="Lipește cheia Google Places API (ex: AIzaSy...)"
+              className="flex-1 px-3 h-8 text-xs rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none"
+            />
+            <button
+              type="button"
+              onClick={handleSaveGoogleKey}
+              disabled={savingGoogleKey || !googlePlacesApiKey.trim()}
+              className="px-3 h-8 rounded-full bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold whitespace-nowrap shrink-0 transition-all flex items-center gap-1 disabled:opacity-50 cursor-pointer"
+            >
+              {savingGoogleKey ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
+              <span>Salvează</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowGoogleKeyInput(false)}
+              className="px-2.5 h-8 rounded-full text-xs font-semibold text-slate-500 hover:text-slate-700 whitespace-nowrap shrink-0 cursor-pointer"
+            >
+              Închide
+            </button>
+          </div>
+        )}
+
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-5 overflow-y-auto">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-5 space-y-3.5 overflow-y-auto">
           {error && (
-            <div className="flex items-center gap-2 p-3 text-xs font-semibold text-red-700 bg-red-50 dark:bg-red-950/40 dark:text-red-400 rounded-2xl border border-red-200 dark:border-red-800">
-              <AlertCircle size={16} className="shrink-0" />
+            <div className="flex items-center gap-2 p-2.5 text-xs font-semibold text-red-700 bg-red-50 dark:bg-red-950/40 dark:text-red-400 rounded-xl border border-red-200 dark:border-red-800">
+              <AlertCircle size={15} className="shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
           {successInfo && (
-            <div className="flex items-center gap-2 p-3 text-xs font-semibold text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 dark:text-emerald-400 rounded-2xl border border-emerald-200 dark:border-emerald-800">
-              <CheckCircle2 size={16} className="shrink-0" />
+            <div className="flex items-center gap-2 p-2.5 text-xs font-semibold text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 dark:text-emerald-400 rounded-xl border border-emerald-200 dark:border-emerald-800">
+              <CheckCircle2 size={15} className="shrink-0" />
               <span>{successInfo}</span>
             </div>
           )}
 
           {/* 1. SELECȚIE ȚARĂ (PASUL 1) */}
           <div>
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between mb-1.5">
               <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                <Globe size={14} className="text-primary-600" />
+                <Globe size={13} className="text-primary-600" />
                 1. Selectează Țara Țintă
               </label>
               <span className="text-[11px] font-semibold text-slate-400">
-                Alege orice țară sau introdu manual
+                Alege țara sau introdu manual
               </span>
             </div>
 
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5">
               {COUNTRIES_LIST.map((c) => {
                 const isSelected = selectedCountry === c.code;
                 const FlagComponent = c.Flag;
@@ -622,7 +789,7 @@ export default function HarveySearchModal({ isOpen, onClose, onSearchComplete })
                     key={c.code}
                     type="button"
                     onClick={() => handleCountryChange(c.code)}
-                    className={`px-3 py-2 rounded-full border text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap shrink-0 cursor-pointer ${
+                    className={`px-3 py-1.5 rounded-full border text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer ${
                       isSelected
                         ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 border-slate-900 shadow-xs ring-1 ring-slate-800'
                         : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
@@ -630,7 +797,7 @@ export default function HarveySearchModal({ isOpen, onClose, onSearchComplete })
                   >
                     <FlagComponent />
                     <span>{c.label}</span>
-                    {isSelected && <Check size={13} className="shrink-0" />}
+                    {isSelected && <Check size={12} className="shrink-0" />}
                   </button>
                 );
               })}
@@ -650,65 +817,69 @@ export default function HarveySearchModal({ isOpen, onClose, onSearchComplete })
             )}
           </div>
 
-          {/* 2. SELECȚIE UN SINGUR ORAȘ & HARTĂ INTERACTIVĂ (PASUL 2) */}
+          {/* 2. SELECȚIE ORAȘE & HARTĂ INTERACTIVĂ (PASUL 2) */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                <MapPin size={14} className="text-primary-600" />
-                2. Alege Orașul din {COUNTRY_NAMES[selectedCountry] || customCountry || 'Țara Selectată'}
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5 whitespace-nowrap shrink-0">
+                <MapPin size={14} className="text-primary-600 shrink-0" />
+                <span>2. Alege Orașele din {COUNTRY_NAMES[selectedCountry] || customCountry || 'Țara Selectată'} ({selectedCities.length} selectate)</span>
               </label>
-              <span className="text-[11px] font-bold text-primary-600 dark:text-primary-400 whitespace-nowrap shrink-0">
-                Activ: {selectedCity === 'Alt Oraș' ? (customCity || 'Specificat manual') : selectedCity}
-              </span>
+              <button
+                type="button"
+                onClick={selectAllCities}
+                className="text-[11px] font-bold text-primary-600 dark:text-primary-400 hover:underline cursor-pointer whitespace-nowrap shrink-0"
+              >
+                {selectedCities.length >= currentCitiesList.filter((c) => c !== 'Alt Oraș').length ? 'Resetează' : 'Selectează Toate'}
+              </button>
             </div>
 
-            {/* Pastile selecție un singur oraș */}
-            <div className="flex flex-wrap gap-2">
+            {/* Pastile selecție orașe (multi-select) */}
+            <div className="flex flex-wrap gap-1.5">
               {currentCitiesList.map((item) => {
-                const isSelected = selectedCity === item;
+                const isSelected = selectedCities.includes(item);
                 return (
                   <button
                     key={item}
                     type="button"
-                    onClick={() => handleCitySelect(item)}
-                    className={`px-3.5 py-1.5 text-xs font-semibold rounded-full border transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer ${
+                    onClick={() => toggleCity(item)}
+                    className={`px-3 py-1 text-xs font-semibold rounded-full border transition-all flex items-center gap-1 whitespace-nowrap shrink-0 cursor-pointer ${
                       isSelected
                         ? 'border-primary-600 bg-primary-600 text-white font-bold shadow-xs'
                         : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
                     }`}
                   >
                     <span>{item}</span>
-                    {isSelected && <Check size={13} className="shrink-0" />}
+                    {isSelected && <Check size={12} className="shrink-0" />}
                   </button>
                 );
               })}
             </div>
 
-            {selectedCity === 'Alt Oraș' && (
+            {selectedCities.includes('Alt Oraș') && (
               <input
                 type="text"
                 value={customCity}
                 onChange={(e) => setCustomCity(e.target.value)}
-                placeholder="Specifică orice oraș din lume (ex: Suceava, Leuven, Bordeaux, Hamburg, Utrecht, Bologna, Sevilla, Leeds etc.)..."
-                className="w-full px-4 h-10 text-sm rounded-full border border-primary-500 dark:border-primary-500 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-hidden transition-all shadow-xs"
+                placeholder="Specifică alte orașe separate prin virgulă (ex: Suceava, Galați, Brăila, Leuven etc.)..."
+                className="w-full px-4 h-9 text-xs rounded-full border border-primary-500 dark:border-primary-500 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-hidden transition-all shadow-xs"
                 autoFocus
               />
             )}
 
             {/* Toggle Opțional pentru Hartă */}
-            <div className="flex items-center justify-between p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/80">
+            <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/80">
               <div className="flex items-center gap-2">
-                <div className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors shrink-0 ${
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors shrink-0 ${
                   showMap ? 'bg-primary-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-500'
                 }`}>
-                  <MapPin size={14} />
+                  <MapPin size={12} />
                 </div>
                 <div>
-                  <span className="text-xs font-bold text-slate-800 dark:text-white block">
+                  <span className="text-xs font-bold text-slate-800 dark:text-white block leading-tight">
                     Căutare pe Hartă («Caută în această zonă»)
                   </span>
-                  <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
-                    {showMap ? 'Harta este activă — poți trage și scana cartiere specifice' : 'Opțional — activează doar dacă vrei explorare vizuală pe hartă'}
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 block leading-tight">
+                    {showMap ? 'Harta este activă — poți trage și scana cartiere specifice' : 'Opțional — explorează vizual pe hartă'}
                   </span>
                 </div>
               </div>
@@ -724,7 +895,7 @@ export default function HarveySearchModal({ isOpen, onClose, onSearchComplete })
                     }, 200);
                   }
                 }}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer ${
+                className={`px-3 py-1 rounded-full text-xs font-bold transition-all flex items-center gap-1 whitespace-nowrap shrink-0 cursor-pointer ${
                   showMap
                     ? 'bg-primary-600 text-white shadow-xs'
                     : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
@@ -741,7 +912,7 @@ export default function HarveySearchModal({ isOpen, onClose, onSearchComplete })
                   {/* Map Canvas */}
                   <div 
                     ref={mapContainerRef} 
-                    className="w-full h-64 z-0 cursor-grab active:cursor-grabbing" 
+                    className="w-full h-56 z-0 cursor-grab active:cursor-grabbing" 
                   />
 
                   {/* Pin central fix de reper */}
@@ -761,14 +932,14 @@ export default function HarveySearchModal({ isOpen, onClose, onSearchComplete })
                       type="button"
                       onClick={() => executeSearch()}
                       disabled={loading}
-                      className={`px-4 py-2 rounded-full text-xs font-bold shadow-xl border flex items-center gap-2 whitespace-nowrap shrink-0 transition-all cursor-pointer ${
+                      className={`px-4 py-1.5 rounded-full text-xs font-bold shadow-xl border flex items-center gap-2 whitespace-nowrap shrink-0 transition-all cursor-pointer ${
                         isMapMoved
                           ? 'bg-primary-600 hover:bg-primary-700 text-white border-primary-500 ring-2 ring-primary-500/30 animate-pulse'
                           : 'bg-white dark:bg-slate-900 text-slate-800 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800 border-slate-200 dark:border-slate-700'
                       }`}
                       title="Execută căutarea la coordonatele vizualizate pe hartă"
                     >
-                      <Search size={14} className={isMapMoved ? 'text-white shrink-0' : 'text-primary-600 shrink-0'} />
+                      <Search size={13} className={isMapMoved ? 'text-white shrink-0' : 'text-primary-600 shrink-0'} />
                       <span>Caută în această zonă</span>
                       {isMapMoved && (
                         <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 animate-ping" />
@@ -777,41 +948,37 @@ export default function HarveySearchModal({ isOpen, onClose, onSearchComplete })
                   </div>
 
                   {/* Indicator coordonate stânga-jos */}
-                  <div className="absolute bottom-2.5 left-2.5 z-[450] flex items-center gap-1.5 pointer-events-none">
-                    <div className="px-2.5 py-1 rounded-full bg-slate-900/80 backdrop-blur-xs text-white text-[10px] font-semibold flex items-center gap-1.5 shadow-md">
-                      <Navigation size={11} className="text-primary-400 shrink-0" />
+                  <div className="absolute bottom-2 left-2 z-[450] flex items-center gap-1.5 pointer-events-none">
+                    <div className="px-2 py-0.5 rounded-full bg-slate-900/80 backdrop-blur-xs text-white text-[10px] font-semibold flex items-center gap-1.5 shadow-md">
+                      <Navigation size={10} className="text-primary-400 shrink-0" />
                       <span className="whitespace-nowrap shrink-0">
-                        {selectedCity}: {mapCenter.lat.toFixed(4)}, {mapCenter.lon.toFixed(4)}
+                        {selectedCities.length === 1 ? selectedCities[0] : `${selectedCities.length} orașe`}: {mapCenter.lat.toFixed(4)}, {mapCenter.lon.toFixed(4)}
                       </span>
                     </div>
                   </div>
 
                   {/* Buton Recentrează dreapta-jos */}
-                  <div className="absolute bottom-2.5 right-2.5 z-[450]">
+                  <div className="absolute bottom-2 right-2 z-[450]">
                     <button
                       type="button"
                       onClick={handleRecenter}
-                      className="px-3 py-1 rounded-full bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-[11px] font-bold shadow-md border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0"
+                      className="px-2.5 py-0.5 rounded-full bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-[10px] font-bold shadow-md border border-slate-200 dark:border-slate-700 flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap shrink-0"
                       title="Recentrează pe centrul orașului"
                     >
-                      <Crosshair size={12} className="text-primary-600 shrink-0" />
+                      <Crosshair size={11} className="text-primary-600 shrink-0" />
                       <span>Centru Oraș</span>
                     </button>
                   </div>
                 </div>
-
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Trage și mărește harta pentru a explora un cartier sau sector specific. Apasă oricând pe <strong className="text-primary-600 dark:text-primary-400">«Caută în această zonă»</strong> pentru a scana companiile vizibile.
-                </p>
               </div>
             )}
           </div>
 
           {/* 3. NIȘE / INDUSTRII (PASUL 3) */}
           <div>
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between mb-1.5">
               <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                <Building2 size={14} className="text-primary-600" />
+                <Building2 size={13} className="text-primary-600" />
                 3. Nișă sau Industrie ({selectedNiches.length} selectate)
               </label>
               <button
@@ -823,7 +990,7 @@ export default function HarveySearchModal({ isOpen, onClose, onSearchComplete })
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 mb-2">
+            <div className="grid grid-cols-2 gap-1.5 mb-1.5">
               {popularNiches.map((item) => {
                 const isSelected = selectedNiches.includes(item);
                 return (
@@ -831,14 +998,14 @@ export default function HarveySearchModal({ isOpen, onClose, onSearchComplete })
                     key={item}
                     type="button"
                     onClick={() => toggleNiche(item)}
-                    className={`px-3.5 py-2 text-xs font-medium rounded-full border transition-all flex items-center justify-between whitespace-nowrap shrink-0 cursor-pointer ${
+                    className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-all flex items-center justify-between whitespace-nowrap shrink-0 cursor-pointer ${
                       isSelected
                         ? 'border-primary-600 bg-primary-600 text-white font-bold shadow-xs'
                         : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
                     }`}
                   >
                     <span className="truncate">{item}</span>
-                    {isSelected && <Check size={14} className="shrink-0 ml-1.5" />}
+                    {isSelected && <Check size={13} className="shrink-0 ml-1" />}
                   </button>
                 );
               })}
@@ -850,31 +1017,29 @@ export default function HarveySearchModal({ isOpen, onClose, onSearchComplete })
                 value={customNiche}
                 onChange={(e) => setCustomNiche(e.target.value)}
                 placeholder="Specifică altă nișă (ex: Farmacii, Service Auto, Depozite)..."
-                className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none transition-all shadow-xs"
+                className="w-full px-4 h-9 text-xs rounded-full border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none transition-all shadow-xs"
               />
             )}
           </div>
 
           {/* 4. NUMĂR TOTAL DE REZULTATE (10 - 200) */}
           <div>
-            <div className="flex items-center justify-between mb-1.5">
+            <div className="flex items-center justify-between mb-1">
               <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 4. Număr Companii de Identificat (Rezultate)
               </label>
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-bold text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-950/40 px-2.5 py-0.5 rounded-full whitespace-nowrap shrink-0">
-                  {limit} companii țintă
-                </span>
-              </div>
+              <span className="text-xs font-bold text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-950/40 px-2 py-0.5 rounded-full whitespace-nowrap shrink-0">
+                {limit} companii țintă
+              </span>
             </div>
 
-            <div className="flex items-center gap-1.5 mb-2 overflow-x-auto pb-1">
+            <div className="flex items-center gap-1.5 mb-1.5 overflow-x-auto pb-0.5">
               {[20, 40, 60, 80, 100, 150, 200].map((preset) => (
                 <button
                   key={preset}
                   type="button"
                   onClick={() => setLimit(preset)}
-                  className={`px-3 py-1 text-xs font-bold rounded-full border transition-all whitespace-nowrap shrink-0 cursor-pointer ${
+                  className={`px-2.5 py-0.5 text-xs font-bold rounded-full border transition-all whitespace-nowrap shrink-0 cursor-pointer ${
                     limit === preset
                       ? 'border-primary-600 bg-primary-600 text-white shadow-xs'
                       : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
@@ -894,25 +1059,12 @@ export default function HarveySearchModal({ isOpen, onClose, onSearchComplete })
               onChange={(e) => setLimit(Number(e.target.value))}
               className="w-full accent-primary-600 cursor-pointer"
             />
-            <div className="flex justify-between text-[10px] text-slate-400 mt-0.5">
-              <span className="whitespace-nowrap shrink-0">10</span>
-              <span className="whitespace-nowrap shrink-0">40</span>
-              <span className="whitespace-nowrap shrink-0">80</span>
-              <span className="whitespace-nowrap shrink-0">120</span>
-              <span className="whitespace-nowrap shrink-0">160</span>
-              <span className="whitespace-nowrap shrink-0">200 companii</span>
-            </div>
           </div>
 
-          {/* Info Box */}
-          <div className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700/60 text-xs text-slate-600 dark:text-slate-400 space-y-1.5">
-            <p className="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-              <Building2 size={14} className="text-primary-600 shrink-0" />
-              Scanare strictă {selectedCity === 'Alt Oraș' ? (customCity || 'Oraș specificat') : selectedCity} ({COUNTRY_NAMES[selectedCountry] || customCountry || 'Internațional'}) — 100% cu email valid
-            </p>
-            <p>
-              Harvey scanează zona selectată pe hartă, verifică domeniile oficiale și extrage <strong className="text-emerald-600 dark:text-emerald-400 font-bold">doar companii reale cu adrese de contact confirmate</strong>.
-            </p>
+          {/* Compact Info Line */}
+          <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5 py-1">
+            <Building2 size={13} className="text-primary-600 shrink-0" />
+            <span className="truncate">Scanare în {selectedCities.length === 1 ? selectedCities[0] : `${selectedCities.length} orașe`} • Se extrag doar companii reale cu contact verificat.</span>
           </div>
 
           {/* Actions */}
@@ -938,7 +1090,7 @@ export default function HarveySearchModal({ isOpen, onClose, onSearchComplete })
               ) : (
                 <>
                   <Search size={16} className="shrink-0" />
-                  <span>Pornește Căutarea ({limit} companii din {selectedCity === 'Alt Oraș' ? (customCity || 'Oraș') : selectedCity})</span>
+                  <span>Pornește Căutarea ({limit} companii din {selectedCities.length === 1 ? (selectedCities[0] === 'Alt Oraș' ? (customCity || 'Oraș') : selectedCities[0]) : `${selectedCities.length} orașe`})</span>
                 </>
               )}
             </button>

@@ -440,22 +440,51 @@ export default function HarveySdrView({ onConvertToTenant }) {
           </p>
         </div>
 
-        {/* Metrici compacte - fără carduri gigantice */}
+        {/* Metrici compacte interactive (filtrare la 1-click) */}
         <div className="flex items-center gap-2 shrink-0">
-          <div className="px-3.5 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-center shrink-0">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">În Așteptare</div>
-            <div className="text-sm font-black text-amber-600">{stats.pendingReview}</div>
-          </div>
-          <div className="px-3.5 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-center shrink-0">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Trimise Azi</div>
-            <div className="text-sm font-black text-slate-800 dark:text-white">
+          <button
+            type="button"
+            onClick={() => { setStatusFilter('pending'); setCurrentPage(1); }}
+            className={`px-3.5 py-1.5 rounded-xl border text-center shrink-0 cursor-pointer transition-all ${
+              statusFilter === 'pending'
+                ? 'bg-amber-50 border-amber-300 dark:bg-amber-950/40 dark:border-amber-700 shadow-xs'
+                : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 hover:border-amber-300'
+            }`}
+            title="Filtrează companiile în așteptare"
+          >
+            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 whitespace-nowrap shrink-0">În Așteptare</div>
+            <div className="text-sm font-black text-amber-600 whitespace-nowrap shrink-0">{stats.pendingReview}</div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => { setStatusFilter('sent'); setCurrentPage(1); }}
+            className={`px-3.5 py-1.5 rounded-xl border text-center shrink-0 cursor-pointer transition-all ${
+              statusFilter === 'sent'
+                ? 'bg-blue-50 border-blue-300 dark:bg-blue-950/40 dark:border-blue-700 shadow-xs'
+                : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 hover:border-blue-300'
+            }`}
+            title="Filtrează companiile cărora li s-a trimis email"
+          >
+            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 whitespace-nowrap shrink-0">Trimise Azi</div>
+            <div className="text-sm font-black text-slate-800 dark:text-white whitespace-nowrap shrink-0">
               {stats.sentToday} <span className="text-[10px] font-normal text-slate-400">/ 25</span>
             </div>
-          </div>
-          <div className="px-3.5 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-center shrink-0">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Convertite</div>
-            <div className="text-sm font-black text-emerald-600">{stats.converted}</div>
-          </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => { setStatusFilter('converted'); setCurrentPage(1); }}
+            className={`px-3.5 py-1.5 rounded-xl border text-center shrink-0 cursor-pointer transition-all ${
+              statusFilter === 'converted'
+                ? 'bg-emerald-50 border-emerald-300 dark:bg-emerald-950/40 dark:border-emerald-700 shadow-xs'
+                : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 hover:border-emerald-300'
+            }`}
+            title="Filtrează companiile convertite în tenanți activi"
+          >
+            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 whitespace-nowrap shrink-0">Convertite</div>
+            <div className="text-sm font-black text-emerald-600 whitespace-nowrap shrink-0">{stats.converted}</div>
+          </button>
         </div>
       </div>
 
@@ -466,9 +495,15 @@ export default function HarveySdrView({ onConvertToTenant }) {
             <span className="text-xs font-bold bg-blue-600 text-white px-2.5 py-0.5 rounded-full whitespace-nowrap shrink-0">
               {selectedLeadIds.length} selectate
             </span>
-            <span className="text-xs text-slate-300 hidden sm:inline">
-              Acțiuni în lot:
-            </span>
+            {selectedLeadIds.length < filteredLeads.length && (
+              <button
+                type="button"
+                onClick={() => setSelectedLeadIds(filteredLeads.map((l) => l.id))}
+                className="text-xs text-blue-400 hover:text-blue-300 underline font-semibold cursor-pointer whitespace-nowrap shrink-0"
+              >
+                Selectează toate cele {filteredLeads.length} din această filtrare
+              </button>
+            )}
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
@@ -937,15 +972,27 @@ export default function HarveySdrView({ onConvertToTenant }) {
                       {/* Status */}
                       <td className="py-3 px-4 text-center">
                         {lead.status === 'sent' ? (
-                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 whitespace-nowrap shrink-0">
-                            Trimis
-                          </span>
+                          <div className="flex flex-col items-center gap-0.5">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 whitespace-nowrap shrink-0">
+                              Email Trimis
+                            </span>
+                            {lead.email_sent_at && (
+                              <span className="text-[10px] text-slate-400 font-medium whitespace-nowrap shrink-0" title={new Date(lead.email_sent_at).toLocaleString('ro-RO')}>
+                                {new Date(lead.email_sent_at).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            )}
+                          </div>
                         ) : lead.status === 'converted' ? (
-                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 whitespace-nowrap shrink-0">
-                            Convertit
-                          </span>
+                          <div className="flex flex-col items-center gap-0.5">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 whitespace-nowrap shrink-0">
+                              Convertit
+                            </span>
+                            <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold whitespace-nowrap shrink-0">
+                              Tenant Activ
+                            </span>
+                          </div>
                         ) : (
-                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 whitespace-nowrap shrink-0">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 whitespace-nowrap shrink-0">
                             În Așteptare
                           </span>
                         )}
@@ -1055,7 +1102,7 @@ export default function HarveySdrView({ onConvertToTenant }) {
           if (searchedCountry) {
             setCountryFilter(searchedCountry);
           }
-          if (searchedCities && searchedCities.length === 1) {
+          if (searchedCities && searchedCities.length > 0) {
             setCityFilter(searchedCities[0]);
           } else {
             setCityFilter('all');

@@ -151,7 +151,7 @@ function detectLeadLanguage(city, country, address) {
 }
 
 // Generare șablon inteligent de pitch când nu este configurată cheia Anthropic
-function generateFallbackPitch({ companyName, industry, city, pitchFocus, language = 'ro' }) {
+function generateFallbackPitch({ companyName, industry, city, pitchFocus, language = 'ro', senderName = 'Smart QR Pontaj', senderEmail = 'contact@pontaj.app', senderPhone = '+40 757 77 77 12' }) {
   const lang = (language || 'ro').toLowerCase();
 
   // FR — Français (Belgique / France)
@@ -168,17 +168,19 @@ Comment ça fonctionne :
 • Paie simplifiée : export direct vers vos logiciels de gestion et secrétariats sociaux (SD Worx, Securex, Liantis, Partena...).
 
 Conditions :
-• 10 jours d'essai gratuit complet, sans engagement et sans carte bancaire ;
+• 15 jours d'essai gratuit complet, sans engagement et sans carte bancaire ;
 • Tarif transparent : 5,00 € / collaborateur / mois.
 
 Découvrez la solution et activez votre test gratuit ici :
 https://qrtime.be
 
-Pour toute question ou une démonstration, vous pouvez répondre directement à cet email.
+Pour toute question ou une démonstration, vous pouvez répondre directement à cet email ou nous contacter par téléphone.
 
 Cordialement,
-L'équipe QRTime
-https://qrtime.be`;
+${senderName || "L'équipe QRTime"}
+Email : ${senderEmail}
+Tél / WhatsApp : ${senderPhone}
+Web : https://qrtime.be`;
 
     if (pitchFocus === 'itm_compliance') {
       subject = `Conformité enregistrement du temps de travail — ${companyName}`;
@@ -191,17 +193,19 @@ Nous vous proposons QRTime pour garantir une conformité irréprochable du temps
 • Rapports complets d'inspection exportables en un clic pour votre secrétariat social.
 
 Conditions :
-• 10 jours d'essai gratuit complet, sans carte bancaire ;
+• 15 jours d'essai gratuit complet, sans carte bancaire ;
 • Tarif de 5,00 € / collaborateur / mois.
 
 Testez gratuitement :
 https://qrtime.be
 
-Pour toute précision, répondez directement à cet email.
+Pour toute précision, répondez directement à cet email ou appelez-nous.
 
 Cordialement,
-L'équipe QRTime
-https://qrtime.be`;
+${senderName || "L'équipe QRTime"}
+Email : ${senderEmail}
+Tél / WhatsApp : ${senderPhone}
+Web : https://qrtime.be`;
     } else if (pitchFocus === 'kiosk_tableta') {
       subject = `Borne de pointage intelligente sur tablette — ${companyName}`;
       hook = 'Transformez n’importe quelle tablette en terminal de pointage connecté avec QR dynamique.';
@@ -213,17 +217,19 @@ Nous vous proposons de transformer une simple tablette à l'entrée de ${company
 • Feuilles d'heures consolidées automatiquement pour la paie à la fin du mois.
 
 Conditions :
-• 10 jours d'essai gratuit complet ;
+• 15 jours d'essai gratuit complet ;
 • Sans matériel coûteux, tarif clair de 5,00 € / collaborateur / mois.
 
 Activez votre essai gratuit :
 https://qrtime.be
 
-À votre disposition pour toute question par retour d'email.
+À votre disposition pour toute question par retour d'email ou par téléphone.
 
 Cordialement,
-L'équipe QRTime
-https://qrtime.be`;
+${senderName || "L'équipe QRTime"}
+Email : ${senderEmail}
+Tél / WhatsApp : ${senderPhone}
+Web : https://qrtime.be`;
     }
 
     return { subject, body, aiHook: hook };
@@ -243,17 +249,19 @@ Hoe het werkt:
 • Eenvoudige loonverwerking: directe export naar uw sociaal secretariaat (SD Worx, Securex, Liantis, etc.).
 
 Voorwaarden:
-• 10 dagen volledige gratis proefperiode, zonder verplichtingen of kredietkaart;
+• 15 dagen volledige gratis proefperiode, zonder verplichtingen of kredietkaart;
 • Helder tarief: 5,00 € / medewerker / maand.
 
 Test het platform direct of activeer uw demo via:
 https://qrtime.be
 
-Heeft u vragen of wenst u een korte toelichting? Beantwoord gerust deze e-mail.
+Heeft u vragen of wenst u een korte toelichting? Beantwoord gerust deze e-mail of bel ons direct.
 
 Met vriendelijke groet,
-Het QRTime team
-https://qrtime.be`;
+${senderName || 'Het QRTime team'}
+E-mail: ${senderEmail}
+Tel / WhatsApp: ${senderPhone}
+Web: https://qrtime.be`;
 
     if (pitchFocus === 'itm_compliance') {
       subject = `Conforme aanwezigheidsregistratie — ${companyName}`;
@@ -266,15 +274,19 @@ Wij bieden ${companyName} een waterdicht digitaal systeem voor urenregistratie t
 • Complete inspectierapporten direct exporteerbaar voor uw sociaal secretariaat.
 
 Voorwaarden:
-• 10 dagen gratis proefperiode, zonder kredietkaart;
+• 15 dagen gratis proefperiode, zonder kredietkaart;
 • 5,00 € / medewerker / maand.
 
 Start uw test hier:
 https://qrtime.be
 
+Vragen? Beantwoord gerust deze e-mail of neem telefonisch contact op.
+
 Met vriendelijke groet,
-Het QRTime team
-https://qrtime.be`;
+${senderName || 'Het QRTime team'}
+E-mail: ${senderEmail}
+Tel / WhatsApp: ${senderPhone}
+Web: https://qrtime.be`;
     } else if (pitchFocus === 'kiosk_tableta') {
       subject = `Slimme tablet prikklok aan de ingang — ${companyName}`;
       hook = 'Verander elke tablet in een professionele prikklok met dynamische QR-code.';
@@ -286,15 +298,17 @@ Transformeer elke standaard tablet aan de ingang van ${companyName} in een slimm
 • Automatisch maandoverzicht voor de loonadministratie.
 
 Voorwaarden:
-• 10 dagen gratis testen zonder verplichting;
+• 15 dagen gratis testen zonder verplichting;
 • Slechts 5,00 € / medewerker / maand.
 
 Activeer uw test direct:
 https://qrtime.be
 
 Met vriendelijke groet,
-Het QRTime team
-https://qrtime.be`;
+${senderName || 'Het QRTime team'}
+E-mail: ${senderEmail}
+Tel / WhatsApp: ${senderPhone}
+Web: https://qrtime.be`;
     }
 
     return { subject, body, aiHook: hook };
@@ -314,17 +328,19 @@ How it works:
 • Seamless payroll: 1-click export to standard payroll formats, CSV, and Excel.
 
 Conditions:
-• 10-day full free trial, no credit card required, cancel anytime;
+• 15-day full free trial, no credit card required, cancel anytime;
 • Transparent pricing: 5.00 € / employee / month.
 
 Start your free trial or explore the platform here:
 https://qrtime.be
 
-If you'd like a quick demo or setup assistance, simply reply to this email.
+If you'd like a quick demo or setup assistance, simply reply to this email or call us directly.
 
 Best regards,
-The QRTime Team
-https://qrtime.be`;
+${senderName || 'The QRTime Team'}
+Email: ${senderEmail}
+Phone / WhatsApp: ${senderPhone}
+Web: https://qrtime.be`;
 
     if (pitchFocus === 'itm_compliance') {
       subject = `Labor law compliance & audit-ready timesheets — ${companyName}`;
@@ -337,17 +353,19 @@ We help ${companyName} maintain audit-proof attendance records effortlessly:
 • Official attendance audits generated on demand for payroll and labor authorities.
 
 Conditions:
-• 10-day free trial, no credit card required;
+• 15-day free trial, no credit card required;
 • Flat rate of 5.00 € / employee / month.
 
 Start here:
 https://qrtime.be
 
-Feel free to reply to this email for any questions.
+Feel free to reply to this email or give us a call for any questions.
 
 Best regards,
-The QRTime Team
-https://qrtime.be`;
+${senderName || 'The QRTime Team'}
+Email: ${senderEmail}
+Phone / WhatsApp: ${senderPhone}
+Web: https://qrtime.be`;
     } else if (pitchFocus === 'kiosk_tableta') {
       subject = `Smart tablet time clock kiosk for ${companyName}`;
       hook = 'Turn any entrance tablet into an intelligent check-in kiosk with dynamic QR.';
@@ -359,15 +377,17 @@ Turn any standard tablet at the entrance of ${companyName} into a smart time clo
 • Monthly timesheets consolidated automatically for payroll.
 
 Conditions:
-• 10 days full free trial;
+• 15 days full free trial;
 • No expensive biometric hardware, flat rate of 5.00 € / employee / month.
 
 Activate your demo today:
 https://qrtime.be
 
 Best regards,
-The QRTime Team
-https://qrtime.be`;
+${senderName || 'The QRTime Team'}
+Email: ${senderEmail}
+Phone / WhatsApp: ${senderPhone}
+Web: https://qrtime.be`;
     }
 
     return { subject, body, aiHook: hook };
@@ -387,17 +407,19 @@ So funktioniert es:
 • Schnelle Lohnabrechnung: 1-Klick-Export für die Lohnbuchhaltung und Excel.
 
 Konditionen:
-• 10 Tage kostenloser Vollzugriff ohne Kreditkarte und ohne Vertragsbindung;
+• 15 Tage kostenloser Vollzugriff ohne Kreditkarte und ohne Vertragsbindung;
 • Transparenter Preis: 5,00 € / Mitarbeiter / Monat.
 
 Starten Sie Ihren kostenlosen Testzugang hier:
 https://qrtime.be
 
-Für Fragen oder eine kurze Vorführung antworten Sie einfach auf diese E-Mail.
+Für Fragen oder eine kurze Vorführung antworten Sie einfach auf diese E-Mail oder rufen Sie uns direkt an.
 
 Mit freundlichen Grüßen,
-Ihr QRTime Team
-https://qrtime.be`;
+${senderName || 'Ihr QRTime Team'}
+E-Mail: ${senderEmail}
+Tel / WhatsApp: ${senderPhone}
+Web: https://qrtime.be`;
 
     if (pitchFocus === 'itm_compliance') {
       subject = `Rechtssichere Arbeitszeiterfassung — ${companyName}`;
@@ -410,15 +432,17 @@ mit QRTime erfüllen Sie die gesetzliche Pflicht zur Arbeitszeiterfassung für $
 • Prüffähige Arbeitszeitberichte auf Knopfdruck für Lohnbuchhaltung und Prüfer.
 
 Konditionen:
-• 10 Tage kostenlos testen, ohne Kreditkarte;
+• 15 Tage kostenlos testen, ohne Kreditkarte;
 • 5,00 € / Mitarbeiter / Monat.
 
 Jetzt kostenlos starten:
 https://qrtime.be
 
 Mit freundlichen Grüßen,
-Ihr QRTime Team
-https://qrtime.be`;
+${senderName || 'Ihr QRTime Team'}
+E-Mail: ${senderEmail}
+Tel / WhatsApp: ${senderPhone}
+Web: https://qrtime.be`;
     } else if (pitchFocus === 'kiosk_tableta') {
       subject = `Smarte Tablet-Stechuhr am Eingang für ${companyName}`;
       hook = 'Verwandeln Sie jedes Tablet in ein Zeiterfassungsterminal mit dynamischem QR-Code.';
@@ -430,15 +454,17 @@ verwandeln Sie jedes handelsübliche Tablet am Eingang von ${companyName} in ein
 • Am Monatsende fertige Stundenübersichten für die Lohnabrechnung.
 
 Konditionen:
-• 10 Tage kostenlos testen ohne Vertragsbindung;
+• 15 Tage kostenlos testen ohne Vertragsbindung;
 • Nur 5,00 € / Mitarbeiter / Monat.
 
 Testzugang sofort aktivieren:
 https://qrtime.be
 
 Mit freundlichen Grüßen,
-Ihr QRTime Team
-https://qrtime.be`;
+${senderName || 'Ihr QRTime Team'}
+E-Mail: ${senderEmail}
+Tel / WhatsApp: ${senderPhone}
+Web: https://qrtime.be`;
     }
 
     return { subject, body, aiHook: hook };
@@ -453,7 +479,7 @@ https://qrtime.be`;
     let hook = 'Parteneriat cu contabili: eliminați condicile pe hârtie ale clienților dvs., export 1-Click în SAGA și comision 20%.';
     let body = `Bună ziua,
 
-Vă propunem un parteneriat prin care eliminați definitiv condicile pe hârtie și pontajele întârziate primite lunar de la clienții ${companyName}: Smart QR Pontaj.
+Vă propunem un parteneriat prin care eliminați definitiv condicile pe hârtie și pontajele întârziate primite lunar de la clienții ${companyName}: Pontaj.app.
 
 Ce vă oferim pentru cabinetul dvs.:
 • Export 1-Click direct în SAGA Salarii: atât log de pontaj detaliat, cât și centralizator lunar cu ore normale, ore de noapte (22:00-06:00), weekend și suplimentare calculate automat;
@@ -461,43 +487,50 @@ Ce vă oferim pentru cabinetul dvs.:
 • Acces gratuit pentru cabinetul dvs. la panoul centralizator + comision recurent de 20% lunar pentru fiecare client activ recomandat.
 
 Condiții pentru clienți:
-• 10 zile test gratuit complet, fără card bancar;
-• Ulterior, tarif transparent de 5.00 € / angajat / lună.
+• 15 zile test gratuit complet, fără card bancar;
+• Ulterior, tarif transparent de 5.00 € / angajat / lună (minim 50 € / lună / firmă, reduceri de volum: 4.50 € de la 50 angajați și 4.00 € de la 100 angajați).
 
 Puteți testa direct exportul SAGA și platforma aici:
-https://qr.pontaj.app
+https://pontaj.app
 
-Dacă doriți activarea unui cont de partener contabil, ne puteți răspunde direct la acest email sau ne puteți contacta telefonic.
+Dacă doriți activarea unui cont de partener contabil, ne puteți răspunde direct la acest email sau ne puteți contacta telefonic la ${senderPhone}.
 
 Cu respect,
-Echipa Smart QR Pontaj
-https://qr.pontaj.app`;
+${senderName || 'Echipa Pontaj.app'}
+Email: ${senderEmail}
+Telefon / WhatsApp: ${senderPhone}
+Web: https://pontaj.app`;
     return { subject, body, aiHook: hook };
   }
 
-  let subject = `Propunere pontaj digital QR și condică ITM — ${companyName}`;
-  let hook = `Pontaj digital prin QR dinamic pe tabletă, condică automată Art. 119 ITM și export direct SAGA Salarii.`;
+  let subject = `Pontaj digital QR și evidență ITM — ${companyName}`;
+  let hook = `Evidență exactă a orelor pe tabletă, condică conformă Art. 119 și export direct în SAGA Salarii.`;
   let body = `Bună ziua,
 
-Vă propunem o soluție smart de pontaj electronic concepută special pentru a elimina complet condica pe hârtie și bătăile de cap la salarizare pentru ${companyName}: Smart QR Pontaj.
+Vă contactez scurt în legătură cu gestionarea prezenței și evidența orelor de muncă pentru echipa ${companyName}.
 
-Cum funcționează:
-• Fără aparate sau ceasuri scumpe: folosiți orice tabletă obișnuită sau telefon la intrare, unde salariații scanează un cod QR dinamic securizat;
-• 100% legal: generează automat condica de prezență cu ore reale de intrare/ieșire, conform Art. 119 din Codul Muncii (cerință strictă ITM);
-• Fără bătăi de cap la salarizare: export instant 1-Click în softul SAGA Salarii și Excel, cu calcul automat al orelor lucrate, de noapte și suplimentare.
+În contextul cerințelor prevăzute de Art. 119 din Codul Muncii și al timpului consumat lunar cu centralizarea foilor de prezență, vă propunem o soluție simplă prin Pontaj.app:
+
+• Terminal Kiosk pe tabletă la intrare: salariații scanează codul QR dinamic în sub o secundă, fără aparate biometrice costisitoare (soluție cloud, folosiți orice tabletă existentă; tableta și/sau suportul digital nu sunt oferite de noi și sunt în responsabilitatea clientului);
+• Condică de prezență conformă Art. 119: înregistrează automat orele exacte de intrare și ieșire, gata oricând pentru controlul ITM;
+• Integrare directă cu SAGA Salarii și Excel: calcul automat pentru orele de zi, de noapte și de weekend, cu export 1-Click direct în contabilitate.
 
 Condiții comerciale:
-• 10 zile test gratuit complet (fără card bancar, fără obligații contractuale);
-• Ulterior, tarif transparent de 5.00 € / angajat / lună.
+• 15 zile test gratuit complet (fără card bancar, fără obligații contractuale);
+• Ulterior, tarif transparent de 5.00 € / angajat / lună (minim 50 € / lună / firmă);
+• Reduceri automate de volum: 4.50 € (de la 50 angajați) și 4.00 € (de la 100 angajați);
+• Echipamente: tableta și/sau suportul digital nu sunt oferite de noi și sunt în responsabilitatea clientului (soluție 100% software în cloud).
 
 Puteți testa direct platforma sau activa un cont demonstrativ accesând:
-https://qr.pontaj.app
+https://pontaj.app
 
-Dacă doriți o scurtă prezentare sau asistență la configurare, ne puteți răspunde direct la acest email sau ne puteți contacta telefonic.
+Dacă doriți o scurtă prezentare sau asistență la configurare, ne puteți răspunde direct la acest email sau ne puteți contacta telefonic la ${senderPhone}.
 
 Cu respect,
-Echipa Smart QR Pontaj
-https://qr.pontaj.app`;
+${senderName || 'Echipa Pontaj.app'}
+Email: ${senderEmail}
+Telefon / WhatsApp: ${senderPhone}
+Web: https://pontaj.app`;
 
   if (pitchFocus === 'itm_compliance') {
     subject = `Evidență pontaj conformă Art. 119 ITM — ${companyName}`;
@@ -506,52 +539,58 @@ https://qr.pontaj.app`;
 
 Conform Art. 119 din Codul Muncii, fiecare angajator are obligația legală de a ține la locul de muncă evidența orelor de începere și sfârșit ale fiecărui salariat, cu ora exactă.
 
-Vă propunem Smart QR Pontaj — soluția digitală care elimină riscul amenzilor ITM și condicile pe hârtie pentru ${companyName}:
+Vă propunem Pontaj.app — soluția digitală care elimină riscul amenzilor ITM și condicile pe hârtie pentru ${companyName}:
 • Pontaj securizat pe tabletă sau smartphone cu cod QR dinamic și minut exact;
 • Rapoarte de control generate instant în formatul solicitat de inspectorii de muncă;
 • Export automat 1-Click în SAGA Salarii și Excel pentru contabilitate.
 
 Condiții:
-• 10 zile perioadă de probă gratuită, fără card bancar;
-• Tarif fix de 5.00 € / angajat / lună.
+• 15 zile perioadă de probă gratuită, fără card bancar;
+• Tarif: 5.00 € / angajat / lună (minim 50 € / firmă, reduceri de volum de la 50 și 100 angajați);
+• Echipamente: tableta și/sau suportul digital nu sunt oferite de noi și sunt în responsabilitatea clientului (soluție 100% software în cloud).
 
 Puteți începe testul gratuit direct aici:
-https://qr.pontaj.app
+https://pontaj.app
 
-Pentru detalii suplimentare sau asistență, răspundeți direct la acest email.
+Pentru detalii suplimentare sau asistență, răspundeți direct la acest email sau ne puteți contacta telefonic la ${senderPhone}.
 
 Cu respect,
-Echipa Smart QR Pontaj
-https://qr.pontaj.app`;
+${senderName || 'Echipa Pontaj.app'}
+Email: ${senderEmail}
+Telefon / WhatsApp: ${senderPhone}
+Web: https://pontaj.app`;
   } else if (pitchFocus === 'kiosk_tableta') {
     subject = `Terminal de pontaj pe tabletă la intrare — ${companyName}`;
     hook = 'Transformați orice tabletă într-un terminal inteligent de pontaj cu QR dinamic.';
     body = `Bună ziua,
 
-Vă propunem transformarea oricărei tablete obișnuite într-un terminal inteligent de pontaj la intrarea în ${companyName}, prin Smart QR Kiosk:
+Vă propunem transformarea oricărei tablete obișnuite într-un terminal inteligent de pontaj la intrarea în ${companyName}, prin Kiosk Pontaj.app:
 • Angajații scanează codul de pe telefon sau ecran în 2 secunde;
 • Prezența și orele exacte sunt transmise în timp real în panoul de management;
 • Generare automată a condicii legale ITM și export direct în SAGA Salarii / Excel la sfârșit de lună.
 
 Condiții:
-• 10 zile de testare gratuită completă;
-• Fără aparate de mii de euro, tarif de doar 5.00 € / angajat / lună.
+• 15 zile de testare gratuită completă;
+• Fără aparate de mii de euro, tarif de 5.00 € / angajat / lună (minim 50 € / firmă, reduceri de volum);
+• Echipamente: tableta și/sau suportul digital nu sunt oferite de noi și sunt în responsabilitatea clientului (soluție 100% software în cloud).
 
 Activați contul demonstrativ pe loc:
-https://qr.pontaj.app
+https://pontaj.app
 
-Dacă aveți întrebări, ne puteți contacta direct sau puteți răspunde la acest email.
+Dacă aveți întrebări, ne puteți contacta direct la ${senderPhone} sau puteți răspunde la acest email.
 
 Cu respect,
-Echipa Smart QR Pontaj
-https://qr.pontaj.app`;
+${senderName || 'Echipa Pontaj.app'}
+Email: ${senderEmail}
+Telefon / WhatsApp: ${senderPhone}
+Web: https://pontaj.app`;
   }
 
   return { subject, body, aiHook: hook };
 }
 
 // Apel direct către Claude (Anthropic API) pentru hiper-personalizare multi-limbă
-async function generateClaudePitch({ companyName, industry, city, website, notes, pitchFocus, language = 'ro', apiKey }) {
+async function generateClaudePitch({ companyName, industry, city, website, notes, pitchFocus, language = 'ro', apiKey, senderName = 'Smart QR Pontaj', senderEmail = 'contact@pontaj.app', senderPhone = '+40 757 77 77 12' }) {
   const lang = (language || 'ro').toLowerCase();
 
   const langDirectives = {
@@ -577,7 +616,7 @@ async function generateClaudePitch({ companyName, industry, city, website, notes
     },
     ro: {
       langName: 'Română',
-      brand: 'Smart QR Pontaj (https://qr.pontaj.app)',
+      brand: 'Pontaj.app (https://pontaj.app)',
       context: 'Piața din România. Focus pe pontaj rapid prin QR dinamic și kiosk pe tabletă, eliminarea condicii pe hârtie, conformitate la controlul ITM conform Art. 119 Codul Muncii și export direct SAGA Salarii / Excel.'
     }
   };
@@ -605,15 +644,20 @@ Cerințe stricte pentru email:
 4. Structură clară:
    - Propunerea directă a soluției smart de pontaj QR.
    - Puncte forte: fără hardware scump (orice tabletă/telefon la intrare), conformitate legală (Art. 119 ITM în RO), export instant pentru contabilitate (SAGA Salarii / Excel în RO, sau secretariat social în BE/FR).
-   - Condiții comerciale clare: 10 zile test gratuit complet fără card bancar, tarif transparent de 5.00 € / angajat / lună.
+   - Condiții comerciale clare: 15 zile test gratuit complet fără card bancar, tarif transparent de 5.00 € / angajat / lună (minim 50 € / lună / firmă, reduceri de volum de la 50 angajați la 4.50 € și de la 100 angajați la 4.00 €). Menționează clar că tableta și/sau suportul digital nu sunt oferite de noi și sunt în responsabilitatea clientului (soluție 100% software în cloud).
    - Call to action clar: link direct către platformă sau răspuns la email / telefon.
+   - OBLIGATORIU: Semnătură completă la finalul emailului cu:
+     ${senderName}
+     Email: ${senderEmail}
+     Telefon / WhatsApp: ${senderPhone}
+     Web: ${directive.brand}
 5. FĂRĂ caractere emoji! Este strict interzisă folosirea de emoji în text sau în subiect.
 
 Răspunde STRICT cu un obiect JSON valid, fără alte comentarii sau blocuri markdown (nu adăuga \`\`\`json):
 {
   "aiHook": "1 frază scurtă care explică unghiul de atac ales pentru această firmă (în ${directive.langName})",
   "subject": "subiect natural și scurt (max 7-8 cuvinte, în ${directive.langName})",
-  "body": "corpul complet al emailului în ${directive.langName}, semnat la final cu ${directive.brand}"
+  "body": "corpul complet al emailului în ${directive.langName}, semnat la final cu datele de contact complete (${senderName}, Email: ${senderEmail}, Telefon: ${senderPhone}, ${directive.brand})"
 }`;
 
   try {
@@ -655,6 +699,108 @@ Răspunde STRICT cu un obiect JSON valid, fără alte comentarii sau blocuri mar
   }
 }
 
+// Căutare companii locale oficiale prin Google Places API (ultra-precis, adrese reale, telefoane, website-uri)
+async function searchGooglePlacesForLeads({ apiKey, niches, cities, country = 'RO', limit = 20, mapCenter = null }) {
+  if (!apiKey) return [];
+  const leadsFound = [];
+  const seenNames = new Set();
+  const perQueryQuota = Math.max(3, Math.ceil(limit / Math.max(1, niches.length * cities.length)));
+
+  for (const curNiche of niches) {
+    for (const curCity of cities) {
+      if (leadsFound.length >= limit) break;
+      try {
+        const query = `${curNiche} in ${curCity}, ${country}`;
+        let url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&key=${apiKey}&language=ro&region=${(country || 'ro').toLowerCase()}`;
+        if (mapCenter && mapCenter.lat && mapCenter.lon) {
+          url += `&location=${mapCenter.lat},${mapCenter.lon}&radius=20000`;
+        }
+
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 8000);
+        const gRes = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeout);
+
+        if (!gRes.ok) {
+          console.warn('[GooglePlaces] HTTP Status:', gRes.status);
+          continue;
+        }
+
+        const gData = await gRes.json();
+        if (gData.status === 'REQUEST_DENIED') {
+          console.warn('[GooglePlaces] REQUEST_DENIED:', gData.error_message || 'Verificați cheia Google Places API');
+          return leadsFound;
+        }
+
+        const places = (gData.results || []).slice(0, perQueryQuota * 2);
+        for (const place of places) {
+          if (leadsFound.length >= limit) break;
+          const rawName = place.name ? place.name.trim() : '';
+          const lowerName = rawName.toLowerCase();
+          if (!rawName || seenNames.has(lowerName)) continue;
+          seenNames.add(lowerName);
+
+          let phone = '';
+          let website = '';
+          let formattedAddress = place.formatted_address || '';
+          let placeCity = curCity;
+          let placeCounty = '';
+
+          // Fetch Place Details dacă avem place_id
+          if (place.place_id) {
+            try {
+              const detUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${place.place_id}&fields=name,formatted_phone_number,international_phone_number,website,formatted_address,address_components&key=${apiKey}&language=ro`;
+              const detRes = await fetch(detUrl);
+              if (detRes.ok) {
+                const detData = await detRes.json();
+                if (detData.result) {
+                  phone = detData.result.formatted_phone_number || detData.result.international_phone_number || '';
+                  website = detData.result.website || '';
+                  if (detData.result.formatted_address) {
+                    formattedAddress = detData.result.formatted_address;
+                  }
+                  const components = detData.result.address_components || [];
+                  const loc = components.find(c => c.types.includes('locality'));
+                  const admin = components.find(c => c.types.includes('administrative_area_level_1'));
+                  if (loc?.long_name) placeCity = loc.long_name;
+                  if (admin?.long_name) placeCounty = admin.long_name;
+                }
+              }
+            } catch (e) {
+              // Ignorăm erori de detalii
+            }
+          }
+
+          let email = null;
+          if (website) {
+            email = await scrapeEmailFromWebsite(website);
+          }
+
+          leadsFound.push({
+            companyName: rawName,
+            address: formattedAddress,
+            city: placeCity,
+            county: placeCounty,
+            country: (country || 'RO').toUpperCase(),
+            phone: phone,
+            website: website,
+            email: email,
+            rating: place.rating || null,
+            userRatingsTotal: place.user_ratings_total || 0,
+            lat: place.geometry?.location?.lat || null,
+            lon: place.geometry?.location?.lng || null,
+            industry: curNiche,
+            source: 'google_places'
+          });
+        }
+      } catch (err) {
+        console.warn('[GooglePlaces] Search step error:', err.message);
+      }
+    }
+  }
+  return leadsFound;
+}
+
 const harveyService = {
   // Preluare setări Harvey
   async getSettings() {
@@ -663,35 +809,66 @@ const harveyService = {
       return {
         sender_name: 'Smart QR Pontaj',
         sender_email: 'jeka7ro@gmail.com',
+        sender_phone: '+40 757 77 77 12',
         daily_send_limit: 25,
         default_pitch: 'pontaj_digital',
-        has_anthropic_key: !!process.env.ANTHROPIC_API_KEY
+        has_anthropic_key: !!process.env.ANTHROPIC_API_KEY,
+        has_google_places_key: !!process.env.GOOGLE_PLACES_API_KEY
       };
     }
     const row = res.rows[0];
     return {
       ...row,
+      sender_phone: row.sender_phone || '+40 757 77 77 12',
       has_anthropic_key: !!(row.anthropic_api_key || process.env.ANTHROPIC_API_KEY),
-      anthropic_api_key: row.anthropic_api_key ? '••••••••' + row.anthropic_api_key.slice(-4) : ''
+      anthropic_api_key: row.anthropic_api_key ? '••••••••' + row.anthropic_api_key.slice(-4) : '',
+      has_google_places_key: !!(row.google_places_api_key || process.env.GOOGLE_PLACES_API_KEY),
+      google_places_api_key: row.google_places_api_key ? '••••••••' + row.google_places_api_key.slice(-4) : ''
     };
   },
 
   // Salvare setări Harvey
   async updateSettings(data) {
-    const { senderName, senderEmail, dailySendLimit, defaultPitch, anthropicApiKey } = data;
+    const { senderName, senderEmail, senderPhone, dailySendLimit, defaultPitch, anthropicApiKey, googlePlacesApiKey } = data;
     
-    // Dacă utilizatorul a trimis o cheie mascată, nu o suprascriem
-    let keyUpdateSql = '';
-    const params = [senderName || 'Smart QR Pontaj', senderEmail || 'jeka7ro@gmail.com', parseInt(dailySendLimit, 10) || 25, defaultPitch || 'pontaj_digital'];
+    const updates = [
+      'sender_name = $1',
+      'sender_email = $2',
+      'sender_phone = $3',
+      'daily_send_limit = $4',
+      'default_pitch = $5'
+    ];
+    const params = [
+      senderName || 'Smart QR Pontaj',
+      senderEmail || 'jeka7ro@gmail.com',
+      senderPhone || '+40 757 77 77 12',
+      parseInt(dailySendLimit, 10) || 25,
+      defaultPitch || 'pontaj_digital'
+    ];
     
-    if (anthropicApiKey && !anthropicApiKey.includes('••••')) {
-      keyUpdateSql = ', anthropic_api_key = $5';
-      params.push(anthropicApiKey.trim());
+    if (anthropicApiKey !== undefined) {
+      if (anthropicApiKey === '') {
+        updates.push('anthropic_api_key = NULL');
+      } else if (!anthropicApiKey.includes('••••')) {
+        params.push(anthropicApiKey.trim());
+        updates.push(`anthropic_api_key = $${params.length}`);
+      }
     }
+
+    if (googlePlacesApiKey !== undefined) {
+      if (googlePlacesApiKey === '') {
+        updates.push('google_places_api_key = NULL');
+      } else if (!googlePlacesApiKey.includes('••••')) {
+        params.push(googlePlacesApiKey.trim());
+        updates.push(`google_places_api_key = $${params.length}`);
+      }
+    }
+
+    updates.push('updated_at = NOW()');
 
     const query = `
       UPDATE sales_settings 
-      SET sender_name = $1, sender_email = $2, daily_send_limit = $3, default_pitch = $4 ${keyUpdateSql}, updated_at = NOW()
+      SET ${updates.join(', ')}
       WHERE id = (SELECT id FROM sales_settings ORDER BY id ASC LIMIT 1)
       RETURNING *;
     `;
@@ -699,12 +876,75 @@ const harveyService = {
     return res.rows[0];
   },
 
-  // Căutare companii reale prin Photon API (OpenStreetMap mirror ultra-rapid, fără rate-limit 429)
-  async searchRealLeads({ niche = 'restaurante', city = 'București', niches = null, cities = null, country = 'RO', limit = 20, campaignId = null, mapCenter = null, bbox = null }) {
+  // Căutare companii reale prin Google Places API sau Photon / OpenStreetMap
+  async searchRealLeads({ niche = 'restaurante', city = 'București', niches = null, cities = null, country = 'RO', limit = 20, campaignId = null, mapCenter = null, bbox = null, googlePlacesApiKey = null }) {
     const targetNiches = Array.isArray(niches) && niches.length > 0 ? niches : [niche];
     const targetCities = Array.isArray(cities) && cities.length > 0 ? cities : [city];
     const targetCountry = (country || 'RO').toUpperCase();
     const requestedTotal = Math.max(4, parseInt(limit, 10) || 20);
+
+    const savedLeads = [];
+
+    // 1. Verificăm dacă avem o cheie Google Places API (din parametru, setări sau env)
+    let googleApiKey = googlePlacesApiKey || process.env.GOOGLE_PLACES_API_KEY || null;
+    if (!googleApiKey) {
+      try {
+        const sRes = await db.query('SELECT google_places_api_key FROM sales_settings ORDER BY id ASC LIMIT 1');
+        if (sRes.rows.length > 0 && sRes.rows[0].google_places_api_key) {
+          googleApiKey = sRes.rows[0].google_places_api_key;
+        }
+      } catch (e) {}
+    }
+
+    if (googleApiKey) {
+      console.log('[HarveyService] Executare căutare companii prin Google Places API...');
+      const googleResults = await searchGooglePlacesForLeads({
+        apiKey: googleApiKey,
+        niches: targetNiches,
+        cities: targetCities,
+        country: targetCountry,
+        limit: requestedTotal,
+        mapCenter
+      });
+
+      for (const item of googleResults) {
+        if (savedLeads.length >= requestedTotal) break;
+
+        const existing = await db.query(
+          'SELECT id FROM sales_leads WHERE (LOWER(company_name) = LOWER($1) AND LOWER(city) = LOWER($2)) OR (email IS NOT NULL AND email != \'\' AND email = $3)',
+          [item.companyName, item.city, item.email || '__no_email__']
+        );
+
+        if (existing.rows.length === 0) {
+          const targetLang = detectLeadLanguage(item.city, item.country, item.address);
+          const fallback = generateFallbackPitch({
+            companyName: item.companyName,
+            industry: item.industry,
+            city: item.city,
+            pitchFocus: 'pontaj_digital',
+            language: targetLang
+          });
+
+          const insertRes = await db.query(`
+            INSERT INTO sales_leads (
+              campaign_id, company_name, city, country, address, website, email, phone, industry,
+              ai_hook, draft_subject, draft_body, language, status, source, notes, created_at, updated_at
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 'pending_review', 'google_places', $14, NOW(), NOW())
+            RETURNING *;
+          `, [
+            campaignId, item.companyName, item.city, item.country, item.address, item.website, item.email, item.phone, item.industry,
+            fallback.aiHook, fallback.subject, fallback.body, targetLang,
+            item.rating ? `Google Rating: ${item.rating} (${item.userRatingsTotal || 0} recenzii)` : null
+          ]);
+
+          savedLeads.push(insertRes.rows[0]);
+        }
+      }
+
+      if (savedLeads.length > 0) {
+        return savedLeads;
+      }
+    }
 
     const CITY_COORDS = {
       // România
@@ -850,7 +1090,6 @@ const harveyService = {
       return true;
     };
 
-    const savedLeads = [];
     const quotaPerNiche = Math.max(2, Math.ceil(requestedTotal / targetNiches.length));
 
     // Iterăm prin FIECARE nișă în mod garantat, asigurând că nicio nișă nu este înfometată
@@ -872,7 +1111,7 @@ const harveyService = {
         if (!coords && cCity) {
           try {
             const geoRes = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(cCity + ' ' + (targetCountry || ''))}&limit=1`, {
-              headers: { 'User-Agent': 'SmartQRPontajCRM/1.0 (contact@smartqr.ro)' }
+              headers: { 'User-Agent': 'SmartQRPontajCRM/1.0 (contact@pontaj.app)' }
             });
             if (geoRes.ok) {
               const geoData = await geoRes.json();
@@ -920,14 +1159,24 @@ const harveyService = {
               if (seenCandidateNames.has(lower)) continue;
               seenCandidateNames.add(lower);
 
-              const detectedCity = p.city || p.town || p.suburb || cCity;
-              // Dacă e căutare pe București, excludem dacă județul e altul decât București / Ilfov
+              const candCity = (p.city || p.town || p.suburb || p.municipality || '').toLowerCase();
+              const candCounty = (p.county || p.state || '').toLowerCase();
+
+              // Verificare strictă a orașului căutat:
               if (normCityLower.includes('bucur')) {
-                if (p.county && !p.county.toLowerCase().includes('bucur') && !p.county.toLowerCase().includes('ilfov')) {
+                if (candCounty && !candCounty.includes('bucur') && !candCounty.includes('ilfov')) {
+                  continue;
+                }
+                if (candCity && !candCity.includes('bucur') && !candCity.includes('sector') && !candCity.includes('ilfov')) {
+                  continue;
+                }
+              } else {
+                if (candCity && !candCity.includes(normCityLower) && !normCityLower.includes(candCity) && !candCounty.includes(normCityLower)) {
                   continue;
                 }
               }
 
+              const detectedCity = p.suburb || p.city || p.town || cCity;
               candidateFeatures.push({ feat, p, rawName, detectedCity });
             }
           } catch (e) {
@@ -948,7 +1197,7 @@ const harveyService = {
             const timeout = setTimeout(() => controller.abort(), 4000);
             const lRes = await fetch(`https://nominatim.openstreetmap.org/lookup?osm_ids=${chunk}&format=json&extratags=1&addressdetails=1`, {
               signal: controller.signal,
-              headers: { 'User-Agent': 'SmartQRPontajCRM/1.0 (contact@smartqr.ro)' }
+              headers: { 'User-Agent': 'SmartQRPontajCRM/1.0 (contact@pontaj.app)' }
             });
             clearTimeout(timeout);
             if (lRes.ok) {
@@ -1085,9 +1334,13 @@ const harveyService = {
 
     const targetLang = language || lead.language || detectLeadLanguage(lead.city, null, lead.address);
 
-    // Luăm cheia Anthropic din settings sau din .env
-    const settings = await db.query('SELECT anthropic_api_key FROM sales_settings LIMIT 1');
-    const apiKey = settings.rows[0]?.anthropic_api_key || process.env.ANTHROPIC_API_KEY;
+    // Luăm cheia Anthropic și setările expeditorului din sales_settings
+    const settingsRes = await db.query('SELECT * FROM sales_settings ORDER BY id ASC LIMIT 1');
+    const settings = settingsRes.rows[0] || {};
+    const apiKey = settings.anthropic_api_key || process.env.ANTHROPIC_API_KEY;
+    const senderName = settings.sender_name || 'Smart QR Pontaj';
+    const senderEmail = settings.sender_email || 'contact@pontaj.app';
+    const senderPhone = settings.sender_phone || '+40 757 77 77 12';
 
     let pitch;
     if (apiKey) {
@@ -1099,7 +1352,10 @@ const harveyService = {
         notes: customNotes || lead.notes,
         pitchFocus,
         language: targetLang,
-        apiKey
+        apiKey,
+        senderName,
+        senderEmail,
+        senderPhone
       });
     } else {
       pitch = generateFallbackPitch({
@@ -1107,7 +1363,10 @@ const harveyService = {
         industry: lead.industry,
         city: lead.city,
         pitchFocus,
-        language: targetLang
+        language: targetLang,
+        senderName,
+        senderEmail,
+        senderPhone
       });
     }
 
@@ -1118,7 +1377,304 @@ const harveyService = {
       RETURNING *;
     `, [pitch.subject, pitch.body, pitch.aiHook, targetLang, leadId]);
 
-    return updated.rows[0];
+  },
+
+  // Generator șablon email HTML stilizat la nivelul landing page-ului (executive dark gradient, cards, pills, CTA)
+  formatLeadEmailHtml(lead, isTest = false) {
+    const companyName = lead.company_name || 'Compania dvs.';
+    const subject = isTest ? `[TEST PREVIZUALIZARE] ${lead.draft_subject || lead.pitch_subject || 'Smart QR Pontaj'}` : (lead.draft_subject || lead.pitch_subject || 'Smart QR Pontaj');
+    const rawBody = lead.draft_body || lead.pitch_body || '';
+
+    // Parsare inteligentă a paragrafelor
+    const paragraphs = rawBody.split('\n\n').map(p => p.trim()).filter(Boolean);
+
+    let greeting = 'Bună ziua,';
+    let introParagraphs = [];
+    let features = [];
+    let closingNote = 'Dacă doriți o scurtă prezentare sau asistență la configurare, ne puteți contacta telefonic sau puteți răspunde direct la acest email.';
+
+    for (const para of paragraphs) {
+      if (para.toLowerCase().startsWith('bună ziua') || para.toLowerCase().startsWith('stimate')) {
+        greeting = para.split('\n')[0];
+      } else if (para.includes('•') || para.includes('- ') || /^\d+\./m.test(para)) {
+        const lines = para.split('\n');
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (trimmed.startsWith('•') || trimmed.startsWith('-') || /^\d+\./.test(trimmed)) {
+            const cleanText = trimmed.replace(/^[•\-\d\.]\s*/, '');
+            if (!cleanText.toLowerCase().includes('15 zile test') && !cleanText.toLowerCase().includes('5.00 €') && !cleanText.toLowerCase().includes('comision recurent')) {
+              features.push(cleanText);
+            }
+          }
+        }
+      } else if (para.toLowerCase().includes('cu respect') || para.toLowerCase().startsWith('smart qr')) {
+        // Semnătura text brut este înlocuită de cardul executiv grafic
+      } else if (para.toLowerCase().includes('puteți testa') || para.includes('https://')) {
+        // Linkul brut este înlocuit de butonul mare CTA
+      } else if (para.toLowerCase().includes('dacă doriți') || para.toLowerCase().includes('pentru detalii') || para.toLowerCase().includes('pentru întrebări')) {
+        closingNote = para;
+      } else {
+        introParagraphs.push(para);
+      }
+    }
+
+    // Generare carduri vizuale elegante cu iconițe vectoriale Lucide renderizate ca PNG via CDN (fără emoji-uri)
+    const getIconConfig = (text, idx) => {
+      const lower = text.toLowerCase();
+      if (lower.includes('kiosk') || lower.includes('tablet') || lower.includes('telefon') || lower.includes('ecran') || lower.includes('aparat') || lower.includes('terminal')) {
+        return {
+          iconName: 'tablet',
+          color: '%25232563eb', // Albastru Royal
+          bg: '#eff6ff',
+          border: '#bfdbfe'
+        };
+      }
+      if (lower.includes('legal') || lower.includes('itm') || lower.includes('condic') || lower.includes('art. 119') || lower.includes('muncii') || lower.includes('lege')) {
+        return {
+          iconName: 'shield-check',
+          color: '%2523059669', // Verde Smarald
+          bg: '#ecfdf5',
+          border: '#a7f3d0'
+        };
+      }
+      if (lower.includes('saga') || lower.includes('export') || lower.includes('salarii') || lower.includes('contab') || lower.includes('excel') || lower.includes('calcul')) {
+        return {
+          iconName: 'file-spreadsheet',
+          color: '%25234f46e5', // Indigo
+          bg: '#eef2ff',
+          border: '#c7d2fe'
+        };
+      }
+      if (lower.includes('ore') || lower.includes('noapte') || lower.includes('weekend') || lower.includes('schimb') || lower.includes('timp') || lower.includes('minut')) {
+        return {
+          iconName: 'clock',
+          color: '%25230284c7', // Bleu
+          bg: '#f0f9ff',
+          border: '#bae6fd'
+        };
+      }
+      if (lower.includes('gps') || lower.includes('teren') || lower.includes('santier') || lower.includes('locati')) {
+        return {
+          iconName: 'map-pin',
+          color: '%2523d97706', // Chihlimbar
+          bg: '#fffbeb',
+          border: '#fde68a'
+        };
+      }
+
+      const defaults = [
+        { iconName: 'tablet', color: '%25232563eb', bg: '#eff6ff', border: '#bfdbfe' },
+        { iconName: 'shield-check', color: '%2523059669', bg: '#ecfdf5', border: '#a7f3d0' },
+        { iconName: 'file-spreadsheet', color: '%25234f46e5', bg: '#eef2ff', border: '#c7d2fe' },
+        { iconName: 'clock', color: '%25230284c7', bg: '#f0f9ff', border: '#bae6fd' },
+        { iconName: 'qr-code', color: '%25237c3aed', bg: '#faf5ff', border: '#e9d5ff' }
+      ];
+      return defaults[idx % defaults.length];
+    };
+
+    const featureCardsHtml = features.map((f, idx) => {
+      let title = '';
+      let desc = f;
+      if (f.includes(':')) {
+        const parts = f.split(':');
+        title = parts[0].trim();
+        desc = parts.slice(1).join(':').trim();
+      } else {
+        title = `Punct Cheie ${idx + 1}`;
+      }
+
+      const cfg = getIconConfig(f, idx);
+      const iconUrl = `https://images.weserv.nl/?url=api.iconify.design/lucide/${cfg.iconName}.svg?color=${cfg.color}&w=48&h=48&output=png`;
+
+      return `
+        <div style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px 18px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+          <table width="100%" cellpadding="0" cellspacing="0" border="0">
+            <tr>
+              <td width="44" valign="top" style="padding-right: 14px;">
+                <table cellpadding="0" cellspacing="0" border="0">
+                  <tr>
+                    <td style="width: 38px; height: 38px; border-radius: 10px; background-color: ${cfg.bg}; border: 1.5px solid ${cfg.border}; text-align: center; vertical-align: middle;">
+                      <img 
+                        src="${iconUrl}" 
+                        width="22" 
+                        height="22" 
+                        alt="${title}"
+                        style="display: block; margin: 0 auto; width: 22px; height: 22px; border: 0;"
+                      />
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td valign="middle">
+                <div style="font-size: 14px; font-weight: 700; color: #0f172a; margin-bottom: 3px; letter-spacing: -0.2px;">${title}</div>
+                <div style="font-size: 13px; color: #475569; line-height: 1.5;">${desc}</div>
+              </td>
+            </tr>
+          </table>
+        </div>
+      `;
+    }).join('');
+
+    const html = `
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${subject}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
+  <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color: #f1f5f9; width: 100%;">
+    <tr>
+      <td align="center" style="padding: 30px 14px;">
+        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="max-width: 600px; background-color: #ffffff; border-radius: 20px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 10px 30px rgba(0,0,0,0.06);">
+          
+          <!-- Header Executive Dark Gradient (Identic Landing) -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 32px 28px; text-align: left;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td valign="middle">
+                    <table cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td align="center" valign="middle" style="width: 40px; height: 40px; background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%); border-radius: 12px; text-align: center; vertical-align: middle; box-shadow: 0 4px 12px rgba(37,99,235,0.35); border: 1px solid rgba(255,255,255,0.18); padding: 0; margin: 0; font-size: 0; line-height: 0;">
+                          <img 
+                            src="https://images.weserv.nl/?url=api.iconify.design/lucide/qr-code.svg?color=%2523ffffff&w=48&h=48&output=png" 
+                            width="22" 
+                            height="22" 
+                            alt="QR"
+                            style="display: block; margin: 0 auto; width: 22px; height: 22px; border: 0;"
+                          />
+                        </td>
+                        <td style="padding-left: 12px;">
+                          <div style="font-size: 20px; font-weight: 900; color: #ffffff; letter-spacing: -0.5px; line-height: 1.1;">
+                            Pontaj<span style="color: #60a5fa;">.app</span>
+                          </div>
+                          <div style="font-size: 10px; font-weight: 700; color: #94a3b8; letter-spacing: 1px; text-transform: uppercase; margin-top: 3px;">PLATFORMĂ DIGITALĂ DE PONTAJ</div>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                  <td align="right" valign="middle">
+                    ${isTest ? '<span style="background: #ef4444; color: #ffffff; font-size: 10px; font-weight: 800; padding: 4px 10px; border-radius: 9999px; display: inline-block; white-space: nowrap; letter-spacing: 0.5px;">TEST</span>' : ''}
+                  </td>
+                </tr>
+              </table>
+
+              <div style="margin-top: 26px;">
+                <div style="color: #ffffff; font-size: 21px; font-weight: 800; line-height: 1.3; letter-spacing: -0.4px;">
+                  Evidență ore salariați &amp; Export SAGA fără hârtii
+                </div>
+                <div style="color: #94a3b8; font-size: 13.5px; margin-top: 6px; font-weight: 500;">
+                  Soluție dedicată pentru <strong style="color: #f8fafc;">${companyName}</strong>
+                </div>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Corp Principal Email -->
+          <tr>
+            <td style="padding: 32px 28px; color: #1e293b;">
+              
+              <!-- Salut și Introducere -->
+              <div style="font-size: 15px; font-weight: 700; color: #0f172a; margin-bottom: 12px;">
+                ${greeting}
+              </div>
+              <div style="font-size: 14.5px; line-height: 1.65; color: #334155; margin-bottom: 20px;">
+                ${introParagraphs.map(p => `<p style="margin: 0 0 12px 0;">${p}</p>`).join('')}
+              </div>
+
+              <!-- Fotografie Video Prezentare (Kiosk QR pe Tabletă) -->
+              <table width="100%" border="0" cellpadding="0" cellspacing="0" style="margin: 20px 0 24px 0;">
+                <tr>
+                  <td align="center">
+                    <a href="https://qr.pontaj.app" target="_blank" style="text-decoration: none; display: inline-block;">
+                      <img 
+                        src="https://qr.pontaj.app/media/qrtime-demo-poster.jpg" 
+                        alt="Salariat scanează codul QR de pe tabletă la intrare" 
+                        width="544" 
+                        style="display: block; width: 100%; max-width: 544px; height: auto; border-radius: 14px; border: 1px solid #cbd5e1; box-shadow: 0 6px 18px rgba(0,0,0,0.08); margin: 0 auto;" 
+                      />
+                    </a>
+                    <div style="font-size: 11px; color: #64748b; margin-top: 8px; font-weight: 600; text-align: center;">
+                      Terminal Kiosk pe tabletă la intrare &bull; Scanare rapidă sub o secundă cu orice telefon
+                    </div>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Titlu Secțiune Beneficii -->
+              <div style="font-size: 13px; font-weight: 700; color: #334155; margin: 20px 0 12px 0;">
+                Cum funcționează pentru ${companyName}:
+              </div>
+
+              <!-- Carduri Beneficii (Fără Emoji, Iconițe Stilizate Lucide) -->
+              ${featureCardsHtml}
+
+
+
+              <!-- Buton Principal Call-To-Action (Landing Style) -->
+              <div style="text-align: center; margin: 26px 0;">
+                <a href="https://qr.pontaj.app/ro?ref=email" target="_blank" style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: #ffffff !important; padding: 16px 36px; border-radius: 9999px; font-weight: 800; font-size: 15px; text-decoration: none; display: inline-block; letter-spacing: 0.2px; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);">
+                  Activează Testul Gratuit (15 Zile) &rarr;
+                </a>
+                <div style="font-size: 12px; color: #64748b; margin-top: 10px; font-weight: 500;">
+                  Nu necesită descărcare &bull; Funcționează instant pe orice tabletă sau telefon
+                </div>
+              </div>
+
+              <!-- Notă Încheiere -->
+              <div style="font-size: 13.5px; color: #475569; line-height: 1.6; margin: 24px 0 20px 0; border-left: 3px solid #2563eb; padding-left: 14px;">
+                ${closingNote}
+              </div>
+
+              <!-- Card Contact Direct & WhatsApp -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; margin-top: 20px;">
+                <tr>
+                  <td style="padding: 18px 20px;">
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td valign="middle">
+                          <div style="font-size: 14px; font-weight: 800; color: #0f172a;">Echipa Pontaj.app</div>
+                          <div style="font-size: 12.5px; color: #475569; margin-top: 3px;">
+                            Telefon: <a href="tel:0757777712" style="color: #2563eb; text-decoration: none; font-weight: 700;">0757 77 77 12</a> &bull; Email: <a href="mailto:contact@pontaj.app" style="color: #2563eb; text-decoration: none; font-weight: 700;">contact@pontaj.app</a>
+                          </div>
+                          <div style="font-size: 12px; color: #64748b; margin-top: 2px;">
+                            Web: <a href="https://qr.pontaj.app" style="color: #2563eb; text-decoration: none;">https://qr.pontaj.app</a>
+                          </div>
+                        </td>
+                        <td align="right" valign="middle" style="padding-left: 14px;">
+                          <a href="https://wa.me/40757777712?text=Buna%20ziua,%20doresc%20detalii%20despre%20Pontaj.app" target="_blank" style="background-color: #16a34a; color: #ffffff !important; padding: 10px 18px; border-radius: 9999px; font-size: 12px; font-weight: 700; text-decoration: none; display: inline-block; white-space: nowrap; box-shadow: 0 2px 8px rgba(22,163,74,0.3);">
+                            Scrie pe WhatsApp &rarr;
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+            </td>
+          </tr>
+
+          <!-- Footer Legal -->
+          <tr>
+            <td align="center" style="background-color: #f8fafc; padding: 22px 28px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #edf2f7; line-height: 1.6;">
+              Pontaj.app &bull; Pontaj Electronic QR pe Orice Ecran<br/>
+              Acest mesaj a fost transmis către <strong>${companyName}</strong>. Dacă nu doriți să mai primiți comunicări, puteți răspunde cu "Dezabonare".
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+    `;
+
+    return { subject, html };
   },
 
   // Trimitere email către lead prin Brevo
@@ -1136,7 +1692,7 @@ const harveyService = {
     }
 
     const settingsRes = await db.query('SELECT * FROM sales_settings LIMIT 1');
-    const settings = settingsRes.rows[0] || { sender_name: 'Smart QR Pontaj', sender_email: 'jeka7ro@gmail.com', daily_send_limit: 25 };
+    const settings = settingsRes.rows[0] || { sender_name: 'Smart QR Pontaj', sender_email: 'contact@pontaj.app', daily_send_limit: 25 };
 
     // Verificăm limita zilnică
     const todayCountRes = await db.query(`
@@ -1149,44 +1705,17 @@ const harveyService = {
       throw new Error(`Limita zilnică de ${settings.daily_send_limit} emailuri a fost atinsă pentru astăzi. Vă rugăm continuați mâine.`);
     }
 
-    // Formatăm corpul emailului cu HTML curat
-    const paragraphs = (lead.draft_body || '')
-      .split('\n\n')
-      .map(p => `<p style="margin: 0 0 14px 0; line-height: 1.6; color: #334155; font-size: 14px;">${p.replace(/\n/g, '<br/>')}</p>`)
-      .join('');
-
-    const htmlContent = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>${lead.draft_subject}</title>
-</head>
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; padding: 24px 12px; margin: 0;">
-  <div style="max-width: 580px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; padding: 28px 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-    <div style="border-bottom: 1px solid #f1f5f9; padding-bottom: 16px; margin-bottom: 20px;">
-      <span style="font-size: 16px; font-weight: 700; color: #0f172a;">Smart QR Pontaj</span>
-    </div>
-
-    <div>
-      ${paragraphs}
-    </div>
-
-    <div style="margin-top: 28px; padding-top: 16px; border-top: 1px solid #f1f5f9; font-size: 11px; color: #94a3b8; line-height: 1.5;">
-      Acest mesaj a fost transmis către ${lead.company_name} privind servicii dedicate de gestiune a pontajului. Dacă nu doriți să mai primiți informări, puteți răspunde cu "Dezabonare" și adresa va fi exclusă imediat.
-    </div>
-  </div>
-</body>
-</html>
-    `;
+    // Generăm HTML stilizat la nivelul landing page-ului
+    const { subject, html } = this.formatLeadEmailHtml(lead, false);
 
     // Trimitere efectivă prin Brevo
     await emailService.sendEmail({
       to: lead.email,
-      subject: lead.draft_subject,
-      html: htmlContent,
+      subject: subject,
+      html: html,
       text: lead.draft_body,
-      senderName: settings.sender_name
+      senderName: settings.sender_name || 'Smart QR Pontaj',
+      senderEmail: settings.sender_email || 'contact@pontaj.app'
     });
 
     // Actualizăm statusul
@@ -1198,6 +1727,32 @@ const harveyService = {
     `, [leadId]);
 
     return updated.rows[0];
+  },
+
+  // Trimitere email de test pentru previzualizare către administrator
+  async sendTestLeadEmail(leadId, targetEmail = null) {
+    const leadRes = await db.query('SELECT * FROM sales_leads WHERE id = $1', [leadId]);
+    if (leadRes.rows.length === 0) throw new Error('Lead-ul nu a fost găsit');
+    const lead = leadRes.rows[0];
+
+    const settingsRes = await db.query('SELECT * FROM sales_settings LIMIT 1');
+    const settings = settingsRes.rows[0] || { sender_name: 'Smart QR Pontaj', sender_email: 'contact@pontaj.app' };
+
+    const recipient = targetEmail || process.env.ADMIN_NOTIFICATION_EMAIL || 'jeka7ro@gmail.com';
+
+    // Generăm HTML stilizat cu marcaj de test
+    const { subject, html } = this.formatLeadEmailHtml(lead, true);
+
+    await emailService.sendEmail({
+      to: recipient,
+      subject: subject,
+      html: html,
+      text: lead.draft_body,
+      senderName: settings.sender_name || 'Smart QR Pontaj',
+      senderEmail: settings.sender_email || 'contact@pontaj.app'
+    });
+
+    return { success: true, recipient };
   },
 
   // Import în lot lead-uri din CSV / Excel / text

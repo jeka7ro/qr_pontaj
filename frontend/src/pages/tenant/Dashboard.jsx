@@ -5,7 +5,7 @@ import {
   CalendarDays, FileSpreadsheet, Globe, Map, BookOpenCheck, Calculator, 
   CalendarClock, ScanFace, MessageSquare, Wrench, Table, ChevronDown,
   Bell, LogIn, Briefcase, Clock, User, PanelLeftClose, PanelLeftOpen, ChevronRight, Settings,
-  Activity
+  Activity, AlertCircle, RefreshCw
 } from 'lucide-react';
 import TenantSettingsModal from '../../components/TenantSettingsModal';
 
@@ -99,48 +99,65 @@ export default function TenantDashboard() {
     }
   }, [tenantInfo, setLanguage]);
 
-  useEffect(() => {
-    const fetchInfo = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          navigate('/admin/login');
-          return;
-        }
+  const fetchInfo = async (retryCount = 0) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        navigate('/admin/login');
+        return;
+      }
 
-        const res = await fetch(`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenant/dashboard/info`, {
+      let apiUrl = `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenant/dashboard/info`;
+      
+      let res;
+      try {
+        res = await fetch(apiUrl, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
         });
-        
-        if (res.status === 401 || res.status === 403) {
-          localStorage.clear();
-          navigate('/admin/login');
-          return;
-        }
-        
-        if (!res.ok) throw new Error('Eroare la preluarea datelor companiei');
-        
-        const data = await res.json();
-        setTenantInfo(data);
-        
-        // Dacă e setată culoarea, o aplicăm global pentru acest dashboard
-        if (data.tenant?.theme_color) {
-          document.documentElement.style.setProperty('--color-tenant-theme', data.tenant.theme_color);
-        }
-
-        // Aplicăm Favicon-ul specific tenantului și titlul paginii
-        if (data.tenant?.favicon_url || data.tenant?.logo_url) {
-          updatePageFavicon(data.tenant.favicon_url || data.tenant.logo_url, `${data.tenant.name || 'QR Pontaj'} - Panou Administrare`);
-        }
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
+      } catch (netErr) {
+        // Fallback la proxy relativ /api dacă apelul direct a eșuat
+        res = await fetch('/api/tenant/dashboard/info', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
       }
-    };
-    
+      
+      if (res.status === 401 || res.status === 403) {
+        localStorage.clear();
+        navigate('/admin/login');
+        return;
+      }
+      
+      if (!res.ok) throw new Error('Eroare la preluarea datelor companiei');
+      
+      const data = await res.json();
+      setTenantInfo(data);
+      setError(null);
+      setLoading(false);
+      
+      // Dacă e setată culoarea, o aplicăm global pentru acest dashboard
+      if (data.tenant?.theme_color) {
+        document.documentElement.style.setProperty('--color-tenant-theme', data.tenant.theme_color);
+      }
+
+      // Aplicăm Favicon-ul specific tenantului și titlul paginii
+      if (data.tenant?.favicon_url || data.tenant?.logo_url) {
+        updatePageFavicon(data.tenant.favicon_url || data.tenant.logo_url, `${data.tenant.name || 'QR Pontaj'} - Panou Administrare`);
+      }
+    } catch (err) {
+      if (retryCount < 3) {
+        setTimeout(() => fetchInfo(retryCount + 1), 1000);
+        return;
+      }
+      setError(err.message || 'Eroare de conexiune la server');
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchInfo();
   }, [navigate]);
 
@@ -213,15 +230,31 @@ export default function TenantDashboard() {
   if (error || !tenantInfo?.tenant) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center p-4">
-        <div className="bg-white dark:bg-slate-900 p-8 rounded-lg shadow-xl max-w-md w-full text-center">
+        <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-xl max-w-md w-full text-center border border-slate-200 dark:border-slate-800">
+          <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-4">
+            <AlertCircle size={24} />
+          </div>
           <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-2">{t('accessError')}</h2>
-          <p className="text-slate-600 dark:text-slate-300 mb-6">{error || 'Nu am putut încărca datele tenantului.'}</p>
-          <button 
-            onClick={handleLogout}
-            className="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold h-11 rounded-full transition-colors"
-          >
-            {t('backToLogin')}
-          </button>
+          <p className="text-slate-600 dark:text-slate-300 text-sm mb-6">{error || 'Nu am putut încărca datele tenantului.'}</p>
+          <div className="space-y-2">
+            <button 
+              onClick={() => {
+                setError(null);
+                setLoading(true);
+                fetchInfo();
+              }}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold h-11 rounded-full transition-colors flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap shrink-0 shadow-sm"
+            >
+              <RefreshCw size={15} />
+              <span>Reîncearcă Conectarea</span>
+            </button>
+            <button 
+              onClick={handleLogout}
+              className="w-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold h-10 rounded-full transition-colors text-xs whitespace-nowrap shrink-0 cursor-pointer"
+            >
+              {t('backToLogin')}
+            </button>
+          </div>
         </div>
       </div>
     );

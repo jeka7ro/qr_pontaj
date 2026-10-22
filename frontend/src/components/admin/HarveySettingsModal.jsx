@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Settings, Key, Mail, User, ShieldCheck, CheckCircle2, AlertCircle, Save, Loader2 } from 'lucide-react';
+import { X, Settings, Key, Mail, User, ShieldCheck, CheckCircle2, AlertCircle, Save, Loader2, MapPin, Phone } from 'lucide-react';
 
 export default function HarveySettingsModal({ isOpen, onClose, onSaved }) {
   if (!isOpen) return null;
@@ -10,11 +10,14 @@ export default function HarveySettingsModal({ isOpen, onClose, onSaved }) {
   const [successMsg, setSuccessMsg] = useState(null);
 
   const [anthropicApiKey, setAnthropicApiKey] = useState('');
+  const [googlePlacesApiKey, setGooglePlacesApiKey] = useState('');
   const [senderName, setSenderName] = useState('Smart QR Pontaj');
   const [senderEmail, setSenderEmail] = useState('jeka7ro@gmail.com');
+  const [senderPhone, setSenderPhone] = useState('+40 757 77 77 12');
   const [dailySendLimit, setDailySendLimit] = useState(25);
   const [defaultPitch, setDefaultPitch] = useState('pontaj_digital');
   const [hasAnthropicKey, setHasAnthropicKey] = useState(false);
+  const [hasGooglePlacesKey, setHasGooglePlacesKey] = useState(false);
 
   useEffect(() => {
     fetchSettings();
@@ -23,16 +26,24 @@ export default function HarveySettingsModal({ isOpen, onClose, onSaved }) {
   const fetchSettings = async () => {
     setLoading(true);
     try {
-      const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
-      const res = await fetch(`${baseUrl}/api/admin/harvey/settings`);
+      let res;
+      try {
+        res = await fetch('/api/admin/harvey/settings');
+      } catch (e) {
+        const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
+        res = await fetch(`${baseUrl}/api/admin/harvey/settings`);
+      }
       const data = await res.json();
       if (data.success && data.settings) {
         setSenderName(data.settings.sender_name || 'Smart QR Pontaj');
-        setSenderEmail(data.settings.sender_email || 'jeka7ro@gmail.com');
+        setSenderEmail(data.settings.sender_email || 'contact@pontaj.app');
+        setSenderPhone(data.settings.sender_phone || '+40 757 77 77 12');
         setDailySendLimit(data.settings.daily_send_limit || 25);
         setDefaultPitch(data.settings.default_pitch || 'pontaj_digital');
         setAnthropicApiKey(data.settings.anthropic_api_key || '');
         setHasAnthropicKey(data.settings.has_anthropic_key);
+        setGooglePlacesApiKey(data.settings.google_places_api_key || '');
+        setHasGooglePlacesKey(data.settings.has_google_places_key);
       }
     } catch (err) {
       setError('Eroare la încărcarea setărilor.');
@@ -48,18 +59,31 @@ export default function HarveySettingsModal({ isOpen, onClose, onSaved }) {
     setSuccessMsg(null);
 
     try {
-      const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
-      const res = await fetch(`${baseUrl}/api/admin/harvey/settings`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          senderName,
-          senderEmail,
-          dailySendLimit: Number(dailySendLimit),
-          defaultPitch,
-          anthropicApiKey
-        })
-      });
+      let res;
+      const payload = {
+        senderName,
+        senderEmail,
+        senderPhone,
+        dailySendLimit: Number(dailySendLimit),
+        defaultPitch,
+        anthropicApiKey,
+        googlePlacesApiKey
+      };
+
+      try {
+        res = await fetch('/api/admin/harvey/settings', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      } catch (e) {
+        const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
+        res = await fetch(`${baseUrl}/api/admin/harvey/settings`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      }
 
       const data = await res.json();
       if (!res.ok || !data.success) {
@@ -127,7 +151,7 @@ export default function HarveySettingsModal({ isOpen, onClose, onSaved }) {
                 <Key size={13} className="text-primary-600" />
                 Anthropic API Key (Claude)
               </label>
-              <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap shrink-0 ${
+              <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full whitespace-nowrap shrink-0 ${
                 hasAnthropicKey 
                   ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
                   : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
@@ -147,10 +171,37 @@ export default function HarveySettingsModal({ isOpen, onClose, onSaved }) {
             </p>
           </div>
 
-          {/* Nume & Email Expeditor */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {/* Google Places API Key */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                <MapPin size={13} className="text-primary-600" />
+                Google Places API Key (Căutare Google Maps)
+              </label>
+              <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full whitespace-nowrap shrink-0 ${
+                hasGooglePlacesKey 
+                  ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
+                  : 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'
+              }`}>
+                {hasGooglePlacesKey ? 'Google Places Activ' : 'OpenStreetMap Gratuit'}
+              </span>
+            </div>
+            <input
+              type="password"
+              value={googlePlacesApiKey}
+              onChange={(e) => setGooglePlacesApiKey(e.target.value)}
+              placeholder={hasGooglePlacesKey ? '••••••••••••••••' : 'AIzaSy... (Cheie API Google Cloud)'}
+              className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none transition-all shadow-xs"
+            />
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+              Activează căutarea directă și ultra-precisă de firme din Google Maps (cu numere de telefon reale, adrese și recenzii). Dacă nu e setat, se folosește OpenStreetMap (gratuit).
+            </p>
+          </div>
+
+          {/* Nume & Email & Telefon Expeditor */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 whitespace-nowrap">
                 Nume Expeditor
               </label>
               <input
@@ -162,14 +213,27 @@ export default function HarveySettingsModal({ isOpen, onClose, onSaved }) {
               />
             </div>
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 whitespace-nowrap">
                 Email Expeditor (Brevo)
               </label>
               <input
                 type="email"
                 value={senderEmail}
                 onChange={(e) => setSenderEmail(e.target.value)}
-                placeholder="jeka7ro@gmail.com"
+                placeholder="contact@pontaj.app"
+                className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none transition-all shadow-xs"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 whitespace-nowrap flex items-center gap-1">
+                <Phone size={12} className="text-primary-600 shrink-0" />
+                <span>Telefon / WhatsApp</span>
+              </label>
+              <input
+                type="tel"
+                value={senderPhone}
+                onChange={(e) => setSenderPhone(e.target.value)}
+                placeholder="+40 757 77 77 12"
                 className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none transition-all shadow-xs"
               />
             </div>

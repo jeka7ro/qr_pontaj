@@ -88,12 +88,12 @@ export default function TimesheetReport({ tenant, themeColor }) {
       key: 'action_type',
       label: 'Acțiune',
       render: (row) => row.action_type === 'IN' ? (
-        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">
-          🟢 INTRARE
+        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700 whitespace-nowrap shrink-0">
+          INTRARE
         </span>
       ) : (
-        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700">
-          🔴 IEȘIRE
+        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700 whitespace-nowrap shrink-0">
+          IEȘIRE
         </span>
       )
     },

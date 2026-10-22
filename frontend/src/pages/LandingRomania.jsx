@@ -48,6 +48,45 @@ export default function LandingRomania() {
   // State Modale și Formular Demo / Abonament
   const [isSubscribeModalOpen, setIsSubscribeModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState('demo'); // 'demo' | 'subscribe'
+  const [selectedPlan, setSelectedPlan] = useState({
+    id: 'standard',
+    name: 'Standard (1 – 49 salariați)',
+    price: '5.00 €',
+    defaultSeats: 15
+  });
+
+  const openPlanModal = (planId = 'standard', mode = 'demo') => {
+    setModalMode(mode);
+    let planData = {
+      id: 'standard',
+      name: 'Standard (1 – 49 salariați)',
+      price: '5.00 €',
+      defaultSeats: 15
+    };
+    if (planId === 'pro') {
+      planData = {
+        id: 'pro',
+        name: 'Popular (50 – 99 salariați)',
+        price: '4.50 €',
+        defaultSeats: 65
+      };
+    } else if (planId === 'enterprise') {
+      planData = {
+        id: 'enterprise',
+        name: 'Echipe Mari (100+ salariați)',
+        price: '4.00 €',
+        defaultSeats: 120
+      };
+    }
+    setSelectedPlan(planData);
+    setSubForm(prev => ({
+      ...prev,
+      employeesCount: String(planData.defaultSeats)
+    }));
+    setIsSubscribeModalOpen(true);
+    setSubSubmitted(false);
+  };
+
   const [subForm, setSubForm] = useState({
     contactName: '',
     email: '',
@@ -59,7 +98,7 @@ export default function LandingRomania() {
     city: '',
     county: '',
     regCom: '',
-    employeesCount: '5-20',
+    employeesCount: '15',
     notes: ''
   });
   const [cuiLoading, setCuiLoading] = useState(false);
@@ -254,6 +293,8 @@ export default function LandingRomania() {
           city: subForm.city || companyVerified?.city || '',
           county: subForm.county || companyVerified?.county || '',
           employeesCount: subForm.employeesCount,
+          planName: selectedPlan.name,
+          planPrice: selectedPlan.price.replace(/[^0-9.]/g, ''),
           mode: modalMode
         })
       });
@@ -276,7 +317,7 @@ export default function LandingRomania() {
   };
 
   useEffect(() => {
-    document.title = 'QrTime.ro — Pontaj QR Dinamic pe Orice Ecran';
+    document.title = 'Pontaj.app — Pontaj QR Dinamic pe Orice Ecran';
   }, []);
 
   return (
@@ -289,7 +330,7 @@ export default function LandingRomania() {
               <QrCode size={20} strokeWidth={2.4} />
             </div>
             <span className="text-xl font-black text-slate-900 tracking-tight leading-none">
-              QrTime<span className="text-blue-600">.ro</span>
+              Pontaj<span className="text-blue-600">.app</span>
             </span>
           </Link>
 
@@ -303,8 +344,8 @@ export default function LandingRomania() {
             <a href="#dashboard" className="px-3.5 py-1.5 rounded-full hover:bg-slate-100 hover:text-slate-900 transition-colors whitespace-nowrap shrink-0">
               Panou Live &amp; SAGA
             </a>
-            <a href="#tarife" className="px-3.5 py-1.5 rounded-full hover:bg-slate-100 hover:text-slate-900 transition-colors whitespace-nowrap shrink-0 text-blue-600">
-              Tarif 5.00 € / angajat
+            <a href="#tarife" className="px-3.5 py-1.5 rounded-full hover:bg-slate-100 hover:text-slate-900 transition-colors whitespace-nowrap shrink-0">
+              Tarife
             </a>
           </nav>
 
@@ -324,15 +365,11 @@ export default function LandingRomania() {
             </Link>
             <button
               type="button"
-              onClick={() => {
-                setModalMode('demo');
-                setIsSubscribeModalOpen(true);
-                setSubSubmitted(false);
-              }}
+              onClick={() => openPlanModal('standard', 'demo')}
               className="px-4 h-9 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-full shadow-sm shadow-blue-500/25 transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0"
             >
               <Sparkles size={13} />
-              <span>Activează Demo (10 Zile)</span>
+              <span>Activează Demo (15 Zile)</span>
             </button>
           </div>
         </div>
@@ -361,24 +398,19 @@ export default function LandingRomania() {
               <div className="flex flex-wrap items-center gap-3 pt-1">
                 <button
                   type="button"
-                  onClick={() => {
-                    setModalMode('demo');
-                    setIsSubscribeModalOpen(true);
-                    setSubSubmitted(false);
-                  }}
+                  onClick={() => openPlanModal('standard', 'demo')}
                   className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-full shadow-lg shadow-blue-500/25 transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap shrink-0"
                 >
                   <Sparkles size={16} />
-                  <span>Testează Gratuit 10 Zile</span>
-                  <span className="opacity-75 font-normal ml-1">| 5.00 € / angajat</span>
+                  <span>Testează Gratuit 15 Zile</span>
                 </button>
 
                 <a
-                  href="#video"
+                  href="#tarife"
                   className="px-5 py-3 border border-slate-300 hover:border-blue-600 hover:text-blue-600 text-slate-700 text-sm font-bold rounded-full bg-white hover:bg-slate-50 transition-all flex items-center gap-2 whitespace-nowrap shrink-0"
                 >
-                  <Play size={16} className="text-blue-600" />
-                  <span>Vezi Video Demo</span>
+                  <CreditCard size={16} className="text-blue-600" />
+                  <span>Vezi Grila de Tarife</span>
                 </a>
               </div>
 
@@ -414,6 +446,9 @@ export default function LandingRomania() {
                   <Laptop size={13} className="text-blue-600" /> Laptop
                 </span>
               </div>
+              <p className="text-[11px] text-slate-500 pt-1 leading-normal">
+                * Tableta și/sau suportul digital nu sunt oferite de noi și sunt în responsabilitatea clientului (soluție 100% software în cloud, compatibilă cu orice dispozitiv deja existent).
+              </p>
             </div>
 
             {/* Dreapta: Fotografie Scanare Kiosk + Badge-uri Plutitoare */}
@@ -502,7 +537,7 @@ export default function LandingRomania() {
                 </button>
                 <div className="absolute bottom-6 left-6 text-left pointer-events-none">
                   <span className="block text-xs uppercase tracking-widest text-blue-300 font-bold whitespace-nowrap shrink-0">
-                    QrTime.ro • Prezentare
+                    Pontaj.app • Prezentare
                   </span>
                   <span className="block text-lg sm:text-xl font-black text-white whitespace-nowrap shrink-0">
                     Intrare în tură cu scanare QR
@@ -634,7 +669,7 @@ export default function LandingRomania() {
                 <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center text-white">
                   <QrCode size={16} />
                 </div>
-                <span className="text-white font-bold text-xs">QrTime.ro Kiosk</span>
+                <span className="text-white font-bold text-xs">Pontaj.app Kiosk</span>
               </div>
               <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[11px] font-bold border border-emerald-500/30 whitespace-nowrap shrink-0">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -686,7 +721,7 @@ export default function LandingRomania() {
                   {/* QR Code cu animație laser */}
                   <div className="relative w-44 h-44 mx-auto mb-4 p-2 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-center overflow-hidden">
                     <QRCodeSVG
-                      value={`https://qrtime.ro/scan?kiosk=demo&mode=${simMode}&t=${simCountdown}`}
+                      value={`https://pontaj.app/scan?kiosk=demo&mode=${simMode}&t=${simCountdown}`}
                       size={144}
                       level="M"
                       includeMargin={false}
@@ -839,7 +874,7 @@ export default function LandingRomania() {
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
                 </div>
                 <div className="px-3 py-0.5 rounded-full bg-white text-[11px] font-semibold text-slate-500 border border-slate-200">
-                  app.qrtime.ro/admin/timesheets
+                  app.pontaj.app/admin/timesheets
                 </div>
                 <div className="w-8" />
               </div>
@@ -903,70 +938,252 @@ export default function LandingRomania() {
       </section>
 
       {/* 6. SECȚIUNE TARIF & CONVERSIE DIRECTĂ (#tarife) */}
-      <section id="tarife" className="py-16 bg-white border-b border-slate-200">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-800 text-xs font-bold mb-3 border border-blue-200 whitespace-nowrap shrink-0">
-            <CreditCard size={14} className="text-blue-600" />
-            <span>Preț Clar & Transparent</span>
+      <section id="tarife" className="py-20 bg-slate-50 border-b border-slate-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-3xl mx-auto mb-12">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-800 text-xs font-bold mb-3 border border-blue-200 whitespace-nowrap shrink-0">
+              <CreditCard size={14} className="text-blue-600" />
+              <span>Grilă Tarifară Clară &amp; Transparentă</span>
+            </div>
+
+            <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight mb-3">
+              Tarife Simple, Adaptate la Mărimea Echipei Tale
+            </h2>
+            <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
+              Fără contracte blocate, fără costuri ascunse și fără aparate scumpe de pontaj. Plătești doar pentru salariații activi, cu reduceri automate de volum pe măsură ce firma crește.
+            </p>
           </div>
 
-          <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight mb-2">
-            Un Singur Tarif Simplu, Fără Costuri Ascunse
-          </h2>
-          <p className="text-slate-600 text-sm sm:text-base max-w-xl mx-auto mb-8">
-            Plătești doar pentru salariații activi. Terminale Kiosk nelimitate pe oricâte ecrane ai nevoie.
-          </p>
+          {/* Grilă 3 Nivele de Preț */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto mb-10 items-stretch">
+            
+            {/* Tier 1: 1 - 49 angajați */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-md hover:shadow-xl transition-all p-7 flex flex-col justify-between relative">
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Standard</span>
+                  <span className="text-xs font-bold text-slate-700 bg-slate-100 px-2.5 py-1 rounded-full whitespace-nowrap shrink-0">
+                    1 – 49 salariați
+                  </span>
+                </div>
 
-          {/* Card Preț */}
-          <div className="max-w-md mx-auto bg-gradient-to-b from-white to-slate-50 rounded-2xl border-2 border-blue-600 shadow-xl p-8 relative">
-            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-blue-600 text-white text-xs font-bold uppercase tracking-wider whitespace-nowrap shrink-0 shadow-sm">
-              Totul Inclus • Fără Taxe de Instalare
+                <div className="mb-4">
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight">5.00 €</span>
+                    <span className="text-xs font-semibold text-slate-500 whitespace-nowrap shrink-0">/ angajat / lună</span>
+                  </div>
+                  <div className="mt-2 text-xs font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2.5 py-1.5 rounded-full inline-flex items-center gap-1 whitespace-nowrap shrink-0">
+                    <ShieldCheck size={13} className="text-blue-600 shrink-0" />
+                    <span>Minim 50 € / lună / firmă</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 mt-1.5">
+                    Include până la 10 angajați în tariful minim de 50 €/lună.
+                  </p>
+                </div>
+
+                <div className="border-t border-slate-100 pt-4 mb-6">
+                  <p className="text-xs font-bold text-slate-800 mb-3">Ce include abonamentul:</p>
+                  <ul className="space-y-2.5 text-xs text-slate-600 font-medium">
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+                      <span>Terminale Kiosk nelimitate pe tablete / TV / PC</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+                      <span>Cod QR dinamic anti-fraudă la fiecare 15 secunde</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+                      <span>Condică ITM automată conform Art. 119 Codul Muncii</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+                      <span>Export 1-Click în SAGA Salarii și Excel</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+                      <span>Calcul automat ore de noapte și weekend</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <div>
+                <button
+                  type="button"
+                  onClick={() => openPlanModal('standard', 'demo')}
+                  className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-full transition-all flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap shrink-0 shadow-sm"
+                >
+                  <Sparkles size={14} />
+                  <span>Testează Gratuit 15 Zile</span>
+                </button>
+              </div>
             </div>
 
-            <div className="my-4">
-              <span className="text-5xl font-black text-slate-900 tracking-tight">5.00 €</span>
-              <span className="text-slate-500 font-semibold text-sm ml-1.5 whitespace-nowrap shrink-0">/ angajat / lună</span>
+            {/* Tier 2: 50 - 99 angajați (Recomandat) */}
+            <div className="bg-gradient-to-b from-white to-blue-50/40 rounded-2xl border-2 border-blue-600 shadow-xl relative p-7 flex flex-col justify-between md:-translate-y-2">
+              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-3.5 py-1 rounded-full bg-blue-600 text-white text-xs font-bold uppercase tracking-wider whitespace-nowrap shrink-0 shadow-sm">
+                Cel Mai Popular
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-xs font-bold uppercase tracking-wider text-blue-600">Echipe Medii</span>
+                  <span className="text-xs font-bold text-blue-700 bg-blue-100 px-2.5 py-1 rounded-full whitespace-nowrap shrink-0">
+                    50 – 99 salariați
+                  </span>
+                </div>
+
+                <div className="mb-4">
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight">4.50 €</span>
+                    <span className="text-xs font-semibold text-slate-500 whitespace-nowrap shrink-0">/ angajat / lună</span>
+                  </div>
+                  <div className="mt-2 text-xs font-bold text-emerald-800 bg-emerald-100/80 border border-emerald-300 px-2.5 py-1.5 rounded-full inline-flex items-center gap-1 whitespace-nowrap shrink-0">
+                    <CheckCircle2 size={13} className="text-emerald-700 shrink-0" />
+                    <span>Economisești 10% din tarif</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 mt-1.5">
+                    Se aplică automat pentru toți salariații odată ce depășești 50 de angajați.
+                  </p>
+                </div>
+
+                <div className="border-t border-blue-100 pt-4 mb-6">
+                  <p className="text-xs font-bold text-slate-800 mb-3">Tot din pachetul Standard, plus:</p>
+                  <ul className="space-y-2.5 text-xs text-slate-700 font-medium">
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+                      <span>Terminale Kiosk nelimitate pe puncte de lucru / secții</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+                      <span>Coduri QR dinamice + geolocație GPS opțională</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+                      <span>Condică ITM și export automat SAGA Salarii</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+                      <span>Asistență prioritară la configurare și import inițial</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+                      <span>Calcul avansat ture și schimburi de noapte</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <div>
+                <button
+                  type="button"
+                  onClick={() => openPlanModal('pro', 'demo')}
+                  className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-full shadow-lg shadow-blue-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap shrink-0"
+                >
+                  <Sparkles size={14} />
+                  <span>Testează Gratuit 15 Zile</span>
+                </button>
+              </div>
             </div>
 
-            <p className="text-xs text-slate-500 mb-6">
-              Primele 10 zile sunt complet gratuite, fără obligații și fără card bancar.
-            </p>
+            {/* Tier 3: 100+ angajați */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-md hover:shadow-xl transition-all p-7 flex flex-col justify-between relative">
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Echipe Mari</span>
+                  <span className="text-xs font-bold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-full whitespace-nowrap shrink-0">
+                    100+ salariați
+                  </span>
+                </div>
 
-            <ul className="text-left space-y-3 text-xs font-semibold text-slate-700 mb-8 max-w-xs mx-auto">
-              <li className="flex items-center gap-2">
-                <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
-                <span>Terminale Kiosk nelimitate pe orice ecran</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
-                <span>Cod QR dinamic cu poză salariat la scanare</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
-                <span>Export automat Condică ITM conform Art. 119</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
-                <span>Export fișier SAGA Salarii la un singur click</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
-                <span>Calcul automat ore de noapte și weekend</span>
-              </li>
-            </ul>
+                <div className="mb-4">
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight">4.00 €</span>
+                    <span className="text-xs font-semibold text-slate-500 whitespace-nowrap shrink-0">/ angajat / lună</span>
+                  </div>
+                  <div className="mt-2 text-xs font-bold text-indigo-800 bg-indigo-100/80 border border-indigo-300 px-2.5 py-1.5 rounded-full inline-flex items-center gap-1 whitespace-nowrap shrink-0">
+                    <CheckCircle2 size={13} className="text-indigo-700 shrink-0" />
+                    <span>Economisești 20% din tarif</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 mt-1.5">
+                    Tarif preferențial optimizat pentru companii cu volum ridicat și fabrici.
+                  </p>
+                </div>
 
-            <button
-              type="button"
-              onClick={() => {
-                setModalMode('demo');
-                setIsSubscribeModalOpen(true);
-                setSubSubmitted(false);
-              }}
-              className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-full shadow-lg shadow-blue-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap shrink-0"
+                <div className="border-t border-slate-100 pt-4 mb-6">
+                  <p className="text-xs font-bold text-slate-800 mb-3">Totul inclus, plus:</p>
+                  <ul className="space-y-2.5 text-xs text-slate-600 font-medium">
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+                      <span>Terminale Kiosk nelimitate la toate porțile și birourile</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+                      <span>Scanare ultra-rapidă sub 1 secundă pe schimburi mari</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+                      <span>Export instant SAGA & fișiere dedicate salarizare</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+                      <span>Account manager dedicat și onboarding personalizat</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+                      <span>SLA garantat și asistență tehnică prioritară</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <div>
+                <button
+                  type="button"
+                  onClick={() => openPlanModal('enterprise', 'demo')}
+                  className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-full transition-all flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap shrink-0 shadow-sm"
+                >
+                  <Sparkles size={14} />
+                  <span>Testează Gratuit 15 Zile</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+          {/* Banner Recapitulativ Garanții & Condiții */}
+          <div className="max-w-4xl mx-auto bg-white rounded-2xl border border-slate-200 p-5 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                <CheckCircle2 size={20} />
+              </div>
+              <div>
+                <div className="text-xs font-bold text-slate-800">
+                  15 Zile de Test Complet Gratuit pe Datele Reale ale Firmei
+                </div>
+                <div className="text-[11px] text-slate-500">
+                  Fără card bancar solicitat la înregistrare &bull; Fără contracte pe perioadă minimă &bull; Anulezi oricând la un simplu click
+                </div>
+              </div>
+            </div>
+            <a
+              href="tel:0757777712"
+              className="px-4 py-2 border border-slate-200 hover:border-blue-600 hover:text-blue-600 rounded-full text-xs font-bold text-slate-700 transition-colors flex items-center gap-1.5 whitespace-nowrap shrink-0"
             >
-              <Sparkles size={16} />
-              <span>Începe Perioada de Test (10 Zile)</span>
-            </button>
+              <Phone size={13} className="text-blue-600" />
+              <span>Întrebări? 0757 77 77 12</span>
+            </a>
+          </div>
+
+          {/* Mențiune Clarificare Hardware / Suport */}
+          <div className="max-w-4xl mx-auto p-4 bg-slate-100/90 border border-slate-200 rounded-2xl flex flex-col sm:flex-row items-center gap-3 text-center sm:text-left text-xs text-slate-600 leading-relaxed shadow-2xs">
+            <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
+              <Tablet size={16} />
+            </div>
+            <div>
+              <strong className="text-slate-900 font-bold">Important privind echipamentele:</strong> Tableta și/sau suportul digital nu sunt oferite de către noi și sunt exclusiv în responsabilitatea clientului. Pontaj.app este un serviciu 100% digital (software în cloud) care rulează direct din browser pe orice tabletă, telefon sau Smart TV pe care îl dețineți deja în firmă.
+            </div>
           </div>
         </div>
       </section>
@@ -978,7 +1195,7 @@ export default function LandingRomania() {
             <div className="w-6 h-6 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-xs">
               QR
             </div>
-            <span className="font-bold text-white text-sm">QrTime.ro</span>
+            <span className="font-bold text-white text-sm">Pontaj.app</span>
             <span>• Pontaj Electronic QR pe Orice Ecran</span>
           </div>
 
@@ -997,7 +1214,7 @@ export default function LandingRomania() {
         </div>
       </footer>
 
-      {/* MODAL SOLICITARE DEMO 10 ZILE / ABONAMENT CU CĂUTARE AUTOMATĂ CUI ANAF */}
+      {/* MODAL SOLICITARE DEMO 15 ZILE / ABONAMENT CU CĂUTARE AUTOMATĂ CUI ANAF */}
       {isSubscribeModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
           <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh]">
@@ -1008,9 +1225,10 @@ export default function LandingRomania() {
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-slate-800">
-                    {modalMode === 'demo' ? 'Activează Cont Demo Gratuit (10 Zile)' : 'Abonament QrTime (5 € / angajat)'}
+                    {modalMode === 'demo' ? 'Activează Cont Demo Gratuit (15 Zile)' : 'Abonament Pontaj.app'}
                   </h3>
-                  <p className="text-[11px] text-slate-500">Completare automată a datelor firmei prin CUI ANAF</p>
+                  <p className="text-[11px] text-slate-500">15 zile test gratuit complet • Fără card bancar</p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">* Tableta și/sau suportul digital nu sunt oferite de noi și sunt în responsabilitatea clientului (soluție 100% cloud).</p>
                 </div>
               </div>
               <button
@@ -1024,6 +1242,23 @@ export default function LandingRomania() {
             <div className="p-6 overflow-y-auto">
               {!subSubmitted ? (
                 <form onSubmit={handleFormSubmit} className="space-y-4">
+                  {/* Badge Pachet Selectat */}
+                  <div className="p-3 bg-blue-50/90 border border-blue-200 rounded-2xl flex items-center justify-between text-xs shadow-2xs">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold shrink-0 shadow-xs">
+                        <CheckCircle2 size={16} />
+                      </div>
+                      <div>
+                        <span className="text-slate-500 block text-[10px] uppercase font-bold tracking-wider">Pachet Selectat:</span>
+                        <strong className="text-blue-950 font-black text-xs">{selectedPlan.name}</strong>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-base font-black text-blue-700 whitespace-nowrap shrink-0">{selectedPlan.price}</span>
+                      <span className="text-[10px] text-slate-500 block whitespace-nowrap shrink-0">/ angajat / lună</span>
+                    </div>
+                  </div>
+
                   {/* CUI ANAF Input */}
                   <div>
                     <label className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1 flex items-center justify-between">
@@ -1039,7 +1274,7 @@ export default function LandingRomania() {
                       required
                       value={subForm.cui}
                       onChange={handleCuiChange}
-                      placeholder="Ex: 42322117 (introdu CUI-ul firmei)..."
+                      placeholder="Ex: 12345678 (introdu CUI-ul firmei)..."
                       className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-xs font-semibold"
                     />
                     {companyVerified && (
@@ -1116,6 +1351,43 @@ export default function LandingRomania() {
                     />
                   </div>
 
+                  {/* Număr Estimativ Salariați */}
+                  <div>
+                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1 flex items-center justify-between">
+                      <span>Număr Salariați în Firmă *</span>
+                      <span className="text-[11px] text-blue-600 font-semibold lowercase">pentru pontaj</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min="1"
+                        max="10000"
+                        required
+                        value={subForm.employeesCount}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setSubForm(prev => ({ ...prev, employeesCount: val }));
+                          const count = parseInt(val, 10);
+                          if (!isNaN(count)) {
+                            if (count >= 100) {
+                              setSelectedPlan({ id: 'enterprise', name: 'Echipe Mari (100+ salariați)', price: '4.00 €', defaultSeats: 120 });
+                            } else if (count >= 50) {
+                              setSelectedPlan({ id: 'pro', name: 'Popular (50 – 99 salariați)', price: '4.50 €', defaultSeats: 65 });
+                            } else {
+                              setSelectedPlan({ id: 'standard', name: 'Standard (1 – 49 salariați)', price: '5.00 €', defaultSeats: 15 });
+                            }
+                          }
+                        }}
+                        placeholder="Ex: 25, 60, 120..."
+                        className="w-full pl-9 pr-4 h-10 text-sm rounded-full border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-xs font-black text-slate-900"
+                      />
+                      <Users size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                    </div>
+                    <p className="text-[10.5px] text-slate-400 mt-1">
+                      Tarif aplicat automat: <strong className="text-slate-700">{selectedPlan.price} / angajat / lună</strong> (minim 50 € / lună / firmă).
+                    </p>
+                  </div>
+
                   {/* Sediu Social / Adresă */}
                   <div>
                     <label className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1 block">
@@ -1135,7 +1407,7 @@ export default function LandingRomania() {
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1 block">
+                      <label className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1 block whitespace-nowrap">
                         Nume Contact
                       </label>
                       <input
@@ -1148,15 +1420,15 @@ export default function LandingRomania() {
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1 block">
-                        Telefon Mobil Direct (Principal)
+                      <label className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1 block whitespace-nowrap">
+                        Telefon Mobil
                       </label>
                       <input
                         type="tel"
                         required
                         value={subForm.phone}
                         onChange={(e) => setSubForm(prev => ({ ...prev, phone: e.target.value }))}
-                        placeholder="07xxxxxxxx (numărul tău direct)..."
+                        placeholder="07xxxxxxxx..."
                         className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-xs"
                       />
                     </div>
@@ -1189,7 +1461,7 @@ export default function LandingRomania() {
                     ) : (
                       <>
                         <Sparkles size={14} />
-                        <span>Activează Contul Demo (10 Zile Gratuit)</span>
+                        <span>Activează Contul Demo (15 Zile Gratuit)</span>
                       </>
                     )}
                   </button>
@@ -1201,23 +1473,41 @@ export default function LandingRomania() {
                   </div>
                   <h4 className="text-lg font-black text-slate-900">Contul Demo a Fost Activat!</h4>
                   <p className="text-xs text-slate-600 max-w-xs mx-auto">
-                    Am configurat instanța pentru <strong className="text-slate-800">{subForm.companyName}</strong>. Ai acces complet 10 zile gratuit.
+                    Instanța pentru <strong className="text-slate-800">{subForm.companyName}</strong> ({subForm.employeesCount} salariați &bull; {selectedPlan.price}/om) este gata. Ai acces complet 15 zile gratuit.
                   </p>
+                  
                   {assignedTempPassword && (
-                    <div className="p-3 bg-slate-100 rounded-xl text-xs text-slate-700 font-semibold max-w-xs mx-auto">
-                      Parolă temporară generată: <strong className="text-blue-600">{assignedTempPassword}</strong>
+                    <div className="p-3.5 bg-blue-50/80 border border-blue-200 rounded-2xl text-xs text-slate-700 max-w-xs mx-auto text-left space-y-1 shadow-2xs">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Datele tale de conectare:</div>
+                      <div>Email: <strong className="text-slate-900">{subForm.email}</strong></div>
+                      <div>Parolă temporară: <strong className="text-blue-700 font-bold text-sm tracking-wide">{assignedTempPassword}</strong></div>
+                      <div className="text-[10px] text-slate-400 pt-0.5">Ți-am trimis o copie a acestor date și pe email.</div>
                     </div>
                   )}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsSubscribeModalOpen(false);
-                      navigate('/admin/login');
-                    }}
-                    className="px-6 h-10 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-full shadow-sm transition-all whitespace-nowrap shrink-0"
-                  >
-                    Mergi la Autentificare
-                  </button>
+
+                  <div className="flex flex-col gap-2 max-w-xs mx-auto pt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsSubscribeModalOpen(false);
+                        navigate('/admin/dashboard');
+                      }}
+                      className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-full shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap shrink-0"
+                    >
+                      <Sparkles size={15} />
+                      <span>Intră Direct în Panoul de Control &rarr;</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsSubscribeModalOpen(false);
+                        navigate(`/admin/login?email=${encodeURIComponent(subForm.email)}`);
+                      }}
+                      className="w-full h-9 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-full transition-all flex items-center justify-center cursor-pointer whitespace-nowrap shrink-0"
+                    >
+                      <span>Pagina de Autentificare</span>
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

@@ -81,6 +81,7 @@ export default function HarveyReviewEmailModal({ isOpen, onClose, lead, onUpdate
   const [regenerating, setRegenerating] = useState(false);
   const [saving, setSaving] = useState(false);
   const [sending, setSending] = useState(false);
+  const [sendingTest, setSendingTest] = useState(false);
   const [error, setError] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
 
@@ -252,6 +253,29 @@ export default function HarveyReviewEmailModal({ isOpen, onClose, lead, onUpdate
       setError(err.message);
     } finally {
       setSending(false);
+    }
+  };
+
+  const handleSendTestEmail = async () => {
+    setSendingTest(true);
+    setError(null);
+    setSuccessMsg(null);
+    try {
+      const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
+      const res = await fetch(`${baseUrl}/api/admin/harvey/leads/${lead.id}/test-send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ testEmail: 'jeka7ro@gmail.com' })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Trimiterea testului a eșuat.');
+      }
+      setSuccessMsg(`Email de test expediat cu succes către ${data.recipient}!`);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSendingTest(false);
     }
   };
 
@@ -474,11 +498,22 @@ export default function HarveyReviewEmailModal({ isOpen, onClose, lead, onUpdate
           <button
             type="button"
             onClick={handleSaveDraft}
-            disabled={saving || sending}
+            disabled={saving || sending || sendingTest}
             className="px-4 h-10 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold transition-colors flex items-center gap-1.5 whitespace-nowrap shrink-0 disabled:opacity-50"
           >
-            <Save size={14} />
+            <Save size={14} className="shrink-0" />
             <span>{saving ? 'Se salvează...' : 'Salvează Draft'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleSendTestEmail}
+            disabled={saving || sending || sendingTest}
+            className="px-4 h-10 rounded-full border border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 text-xs font-bold transition-colors flex items-center gap-1.5 whitespace-nowrap shrink-0 disabled:opacity-50"
+            title="Trimite un test pe jeka7ro@gmail.com fără a schimba statusul lead-ului"
+          >
+            <Mail size={14} className="shrink-0" />
+            <span>{sendingTest ? 'Se trimite test...' : 'Trimite Test pe Emailul Meu'}</span>
           </button>
 
           <div className="flex items-center gap-3">
