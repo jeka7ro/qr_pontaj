@@ -13,6 +13,7 @@ import EmployeeDashboard from './pages/employee/EmployeeDashboard';
 import ResetPassword from './pages/admin/ResetPassword';
 import GdprConsentBanner from './components/GdprConsentBanner';
 import AccountantPortal from './pages/accountant/AccountantPortal';
+import AnalyticsTracker from './components/AnalyticsTracker';
 import { LanguageProvider } from './utils/i18n.jsx';
 
 const getIsSubdomain = () => {
@@ -86,6 +87,7 @@ function App() {
   return (
     <LanguageProvider>
       <Router>
+        <AnalyticsTracker />
         <Routes>
           {/* Rută dedicată Kiosk Full Screen (Tablete) */}
           <Route path="/kiosk/:tenantId/:kioskId" element={<KioskDisplay />} />

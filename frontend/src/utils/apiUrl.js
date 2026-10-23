@@ -23,3 +23,9 @@ export const getAuthHeaders = (extraHeaders = {}) => {
   } catch (e) {}
   return headers;
 };
+
+export const apiUrl = (endpoint = '') => {
+  const base = getApiUrl();
+  if (!endpoint) return base;
+  return `${base}${endpoint.startsWith('/') ? endpoint : '/' + endpoint}`;
+};

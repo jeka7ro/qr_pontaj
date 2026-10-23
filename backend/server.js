@@ -30,6 +30,7 @@ app.use('/api/billing/deviz', require('./routes/billingDeviz'));
 app.use('/api/stripe', require('./routes/stripeBilling'));
 app.use('/api/company', require('./routes/companyLookup'));
 app.use('/api/accountants', require('./routes/accountantPartners'));
+app.use('/api/analytics', require('./routes/analytics'));
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'QR Pontaj API is running' });

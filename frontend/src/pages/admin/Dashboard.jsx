@@ -29,7 +29,8 @@ import {
   RefreshCw,
   AlertCircle,
   Megaphone,
-  FileCheck
+  FileCheck,
+  TrendingUp
 } from 'lucide-react';
 import DataTable from '../../components/DataTable';
 import ProfileModal from '../../components/ProfileModal';
@@ -41,6 +42,7 @@ import LanguageToggle from '../../components/LanguageToggle';
 import { resolveFaviconUrl } from '../../utils/favicon';
 import HarveySdrView from '../../components/admin/HarveySdrView';
 import MarketingAdsKit from '../../components/admin/MarketingAdsKit';
+import TrafficAnalyticsView from '../../components/admin/TrafficAnalyticsView';
 
 export default function AdminDashboard() {
   const location = useLocation();
@@ -114,6 +116,7 @@ export default function AdminDashboard() {
   const navItems = [
     { name: 'Tenanți', path: '/admin/dashboard', icon: Building2 },
     { name: 'Harvey AI (SDR)', path: '/admin/harvey', icon: Sparkles },
+    { name: 'Trafic & Lead-uri', path: '/admin/traffic', icon: TrendingUp },
     { name: 'Portal Contabili', path: '/contabil', icon: FileCheck, targetBlank: true },
     { name: 'Kit Reclame Meta', path: '/admin/marketing', icon: Megaphone },
     { name: 'Calcul Facturi', path: '/admin/billing', icon: Calculator },
@@ -279,6 +282,8 @@ export default function AdminDashboard() {
             <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
             <Route path="/dashboard" element={<TenantsList defaultTab="tenants" />} />
             <Route path="/harvey" element={<TenantsList defaultTab="harvey" />} />
+            <Route path="/traffic" element={<TrafficAnalyticsView />} />
+            <Route path="/analytics" element={<TrafficAnalyticsView />} />
             <Route path="/marketing" element={<MarketingAdsKit />} />
             <Route path="/billing" element={<BillingCalculator />} />
             <Route path="/logs" element={<LoginLogs />} />

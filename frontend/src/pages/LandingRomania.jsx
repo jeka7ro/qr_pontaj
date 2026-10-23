@@ -42,6 +42,7 @@ import {
   Lock
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
+import { trackEvent } from '../utils/analytics';
 
 export default function LandingRomania() {
   const navigate = useNavigate();
@@ -86,6 +87,7 @@ export default function LandingRomania() {
     }));
     setIsSubscribeModalOpen(true);
     setSubSubmitted(false);
+    trackEvent('open_demo_modal', { planId, mode });
   };
 
   const [subForm, setSubForm] = useState({
@@ -268,6 +270,7 @@ export default function LandingRomania() {
         }));
         setCompanyVerified(data.company);
         setCuiError(null);
+        trackEvent('cui_search', { cui: cuiDigits, company: data.company.name });
       } else {
         setCompanyVerified(null);
       }
@@ -313,6 +316,11 @@ export default function LandingRomania() {
         if (data.tempPassword) {
           setAssignedTempPassword(data.tempPassword);
         }
+        trackEvent('demo_submitted', {
+          plan: selectedPlan.name,
+          cui: subForm.cui,
+          company: subForm.companyName || companyVerified?.name
+        });
       }
     } catch (err) {
       console.warn('Eroare apel demo-request API:', err);
