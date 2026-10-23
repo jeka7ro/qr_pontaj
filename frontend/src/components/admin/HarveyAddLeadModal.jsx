@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Plus, Building2, Search, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { getApiUrl, getAuthHeaders } from '../../utils/apiUrl';
 
 export default function HarveyAddLeadModal({ isOpen, onClose, onLeadAdded }) {
   if (!isOpen) return null;
@@ -57,10 +58,10 @@ export default function HarveyAddLeadModal({ isOpen, onClose, onLeadAdded }) {
     setError(null);
 
     try {
-      const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
+      const baseUrl = getApiUrl();
       const res = await fetch(`${baseUrl}/api/admin/harvey/leads`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           companyName,
           cui,

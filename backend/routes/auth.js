@@ -361,6 +361,12 @@ router.post('/demo-request', async (req, res) => {
     const cleanPhone = (phone || '').trim(); // TELEFON DE BAZĂ (introdus de client)
     const cleanCui = (cui || '').trim();
 
+    // Preluăm datele electronice de conectare pentru pista de audit GDPR (DPA Art. 28)
+    const rawIp = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || req.ip || '127.0.0.1';
+    const clientIp = typeof rawIp === 'string' ? rawIp.split(',')[0].trim() : '127.0.0.1';
+    const userAgent = req.headers['user-agent'] || 'Unknown';
+    const termsVersion = 'v2026.1-DPA-ART28';
+
     // Preluăm automat adresa oficială și denumirea completă din ANAF
     let anafData = null;
     if (cleanCui) {
@@ -377,10 +383,10 @@ router.post('/demo-request', async (req, res) => {
     const seats = (!isNaN(parsedSeats) && parsedSeats > 0) ? parsedSeats : 10;
     
     let pricePerEmployee = 5.00;
-    if (seats >= 100) {
+    if (seats >= 150) {
       pricePerEmployee = 4.00;
-    } else if (seats >= 50) {
-      pricePerEmployee = 4.50;
+    } else if (seats > 50) {
+      pricePerEmployee = 4.00;
     }
 
     const isDemo = mode !== 'subscribe';
@@ -426,8 +432,14 @@ router.post('/demo-request', async (req, res) => {
               registration_notes = COALESCE($8, registration_notes),
               subscription_seats = $9,
               price_per_employee = $10,
-              demo_expires_at = GREATEST(demo_expires_at, NOW() + INTERVAL '15 days')
-          WHERE id = $11
+              demo_expires_at = GREATEST(demo_expires_at, NOW() + INTERVAL '15 days'),
+              terms_accepted_at = NOW(),
+              terms_accepted_ip = $11,
+              terms_accepted_by = $12,
+              terms_version = $13,
+              dpa_accepted_at = NOW(),
+              dpa_version = $13
+          WHERE id = $14
         `, [
           finalCompanyName,
           contactName,
@@ -439,6 +451,9 @@ router.post('/demo-request', async (req, res) => {
           notes,
           seats,
           pricePerEmployee,
+          clientIp,
+          contactName || cleanEmail,
+          termsVersion,
           tenantId
         ]);
       }
@@ -485,14 +500,18 @@ router.post('/demo-request', async (req, res) => {
           contact_name, contact_phone, anaf_phone, contact_email, registration_notes,
           subscription_status, subscription_seats, price_per_employee, billing_per_employee,
           demo_expires_at, modules, country_code, timezone, currency,
-          theme_color, allow_employee_portal, allow_breaks, logo_url, favicon_url, created_at
+          theme_color, allow_employee_portal, allow_breaks, logo_url, favicon_url,
+          terms_accepted_at, terms_accepted_ip, terms_accepted_by, terms_version,
+          dpa_accepted_at, dpa_version, created_at
         )
         VALUES (
           $1, $2, $3, $4,
           $5, $6, $7, $8, $9,
           $10, $11, $12, $13,
           $14, $15, $16, $17, $18,
-          $19, $20, $21, $22, $23, NOW()
+          $19, $20, $21, $22, $23,
+          NOW(), $24, $25, $26,
+          NOW(), $26, NOW()
         )
         RETURNING id
       `, [
@@ -518,7 +537,10 @@ router.post('/demo-request', async (req, res) => {
         true,
         true,
         '/logo_getapp_smartqr.jpg',
-        '/logo_getapp_smartqr.jpg'
+        '/logo_getapp_smartqr.jpg',
+        clientIp,
+        contactName || cleanEmail,
+        termsVersion
       ]);
       tenantId = tenantInsertRes.rows[0].id;
 
@@ -537,6 +559,44 @@ router.post('/demo-request', async (req, res) => {
       userId = userInsertRes.rows[0].id;
     }
 
+    // 6. Înregistrare Pistă de Audit Electronic / Precontract DPA (Art. 28 GDPR)
+    try {
+      const agreementHash = crypto.createHash('sha256')
+        .update(`${finalCompanyName}|${cleanCui}|${cleanEmail}|${clientIp}|${termsVersion}|${Date.now()}`)
+        .digest('hex');
+
+      await client.query(`
+        INSERT INTO qrp_legal_agreements (
+          tenant_id, agreement_type, version, accepted_at,
+          accepted_by_name, accepted_by_email, accepted_by_phone,
+          company_name, company_cui, company_address,
+          signer_ip, signer_user_agent, agreement_hash, metadata
+        ) VALUES ($1, $2, $3, NOW(), $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+      `, [
+        tenantId,
+        'DPA_ART28_TRIAL',
+        termsVersion,
+        contactName || finalCompanyName,
+        cleanEmail,
+        cleanPhone || null,
+        finalCompanyName,
+        cleanCui || null,
+        cleanAddress || null,
+        clientIp,
+        userAgent,
+        agreementHash,
+        JSON.stringify({
+          acceptedTerms: true,
+          acceptedDpa: true,
+          seats,
+          planName: planName || (seats >= 150 ? 'Corporate' : seats > 50 ? 'Echipe Mari' : 'Standard'),
+          legalBasis: 'GDPR Art. 28(9) & Legea 365/2002'
+        })
+      ]);
+    } catch (legalAuditErr) {
+      console.warn('[DemoRequest] Notificare inserare audit legal:', legalAuditErr.message);
+    }
+
     await client.query('COMMIT');
 
     const baseDomain = process.env.BASE_DOMAIN || 'qr.pontaj.app';
@@ -545,7 +605,7 @@ router.post('/demo-request', async (req, res) => {
       : `https://${baseDomain}`;
     const loginUrl = `${targetHost}/admin/login?email=${encodeURIComponent(cleanEmail)}`;
 
-    // Trimitem email către client (asincron)
+    // Trimitem email către client (asincron) cu confirmarea precontractuală DPA
     const isMock = cleanEmail.includes('example.com') || 
                    cleanEmail.includes('exemplu.ro') ||
                    cleanEmail.endsWith('.test') || 
@@ -559,7 +619,14 @@ router.post('/demo-request', async (req, res) => {
         initialPassword: tempPassword,
         loginUrl,
         employeesCount: seats,
-        mode: mode || 'demo'
+        mode: mode || 'demo',
+        dpaAudit: {
+          clientIp,
+          termsVersion,
+          cui: cleanCui,
+          companyName: finalCompanyName,
+          contactName: contactName || 'Administrator'
+        }
       }).catch(mailErr => console.warn('[DemoRequest] Notificare client error:', mailErr.message));
     }
 
@@ -575,11 +642,13 @@ router.post('/demo-request', async (req, res) => {
       city: city || '',
       county: county || '',
       employeesCount: seats,
-      planName: planName || (seats >= 100 ? '100+ angajați (4.00 €)' : seats >= 50 ? '50-99 angajați (4.50 €)' : '1-49 angajați (5.00 €)'),
+      planName: planName || (seats >= 150 ? 'Corporate (150+ salariați - Negociabil)' : seats > 50 ? 'Echipe Mari (51+ salariați - 4.00 €)' : 'Standard (1-50 salariați - 5.00 €)'),
       planPrice: pricePerEmployee,
       mode: mode || 'demo',
       subdomain: finalSubdomain,
-      notes: notes || '',
+      notes: `${notes || ''} [GDPR DPA Art. 28 Acceptat Electronic de la IP: ${clientIp}]`,
+      clientIp: clientIp,
+      dpaAccepted: true,
       initialPassword: tempPassword,
       loginUrl: loginUrl
     }).catch(adminMailErr => console.warn('[DemoRequest] Notificare SuperAdmin error:', adminMailErr.message));

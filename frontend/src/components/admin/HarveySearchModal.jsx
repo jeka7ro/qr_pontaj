@@ -13,10 +13,13 @@ import {
   Crosshair, 
   RotateCcw,
   Navigation,
-  Key
+  Key,
+  ChevronDown,
+  Plus
 } from 'lucide-react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { getApiUrl, getAuthHeaders } from '../../utils/apiUrl';
 
 const CITY_COORDS = {
   // România
@@ -262,13 +265,10 @@ export default function HarveySearchModal({ isOpen, onClose, onSearchComplete })
     if (!isOpen) return;
     const fetchSettings = async () => {
       try {
-        let res;
-        try {
-          res = await fetch('/api/admin/harvey/settings');
-        } catch (e) {
-          const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
-          res = await fetch(`${baseUrl}/api/admin/harvey/settings`);
-        }
+        const baseUrl = getApiUrl();
+        const res = await fetch(`${baseUrl}/api/admin/harvey/settings`, {
+          headers: getAuthHeaders()
+        });
         const data = await res.json();
         if (data.success && data.settings) {
           setHasGooglePlacesKey(data.settings.has_google_places_key);
@@ -285,21 +285,12 @@ export default function HarveySearchModal({ isOpen, onClose, onSearchComplete })
     if (!googlePlacesApiKey.trim()) return;
     setSavingGoogleKey(true);
     try {
-      let res;
-      try {
-        res = await fetch('/api/admin/harvey/settings', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ googlePlacesApiKey: googlePlacesApiKey.trim() })
-        });
-      } catch (e) {
-        const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
-        res = await fetch(`${baseUrl}/api/admin/harvey/settings`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ googlePlacesApiKey: googlePlacesApiKey.trim() })
-        });
-      }
+      const baseUrl = getApiUrl();
+      const res = await fetch(`${baseUrl}/api/admin/harvey/settings`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ googlePlacesApiKey: googlePlacesApiKey.trim() })
+      });
       const data = await res.json();
       if (data.success) {
         setHasGooglePlacesKey(true);
@@ -427,6 +418,23 @@ export default function HarveySearchModal({ isOpen, onClose, onSearchComplete })
     ]
   };
 
+  const currentCitiesList = citiesByCountry[selectedCountry] || citiesByCountry.RO;
+  const isAllCitiesSelected = selectedCities.length >= currentCitiesList.filter((c) => c !== 'Alt Oraș').length;
+  const unselectedCities = currentCitiesList.filter(
+    (c) => c !== 'Alt Oraș' && !selectedCities.includes(c)
+  );
+
+  let cityDropdownValue = '__ALL__';
+  if (isAllCitiesSelected) {
+    cityDropdownValue = '__ALL__';
+  } else if (selectedCities.includes('Alt Oraș')) {
+    cityDropdownValue = 'Alt Oraș';
+  } else if (selectedCities.length === 1) {
+    cityDropdownValue = selectedCities[0];
+  } else {
+    cityDropdownValue = '__MULTI__';
+  }
+
   const handleCountryChange = (c) => {
     setSelectedCountry(c);
     const countryObj = COUNTRIES_LIST.find((item) => item.code === c);
@@ -434,6 +442,57 @@ export default function HarveySearchModal({ isOpen, onClose, onSearchComplete })
     setSelectedCities([defaultCity]);
     setCustomCity('');
     setIsMapMoved(false);
+  };
+
+  const handleCityDropdownChange = (val) => {
+    if (val === '__ALL__') {
+      const all = currentCitiesList.filter((c) => c !== 'Alt Oraș');
+      setSelectedCities(all);
+      return;
+    }
+    if (val === 'Alt Oraș') {
+      setSelectedCities(['Alt Oraș']);
+      return;
+    }
+    // Selecție oraș individual
+    setSelectedCities([val]);
+    setCustomCity('');
+    const cityKey = val.toLowerCase();
+    const coords = CITY_COORDS[cityKey];
+    if (coords && mapInstanceRef.current) {
+      mapInstanceRef.current.flyTo([coords.lat, coords.lon], 13, { duration: 0.8 });
+      setMapCenter(coords);
+      setIsMapMoved(false);
+    }
+  };
+
+  const handleAddAdditionalCity = (cityToAdd) => {
+    if (!cityToAdd || cityToAdd === '__ADD__') return;
+    if (cityToAdd === 'Alt Oraș') {
+      if (!selectedCities.includes('Alt Oraș')) {
+        setSelectedCities((prev) => [...prev.filter((c) => c !== 'Alt Oraș'), 'Alt Oraș']);
+      }
+      return;
+    }
+    setSelectedCities((prev) => {
+      const filtered = prev.filter((c) => c !== 'Alt Oraș');
+      if (filtered.includes(cityToAdd)) return filtered;
+      return [...filtered, cityToAdd];
+    });
+    const cityKey = cityToAdd.toLowerCase();
+    const coords = CITY_COORDS[cityKey];
+    if (coords && mapInstanceRef.current) {
+      mapInstanceRef.current.flyTo([coords.lat, coords.lon], 13, { duration: 0.8 });
+      setMapCenter(coords);
+      setIsMapMoved(false);
+    }
+  };
+
+  const handleRemoveCity = (cityToRemove) => {
+    setSelectedCities((prev) => {
+      if (prev.length <= 1) return prev;
+      return prev.filter((c) => c !== cityToRemove);
+    });
   };
 
   const toggleCity = (city) => {
@@ -571,8 +630,6 @@ export default function HarveySearchModal({ isOpen, onClose, onSearchComplete })
     }
   };
 
-  const currentCitiesList = citiesByCountry[selectedCountry] || citiesByCountry.RO;
-
   const executeSearch = async (coordsOverride = null, bboxOverride = null) => {
     setLoading(true);
     setError(null);
@@ -630,21 +687,12 @@ export default function HarveySearchModal({ isOpen, onClose, onSearchComplete })
         googlePlacesApiKey: googlePlacesApiKey || undefined
       };
 
-      let res;
-      try {
-        res = await fetch('/api/admin/harvey/search', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-      } catch (proxyErr) {
-        const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
-        res = await fetch(`${baseUrl}/api/admin/harvey/search`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-      }
+      const baseUrl = getApiUrl();
+      const res = await fetch(`${baseUrl}/api/admin/harvey/search`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload)
+      });
 
       let data = {};
       try {
@@ -768,103 +816,178 @@ export default function HarveySearchModal({ isOpen, onClose, onSearchComplete })
             </div>
           )}
 
-          {/* 1. SELECȚIE ȚARĂ (PASUL 1) */}
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                <Globe size={13} className="text-primary-600" />
-                1. Selectează Țara Țintă
-              </label>
-              <span className="text-[11px] font-semibold text-slate-400">
-                Alege țara sau introdu manual
-              </span>
-            </div>
+          {/* 1 & 2. SELECȚIE ȚARĂ & ORAȘE (CASCADĂ DROPLISTS) */}
+          <div className="space-y-3 p-3.5 rounded-2xl bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-700/80">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* 1. SELECȚIE ȚARĂ (DROPDOWN) */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 flex items-center gap-1.5 whitespace-nowrap shrink-0">
+                    <Globe size={13} className="text-primary-600 shrink-0" />
+                    <span>1. Țara Țintă</span>
+                  </label>
+                  <span className="text-[11px] font-semibold text-slate-400 whitespace-nowrap shrink-0">
+                    Filtru național
+                  </span>
+                </div>
 
-            <div className="flex flex-wrap gap-1.5">
-              {COUNTRIES_LIST.map((c) => {
-                const isSelected = selectedCountry === c.code;
-                const FlagComponent = c.Flag;
-                return (
-                  <button
-                    key={c.code}
-                    type="button"
-                    onClick={() => handleCountryChange(c.code)}
-                    className={`px-3 py-1.5 rounded-full border text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer ${
-                      isSelected
-                        ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 border-slate-900 shadow-xs ring-1 ring-slate-800'
-                        : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
-                    }`}
+                <div className="relative flex items-center">
+                  <div className="absolute left-3.5 pointer-events-none flex items-center justify-center shrink-0">
+                    {(() => {
+                      const countryObj = COUNTRIES_LIST.find((c) => c.code === selectedCountry);
+                      if (countryObj && countryObj.Flag) {
+                        const FlagComp = countryObj.Flag;
+                        return <FlagComp />;
+                      }
+                      return <Globe size={15} className="text-slate-400 shrink-0" />;
+                    })()}
+                  </div>
+                  <select
+                    value={selectedCountry}
+                    onChange={(e) => handleCountryChange(e.target.value)}
+                    className="w-full h-10 pl-10 pr-9 text-xs font-semibold rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-hidden transition-all shadow-xs appearance-none cursor-pointer"
                   >
-                    <FlagComponent />
-                    <span>{c.label}</span>
-                    {isSelected && <Check size={12} className="shrink-0" />}
-                  </button>
-                );
-              })}
-            </div>
+                    {COUNTRIES_LIST.map((c) => (
+                      <option key={c.code} value={c.code} className="bg-white dark:bg-slate-800 text-slate-800 dark:text-white py-1">
+                        {c.label}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute right-3.5 pointer-events-none text-slate-400">
+                    <ChevronDown size={14} className="shrink-0" />
+                  </div>
+                </div>
 
-            {selectedCountry === 'CUSTOM' && (
-              <div className="mt-3 animate-fade-in">
-                <input
-                  type="text"
-                  value={customCountry}
-                  onChange={(e) => setCustomCountry(e.target.value)}
-                  placeholder="Scrie numele oricărei țări (ex: Elveția, SUA, Polonia, Portugalia, Suedia, Grecia etc.)..."
-                  className="w-full px-4 h-10 text-xs font-semibold rounded-full border border-primary-500 dark:border-primary-500 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-hidden shadow-xs"
-                  autoFocus
-                />
+                {selectedCountry === 'CUSTOM' && (
+                  <div className="mt-2 animate-fade-in">
+                    <input
+                      type="text"
+                      value={customCountry}
+                      onChange={(e) => setCustomCountry(e.target.value)}
+                      placeholder="Numele țării (ex: Elveția, SUA, Polonia, Grecia)..."
+                      className="w-full px-4 h-9 text-xs font-semibold rounded-full border border-primary-500 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-hidden shadow-xs"
+                      autoFocus
+                    />
+                  </div>
+                )}
               </div>
-            )}
-          </div>
 
-          {/* 2. SELECȚIE ORAȘE & HARTĂ INTERACTIVĂ (PASUL 2) */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5 whitespace-nowrap shrink-0">
-                <MapPin size={14} className="text-primary-600 shrink-0" />
-                <span>2. Alege Orașele din {COUNTRY_NAMES[selectedCountry] || customCountry || 'Țara Selectată'} ({selectedCities.length} selectate)</span>
-              </label>
-              <button
-                type="button"
-                onClick={selectAllCities}
-                className="text-[11px] font-bold text-primary-600 dark:text-primary-400 hover:underline cursor-pointer whitespace-nowrap shrink-0"
-              >
-                {selectedCities.length >= currentCitiesList.filter((c) => c !== 'Alt Oraș').length ? 'Resetează' : 'Selectează Toate'}
-              </button>
-            </div>
-
-            {/* Pastile selecție orașe (multi-select) */}
-            <div className="flex flex-wrap gap-1.5">
-              {currentCitiesList.map((item) => {
-                const isSelected = selectedCities.includes(item);
-                return (
+              {/* 2. SELECȚIE ORAȘE (CASCADĂ ÎN FUNCȚIE DE ȚARĂ) */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 flex items-center gap-1.5 whitespace-nowrap shrink-0">
+                    <MapPin size={13} className="text-primary-600 shrink-0" />
+                    <span>2. Orașe ({COUNTRY_NAMES[selectedCountry] || customCountry || 'Țară'})</span>
+                  </label>
                   <button
-                    key={item}
                     type="button"
-                    onClick={() => toggleCity(item)}
-                    className={`px-3 py-1 text-xs font-semibold rounded-full border transition-all flex items-center gap-1 whitespace-nowrap shrink-0 cursor-pointer ${
-                      isSelected
-                        ? 'border-primary-600 bg-primary-600 text-white font-bold shadow-xs'
-                        : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
-                    }`}
+                    onClick={selectAllCities}
+                    className="text-[11px] font-bold text-primary-600 dark:text-primary-400 hover:underline cursor-pointer whitespace-nowrap shrink-0"
                   >
-                    <span>{item}</span>
-                    {isSelected && <Check size={12} className="shrink-0" />}
+                    {isAllCitiesSelected ? 'Doar Capitala' : 'Selectează Toate'}
                   </button>
-                );
-              })}
+                </div>
+
+                <div className="relative flex items-center">
+                  <div className="absolute left-3.5 pointer-events-none flex items-center justify-center text-primary-600 dark:text-primary-400 shrink-0">
+                    <MapPin size={14} className="shrink-0" />
+                  </div>
+                  <select
+                    value={cityDropdownValue}
+                    onChange={(e) => handleCityDropdownChange(e.target.value)}
+                    className="w-full h-10 pl-10 pr-9 text-xs font-semibold rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-hidden transition-all shadow-xs appearance-none cursor-pointer"
+                  >
+                    {cityDropdownValue === '__MULTI__' && (
+                      <option value="__MULTI__" disabled>
+                        {selectedCities.length} orașe selectate (personalizat)
+                      </option>
+                    )}
+                    <option value="__ALL__">
+                      Toate orașele mari din {COUNTRY_NAMES[selectedCountry] || 'țară'} ({currentCitiesList.filter((c) => c !== 'Alt Oraș').length} orașe)
+                    </option>
+                    <option disabled>──────────</option>
+                    {currentCitiesList.filter((c) => c !== 'Alt Oraș').map((city) => (
+                      <option key={city} value={city}>
+                        {city}
+                      </option>
+                    ))}
+                    <option disabled>──────────</option>
+                    <option value="Alt Oraș">Alt Oraș / Zonă manuală...</option>
+                  </select>
+                  <div className="absolute right-3.5 pointer-events-none text-slate-400">
+                    <ChevronDown size={14} className="shrink-0" />
+                  </div>
+                </div>
+
+                {selectedCities.includes('Alt Oraș') && (
+                  <div className="mt-2 animate-fade-in">
+                    <input
+                      type="text"
+                      value={customCity}
+                      onChange={(e) => setCustomCity(e.target.value)}
+                      placeholder="Specifică orașele separate prin virgulă (ex: Suceava, Galați)..."
+                      className="w-full px-4 h-9 text-xs rounded-full border border-primary-500 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-hidden shadow-xs"
+                      autoFocus
+                    />
+                  </div>
+                )}
+              </div>
             </div>
 
-            {selectedCities.includes('Alt Oraș') && (
-              <input
-                type="text"
-                value={customCity}
-                onChange={(e) => setCustomCity(e.target.value)}
-                placeholder="Specifică alte orașe separate prin virgulă (ex: Suceava, Galați, Brăila, Leuven etc.)..."
-                className="w-full px-4 h-9 text-xs rounded-full border border-primary-500 dark:border-primary-500 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-hidden transition-all shadow-xs"
-                autoFocus
-              />
-            )}
+            {/* ZONĂ ORAȘE ACTIVE (CHIPS & ADĂUGARE MULTI-ORAȘ) */}
+            <div className="pt-2 border-t border-slate-200/60 dark:border-slate-700/60 flex flex-wrap items-center gap-1.5">
+              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap shrink-0">
+                Orașe active ({selectedCities.length}):
+              </span>
+
+              {isAllCitiesSelected ? (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 whitespace-nowrap shrink-0 shadow-2xs">
+                  <Check size={12} className="shrink-0 text-emerald-600" />
+                  <span>Toate orașele principale ({currentCitiesList.filter((c) => c !== 'Alt Oraș').length}) sunt incluse</span>
+                </span>
+              ) : (
+                selectedCities.map((city) => (
+                  <span
+                    key={city}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-semibold rounded-full bg-primary-50 dark:bg-primary-950/50 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-800 whitespace-nowrap shrink-0 shadow-2xs"
+                  >
+                    <span>{city}</span>
+                    {selectedCities.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveCity(city)}
+                        className="text-primary-400 hover:text-red-500 transition-colors cursor-pointer shrink-0"
+                        title={`Elimină ${city}`}
+                      >
+                        <X size={12} className="shrink-0" />
+                      </button>
+                    )}
+                  </span>
+                ))
+              )}
+
+              {/* Selector rapid pentru a adăuga încă un oraș la căutare */}
+              {!isAllCitiesSelected && unselectedCities.length > 0 && (
+                <div className="relative inline-flex items-center">
+                  <select
+                    value="__ADD__"
+                    onChange={(e) => {
+                      handleAddAdditionalCity(e.target.value);
+                      e.target.value = '__ADD__';
+                    }}
+                    className="h-6 pl-2.5 pr-6 text-[11px] font-bold rounded-full border border-dashed border-primary-400 dark:border-primary-600 bg-primary-50/60 dark:bg-primary-950/30 text-primary-700 dark:text-primary-300 hover:bg-primary-100 dark:hover:bg-primary-900/50 transition-colors cursor-pointer appearance-none whitespace-nowrap shrink-0"
+                  >
+                    <option value="__ADD__" disabled>+ Adaugă alt oraș...</option>
+                    {unselectedCities.map((c) => (
+                      <option key={c} value={c} className="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">
+                        + {c}
+                      </option>
+                    ))}
+                  </select>
+                  <Plus size={11} className="absolute right-2 pointer-events-none text-primary-600 dark:text-primary-400 shrink-0" />
+                </div>
+              )}
+            </div>
 
             {/* Toggle Opțional pentru Hartă */}
             <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/80">

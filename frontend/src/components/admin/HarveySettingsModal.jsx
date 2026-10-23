@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { X, Settings, Key, Mail, User, ShieldCheck, CheckCircle2, AlertCircle, Save, Loader2, MapPin, Phone } from 'lucide-react';
+import { X, Settings, Key, Mail, User, ShieldCheck, CheckCircle2, AlertCircle, Save, Loader2, MapPin, Phone, Sparkles } from 'lucide-react';
+import { getApiUrl, getAuthHeaders } from '../../utils/apiUrl';
 
 export default function HarveySettingsModal({ isOpen, onClose, onSaved }) {
   if (!isOpen) return null;
@@ -10,13 +11,15 @@ export default function HarveySettingsModal({ isOpen, onClose, onSaved }) {
   const [successMsg, setSuccessMsg] = useState(null);
 
   const [anthropicApiKey, setAnthropicApiKey] = useState('');
+  const [geminiApiKey, setGeminiApiKey] = useState('');
   const [googlePlacesApiKey, setGooglePlacesApiKey] = useState('');
-  const [senderName, setSenderName] = useState('Smart QR Pontaj');
+  const [senderName, setSenderName] = useState('QR Pontaj');
   const [senderEmail, setSenderEmail] = useState('jeka7ro@gmail.com');
   const [senderPhone, setSenderPhone] = useState('+40 757 77 77 12');
   const [dailySendLimit, setDailySendLimit] = useState(25);
   const [defaultPitch, setDefaultPitch] = useState('pontaj_digital');
   const [hasAnthropicKey, setHasAnthropicKey] = useState(false);
+  const [hasGeminiKey, setHasGeminiKey] = useState(false);
   const [hasGooglePlacesKey, setHasGooglePlacesKey] = useState(false);
 
   useEffect(() => {
@@ -26,20 +29,19 @@ export default function HarveySettingsModal({ isOpen, onClose, onSaved }) {
   const fetchSettings = async () => {
     setLoading(true);
     try {
-      let res;
-      try {
-        res = await fetch('/api/admin/harvey/settings');
-      } catch (e) {
-        const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
-        res = await fetch(`${baseUrl}/api/admin/harvey/settings`);
-      }
+      const baseUrl = getApiUrl();
+      const res = await fetch(`${baseUrl}/api/admin/harvey/settings`, {
+        headers: getAuthHeaders()
+      });
       const data = await res.json();
       if (data.success && data.settings) {
-        setSenderName(data.settings.sender_name || 'Smart QR Pontaj');
+        setSenderName(data.settings.sender_name || 'QR Pontaj');
         setSenderEmail(data.settings.sender_email || 'contact@pontaj.app');
         setSenderPhone(data.settings.sender_phone || '+40 757 77 77 12');
         setDailySendLimit(data.settings.daily_send_limit || 25);
         setDefaultPitch(data.settings.default_pitch || 'pontaj_digital');
+        setGeminiApiKey(data.settings.gemini_api_key || '');
+        setHasGeminiKey(data.settings.has_gemini_key);
         setAnthropicApiKey(data.settings.anthropic_api_key || '');
         setHasAnthropicKey(data.settings.has_anthropic_key);
         setGooglePlacesApiKey(data.settings.google_places_api_key || '');
@@ -59,31 +61,23 @@ export default function HarveySettingsModal({ isOpen, onClose, onSaved }) {
     setSuccessMsg(null);
 
     try {
-      let res;
       const payload = {
         senderName,
         senderEmail,
         senderPhone,
         dailySendLimit: Number(dailySendLimit),
         defaultPitch,
+        geminiApiKey,
         anthropicApiKey,
         googlePlacesApiKey
       };
 
-      try {
-        res = await fetch('/api/admin/harvey/settings', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-      } catch (e) {
-        const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
-        res = await fetch(`${baseUrl}/api/admin/harvey/settings`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-      }
+      const baseUrl = getApiUrl();
+      const res = await fetch(`${baseUrl}/api/admin/harvey/settings`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload)
+      });
 
       const data = await res.json();
       if (!res.ok || !data.success) {
@@ -113,10 +107,10 @@ export default function HarveySettingsModal({ isOpen, onClose, onSaved }) {
             </div>
             <div>
               <h3 className="text-base font-bold text-slate-800 dark:text-white">
-                Setări Harvey SDR & Claude
+                Setări Harvey SDR & AI
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Configurare model AI, expeditor Brevo și limite de trimitere
+                Configurare modele AI (Google Gemini / Claude), expeditor Brevo și limite de trimitere
               </p>
             </div>
           </div>
@@ -144,19 +138,55 @@ export default function HarveySettingsModal({ isOpen, onClose, onSaved }) {
             </div>
           )}
 
-          {/* Anthropic API Key */}
+          {/* Google Gemini API Key (Recomandat cu Google One / Google AI) */}
+          <div className="p-3.5 rounded-2xl border border-blue-100 dark:border-blue-900/60 bg-blue-50/30 dark:bg-blue-950/20">
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs font-bold uppercase tracking-wider text-blue-700 dark:text-blue-300 flex items-center gap-1.5">
+                <Sparkles size={13} className="text-blue-600" />
+                Google Gemini API Key (Google AI)
+              </label>
+              <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full whitespace-nowrap shrink-0 ${
+                hasGeminiKey 
+                  ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
+                  : 'bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-200'
+              }`}>
+                {hasGeminiKey ? 'Gemini 1.5 Flash Activ' : 'Gratuit cu Contul Google'}
+              </span>
+            </div>
+            <input
+              type="password"
+              value={geminiApiKey}
+              onChange={(e) => setGeminiApiKey(e.target.value)}
+              placeholder={hasGeminiKey ? '••••••••••••••••' : 'AIzaSy... (Cheie gratuită Google AI Studio)'}
+              className="w-full px-4 h-10 text-sm rounded-full border border-blue-200 dark:border-blue-800 focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none transition-all shadow-xs"
+            />
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+              Recomandat! Dacă ai cont Google / Google One, obții o cheie gratuită în 1 minut de pe{' '}
+              <a
+                href="https://aistudio.google.com/app/apikey"
+                target="_blank"
+                rel="noreferrer"
+                className="text-blue-600 dark:text-blue-400 underline font-semibold hover:text-blue-700"
+              >
+                aistudio.google.com
+              </a>
+              , fără costuri suplimentare.
+            </p>
+          </div>
+
+          {/* Anthropic API Key (Claude) - Alternativă */}
           <div>
             <div className="flex items-center justify-between mb-1">
               <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
                 <Key size={13} className="text-primary-600" />
-                Anthropic API Key (Claude)
+                Anthropic API Key (Claude — Alternativă)
               </label>
               <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full whitespace-nowrap shrink-0 ${
                 hasAnthropicKey 
                   ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
                   : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
               }`}>
-                {hasAnthropicKey ? 'Claude 3.5 Activ' : 'Mod Template Activ'}
+                {hasAnthropicKey ? 'Claude 3.5 Activ' : 'Opțional'}
               </span>
             </div>
             <input
@@ -167,7 +197,7 @@ export default function HarveySettingsModal({ isOpen, onClose, onSaved }) {
               className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none transition-all shadow-xs"
             />
             <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
-              Dacă nu introduci o cheie Anthropic, sistemul folosește generatorul inteligent cu șabloane optimizate pe fiecare nișă.
+              Dacă nu introduci nicio cheie (Gemini sau Claude), Harvey folosește generatorul intern cu șabloane inteligente (100% gratuit).
             </p>
           </div>
 
@@ -199,22 +229,22 @@ export default function HarveySettingsModal({ isOpen, onClose, onSaved }) {
           </div>
 
           {/* Nume & Email & Telefon Expeditor */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 whitespace-nowrap">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 truncate">
                 Nume Expeditor
               </label>
               <input
                 type="text"
                 value={senderName}
                 onChange={(e) => setSenderName(e.target.value)}
-                placeholder="Smart QR Pontaj"
+                placeholder="QR Pontaj"
                 className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none transition-all shadow-xs"
               />
             </div>
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 whitespace-nowrap">
-                Email Expeditor (Brevo)
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 truncate" title="Email Expeditor (Brevo)">
+                Email (Brevo)
               </label>
               <input
                 type="email"
@@ -225,9 +255,9 @@ export default function HarveySettingsModal({ isOpen, onClose, onSaved }) {
               />
             </div>
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 whitespace-nowrap flex items-center gap-1">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 flex items-center gap-1 truncate" title="Telefon / WhatsApp">
                 <Phone size={12} className="text-primary-600 shrink-0" />
-                <span>Telefon / WhatsApp</span>
+                <span className="truncate">Telefon / WhatsApp</span>
               </label>
               <input
                 type="tel"

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { getApiUrl, getAuthHeaders } from '../../utils/apiUrl';
 import { 
   X, 
   Building2, 
@@ -49,23 +50,12 @@ export default function HarveyAnafLookupModal({ isOpen, onClose, onImportComplet
 
     setLoading(true);
     try {
-      let res;
-      try {
-        // Încercare 1: Cale relativă (proxy Vite / producție)
-        res = await fetch('/api/admin/harvey/anaf-batch', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ cuis: uniqueCuis })
-        });
-      } catch (proxyErr) {
-        // Încercare 2: Fallback pe baseUrl explicit
-        const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
-        res = await fetch(`${baseUrl}/api/admin/harvey/anaf-batch`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ cuis: uniqueCuis })
-        });
-      }
+      const baseUrl = getApiUrl();
+      const res = await fetch(`${baseUrl}/api/admin/harvey/anaf-batch`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ cuis: uniqueCuis })
+      });
 
       let data = null;
       try {
@@ -121,10 +111,10 @@ export default function HarveyAnafLookupModal({ isOpen, onClose, onImportComplet
     const companiesToSave = selectedIndices.map(idx => results.found[idx]);
 
     try {
-      const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
+      const baseUrl = getApiUrl();
       const res = await fetch(`${baseUrl}/api/admin/harvey/anaf-save`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ companies: companiesToSave })
       });
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { getApiUrl, getAuthHeaders } from '../../utils/apiUrl';
 import { 
   Sparkles, 
   Search, 
@@ -100,10 +101,11 @@ export default function HarveySdrView({ onConvertToTenant }) {
     if (!silent) setLoading(true);
     setError(null);
     try {
-      const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
+      const baseUrl = getApiUrl();
+      const authHeaders = getAuthHeaders();
       const [leadsRes, statsRes] = await Promise.all([
-        fetch(`${baseUrl}/api/admin/harvey/leads`),
-        fetch(`${baseUrl}/api/admin/harvey/stats`)
+        fetch(`${baseUrl}/api/admin/harvey/leads`, { headers: authHeaders }),
+        fetch(`${baseUrl}/api/admin/harvey/stats`, { headers: authHeaders })
       ]);
 
       const leadsData = await leadsRes.json();
@@ -299,10 +301,10 @@ export default function HarveySdrView({ onConvertToTenant }) {
     if (selectedLeadIds.length === 0) return;
     setBulkActionLoading(true);
     try {
-      const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
+      const baseUrl = getApiUrl();
       const res = await fetch(`${baseUrl}/api/admin/harvey/leads/bulk-send`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ leadIds: selectedLeadIds })
       });
       const data = await res.json();
@@ -323,10 +325,10 @@ export default function HarveySdrView({ onConvertToTenant }) {
     if (selectedLeadIds.length === 0) return;
     setBulkActionLoading(true);
     try {
-      const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
+      const baseUrl = getApiUrl();
       const res = await fetch(`${baseUrl}/api/admin/harvey/leads/bulk-delete`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ leadIds: selectedLeadIds })
       });
       const data = await res.json();
@@ -347,10 +349,10 @@ export default function HarveySdrView({ onConvertToTenant }) {
     if (selectedLeadIds.length === 0) return;
     setBulkActionLoading(true);
     try {
-      const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
+      const baseUrl = getApiUrl();
       const res = await fetch(`${baseUrl}/api/admin/harvey/leads/bulk-generate-pitch`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ leadIds: selectedLeadIds })
       });
       const data = await res.json();
@@ -368,9 +370,10 @@ export default function HarveySdrView({ onConvertToTenant }) {
 
   const handleDeleteLead = async (leadId) => {
     try {
-      const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
+      const baseUrl = getApiUrl();
       const res = await fetch(`${baseUrl}/api/admin/harvey/leads/${leadId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: getAuthHeaders()
       });
       if (res.ok) {
         setLeads((prev) => prev.filter((l) => l.id !== leadId));
@@ -390,10 +393,10 @@ export default function HarveySdrView({ onConvertToTenant }) {
     }
 
     try {
-      const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
+      const baseUrl = getApiUrl();
       const res = await fetch(`${baseUrl}/api/admin/harvey/leads/${lead.id}/send`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        headers: getAuthHeaders()
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
@@ -544,205 +547,145 @@ export default function HarveySdrView({ onConvertToTenant }) {
         </div>
       )}
 
-      {/* Bară Unificată de Căutare, Filtre Dropdown și Acțiuni */}
-      <div className="bg-white dark:bg-slate-800 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs space-y-3">
-        {/* Rândul 1: Căutare + Select Țară + Select Oraș + Butoane Acțiuni */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
-          {/* Căutare */}
-          <div className="relative flex-1 min-w-[200px]">
-            <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+      {/* Bară Unificată de Căutare, Filtre și Acțiuni — UN SINGUR RÂND */}
+      <div className="bg-white dark:bg-slate-800 p-3 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs space-y-2.5">
+        {/* Rândul 1: Totul pe un singur rând uniform, înălțime identică h-9, fără iconițe în butoane */}
+        <div className="flex items-center gap-2 flex-wrap xl:flex-nowrap">
+          {/* Căutare text */}
+          <div className="relative flex-1 min-w-[170px]">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-              placeholder="Caută companie, oraș, industrie sau email..."
-              className="w-full pl-9 pr-4 h-9 text-xs sm:text-sm rounded-full border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500 bg-slate-50/50 dark:bg-slate-900 text-slate-800 dark:text-white outline-none transition-all"
+              placeholder="Caută companie, oraș, email..."
+              className="w-full pl-8 pr-3 h-9 text-xs rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-1 focus:ring-blue-500 transition-all"
             />
           </div>
 
-          {/* Filtre și Acțiuni */}
-          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-            {/* Dropdown Țară */}
+          {/* Droplist Țară */}
+          <select
+            value={countryFilter}
+            onChange={(e) => { setCountryFilter(e.target.value); setCityFilter('all'); setCurrentPage(1); }}
+            className="h-9 px-3 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 outline-none cursor-pointer shrink-0"
+          >
+            <option value="all">Toate Țările ({leads.length})</option>
+            {existingCountries.map((c) => (
+              <option key={c} value={c}>
+                {COUNTRY_NAMES[c] || c} ({countryCounts[c]})
+              </option>
+            ))}
+          </select>
+
+          {/* Droplist Oraș (dacă sunt disponibile orașe) */}
+          {availableCities.length > 0 && (
             <select
-              value={countryFilter}
-              onChange={(e) => { setCountryFilter(e.target.value); setCityFilter('all'); setCurrentPage(1); }}
-              className="h-9 px-3 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 outline-none cursor-pointer shrink-0"
+              value={cityFilter}
+              onChange={(e) => { setCityFilter(e.target.value); setCurrentPage(1); }}
+              className="h-9 px-3 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 outline-none cursor-pointer max-w-[130px] truncate shrink-0"
             >
-              <option value="all">Toate Țările ({leads.length})</option>
-              {existingCountries.map((c) => (
-                <option key={c} value={c}>
-                  {COUNTRY_NAMES[c] || c} ({countryCounts[c]})
-                </option>
+              <option value="all">Toate Orașele</option>
+              {availableCities.map((city) => (
+                <option key={city} value={city}>{city}</option>
               ))}
             </select>
+          )}
 
-            {/* Dropdown Oraș */}
-            {availableCities.length > 0 && (
-              <select
-                value={cityFilter}
-                onChange={(e) => { setCityFilter(e.target.value); setCurrentPage(1); }}
-                className="h-9 px-3 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 outline-none cursor-pointer max-w-[140px] truncate shrink-0"
-              >
-                <option value="all">Toate Orașele</option>
-                {availableCities.map((city) => (
-                  <option key={city} value={city}>{city}</option>
-                ))}
-              </select>
-            )}
+          {/* Droplist Căutări / Nișe (droplist unic și curat) */}
+          <select
+            value={industryFilter}
+            onChange={(e) => { setIndustryFilter(e.target.value); setCurrentPage(1); }}
+            className="h-9 px-3 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 outline-none cursor-pointer max-w-[170px] truncate shrink-0"
+          >
+            <option value="all">Toate Căutările ({leads.length})</option>
+            {availableIndustries.map((ind) => (
+              <option key={ind} value={ind}>
+                {ind} ({industryCounts[ind] || 0})
+              </option>
+            ))}
+          </select>
 
-            {/* Dropdown Domeniu / Nișă */}
-            <select
-              value={industryFilter}
-              onChange={(e) => { setIndustryFilter(e.target.value); setCurrentPage(1); }}
-              className="h-9 px-3 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 outline-none cursor-pointer max-w-[170px] truncate shrink-0"
-            >
-              <option value="all">Toate Domeniile ({leads.length})</option>
-              {availableIndustries.map((ind) => (
-                <option key={ind} value={ind}>
-                  {ind} ({industryCounts[ind] || 0})
-                </option>
-              ))}
-            </select>
+          {/* Delimitator vertical */}
+          <div className="hidden sm:block h-5 w-px bg-slate-200 dark:bg-slate-700 shrink-0" />
 
-            {/* CTA Caută Companii Noi */}
-            <button
-              onClick={() => setIsSearchModalOpen(true)}
-              className="h-9 px-4 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm shadow-blue-500/20 whitespace-nowrap shrink-0 cursor-pointer"
-            >
-              <Sparkles size={13} />
-              <span>Caută Companii</span>
-            </button>
+          {/* Butoane Acțiuni — DOAR TEXT, FĂRĂ ICONIȚE, ÎNĂLȚIME IDENTICĂ h-9 */}
+          <button
+            onClick={() => setIsSearchModalOpen(true)}
+            className="h-9 px-4 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold whitespace-nowrap shrink-0 transition-colors cursor-pointer"
+          >
+            Caută companii
+          </button>
 
-            {/* Buton Adaugă Manual */}
-            <button
-              onClick={() => setIsAddLeadModalOpen(true)}
-              className="h-9 px-3 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all flex items-center gap-1 whitespace-nowrap shrink-0 cursor-pointer"
-              title="Adaugă un lead manual"
-            >
-              <Plus size={13} />
-              <span>Manual</span>
-            </button>
+          <button
+            onClick={() => setIsAddLeadModalOpen(true)}
+            className="h-9 px-3.5 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold whitespace-nowrap shrink-0 transition-colors cursor-pointer"
+          >
+            Manual
+          </button>
 
-            {/* Buton Import CSV / Excel */}
-            <button
-              onClick={() => setIsImportModalOpen(true)}
-              className="h-9 px-3 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer"
-              title="Importă companii din fișier CSV sau tabel Excel"
-            >
-              <Upload size={13} />
-              <span>Import CSV</span>
-            </button>
+          <button
+            onClick={() => setIsImportModalOpen(true)}
+            className="h-9 px-3.5 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold whitespace-nowrap shrink-0 transition-colors cursor-pointer"
+          >
+            Import CSV
+          </button>
 
-            {/* Buton Oficial ANAF v9 (CUI Batch) */}
-            <button
-              onClick={() => setIsAnafModalOpen(true)}
-              className="h-9 px-3.5 rounded-full border border-blue-200 dark:border-blue-900 bg-blue-50/70 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer shadow-xs"
-              title="Interogare companii oficiale ANAF v9 după listă de CUI-uri (Pilonul 3)"
-            >
-              <ShieldCheck size={14} className="text-blue-600 dark:text-blue-400" />
-              <span>ANAF (CUI)</span>
-            </button>
+          <button
+            onClick={() => setIsAnafModalOpen(true)}
+            className="h-9 px-3.5 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold whitespace-nowrap shrink-0 transition-colors cursor-pointer"
+          >
+            ANAF (CUI)
+          </button>
 
-            {/* Setări și Refresh */}
-            <button
-              onClick={() => setIsSettingsModalOpen(true)}
-              className="w-9 h-9 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-500 flex items-center justify-center transition-all shrink-0 cursor-pointer"
-              title="Setări Harvey"
-            >
-              <Settings size={14} />
-            </button>
-            <button
-              onClick={() => fetchLeadsAndStats(false)}
-              className="w-9 h-9 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-500 flex items-center justify-center transition-all shrink-0 cursor-pointer"
-              title="Reîmprospătează"
-            >
-              <RefreshCw size={14} className={loading ? 'animate-spin text-blue-600' : ''} />
-            </button>
-          </div>
+          {/* Utilitare Setări și Refresh */}
+          <button
+            onClick={() => setIsSettingsModalOpen(true)}
+            className="w-9 h-9 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center transition-colors shrink-0 cursor-pointer ml-auto sm:ml-0"
+            title="Setări Harvey"
+          >
+            <Settings size={15} />
+          </button>
+          <button
+            onClick={() => fetchLeadsAndStats(false)}
+            className="w-9 h-9 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center transition-colors shrink-0 cursor-pointer"
+            title="Reîmprospătează"
+          >
+            <RefreshCw size={15} className={loading ? 'animate-spin text-blue-600' : ''} />
+          </button>
         </div>
-
-        {/* Rândul 1.5: Filtre Rapide Domenii / Căutări (Chips orizontale pe un singur rând) */}
-        {availableIndustries.length > 0 && (
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-1 border-t border-slate-100 dark:border-slate-700/60">
-            <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider whitespace-nowrap shrink-0 mr-1 flex items-center gap-1">
-              <Filter size={12} className="text-slate-400" /> Căutări:
-            </span>
-            <button
-              type="button"
-              onClick={() => { setIndustryFilter('all'); setCurrentPage(1); }}
-              className={`px-3 h-7 rounded-full text-xs font-bold transition-all whitespace-nowrap shrink-0 cursor-pointer flex items-center gap-1.5 ${
-                industryFilter === 'all'
-                  ? 'bg-blue-600 text-white shadow-xs'
-                  : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'
-              }`}
-            >
-              <span>Toate</span>
-              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
-                industryFilter === 'all' ? 'bg-white/20 text-white' : 'bg-black/5 dark:bg-white/10'
-              }`}>
-                {leads.length}
-              </span>
-            </button>
-
-            {availableIndustries.map((ind) => {
-              const isSelected = industryFilter === ind;
-              const badgeStyle = getIndustryBadgeStyle(ind);
-              return (
-                <button
-                  key={ind}
-                  type="button"
-                  onClick={() => { setIndustryFilter(isSelected ? 'all' : ind); setCurrentPage(1); }}
-                  className={`px-3 h-7 rounded-full text-xs font-bold transition-all whitespace-nowrap shrink-0 cursor-pointer border flex items-center gap-1.5 ${
-                    isSelected
-                      ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
-                      : `${badgeStyle.bg} ${badgeStyle.text} ${badgeStyle.border} hover:opacity-90`
-                  }`}
-                >
-                  <Tag size={11} className={isSelected ? 'text-white' : ''} />
-                  <span>{ind}</span>
-                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
-                    isSelected ? 'bg-white/20 text-white' : 'bg-black/5 dark:bg-white/10'
-                  }`}>
-                    {industryCounts[ind] || 0}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        )}
 
         {/* Bară sumară filtre active cu buton de reset */}
         {(industryFilter !== 'all' || cityFilter !== 'all' || countryFilter !== 'all' || searchQuery || statusFilter !== 'all') && (
           <div className="flex items-center gap-2 flex-wrap pt-2 border-t border-slate-100 dark:border-slate-700/60">
-            <span className="text-[11px] font-bold text-slate-400">Filtre active:</span>
+            <span className="text-[11px] font-semibold text-slate-400">Filtre active:</span>
             {industryFilter !== 'all' && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border border-blue-200 dark:border-blue-800 whitespace-nowrap shrink-0">
-                Domeniu: {industryFilter}
-                <button type="button" onClick={() => setIndustryFilter('all')} className="hover:text-blue-900 cursor-pointer">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 whitespace-nowrap shrink-0">
+                Nișă: {industryFilter}
+                <button type="button" onClick={() => setIndustryFilter('all')} className="hover:text-red-500 cursor-pointer">
                   <X size={12} />
                 </button>
               </span>
             )}
             {cityFilter !== 'all' && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700 whitespace-nowrap shrink-0">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 whitespace-nowrap shrink-0">
                 Oraș: {cityFilter}
-                <button type="button" onClick={() => setCityFilter('all')} className="hover:text-slate-900 cursor-pointer">
+                <button type="button" onClick={() => setCityFilter('all')} className="hover:text-red-500 cursor-pointer">
                   <X size={12} />
                 </button>
               </span>
             )}
             {countryFilter !== 'all' && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700 whitespace-nowrap shrink-0">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 whitespace-nowrap shrink-0">
                 Țară: {COUNTRY_NAMES[countryFilter] || countryFilter}
-                <button type="button" onClick={() => setCountryFilter('all')} className="hover:text-slate-900 cursor-pointer">
+                <button type="button" onClick={() => setCountryFilter('all')} className="hover:text-red-500 cursor-pointer">
                   <X size={12} />
                 </button>
               </span>
             )}
             {searchQuery && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700 whitespace-nowrap shrink-0">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 whitespace-nowrap shrink-0">
                 Căutare: "{searchQuery}"
-                <button type="button" onClick={() => setSearchQuery('')} className="hover:text-slate-900 cursor-pointer">
+                <button type="button" onClick={() => setSearchQuery('')} className="hover:text-red-500 cursor-pointer">
                   <X size={12} />
                 </button>
               </span>
@@ -757,19 +700,19 @@ export default function HarveySdrView({ onConvertToTenant }) {
                 setSearchQuery('');
                 setCurrentPage(1);
               }}
-              className="text-xs font-bold text-red-600 dark:text-red-400 hover:underline cursor-pointer whitespace-nowrap shrink-0 ml-auto"
+              className="text-xs font-semibold text-red-600 dark:text-red-400 hover:underline cursor-pointer whitespace-nowrap shrink-0 ml-auto"
             >
               Resetează toate filtrele
             </button>
           </div>
         )}
 
-        {/* Rândul 2: Status Tabs curate */}
-        <div className="flex items-center justify-between pt-2.5 border-t border-slate-100 dark:border-slate-700/60">
+        {/* Rândul 2: Status Tabs curate — culori neutre profesionale, fără culori de circ */}
+        <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-700/60">
           <div className="flex items-center gap-1.5 overflow-x-auto">
             <button
               onClick={() => { setStatusFilter('all'); setCurrentPage(1); }}
-              className={`px-3 h-7 rounded-full text-xs font-bold transition-all whitespace-nowrap shrink-0 cursor-pointer ${
+              className={`px-3 h-8 rounded-full text-xs font-semibold transition-all whitespace-nowrap shrink-0 cursor-pointer ${
                 statusFilter === 'all'
                   ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs'
                   : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
@@ -779,9 +722,9 @@ export default function HarveySdrView({ onConvertToTenant }) {
             </button>
             <button
               onClick={() => { setStatusFilter('pending'); setCurrentPage(1); }}
-              className={`px-3 h-7 rounded-full text-xs font-bold transition-all whitespace-nowrap shrink-0 cursor-pointer ${
+              className={`px-3 h-8 rounded-full text-xs font-semibold transition-all whitespace-nowrap shrink-0 cursor-pointer ${
                 statusFilter === 'pending'
-                  ? 'bg-amber-500 text-white shadow-xs'
+                  ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs'
                   : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
               }`}
             >
@@ -789,9 +732,9 @@ export default function HarveySdrView({ onConvertToTenant }) {
             </button>
             <button
               onClick={() => { setStatusFilter('sent'); setCurrentPage(1); }}
-              className={`px-3 h-7 rounded-full text-xs font-bold transition-all whitespace-nowrap shrink-0 cursor-pointer ${
+              className={`px-3 h-8 rounded-full text-xs font-semibold transition-all whitespace-nowrap shrink-0 cursor-pointer ${
                 statusFilter === 'sent'
-                  ? 'bg-blue-600 text-white shadow-xs'
+                  ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs'
                   : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
               }`}
             >
@@ -799,9 +742,9 @@ export default function HarveySdrView({ onConvertToTenant }) {
             </button>
             <button
               onClick={() => { setStatusFilter('converted'); setCurrentPage(1); }}
-              className={`px-3 h-7 rounded-full text-xs font-bold transition-all whitespace-nowrap shrink-0 cursor-pointer ${
+              className={`px-3 h-8 rounded-full text-xs font-semibold transition-all whitespace-nowrap shrink-0 cursor-pointer ${
                 statusFilter === 'converted'
-                  ? 'bg-emerald-600 text-white shadow-xs'
+                  ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs'
                   : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
               }`}
             >
@@ -809,7 +752,7 @@ export default function HarveySdrView({ onConvertToTenant }) {
             </button>
           </div>
 
-          <div className="text-[11px] text-slate-400 font-semibold hidden md:block whitespace-nowrap shrink-0">
+          <div className="text-xs text-slate-500 font-medium hidden md:block whitespace-nowrap shrink-0">
             Afișate {filteredLeads.length} din {leads.length} companii
           </div>
         </div>

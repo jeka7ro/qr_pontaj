@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Upload, FileText, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { getApiUrl, getAuthHeaders } from '../../utils/apiUrl';
 
 export default function HarveyImportModal({ isOpen, onClose, onImportSuccess }) {
   const [tab, setTab] = useState('paste'); // 'paste' | 'file'
@@ -103,10 +104,10 @@ export default function HarveyImportModal({ isOpen, onClose, onImportSuccess }) 
     setErrorMsg('');
 
     try {
-      const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
+      const baseUrl = getApiUrl();
       const res = await fetch(`${baseUrl}/api/admin/harvey/import`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ leads: parsedLeads })
       });
 

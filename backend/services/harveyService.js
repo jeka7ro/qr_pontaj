@@ -151,7 +151,7 @@ function detectLeadLanguage(city, country, address) {
 }
 
 // Generare șablon inteligent de pitch când nu este configurată cheia Anthropic
-function generateFallbackPitch({ companyName, industry, city, pitchFocus, language = 'ro', senderName = 'Smart QR Pontaj', senderEmail = 'contact@pontaj.app', senderPhone = '+40 757 77 77 12' }) {
+function generateFallbackPitch({ companyName, industry, city, pitchFocus, language = 'ro', senderName = 'QR Pontaj', senderEmail = 'contact@pontaj.app', senderPhone = '+40 757 77 77 12' }) {
   const lang = (language || 'ro').toLowerCase();
 
   // FR — Français (Belgique / France)
@@ -167,9 +167,12 @@ Comment ça fonctionne :
 • Feuilles d’heures automatiques : suivi en temps réel des présences, des heures de nuit et des heures supplémentaires ;
 • Paie simplifiée : export direct vers vos logiciels de gestion et secrétariats sociaux (SD Worx, Securex, Liantis, Partena...).
 
-Conditions :
+Conditions & Grille tarifaire (selon la taille de l'équipe) :
 • 15 jours d'essai gratuit complet, sans engagement et sans carte bancaire ;
-• Tarif transparent : 5,00 € / collaborateur / mois.
+• 1 – 49 collaborateurs : 5,00 € / collaborateur / mois (minimum 50 € / mois / entreprise) ;
+• 50 – 99 collaborateurs : 4,50 € / collaborateur / mois (remise de 10%) ;
+• 100+ collaborateurs : 4,00 € / collaborateur / mois (remise de 20%) ;
+• Matériel : solution 100% cloud sur tablette ou smartphone existant (tablette non fournie).
 
 Découvrez la solution et activez votre test gratuit ici :
 https://qrtime.be
@@ -192,9 +195,12 @@ Nous vous proposons QRTime pour garantir une conformité irréprochable du temps
 • Chaque pointage est horodaté à la seconde près avec validation du lieu de travail ;
 • Rapports complets d'inspection exportables en un clic pour votre secrétariat social.
 
-Conditions :
+Conditions & Grille tarifaire :
 • 15 jours d'essai gratuit complet, sans carte bancaire ;
-• Tarif de 5,00 € / collaborateur / mois.
+• 1 – 49 collaborateurs : 5,00 € / collaborateur / mois (minimum 50 € / mois / entreprise) ;
+• 50 – 99 collaborateurs : 4,50 € / collaborateur / mois (remise de 10%) ;
+• 100+ collaborateurs : 4,00 € / collaborateur / mois (remise de 20%) ;
+• Matériel : solution 100% cloud sur tablette ou smartphone existant (tablette non fournie).
 
 Testez gratuitement :
 https://qrtime.be
@@ -216,9 +222,12 @@ Nous vous proposons de transformer une simple tablette à l'entrée de ${company
 • Tableau de bord en temps réel des collaborateurs présents ;
 • Feuilles d'heures consolidées automatiquement pour la paie à la fin du mois.
 
-Conditions :
+Conditions & Grille tarifaire :
 • 15 jours d'essai gratuit complet ;
-• Sans matériel coûteux, tarif clair de 5,00 € / collaborateur / mois.
+• 1 – 49 collaborateurs : 5,00 € / collaborateur / mois (minimum 50 € / mois / entreprise) ;
+• 50 – 99 collaborateurs : 4,50 € / collaborateur / mois (remise de 10%) ;
+• 100+ collaborateurs : 4,00 € / collaborateur / mois (remise de 20%) ;
+• Matériel : solution 100% cloud sur tablette ou smartphone existant (tablette non fournie).
 
 Activez votre essai gratuit :
 https://qrtime.be
@@ -248,9 +257,12 @@ Hoe het werkt:
 • Automatische urenstaten: realtime overzicht van gewerkte uren, nacht- en overuren;
 • Eenvoudige loonverwerking: directe export naar uw sociaal secretariaat (SD Worx, Securex, Liantis, etc.).
 
-Voorwaarden:
+Voorwaarden & Transparante tarieven (volgens teamgrootte) :
 • 15 dagen volledige gratis proefperiode, zonder verplichtingen of kredietkaart;
-• Helder tarief: 5,00 € / medewerker / maand.
+• 1 – 49 medewerkers: 5,00 € / medewerker / maand (minimum 50 € / maand);
+• 50 – 99 medewerkers: 4,50 € / medewerker / maand (10% volumekorting);
+• 100+ medewerkers: 4,00 € / medewerker / maand (20% volumekorting);
+• Apparatuur: 100% cloudoplossing op bestaande tablet of smartphone (tablet niet inbegrepen).
 
 Test het platform direct of activeer uw demo via:
 https://qrtime.be
@@ -273,9 +285,12 @@ Wij bieden ${companyName} een waterdicht digitaal systeem voor urenregistratie t
 • Elke inkloktijd wordt exact geregistreerd met locatieverificatie;
 • Complete inspectierapporten direct exporteerbaar voor uw sociaal secretariaat.
 
-Voorwaarden:
+Voorwaarden & Tarieven :
 • 15 dagen gratis proefperiode, zonder kredietkaart;
-• 5,00 € / medewerker / maand.
+• 1 – 49 medewerkers: 5,00 € / medewerker / maand (minimum 50 € / maand);
+• 50 – 99 medewerkers: 4,50 € / medewerker / maand (10% volumekorting);
+• 100+ medewerkers: 4,00 € / medewerker / maand (20% volumekorting);
+• Apparatuur: 100% cloudoplossing op bestaande tablet of smartphone (tablet niet inbegrepen).
 
 Start uw test hier:
 https://qrtime.be
@@ -297,9 +312,12 @@ Transformeer elke standaard tablet aan de ingang van ${companyName} in een slimm
 • Realtime overzicht van aanwezigen op uw management dashboard;
 • Automatisch maandoverzicht voor de loonadministratie.
 
-Voorwaarden:
+Voorwaarden & Tarieven :
 • 15 dagen gratis testen zonder verplichting;
-• Slechts 5,00 € / medewerker / maand.
+• 1 – 49 medewerkers: 5,00 € / medewerker / maand (minimum 50 € / maand);
+• 50 – 99 medewerkers: 4,50 € / medewerker / maand (10% volumekorting);
+• 100+ medewerkers: 4,00 € / medewerker / maand (20% volumekorting);
+• Apparatuur: 100% cloudoplossing op bestaande tablet of smartphone (tablet niet inbegrepen).
 
 Activeer uw test direct:
 https://qrtime.be
@@ -327,9 +345,12 @@ How it works:
 • Real-time attendance: automatic tracking of working hours, night shifts, and overtime;
 • Seamless payroll: 1-click export to standard payroll formats, CSV, and Excel.
 
-Conditions:
+Conditions & Transparent Pricing Grid (scaled to team size):
 • 15-day full free trial, no credit card required, cancel anytime;
-• Transparent pricing: 5.00 € / employee / month.
+• 1 – 49 employees: 5.00 € / employee / month (minimum 50 € / month / company);
+• 50 – 99 employees: 4.50 € / employee / month (10% volume discount);
+• 100+ employees: 4.00 € / employee / month (20% volume discount);
+• Hardware: 100% cloud solution using any existing tablet or smartphone (device not included).
 
 Start your free trial or explore the platform here:
 https://qrtime.be
@@ -352,9 +373,12 @@ We help ${companyName} maintain audit-proof attendance records effortlessly:
 • Every clock-in is timestamped with precise location verification;
 • Official attendance audits generated on demand for payroll and labor authorities.
 
-Conditions:
+Conditions & Pricing Grid:
 • 15-day free trial, no credit card required;
-• Flat rate of 5.00 € / employee / month.
+• 1 – 49 employees: 5.00 € / employee / month (minimum 50 € / month / company);
+• 50 – 99 employees: 4.50 € / employee / month (10% volume discount);
+• 100+ employees: 4.00 € / employee / month (20% volume discount);
+• Hardware: 100% cloud solution using any existing tablet or smartphone (device not included).
 
 Start here:
 https://qrtime.be
@@ -376,9 +400,12 @@ Turn any standard tablet at the entrance of ${companyName} into a smart time clo
 • Live attendance dashboard for managers;
 • Monthly timesheets consolidated automatically for payroll.
 
-Conditions:
+Conditions & Pricing Grid:
 • 15 days full free trial;
-• No expensive biometric hardware, flat rate of 5.00 € / employee / month.
+• 1 – 49 employees: 5.00 € / employee / month (minimum 50 € / month / company);
+• 50 – 99 employees: 4.50 € / employee / month (10% volume discount);
+• 100+ employees: 4.00 € / employee / month (20% volume discount);
+• Hardware: 100% cloud solution using any existing tablet or smartphone (device not included).
 
 Activate your demo today:
 https://qrtime.be
@@ -406,9 +433,12 @@ So funktioniert es:
 • Lückenlose Erfassung: minutengenaue Arbeitszeiten, Nacht- und Wochenendzuschläge in Echtzeit;
 • Schnelle Lohnabrechnung: 1-Klick-Export für die Lohnbuchhaltung und Excel.
 
-Konditionen:
+Konditionen & Transparente Preisübersicht (nach Teamgröße gestaffelt):
 • 15 Tage kostenloser Vollzugriff ohne Kreditkarte und ohne Vertragsbindung;
-• Transparenter Preis: 5,00 € / Mitarbeiter / Monat.
+• 1 – 49 Mitarbeiter: 5,00 € / Mitarbeiter / Monat (Mindestbetrag 50 € / Monat);
+• 50 – 99 Mitarbeiter: 4,50 € / Mitarbeiter / Monat (10% Mengenrabatt);
+• 100+ Mitarbeiter: 4,00 € / Mitarbeiter / Monat (20% Mengenrabatt);
+• Hardware: 100% Cloud-Lösung auf jedem vorhandenen Tablet oder Smartphone (Gerät nicht enthalten).
 
 Starten Sie Ihren kostenlosen Testzugang hier:
 https://qrtime.be
@@ -431,9 +461,12 @@ mit QRTime erfüllen Sie die gesetzliche Pflicht zur Arbeitszeiterfassung für $
 • Jede Buchung minutengenau mit Standortvalidierung erfasst;
 • Prüffähige Arbeitszeitberichte auf Knopfdruck für Lohnbuchhaltung und Prüfer.
 
-Konditionen:
+Konditionen & Preisübersicht:
 • 15 Tage kostenlos testen, ohne Kreditkarte;
-• 5,00 € / Mitarbeiter / Monat.
+• 1 – 49 Mitarbeiter: 5,00 € / Mitarbeiter / Monat (Mindestbetrag 50 € / Monat);
+• 50 – 99 Mitarbeiter: 4,50 € / Mitarbeiter / Monat (10% Mengenrabatt);
+• 100+ Mitarbeiter: 4,00 € / Mitarbeiter / Monat (20% Mengenrabatt);
+• Hardware: 100% Cloud-Lösung auf jedem vorhandenen Tablet oder Smartphone (Gerät nicht enthalten).
 
 Jetzt kostenlos starten:
 https://qrtime.be
@@ -453,9 +486,12 @@ verwandeln Sie jedes handelsübliche Tablet am Eingang von ${companyName} in ein
 • Live-Übersicht aller anwesenden Mitarbeiter im Management-Dashboard;
 • Am Monatsende fertige Stundenübersichten für die Lohnabrechnung.
 
-Konditionen:
+Konditionen & Preisübersicht:
 • 15 Tage kostenlos testen ohne Vertragsbindung;
-• Nur 5,00 € / Mitarbeiter / Monat.
+• 1 – 49 Mitarbeiter: 5,00 € / Mitarbeiter / Monat (Mindestbetrag 50 € / Monat);
+• 50 – 99 Mitarbeiter: 4,50 € / Mitarbeiter / Monat (10% Mengenrabatt);
+• 100+ Mitarbeiter: 4,00 € / Mitarbeiter / Monat (20% Mengenrabatt);
+• Hardware: 100% Cloud-Lösung auf jedem vorhandenen Tablet oder Smartphone (Gerät nicht enthalten).
 
 Testzugang sofort aktivieren:
 https://qrtime.be
@@ -488,7 +524,11 @@ Ce vă oferim pentru cabinetul dvs.:
 
 Condiții pentru clienți:
 • 15 zile test gratuit complet, fără card bancar;
-• Ulterior, tarif transparent de 5.00 € / angajat / lună (minim 50 € / lună / firmă, reduceri de volum: 4.50 € de la 50 angajați și 4.00 € de la 100 angajați).
+• 1 – 50 salariați: 5.00 € / angajat / lună (redus de la 6.00 €, minim 50 € / lună / firmă);
+• 51+ salariați: 4.00 € / angajat / lună (redus de la 5.00 €, reducere de volum 20%);
+• Peste 150 salariați: tarif corporate negociabil;
+• Conformitate legală & GDPR: acord electronic DPA (Art. 28 GDPR) inclus, date securizate în UE, fără biometrie invazivă;
+• Echipamente: tableta și/sau suportul digital nu sunt oferite de noi și sunt în responsabilitatea clientului (soluție 100% software în cloud).
 
 Puteți testa direct exportul SAGA și platforma aici:
 https://pontaj.app
@@ -515,10 +555,12 @@ Pentru a simplifica evidența orelor de muncă și a elimina timpul consumat lun
 • Foaie de prezență digitală automată: înregistrează automat orele exacte de intrare și ieșire, minut cu minut, fără erori;
 • Integrare directă cu SAGA Salarii și Excel: calcul automat pentru orele de zi, de noapte și de weekend, cu export 1-Click direct în contabilitate.
 
-Condiții comerciale:
+Condiții comerciale & Grilă de tarife (în funcție de mărimea echipei):
 • 15 zile test gratuit complet (fără card bancar, fără obligații contractuale);
-• Ulterior, tarif transparent de 5.00 € / angajat / lună (minim 50 € / lună / firmă);
-• Reduceri automate de volum: 4.50 € (de la 50 angajați) și 4.00 € (de la 100 angajați);
+• 1 – 50 salariați: 5.00 € / angajat / lună (redus de la 6.00 €, minim 50 € / lună / firmă);
+• 51+ salariați: 4.00 € / angajat / lună (redus de la 5.00 €, reducere de volum 20%);
+• Peste 150 salariați: tarif corporate negociabil;
+• Conformitate legală & GDPR: acord electronic DPA (Art. 28 GDPR) inclus, date securizate în UE, fără biometrie invazivă;
 • Echipamente: tableta și/sau suportul digital nu sunt oferite de noi și sunt în responsabilitatea clientului (soluție 100% software în cloud).
 
 Puteți testa direct platforma sau activa un cont demonstrativ accesând:
@@ -542,9 +584,12 @@ Pentru a simplifica evidența orelor de muncă și a scăpa definitiv de condici
 • Rapoarte clare generate instant pentru prezența zilnică;
 • Export automat 1-Click în SAGA Salarii și Excel pentru contabilitate.
 
-Condiții:
+Condiții & Grilă de tarife:
 • 15 zile perioadă de probă gratuită, fără card bancar;
-• Tarif: 5.00 € / angajat / lună (minim 50 € / firmă, reduceri de volum de la 50 și 100 angajați);
+• 1 – 50 salariați: 5.00 € / angajat / lună (redus de la 6.00 €, minim 50 € / lună / firmă);
+• 51+ salariați: 4.00 € / angajat / lună (redus de la 5.00 €, reducere de volum 20%);
+• Peste 150 salariați: tarif corporate negociabil;
+• Conformitate legală & GDPR: acord electronic DPA (Art. 28 GDPR) inclus, date securizate în UE, fără biometrie invazivă;
 • Echipamente: tableta și/sau suportul digital nu sunt oferite de noi și sunt în responsabilitatea clientului (soluție 100% software în cloud).
 
 Puteți începe testul gratuit direct aici:
@@ -558,7 +603,7 @@ Email: ${senderEmail}
 Telefon / WhatsApp: ${senderPhone}
 Web: https://pontaj.app`;
   } else if (pitchFocus === 'kiosk_tableta') {
-    subject = `Terminal de pontaj pe tabletă la intrare — ${companyName}`;
+    subject = `Pontaj digital QR`;
     hook = 'Transformați orice tabletă într-un terminal inteligent de pontaj cu QR dinamic.';
     body = `Bună ziua,
 
@@ -567,9 +612,12 @@ Vă propunem transformarea oricărei tablete obișnuite într-un terminal inteli
 • Prezența și orele exacte sunt transmise în timp real în panoul de management;
 • Generare automată a foilor de prezență și export direct în SAGA Salarii / Excel la sfârșit de lună.
 
-Condiții:
+Condiții & Grilă de tarife:
 • 15 zile de testare gratuită completă;
-• Fără aparate de mii de euro, tarif de 5.00 € / angajat / lună (minim 50 € / firmă, reduceri de volum);
+• 1 – 50 salariați: 5.00 € / angajat / lună (redus de la 6.00 €, minim 50 € / lună / firmă);
+• 51+ salariați: 4.00 € / angajat / lună (redus de la 5.00 €, reducere de volum 20%);
+• Peste 150 salariați: tarif corporate negociabil;
+• Conformitate legală & GDPR: acord electronic DPA (Art. 28 GDPR) inclus, date securizate în UE, fără biometrie invazivă;
 • Echipamente: tableta și/sau suportul digital nu sunt oferite de noi și sunt în responsabilitatea clientului (soluție 100% software în cloud).
 
 Activați contul demonstrativ pe loc:
@@ -588,7 +636,7 @@ Web: https://pontaj.app`;
 }
 
 // Apel direct către Claude (Anthropic API) pentru hiper-personalizare multi-limbă
-async function generateClaudePitch({ companyName, industry, city, website, notes, pitchFocus, language = 'ro', apiKey, senderName = 'Smart QR Pontaj', senderEmail = 'contact@pontaj.app', senderPhone = '+40 757 77 77 12' }) {
+async function generateClaudePitch({ companyName, industry, city, website, notes, pitchFocus, language = 'ro', apiKey, senderName = 'QR Pontaj', senderEmail = 'contact@pontaj.app', senderPhone = '+40 757 77 77 12' }) {
   const lang = (language || 'ro').toLowerCase();
 
   const langDirectives = {
@@ -641,8 +689,13 @@ Cerințe stricte pentru email:
 3. Lungime: scurt, între 70 și 120 cuvinte.
 4. Structură clară:
    - Propunerea directă a soluției smart de pontaj QR. Subiectul emailului TREBUIE să fie scurt și curat: "Pontaj digital QR". Fără "ITM", fără "Art. 119", fără texte lungi.
-   - Puncte forte: fără hardware scump (orice tabletă/telefon la intrare), eliminarea condicilor pe hârtie, export instant pentru contabilitate (SAGA Salarii / Excel în RO, sau secretariat social în BE/FR).
-   - Condiții comerciale clare: 15 zile test gratuit complet fără card bancar, tarif transparent de 5.00 € / angajat / lună (minim 50 € / lună / firmă, reduceri de volum de la 50 angajați la 4.50 € și de la 100 angajați la 4.00 €). Menționează clar că tableta și/sau suportul digital nu sunt oferite de noi și sunt în responsabilitatea clientului (soluție 100% software în cloud).
+   - Condiții comerciale & Grilă de tarife structurată simplu pe 2 praguri:
+     • 15 zile test gratuit complet (fără card bancar, fără obligații contractuale);
+     • 1 – 50 salariați: 5.00 € / angajat / lună (redus de la 6.00 €, minim 50 € / lună / firmă);
+     • 51+ salariați: 4.00 € / angajat / lună (redus de la 5.00 €, reducere de volum 20%);
+     • Peste 150 salariați: tarif corporate negociabil;
+     • Conformitate legală & GDPR: acord electronic DPA (Art. 28 GDPR) inclus, date securizate în UE, fără biometrie invazivă;
+     • Menționează clar că tableta și/sau suportul digital nu sunt oferite de noi și sunt în responsabilitatea clientului (soluție 100% software în cloud).
    - Call to action clar: link direct către platformă sau răspuns la email / telefon.
    - OBLIGATORIU: Semnătură completă la finalul emailului cu:
      ${senderName}
@@ -693,7 +746,143 @@ Răspunde STRICT cu un obiect JSON valid, fără alte comentarii sau blocuri mar
     };
   } catch (err) {
     console.error('[HarveyService] Eroare la apelul Claude, se folosește șablonul inteligent de fallback:', err.message);
-    return generateFallbackPitch({ companyName, industry, city, pitchFocus, language: lang });
+    return generateFallbackPitch({ companyName, industry, city, pitchFocus, language: lang, senderName, senderEmail, senderPhone });
+  }
+}
+
+// Apel direct către Google Gemini (Gemini 3.5 Flash) pentru hiper-personalizare multi-limbă
+async function generateGeminiPitch({ companyName, industry, city, website, notes, pitchFocus, language = 'ro', apiKey, senderName = 'QR Pontaj', senderEmail = 'contact@pontaj.app', senderPhone = '+40 757 77 77 12' }) {
+  const lang = (language || 'ro').toLowerCase();
+
+  const langDirectives = {
+    fr: {
+      langName: 'Français',
+      brand: 'QRTime (https://qrtime.be)',
+      context: 'Marché belge et francophone. Souligne le pointage digital rapide par smartphone (QR dynamique) et borne tablette kiosk à l’entrée, feuilles d’heures automatiques pour le secrétariat social (SD Worx, Securex, Liantis, Partena...), conformité stricte du temps de travail, pas de paperasse. INTERDICTION STRICTE DE MENTIONNER "ITM" OU "SAGA" (ce sont des termes uniquement roumains).'
+    },
+    nl: {
+      langName: 'Nederlands',
+      brand: 'QRTime (https://qrtime.be)',
+      context: 'Belgische (Vlaanderen) en Nederlandse markt. Benadruk inklokken via smartphone (dynamische QR) en tablet prikklok aan de ingang, urenregistratie voor sociaal secretariaat (SD Worx, Securex, Liantis...), Dimona/aanwezigheidsregistratie. GEEN "ITM" OF "SAGA" GEBRUIKEN.'
+    },
+    en: {
+      langName: 'English',
+      brand: 'QRTime (https://qrtime.be)',
+      context: 'International business audience. Focus on dynamic QR code and tablet kiosk clock-in, eliminating paper timesheets, automated payroll export and labor law compliance. NEVER MENTION "ITM" OR "SAGA".'
+    },
+    de: {
+      langName: 'Deutsch',
+      brand: 'QRTime (https://qrtime.be)',
+      context: 'Deutscher und belgischer Markt. Fokus auf digitale Zeiterfassung per QR-Code und Tablet-Kiosk am Eingang, automatisierte Stundennachweise für die Lohnbuchhaltung, Rechtssicherheit bei Kontrollen. KEIN "ITM" ODER "SAGA".'
+    },
+    ro: {
+      langName: 'Română',
+      brand: 'Pontaj.app (https://pontaj.app)',
+      context: 'Piața din România. Focus pe pontaj rapid prin QR dinamic și kiosk pe tabletă, eliminarea foilor pe hârtie și export direct SAGA Salarii / Excel.'
+    }
+  };
+
+  const directive = langDirectives[lang] || langDirectives.en;
+
+  const prompt = `Ești un specialist de elită în vânzări B2B (SDR - Sales Development Representative) pentru "${directive.brand}".
+Limba OBLIGATORIE pentru email este STRICT: ${directive.langName}.
+
+Context specific de piață:
+${directive.context}
+
+Analizează prospectul:
+- Nume companie: "${companyName}"
+- Industrie/Domeniu: "${industry || 'Nespecificat'}"
+- Oraș/Zonă: "${city || 'Local'}"
+- Website: "${website || 'Nespecificat'}"
+- Cârlig/Focalizare dorită: "${pitchFocus || 'pontaj_digital'}"
+- Notițe suplimentare: "${notes || ''}"
+
+Cerințe stricte pentru email:
+1. Limba: Scrie ÎNTREGUL email (subiect, text, cârlig) în ${directive.langName} impecabilă, cu vocabular de afaceri natural și fluid.
+2. Stil: Direct, profesionist, comercial fără bullshit. ESTE STRICT INTERZISĂ folosirea de introduceri de complezență siropoase sau false ("din respect pentru timpul dvs.", "urmărim activitatea dvs.", "ne-am gândit că", etc.). Treci direct la propunerea de valoare.
+3. Lungime: scurt, între 70 și 120 cuvinte.
+4. Structură clară:
+   - Propunerea directă a soluției smart de pontaj QR. Subiectul emailului TREBUIE să fie scurt și curat: "Pontaj digital QR". Fără "ITM", fără "Art. 119", fără texte lungi.
+   - Condiții comerciale & Grilă de tarife structurată simplu pe 2 praguri:
+     • 15 zile test gratuit complet (fără card bancar, fără obligații contractuale);
+     • 1 – 50 salariați: 5.00 € / angajat / lună (redus de la 6.00 €, minim 50 € / lună / firmă);
+     • 51+ salariați: 4.00 € / angajat / lună (redus de la 5.00 €, reducere de volum 20%);
+     • Peste 150 salariați: tarif corporate negociabil;
+     • Conformitate legală & GDPR: acord electronic DPA (Art. 28 GDPR) inclus, date securizate în UE, fără biometrie invazivă;
+     • Menționează clar că tableta și/sau suportul digital nu sunt oferite de noi și sunt în responsabilitatea clientului (soluție 100% software în cloud).
+   - Call to action clar: link direct către platformă sau răspuns la email / telefon.
+   - OBLIGATORIU: Semnătură completă la finalul emailului cu:
+     ${senderName}
+     Email: ${senderEmail}
+     Telefon / WhatsApp: ${senderPhone}
+     Web: ${directive.brand}
+5. FĂRĂ caractere emoji! Este strict interzisă folosirea de emoji în text sau în subiect.
+
+Răspunde STRICT cu un obiect JSON valid, fără alte comentarii sau blocuri markdown (nu adăuga \`\`\`json):
+{
+  "aiHook": "1 frază scurtă care explică unghiul de atac ales pentru această firmă (în ${directive.langName})",
+  "subject": "subiect natural și scurt (max 7-8 cuvinte, în ${directive.langName})",
+  "body": "corpul complet al emailului în ${directive.langName}, semnat la final cu datele de contact complete (${senderName}, Email: ${senderEmail}, Telefon: ${senderPhone}, ${directive.brand})"
+}`;
+
+  try {
+    let res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{ text: prompt }]
+        }],
+        generationConfig: {
+          temperature: 0.3,
+          responseMimeType: 'application/json'
+        }
+      })
+    });
+
+    if (!res.ok) {
+      // Fallback la gemini-3-flash-preview dacă 3.5 este temporar încărcat
+      res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{ text: prompt }]
+          }],
+          generationConfig: {
+            temperature: 0.3,
+            responseMimeType: 'application/json'
+          }
+        })
+      });
+    }
+
+    if (!res.ok) {
+      const errText = await res.text();
+      console.warn('[HarveyService] Gemini API error:', res.status, errText);
+      throw new Error(`Gemini error ${res.status}`);
+    }
+
+    const data = await res.json();
+    const rawContent = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+    
+    // Curățăm posibile markere markdown
+    const cleaned = rawContent.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
+    const parsed = JSON.parse(cleaned);
+
+    return {
+      subject: parsed.subject || `Pontaj digital QR ${companyName}`,
+      body: parsed.body || '',
+      aiHook: parsed.aiHook || `Généré en ${directive.langName} avec Google Gemini AI`
+    };
+  } catch (err) {
+    console.error('[HarveyService] Eroare la apelul Gemini, se folosește șablonul inteligent de fallback:', err.message);
+    return generateFallbackPitch({ companyName, industry, city, pitchFocus, language: lang, senderName, senderEmail, senderPhone });
   }
 }
 
@@ -805,7 +994,7 @@ const harveyService = {
     const res = await db.query('SELECT * FROM sales_settings ORDER BY id ASC LIMIT 1');
     if (res.rows.length === 0) {
       return {
-        sender_name: 'Smart QR Pontaj',
+        sender_name: 'QR Pontaj',
         sender_email: 'jeka7ro@gmail.com',
         sender_phone: '+40 757 77 77 12',
         daily_send_limit: 25,
@@ -817,9 +1006,12 @@ const harveyService = {
     const row = res.rows[0];
     return {
       ...row,
+      sender_name: row.sender_name || 'QR Pontaj',
       sender_phone: row.sender_phone || '+40 757 77 77 12',
       has_anthropic_key: !!(row.anthropic_api_key || process.env.ANTHROPIC_API_KEY),
       anthropic_api_key: row.anthropic_api_key ? '••••••••' + row.anthropic_api_key.slice(-4) : '',
+      has_gemini_key: !!(row.gemini_api_key || process.env.GEMINI_API_KEY),
+      gemini_api_key: row.gemini_api_key ? '••••••••' + row.gemini_api_key.slice(-4) : '',
       has_google_places_key: !!(row.google_places_api_key || process.env.GOOGLE_PLACES_API_KEY),
       google_places_api_key: row.google_places_api_key ? '••••••••' + row.google_places_api_key.slice(-4) : ''
     };
@@ -827,7 +1019,7 @@ const harveyService = {
 
   // Salvare setări Harvey
   async updateSettings(data) {
-    const { senderName, senderEmail, senderPhone, dailySendLimit, defaultPitch, anthropicApiKey, googlePlacesApiKey } = data;
+    const { senderName, senderEmail, senderPhone, dailySendLimit, defaultPitch, geminiApiKey, anthropicApiKey, googlePlacesApiKey } = data;
     
     const updates = [
       'sender_name = $1',
@@ -837,13 +1029,22 @@ const harveyService = {
       'default_pitch = $5'
     ];
     const params = [
-      senderName || 'Smart QR Pontaj',
+      senderName || 'QR Pontaj',
       senderEmail || 'jeka7ro@gmail.com',
       senderPhone || '+40 757 77 77 12',
       parseInt(dailySendLimit, 10) || 25,
       defaultPitch || 'pontaj_digital'
     ];
     
+    if (geminiApiKey !== undefined) {
+      if (geminiApiKey === '') {
+        updates.push('gemini_api_key = NULL');
+      } else if (!geminiApiKey.includes('••••')) {
+        params.push(geminiApiKey.trim());
+        updates.push(`gemini_api_key = $${params.length}`);
+      }
+    }
+
     if (anthropicApiKey !== undefined) {
       if (anthropicApiKey === '') {
         updates.push('anthropic_api_key = NULL');
@@ -1332,16 +1533,33 @@ const harveyService = {
 
     const targetLang = language || lead.language || detectLeadLanguage(lead.city, null, lead.address);
 
-    // Luăm cheia Anthropic și setările expeditorului din sales_settings
+    // Luăm cheile AI (Gemini sau Claude) și setările expeditorului din sales_settings
     const settingsRes = await db.query('SELECT * FROM sales_settings ORDER BY id ASC LIMIT 1');
     const settings = settingsRes.rows[0] || {};
-    const apiKey = settings.anthropic_api_key || process.env.ANTHROPIC_API_KEY;
-    const senderName = settings.sender_name || 'Smart QR Pontaj';
+    const geminiKey = settings.gemini_api_key || process.env.GEMINI_API_KEY;
+    const anthropicKey = settings.anthropic_api_key || process.env.ANTHROPIC_API_KEY;
+    const senderName = settings.sender_name || 'QR Pontaj';
     const senderEmail = settings.sender_email || 'contact@pontaj.app';
     const senderPhone = settings.sender_phone || '+40 757 77 77 12';
 
     let pitch;
-    if (apiKey) {
+    if (geminiKey) {
+      // Prioritate Google Gemini (conectat cu contul Google / Google One / Google AI)
+      pitch = await generateGeminiPitch({
+        companyName: lead.company_name,
+        industry: lead.industry,
+        city: lead.city,
+        website: lead.website,
+        notes: customNotes || lead.notes,
+        pitchFocus,
+        language: targetLang,
+        apiKey: geminiKey,
+        senderName,
+        senderEmail,
+        senderPhone
+      });
+    } else if (anthropicKey) {
+      // Alternativă Claude 3.5 Sonnet
       pitch = await generateClaudePitch({
         companyName: lead.company_name,
         industry: lead.industry,
@@ -1350,7 +1568,7 @@ const harveyService = {
         notes: customNotes || lead.notes,
         pitchFocus,
         language: targetLang,
-        apiKey,
+        apiKey: anthropicKey,
         senderName,
         senderEmail,
         senderPhone
@@ -1375,12 +1593,22 @@ const harveyService = {
       RETURNING *;
     `, [pitch.subject, pitch.body, pitch.aiHook, targetLang, leadId]);
 
+    return updated.rows[0];
   },
 
   // Generator șablon email HTML stilizat la nivelul landing page-ului (executive dark gradient, cards, pills, CTA)
   formatLeadEmailHtml(lead, isTest = false) {
     const companyName = lead.company_name || 'Compania dvs.';
-    const subject = isTest ? `[TEST PREVIZUALIZARE] ${lead.draft_subject || lead.pitch_subject || 'Smart QR Pontaj'}` : (lead.draft_subject || lead.pitch_subject || 'Smart QR Pontaj');
+    let subject = (lead.draft_subject || 'Pontaj digital QR').trim();
+    // Asigurăm un subiect curat, scurt, fără [TEST PREVIZUALIZARE], fără simboluri și fără cuvinte de spam
+    subject = subject.replace(/^\[TEST PREVIZUALIZARE\]\s*/i, '').replace(/^Propunere\s+/i, '').replace(/\s*—\s*.*$/, '').trim();
+    if (!subject || subject.length < 3) {
+      const l = (lead.language || 'ro').toLowerCase();
+      if (l === 'fr') subject = 'Pointage digital QR';
+      else if (l === 'nl') subject = 'Digitale QR prikklok';
+      else if (l === 'en') subject = 'Digital QR clock-in';
+      else subject = 'Pontaj digital QR';
+    }
     const rawBody = lead.draft_body || lead.pitch_body || '';
 
     // Parsare inteligentă a paragrafelor
@@ -1400,7 +1628,23 @@ const harveyService = {
           const trimmed = line.trim();
           if (trimmed.startsWith('•') || trimmed.startsWith('-') || /^\d+\./.test(trimmed)) {
             const cleanText = trimmed.replace(/^[•\-\d\.]\s*/, '');
-            if (!cleanText.toLowerCase().includes('15 zile test') && !cleanText.toLowerCase().includes('5.00 €') && !cleanText.toLowerCase().includes('comision recurent')) {
+            const cleanLower = cleanText.toLowerCase();
+            const isPricingOrExcluded = 
+              cleanLower.includes('15 zile') ||
+              cleanLower.includes('€') ||
+              cleanLower.includes('tarif') ||
+              cleanLower.includes('grilă') ||
+              cleanLower.includes('grila') ||
+              cleanLower.includes('echipamente') ||
+              cleanLower.includes('matériel') ||
+              cleanLower.includes('hardware') ||
+              cleanLower.includes('apparatuur') ||
+              cleanLower.includes('comision recurent') ||
+              cleanLower.includes('salariați') ||
+              cleanLower.includes('collab') ||
+              cleanLower.includes('medew') ||
+              cleanLower.includes('mensen');
+            if (!isPricingOrExcluded) {
               features.push(cleanText);
             }
           }
@@ -1597,15 +1841,274 @@ const harveyService = {
               <!-- Carduri Beneficii (Fără Emoji, Iconițe Stilizate Lucide) -->
               ${featureCardsHtml}
 
-
+              <!-- Secțiune Grilă de Tarife Transparentă Conform Grilei Oficiale -->
+              ${(() => {
+                const l = (lead.language || 'ro').toLowerCase();
+                if (l === 'fr') {
+                  return `
+                    <div style="margin: 26px 0 18px 0; background-color: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 16px; padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+                      <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 14px;">
+                        <tr>
+                          <td valign="middle">
+                            <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; color: #2563eb;">
+                              Grille Tarifaire Transparente
+                            </div>
+                            <div style="font-size: 15px; font-weight: 800; color: #0f172a; margin-top: 2px;">
+                              Facturation adaptée à la taille de votre équipe
+                            </div>
+                          </td>
+                          <td align="right" valign="middle">
+                            <span style="display: inline-block; background-color: #dcfce7; color: #166534; font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 9999px; border: 1px solid #bbf7d0; white-space: nowrap;">
+                              15 Jours d'Essai Gratuit
+                            </span>
+                          </td>
+                        </tr>
+                      </table>
+                      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                        <tr>
+                          <td width="32%" valign="top" style="background-color: #ffffff; border: 1px solid #cbd5e1; border-radius: 12px; padding: 12px 8px; text-align: center;">
+                            <div style="font-size: 10.5px; font-weight: 700; color: #64748b; text-transform: uppercase;">1 – 49 collab.</div>
+                            <div style="font-size: 19px; font-weight: 900; color: #0f172a; margin: 4px 0 2px 0; white-space: nowrap;">5,00 €</div>
+                            <div style="font-size: 10px; font-weight: 600; color: #64748b; white-space: nowrap;">/ collaborateur / mois</div>
+                            <div style="font-size: 9.5px; color: #2563eb; font-weight: 700; margin-top: 6px; padding-top: 6px; border-top: 1px dashed #e2e8f0; white-space: nowrap;">Min. 50 € / mois</div>
+                          </td>
+                          <td width="2%"></td>
+                          <td width="32%" valign="top" style="background-color: #eff6ff; border: 2px solid #2563eb; border-radius: 12px; padding: 12px 8px; text-align: center;">
+                            <div style="font-size: 10.5px; font-weight: 800; color: #1d4ed8; text-transform: uppercase;">50 – 99 collab.</div>
+                            <div style="font-size: 19px; font-weight: 900; color: #1d4ed8; margin: 4px 0 2px 0; white-space: nowrap;">4,50 €</div>
+                            <div style="font-size: 10px; font-weight: 600; color: #3b82f6; white-space: nowrap;">/ collaborateur / mois</div>
+                            <div style="font-size: 9.5px; color: #16a34a; font-weight: 800; margin-top: 6px; padding-top: 6px; border-top: 1px dashed #bfdbfe; white-space: nowrap;">Remise 10%</div>
+                          </td>
+                          <td width="2%"></td>
+                          <td width="32%" valign="top" style="background-color: #ffffff; border: 1px solid #cbd5e1; border-radius: 12px; padding: 12px 8px; text-align: center;">
+                            <div style="font-size: 10.5px; font-weight: 700; color: #64748b; text-transform: uppercase;">100+ collab.</div>
+                            <div style="font-size: 19px; font-weight: 900; color: #0f172a; margin: 4px 0 2px 0; white-space: nowrap;">4,00 €</div>
+                            <div style="font-size: 10px; font-weight: 600; color: #64748b; white-space: nowrap;">/ collaborateur / mois</div>
+                            <div style="font-size: 9.5px; color: #4338ca; font-weight: 800; margin-top: 6px; padding-top: 6px; border-top: 1px dashed #e2e8f0; white-space: nowrap;">Remise 20%</div>
+                          </td>
+                        </tr>
+                      </table>
+                      <div style="font-size: 11px; color: #64748b; margin-top: 12px; text-align: center; line-height: 1.4;">
+                        Solution 100% cloud sur tablette ou smartphone existant &bull; Sans matériel obligatoire &bull; Sans carte bancaire
+                      </div>
+                    </div>
+                  `;
+                }
+                if (l === 'nl') {
+                  return `
+                    <div style="margin: 26px 0 18px 0; background-color: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 16px; padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+                      <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 14px;">
+                        <tr>
+                          <td valign="middle">
+                            <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; color: #2563eb;">
+                              Transparant Tarievenoverzicht
+                            </div>
+                            <div style="font-size: 15px; font-weight: 800; color: #0f172a; margin-top: 2px;">
+                              Betaal enkel voor actieve medewerkers
+                            </div>
+                          </td>
+                          <td align="right" valign="middle">
+                            <span style="display: inline-block; background-color: #dcfce7; color: #166534; font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 9999px; border: 1px solid #bbf7d0; white-space: nowrap;">
+                              15 Dagen Gratis Testen
+                            </span>
+                          </td>
+                        </tr>
+                      </table>
+                      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                        <tr>
+                          <td width="32%" valign="top" style="background-color: #ffffff; border: 1px solid #cbd5e1; border-radius: 12px; padding: 12px 8px; text-align: center;">
+                            <div style="font-size: 10.5px; font-weight: 700; color: #64748b; text-transform: uppercase;">1 – 49 medew.</div>
+                            <div style="font-size: 19px; font-weight: 900; color: #0f172a; margin: 4px 0 2px 0; white-space: nowrap;">5,00 €</div>
+                            <div style="font-size: 10px; font-weight: 600; color: #64748b; white-space: nowrap;">/ medewerker / maand</div>
+                            <div style="font-size: 9.5px; color: #2563eb; font-weight: 700; margin-top: 6px; padding-top: 6px; border-top: 1px dashed #e2e8f0; white-space: nowrap;">Min. 50 € / maand</div>
+                          </td>
+                          <td width="2%"></td>
+                          <td width="32%" valign="top" style="background-color: #eff6ff; border: 2px solid #2563eb; border-radius: 12px; padding: 12px 8px; text-align: center;">
+                            <div style="font-size: 10.5px; font-weight: 800; color: #1d4ed8; text-transform: uppercase;">50 – 99 medew.</div>
+                            <div style="font-size: 19px; font-weight: 900; color: #1d4ed8; margin: 4px 0 2px 0; white-space: nowrap;">4,50 €</div>
+                            <div style="font-size: 10px; font-weight: 600; color: #3b82f6; white-space: nowrap;">/ medewerker / maand</div>
+                            <div style="font-size: 9.5px; color: #16a34a; font-weight: 800; margin-top: 6px; padding-top: 6px; border-top: 1px dashed #bfdbfe; white-space: nowrap;">10% Korting</div>
+                          </td>
+                          <td width="2%"></td>
+                          <td width="32%" valign="top" style="background-color: #ffffff; border: 1px solid #cbd5e1; border-radius: 12px; padding: 12px 8px; text-align: center;">
+                            <div style="font-size: 10.5px; font-weight: 700; color: #64748b; text-transform: uppercase;">100+ medew.</div>
+                            <div style="font-size: 19px; font-weight: 900; color: #0f172a; margin: 4px 0 2px 0; white-space: nowrap;">4,00 €</div>
+                            <div style="font-size: 10px; font-weight: 600; color: #64748b; white-space: nowrap;">/ medewerker / maand</div>
+                            <div style="font-size: 9.5px; color: #4338ca; font-weight: 800; margin-top: 6px; padding-top: 6px; border-top: 1px dashed #e2e8f0; white-space: nowrap;">20% Korting</div>
+                          </td>
+                        </tr>
+                      </table>
+                      <div style="font-size: 11px; color: #64748b; margin-top: 12px; text-align: center; line-height: 1.4;">
+                        100% cloudoplossing op bestaande tablet of smartphone &bull; Geen verplichte hardware &bull; Zonder kredietkaart
+                      </div>
+                    </div>
+                  `;
+                }
+                if (l === 'de') {
+                  return `
+                    <div style="margin: 26px 0 18px 0; background-color: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 16px; padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+                      <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 14px;">
+                        <tr>
+                          <td valign="middle">
+                            <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; color: #2563eb;">
+                              Transparente Preisübersicht
+                            </div>
+                            <div style="font-size: 15px; font-weight: 800; color: #0f172a; margin-top: 2px;">
+                              Zahlen Sie nur für aktive Mitarbeiter
+                            </div>
+                          </td>
+                          <td align="right" valign="middle">
+                            <span style="display: inline-block; background-color: #dcfce7; color: #166534; font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 9999px; border: 1px solid #bbf7d0; white-space: nowrap;">
+                              15 Tage Kostenlos Testen
+                            </span>
+                          </td>
+                        </tr>
+                      </table>
+                      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                        <tr>
+                          <td width="32%" valign="top" style="background-color: #ffffff; border: 1px solid #cbd5e1; border-radius: 12px; padding: 12px 8px; text-align: center;">
+                            <div style="font-size: 10.5px; font-weight: 700; color: #64748b; text-transform: uppercase;">1 – 49 Mitarb.</div>
+                            <div style="font-size: 19px; font-weight: 900; color: #0f172a; margin: 4px 0 2px 0; white-space: nowrap;">5,00 €</div>
+                            <div style="font-size: 10px; font-weight: 600; color: #64748b; white-space: nowrap;">/ Mitarbeiter / Monat</div>
+                            <div style="font-size: 9.5px; color: #2563eb; font-weight: 700; margin-top: 6px; padding-top: 6px; border-top: 1px dashed #e2e8f0; white-space: nowrap;">Min. 50 € / Monat</div>
+                          </td>
+                          <td width="2%"></td>
+                          <td width="32%" valign="top" style="background-color: #eff6ff; border: 2px solid #2563eb; border-radius: 12px; padding: 12px 8px; text-align: center;">
+                            <div style="font-size: 10.5px; font-weight: 800; color: #1d4ed8; text-transform: uppercase;">50 – 99 Mitarb.</div>
+                            <div style="font-size: 19px; font-weight: 900; color: #1d4ed8; margin: 4px 0 2px 0; white-space: nowrap;">4,50 €</div>
+                            <div style="font-size: 10px; font-weight: 600; color: #3b82f6; white-space: nowrap;">/ Mitarbeiter / Monat</div>
+                            <div style="font-size: 9.5px; color: #16a34a; font-weight: 800; margin-top: 6px; padding-top: 6px; border-top: 1px dashed #bfdbfe; white-space: nowrap;">10% Rabatt</div>
+                          </td>
+                          <td width="2%"></td>
+                          <td width="32%" valign="top" style="background-color: #ffffff; border: 1px solid #cbd5e1; border-radius: 12px; padding: 12px 8px; text-align: center;">
+                            <div style="font-size: 10.5px; font-weight: 700; color: #64748b; text-transform: uppercase;">100+ Mitarb.</div>
+                            <div style="font-size: 19px; font-weight: 900; color: #0f172a; margin: 4px 0 2px 0; white-space: nowrap;">4,00 €</div>
+                            <div style="font-size: 10px; font-weight: 600; color: #64748b; white-space: nowrap;">/ Mitarbeiter / Monat</div>
+                            <div style="font-size: 9.5px; color: #4338ca; font-weight: 800; margin-top: 6px; padding-top: 6px; border-top: 1px dashed #e2e8f0; white-space: nowrap;">20% Rabatt</div>
+                          </td>
+                        </tr>
+                      </table>
+                      <div style="font-size: 11px; color: #64748b; margin-top: 12px; text-align: center; line-height: 1.4;">
+                        100% Cloud-Lösung auf jedem Tablet oder Smartphone &bull; Keine teure Hardware &bull; Ohne Kreditkarte
+                      </div>
+                    </div>
+                  `;
+                }
+                if (l === 'en') {
+                  return `
+                    <div style="margin: 26px 0 18px 0; background-color: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 16px; padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+                      <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 14px;">
+                        <tr>
+                          <td valign="middle">
+                            <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; color: #2563eb;">
+                              Transparent Pricing Grid
+                            </div>
+                            <div style="font-size: 15px; font-weight: 800; color: #0f172a; margin-top: 2px;">
+                              Pay only for active team members
+                            </div>
+                          </td>
+                          <td align="right" valign="middle">
+                            <span style="display: inline-block; background-color: #dcfce7; color: #166534; font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 9999px; border: 1px solid #bbf7d0; white-space: nowrap;">
+                              15-Day Free Trial
+                            </span>
+                          </td>
+                        </tr>
+                      </table>
+                      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                        <tr>
+                          <td width="32%" valign="top" style="background-color: #ffffff; border: 1px solid #cbd5e1; border-radius: 12px; padding: 12px 8px; text-align: center;">
+                            <div style="font-size: 10.5px; font-weight: 700; color: #64748b; text-transform: uppercase;">1 – 49 emp.</div>
+                            <div style="font-size: 19px; font-weight: 900; color: #0f172a; margin: 4px 0 2px 0; white-space: nowrap;">5.00 €</div>
+                            <div style="font-size: 10px; font-weight: 600; color: #64748b; white-space: nowrap;">/ employee / month</div>
+                            <div style="font-size: 9.5px; color: #2563eb; font-weight: 700; margin-top: 6px; padding-top: 6px; border-top: 1px dashed #e2e8f0; white-space: nowrap;">Min. 50 € / month</div>
+                          </td>
+                          <td width="2%"></td>
+                          <td width="32%" valign="top" style="background-color: #eff6ff; border: 2px solid #2563eb; border-radius: 12px; padding: 12px 8px; text-align: center;">
+                            <div style="font-size: 10.5px; font-weight: 800; color: #1d4ed8; text-transform: uppercase;">50 – 99 emp.</div>
+                            <div style="font-size: 19px; font-weight: 900; color: #1d4ed8; margin: 4px 0 2px 0; white-space: nowrap;">4.50 €</div>
+                            <div style="font-size: 10px; font-weight: 600; color: #3b82f6; white-space: nowrap;">/ employee / month</div>
+                            <div style="font-size: 9.5px; color: #16a34a; font-weight: 800; margin-top: 6px; padding-top: 6px; border-top: 1px dashed #bfdbfe; white-space: nowrap;">Save 10%</div>
+                          </td>
+                          <td width="2%"></td>
+                          <td width="32%" valign="top" style="background-color: #ffffff; border: 1px solid #cbd5e1; border-radius: 12px; padding: 12px 8px; text-align: center;">
+                            <div style="font-size: 10.5px; font-weight: 700; color: #64748b; text-transform: uppercase;">100+ emp.</div>
+                            <div style="font-size: 19px; font-weight: 900; color: #0f172a; margin: 4px 0 2px 0; white-space: nowrap;">4.00 €</div>
+                            <div style="font-size: 10px; font-weight: 600; color: #64748b; white-space: nowrap;">/ employee / month</div>
+                            <div style="font-size: 9.5px; color: #4338ca; font-weight: 800; margin-top: 6px; padding-top: 6px; border-top: 1px dashed #e2e8f0; white-space: nowrap;">Save 20%</div>
+                          </td>
+                        </tr>
+                      </table>
+                      <div style="font-size: 11px; color: #64748b; margin-top: 12px; text-align: center; line-height: 1.4;">
+                        100% cloud solution on any existing tablet or smartphone &bull; No hardware required &bull; No credit card
+                      </div>
+                    </div>
+                  `;
+                }
+                // RO (Implicit România)
+                return `
+                  <div style="margin: 26px 0 18px 0; background-color: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 16px; padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 14px;">
+                      <tr>
+                        <td valign="middle">
+                          <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; color: #2563eb;">
+                            Grilă Tarifară Clară &amp; Transparentă
+                          </div>
+                          <div style="font-size: 15px; font-weight: 800; color: #0f172a; margin-top: 2px;">
+                            Plătești doar pentru salariații activi
+                          </div>
+                        </td>
+                        <td align="right" valign="middle">
+                          <span style="display: inline-block; background-color: #dcfce7; color: #166534; font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 9999px; border: 1px solid #bbf7d0; white-space: nowrap;">
+                            15 Zile Test Gratuit
+                          </span>
+                        </td>
+                      </tr>
+                    </table>
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td width="49%" valign="top" style="background-color: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 12px; padding: 14px 12px; text-align: center;">
+                          <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">1 – 50 salariați</div>
+                          <div style="font-size: 22px; font-weight: 900; color: #0f172a; margin: 4px 0 2px 0; white-space: nowrap;"><span style="font-size: 14px; color: #94a3b8; text-decoration: line-through; margin-right: 6px; font-weight: 700;">6.00 €</span>5.00 €</div>
+                          <div style="font-size: 10.5px; font-weight: 600; color: #64748b; white-space: nowrap;">/ angajat / lună</div>
+                          <div style="font-size: 10px; color: #2563eb; font-weight: 700; margin-top: 8px; padding-top: 6px; border-top: 1px dashed #e2e8f0; white-space: nowrap;">Minim 50 € / lună / firmă</div>
+                        </td>
+                        <td width="2%"></td>
+                        <td width="49%" valign="top" style="background-color: #eff6ff; border: 2px solid #2563eb; border-radius: 12px; padding: 14px 12px; text-align: center;">
+                          <div style="font-size: 11px; font-weight: 800; color: #1d4ed8; text-transform: uppercase;">51+ salariați (Popular)</div>
+                          <div style="font-size: 22px; font-weight: 900; color: #1d4ed8; margin: 4px 0 2px 0; white-space: nowrap;"><span style="font-size: 14px; color: #93c5fd; text-decoration: line-through; margin-right: 6px; font-weight: 700;">5.00 €</span>4.00 €</div>
+                          <div style="font-size: 10.5px; font-weight: 600; color: #3b82f6; white-space: nowrap;">/ angajat / lună</div>
+                          <div style="font-size: 10px; color: #16a34a; font-weight: 800; margin-top: 8px; padding-top: 6px; border-top: 1px dashed #bfdbfe; white-space: nowrap;">Economisești 20% din tarif</div>
+                        </td>
+                      </tr>
+                    </table>
+                    <div style="font-size: 11px; color: #64748b; margin-top: 12px; text-align: center; line-height: 1.4;">
+                      Soluție 100% cloud &bull; Fără echipamente obligatorii &bull; Peste 150 salariați? Tarif corporate negociat
+                    </div>
+                  </div>
+                `;
+              })()}
 
               <!-- Buton Principal Call-To-Action (Landing Style) -->
               <div style="text-align: center; margin: 26px 0;">
-                <a href="https://qr.pontaj.app/ro?ref=email" target="_blank" style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: #ffffff !important; padding: 16px 36px; border-radius: 9999px; font-weight: 800; font-size: 15px; text-decoration: none; display: inline-block; letter-spacing: 0.2px; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);">
-                  Activează Testul Gratuit (15 Zile) &rarr;
+                <a href="${(lead.language === 'fr' || lead.language === 'nl' || lead.language === 'de') ? 'https://qrtime.be' : 'https://qr.pontaj.app/ro?ref=email'}" target="_blank" style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: #ffffff !important; padding: 16px 36px; border-radius: 9999px; font-weight: 800; font-size: 15px; text-decoration: none; display: inline-block; letter-spacing: 0.2px; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);">
+                  ${(() => {
+                    const l = (lead.language || 'ro').toLowerCase();
+                    if (l === 'fr') return "Activer l'Essai Gratuit (15 Jours) &rarr;";
+                    if (l === 'nl') return 'Start Gratis Proefperiode (15 Dagen) &rarr;';
+                    if (l === 'de') return 'Kostenlosen Test Starten (15 Tage) &rarr;';
+                    if (l === 'en') return 'Start 15-Day Free Trial &rarr;';
+                    return 'Activează Testul Gratuit (15 Zile) &rarr;';
+                  })()}
                 </a>
                 <div style="font-size: 12px; color: #64748b; margin-top: 10px; font-weight: 500;">
-                  Nu necesită descărcare &bull; Funcționează instant pe orice tabletă sau telefon
+                  ${(() => {
+                    const l = (lead.language || 'ro').toLowerCase();
+                    if (l === 'fr') return 'Sans installation &bull; Fonctionne immédiatement sur toute tablette ou smartphone';
+                    if (l === 'nl') return 'Geen installatie nodig &bull; Werkt direct op elke tablet of smartphone';
+                    if (l === 'de') return 'Keine Installation erforderlich &bull; Funktioniert sofort auf jedem Tablet oder Smartphone';
+                    if (l === 'en') return 'No download required &bull; Works instantly on any tablet or smartphone';
+                    return 'Nu necesită descărcare &bull; Funcționează instant pe orice tabletă sau telefon';
+                  })()}
                 </div>
               </div>
 
@@ -1677,7 +2180,7 @@ const harveyService = {
     }
 
     const settingsRes = await db.query('SELECT * FROM sales_settings LIMIT 1');
-    const settings = settingsRes.rows[0] || { sender_name: 'Smart QR Pontaj', sender_email: 'contact@pontaj.app', daily_send_limit: 25 };
+    const settings = settingsRes.rows[0] || { sender_name: 'QR Pontaj', sender_email: 'contact@pontaj.app', daily_send_limit: 25 };
 
     // Verificăm limita zilnică
     const todayCountRes = await db.query(`
@@ -1699,7 +2202,7 @@ const harveyService = {
       subject: subject,
       html: html,
       text: lead.draft_body,
-      senderName: settings.sender_name || 'Smart QR Pontaj',
+      senderName: settings.sender_name || 'QR Pontaj',
       senderEmail: settings.sender_email || 'contact@pontaj.app'
     });
 
@@ -1721,7 +2224,7 @@ const harveyService = {
     const lead = leadRes.rows[0];
 
     const settingsRes = await db.query('SELECT * FROM sales_settings LIMIT 1');
-    const settings = settingsRes.rows[0] || { sender_name: 'Smart QR Pontaj', sender_email: 'contact@pontaj.app' };
+    const settings = settingsRes.rows[0] || { sender_name: 'QR Pontaj', sender_email: 'contact@pontaj.app' };
 
     const recipient = targetEmail || process.env.ADMIN_NOTIFICATION_EMAIL || 'jeka7ro@gmail.com';
 
@@ -1733,7 +2236,7 @@ const harveyService = {
       subject: subject,
       html: html,
       text: lead.draft_body,
-      senderName: settings.sender_name || 'Smart QR Pontaj',
+      senderName: settings.sender_name || 'QR Pontaj',
       senderEmail: settings.sender_email || 'contact@pontaj.app'
     });
 

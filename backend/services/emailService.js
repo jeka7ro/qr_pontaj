@@ -83,7 +83,7 @@ async function sendEmail({ to, subject, html, text, senderName }) {
 
   const apiKey = process.env.BREVO_API_KEY;
   const senderEmail = process.env.BREVO_SENDER_EMAIL || 'contact@pontaj.app';
-  const name = senderName || process.env.BREVO_SENDER_NAME || 'Smart QR Pontaj';
+  const name = senderName || process.env.BREVO_SENDER_NAME || 'Pontaj.app';
 
   if (!apiKey) {
     console.error('[EmailService] Lipseste BREVO_API_KEY in .env!');
@@ -414,15 +414,22 @@ async function sendPasswordChangedEmail({ to, userName, companyName, tenantLogo,
 /**
  * Template Email: Date de conectare Cont Demo / Activare QrTime.ro
  */
-async function sendDemoAccessEmail({ to, contactName, companyName, initialPassword, loginUrl, employeesCount, mode }) {
+async function sendDemoAccessEmail({ to, contactName, companyName, initialPassword, loginUrl, employeesCount, mode, dpaAudit }) {
   const name = contactName || 'Administrator';
   const company = companyName || 'Companie Partener';
   const isDemo = mode === 'demo';
   const subject = isDemo 
-    ? `Date de conectare cont Demo QrTime.ro — ${company}`
-    : `Confirmare solicitare activare QrTime.ro — ${company}`;
-  const senderName = 'QrTime.ro';
-  const cleanLoginUrl = loginUrl || 'https://qrtime.ro/admin/login';
+    ? `Date de conectare cont Demo Pontaj.app — ${company}`
+    : `Confirmare solicitare activare Pontaj.app — ${company}`;
+  const senderName = 'Pontaj.app';
+  const cleanLoginUrl = loginUrl || 'https://qr.pontaj.app/admin/login';
+  const dateFormatted = dpaAudit?.dateRo || new Date().toLocaleDateString('ro-RO', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
 
   const html = `
 <!DOCTYPE html>
@@ -439,11 +446,11 @@ async function sendDemoAccessEmail({ to, contactName, companyName, initialPasswo
       <td align="center" style="padding: 40px 16px;">
         <table width="100%" border="0" cellpadding="0" cellspacing="0" style="max-width: 580px; background-color: #ffffff; border-radius: 20px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 10px 30px rgba(0,0,0,0.04);">
           
-          <!-- Header QrTime.ro -->
+          <!-- Header Pontaj.app -->
           <tr>
             <td align="center" style="background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%); padding: 36px 24px; text-align: center;">
               <div style="display: inline-block; background-color: #ffffff; border-radius: 12px; padding: 6px 14px; margin-bottom: 10px;">
-                <span style="font-size: 18px; font-weight: 900; color: #1d4ed8; letter-spacing: -0.5px;">QrTime<span style="color: #60a5fa;">.ro</span></span>
+                <span style="font-size: 18px; font-weight: 900; color: #1d4ed8; letter-spacing: -0.5px;">Pontaj<span style="color: #2563eb;">.app</span></span>
               </div>
               <div style="font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.85); letter-spacing: 2px; text-transform: uppercase;">
                 ${isDemo ? 'CONT DEMO ACTIVAT (15 ZILE GRATUIT)' : 'SOLICITARE ACTIVARE PLATFORMĂ'}
@@ -459,8 +466,8 @@ async function sendDemoAccessEmail({ to, contactName, companyName, initialPasswo
               </h1>
               <p style="font-size: 14px; line-height: 1.65; color: #475569; margin: 0 0 24px 0;">
                 ${isDemo 
-                  ? `Contul tău demonstrativ pentru compania <strong>${company}</strong> este pregătit. Ai acces complet timp de 15 zile la toate funcționalitățile (pontaj QR pe tabletă, condică ITM Art. 119 și export SAGA).` 
-                  : `Am înregistrat solicitarea ta de abonament pentru compania <strong>${company}</strong> (${employeesCount || 10} angajați la 5 € / angajat / lună).`
+                  ? `Contul tău demonstrativ pentru compania <strong>${company}</strong> este pregătit. Ai acces complet timp de 15 zile la toate funcționalitățile (pontaj QR dinamic, condică ITM conformă cu Art. 119 Codul Muncii și export SAGA Salarii).` 
+                  : `Am înregistrat solicitarea ta de abonament pentru compania <strong>${company}</strong> (${employeesCount || 10} angajați).`
                 }
               </p>
 
@@ -505,9 +512,46 @@ async function sendDemoAccessEmail({ to, contactName, companyName, initialPasswo
               </div>
 
               <!-- Conectare cu Google -->
-              <div style="background-color: #f1f5f9; border-radius: 12px; padding: 14px 18px; margin: 24px 0; font-size: 12px; color: #334155; line-height: 1.55;">
+              <div style="background-color: #f1f5f9; border-radius: 12px; padding: 14px 18px; margin: 20px 0; font-size: 12px; color: #334155; line-height: 1.55;">
                 <strong>Autentificare rapidă cu Google:</strong> Te poți conecta oricând în aplicație și prin butonul <strong>„Continuă cu Google”</strong> folosind această adresă de email, fără a fi nevoie să reții parola.
               </div>
+
+              <!-- Confirmare Precontract & Acord DPA (Art. 28 GDPR) -->
+              <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color: #f0fdf4; border: 1.5px solid #bbf7d0; border-radius: 14px; margin: 24px 0 16px 0;">
+                <tr>
+                  <td style="padding: 18px 20px;">
+                    <div style="font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #166534; margin-bottom: 6px;">
+                      Conformitate Legală &bull; Acord DPA (Art. 28 GDPR)
+                    </div>
+                    <p style="font-size: 12px; line-height: 1.6; color: #14532d; margin: 0 0 10px 0;">
+                      Prin activarea contului, a fost înregistrat electronic <strong>Acordul de Prelucrare a Datelor cu Caracter Personal (DPA conform Art. 28 Regulamentul UE 2016/679)</strong> între <strong>${company}</strong> (în calitate de Operator) și <strong>Pontaj.app</strong> (Persoană Împuternicită).
+                    </p>
+                    <table width="100%" border="0" cellpadding="0" cellspacing="0" style="font-size: 11px; color: #15803d;">
+                      <tr>
+                        <td style="padding: 3px 0; width: 45%;">Reprezentant / Semnatar:</td>
+                        <td style="padding: 3px 0; font-weight: 700; text-align: right; color: #14532d;">${name}</td>
+                      </tr>
+                      ${dpaAudit?.cui ? `
+                      <tr>
+                        <td style="padding: 3px 0;">CUI / CIF Companie:</td>
+                        <td style="padding: 3px 0; font-weight: 700; text-align: right; color: #14532d;">${dpaAudit.cui}</td>
+                      </tr>
+                      ` : ''}
+                      <tr>
+                        <td style="padding: 3px 0;">Pistă audit electronică:</td>
+                        <td style="padding: 3px 0; font-weight: 700; text-align: right; color: #14532d;">IP: ${dpaAudit?.clientIp || 'Înregistrat'} &bull; ${dateFormatted}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 3px 0;">Versiune acord precontractual:</td>
+                        <td style="padding: 3px 0; font-weight: 700; text-align: right; color: #14532d;">v2026.1-DPA-ART28</td>
+                      </tr>
+                    </table>
+                    <div style="font-size: 10.5px; color: #166534; margin-top: 10px; border-top: 1px dashed #86efac; padding-top: 8px; line-height: 1.5;">
+                      Acest document atestă conformitatea legală a prelucrării datelor salariaților în perioada de testare și utilizare a soluției Pontaj.app conform cerințelor ITM și ANSPDCP. Toate datele sunt stocate criptat pe servere securizate din UE.
+                    </div>
+                  </td>
+                </tr>
+              </table>
 
               <div style="font-size: 12px; color: #64748b; line-height: 1.5; margin-top: 20px;">
                 Ai întrebări sau dorești asistență la instalarea pe tabletele din locații? Echipa noastră te poate asista telefonic la <a href="tel:0757777712" style="color: #2563eb; font-weight: 700; text-decoration: none;">0757 77 77 12</a>.
@@ -518,8 +562,8 @@ async function sendDemoAccessEmail({ to, contactName, companyName, initialPasswo
           <!-- Footer -->
           <tr>
             <td align="center" style="background-color: #f8fafc; padding: 20px 32px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #edf2f7; line-height: 1.6;">
-              QrTime.ro &bull; Pontaj Electronic QR pe Tabletă &amp; Conformitate Art. 119 Codul Muncii<br>
-              Ai primit acest mesaj deoarece ai solicitat accesul la platforma QrTime.ro.
+              Pontaj.app &bull; Pontaj Electronic QR pe Orice Ecran &amp; Conformitate Art. 119 Codul Muncii<br>
+              Ai primit acest mesaj deoarece ai solicitat accesul la platforma Pontaj.app.
             </td>
           </tr>
 
@@ -531,7 +575,7 @@ async function sendDemoAccessEmail({ to, contactName, companyName, initialPasswo
 </html>
   `;
 
-  const text = `Salut ${name},\n\nContul tau QrTime.ro pentru ${company} este gata.\nEmail: ${to}\n${initialPassword ? `Parola temporara: ${initialPassword}\n` : ''}\nAcceseaza panoul: ${cleanLoginUrl}\n\nTe poti conecta de asemenea direct cu Google folosind aceasta adresa de email.\n\nSuport: 0757 77 77 12\nQrTime.ro`;
+  const text = `Salut ${name},\n\nContul tau Pontaj.app pentru ${company} este gata.\nEmail: ${to}\n${initialPassword ? `Parola temporara: ${initialPassword}\n` : ''}\nAcceseaza panoul: ${cleanLoginUrl}\n\nConformitate GDPR: A fost inregistrat acordul DPA (Art. 28 GDPR) acceptat electronic de catre ${name} la ${dateFormatted} (IP: ${dpaAudit?.clientIp || 'Inregistrat'}).\n\nSuport: 0757 77 77 12\nPontaj.app`;
 
   return sendEmail({ to, subject, html, text, senderName });
 }
@@ -555,6 +599,8 @@ async function sendLeadNotificationToAdmin({
   mode,
   subdomain,
   notes,
+  clientIp,
+  dpaAccepted,
   initialPassword,
   loginUrl
 }) {
@@ -681,6 +727,12 @@ async function sendLeadNotificationToAdmin({
                         <td style="padding: 8px 0; font-size: 13px; color: #64748b; font-weight: 600; border-bottom: 1px solid #e2e8f0;">Adresă Sediu:</td>
                         <td style="padding: 8px 0; font-size: 13px; color: #0f172a; font-weight: 600; border-bottom: 1px solid #e2e8f0;">${[address, city, county].filter(Boolean).join(', ')}</td>
                       </tr>` : ''}
+                      <tr>
+                        <td style="padding: 8px 0; font-size: 13px; color: #64748b; font-weight: 600; border-bottom: 1px solid #e2e8f0;">Precontract DPA (Art. 28 GDPR):</td>
+                        <td style="padding: 8px 0; font-size: 13px; color: #166534; font-weight: 800; border-bottom: 1px solid #e2e8f0;">
+                          <span style="background: #dcfce7; color: #15803d; padding: 2px 8px; border-radius: 6px; font-size: 11px;">✓ Acceptat Electronic (IP: ${clientIp || 'Înregistrat'})</span>
+                        </td>
+                      </tr>
                       ${notes ? `
                       <tr>
                         <td style="padding: 8px 0; font-size: 13px; color: #64748b; font-weight: 600;">Mesaj / Detalii:</td>

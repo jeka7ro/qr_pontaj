@@ -38,7 +38,8 @@ import {
   LogIn,
   LogOut,
   UserCheck,
-  RotateCcw
+  RotateCcw,
+  Lock
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 
@@ -50,7 +51,7 @@ export default function LandingRomania() {
   const [modalMode, setModalMode] = useState('demo'); // 'demo' | 'subscribe'
   const [selectedPlan, setSelectedPlan] = useState({
     id: 'standard',
-    name: 'Standard (1 – 49 salariați)',
+    name: 'Standard (1 – 50 salariați)',
     price: '5.00 €',
     defaultSeats: 15
   });
@@ -59,23 +60,23 @@ export default function LandingRomania() {
     setModalMode(mode);
     let planData = {
       id: 'standard',
-      name: 'Standard (1 – 49 salariați)',
+      name: 'Standard (1 – 50 salariați)',
       price: '5.00 €',
       defaultSeats: 15
     };
     if (planId === 'pro') {
       planData = {
         id: 'pro',
-        name: 'Popular (50 – 99 salariați)',
-        price: '4.50 €',
+        name: 'Echipe Mari (51+ salariați)',
+        price: '4.00 €',
         defaultSeats: 65
       };
     } else if (planId === 'enterprise') {
       planData = {
         id: 'enterprise',
-        name: 'Echipe Mari (100+ salariați)',
-        price: '4.00 €',
-        defaultSeats: 120
+        name: 'Corporate (150+ salariați)',
+        price: 'Negociabil',
+        defaultSeats: 160
       };
     }
     setSelectedPlan(planData);
@@ -107,6 +108,9 @@ export default function LandingRomania() {
   const [isSubmittingForm, setIsSubmittingForm] = useState(false);
   const [subSubmitted, setSubSubmitted] = useState(false);
   const [assignedTempPassword, setAssignedTempPassword] = useState(null);
+  const [acceptTerms, setAcceptTerms] = useState(true);
+  const [acceptDpa, setAcceptDpa] = useState(true);
+  const [legalModalType, setLegalModalType] = useState(null); // 'terms' | 'privacy' | 'dpa'
 
   // Ceas Digital Live și Dată
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -295,7 +299,9 @@ export default function LandingRomania() {
           employeesCount: subForm.employeesCount,
           planName: selectedPlan.name,
           planPrice: selectedPlan.price.replace(/[^0-9.]/g, ''),
-          mode: modalMode
+          mode: modalMode,
+          termsAccepted: acceptTerms,
+          dpaAccepted: acceptDpa
         })
       });
       if (res.ok) {
@@ -954,26 +960,29 @@ export default function LandingRomania() {
             </p>
           </div>
 
-          {/* Grilă 3 Nivele de Preț */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto mb-10 items-stretch">
+          {/* Grilă 2 Nivele Simple de Preț */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-8 items-stretch">
             
-            {/* Tier 1: 1 - 49 angajați */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-md hover:shadow-xl transition-all p-7 flex flex-col justify-between relative">
+            {/* Tier 1: 1 - 50 angajați */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-md hover:shadow-xl transition-all p-7 sm:p-8 flex flex-col justify-between relative">
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Standard</span>
-                  <span className="text-xs font-bold text-slate-700 bg-slate-100 px-2.5 py-1 rounded-full whitespace-nowrap shrink-0">
-                    1 – 49 salariați
+                  <span className="text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded-full whitespace-nowrap shrink-0">
+                    1 – 50 salariați
                   </span>
                 </div>
 
-                <div className="mb-4">
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight">5.00 €</span>
+                <div className="mb-5">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-xl sm:text-2xl font-bold text-slate-400 line-through decoration-rose-500/70 decoration-2 whitespace-nowrap shrink-0">
+                      6.00 €
+                    </span>
+                    <span className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight whitespace-nowrap shrink-0">5.00 €</span>
                     <span className="text-xs font-semibold text-slate-500 whitespace-nowrap shrink-0">/ angajat / lună</span>
                   </div>
-                  <div className="mt-2 text-xs font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2.5 py-1.5 rounded-full inline-flex items-center gap-1 whitespace-nowrap shrink-0">
-                    <ShieldCheck size={13} className="text-blue-600 shrink-0" />
+                  <div className="mt-2.5 text-xs font-bold text-blue-700 bg-blue-50 border border-blue-200 px-3 py-1.5 rounded-full inline-flex items-center gap-1.5 whitespace-nowrap shrink-0">
+                    <ShieldCheck size={14} className="text-blue-600 shrink-0" />
                     <span>Minim 50 € / lună / firmă</span>
                   </div>
                   <p className="text-[11px] text-slate-500 mt-1.5">
@@ -981,27 +990,27 @@ export default function LandingRomania() {
                   </p>
                 </div>
 
-                <div className="border-t border-slate-100 pt-4 mb-6">
+                <div className="border-t border-slate-100 pt-5 mb-6">
                   <p className="text-xs font-bold text-slate-800 mb-3">Ce include abonamentul:</p>
-                  <ul className="space-y-2.5 text-xs text-slate-600 font-medium">
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+                  <ul className="space-y-3 text-xs text-slate-600 font-medium">
+                    <li className="flex items-center gap-2.5">
+                      <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
                       <span>Terminale Kiosk nelimitate pe tablete / TV / PC</span>
                     </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+                    <li className="flex items-center gap-2.5">
+                      <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
                       <span>Cod QR dinamic anti-fraudă la fiecare 15 secunde</span>
                     </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+                    <li className="flex items-center gap-2.5">
+                      <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
                       <span>Condică ITM automată conform Art. 119 Codul Muncii</span>
                     </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+                    <li className="flex items-center gap-2.5">
+                      <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
                       <span>Export 1-Click în SAGA Salarii și Excel</span>
                     </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+                    <li className="flex items-center gap-2.5">
+                      <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
                       <span>Calcul automat ore de noapte și weekend</span>
                     </li>
                   </ul>
@@ -1012,7 +1021,7 @@ export default function LandingRomania() {
                 <button
                   type="button"
                   onClick={() => openPlanModal('standard', 'demo')}
-                  className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-full transition-all flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap shrink-0 shadow-sm"
+                  className="w-full py-3.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-full transition-all flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap shrink-0 shadow-sm"
                 >
                   <Sparkles size={14} />
                   <span>Testează Gratuit 15 Zile</span>
@@ -1020,56 +1029,63 @@ export default function LandingRomania() {
               </div>
             </div>
 
-            {/* Tier 2: 50 - 99 angajați (Recomandat) */}
-            <div className="bg-gradient-to-b from-white to-blue-50/40 rounded-2xl border-2 border-blue-600 shadow-xl relative p-7 flex flex-col justify-between md:-translate-y-2">
-              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-3.5 py-1 rounded-full bg-blue-600 text-white text-xs font-bold uppercase tracking-wider whitespace-nowrap shrink-0 shadow-sm">
+            {/* Tier 2: 51+ angajați (Cel Mai Popular) */}
+            <div className="bg-gradient-to-b from-white to-blue-50/40 rounded-2xl border-2 border-blue-600 shadow-xl relative p-7 sm:p-8 flex flex-col justify-between md:-translate-y-2">
+              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-blue-600 text-white text-xs font-bold uppercase tracking-wider whitespace-nowrap shrink-0 shadow-sm">
                 Cel Mai Popular
               </div>
 
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <span className="text-xs font-bold uppercase tracking-wider text-blue-600">Echipe Medii</span>
-                  <span className="text-xs font-bold text-blue-700 bg-blue-100 px-2.5 py-1 rounded-full whitespace-nowrap shrink-0">
-                    50 – 99 salariați
+                  <span className="text-xs font-bold uppercase tracking-wider text-blue-600">Echipe În Creștere</span>
+                  <span className="text-xs font-bold text-blue-700 bg-blue-100 px-3 py-1 rounded-full whitespace-nowrap shrink-0">
+                    51+ salariați
                   </span>
                 </div>
 
-                <div className="mb-4">
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight">4.50 €</span>
+                <div className="mb-5">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-xl sm:text-2xl font-bold text-blue-300 line-through decoration-rose-500/70 decoration-2 whitespace-nowrap shrink-0">
+                      5.00 €
+                    </span>
+                    <span className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight whitespace-nowrap shrink-0">4.00 €</span>
                     <span className="text-xs font-semibold text-slate-500 whitespace-nowrap shrink-0">/ angajat / lună</span>
                   </div>
-                  <div className="mt-2 text-xs font-bold text-emerald-800 bg-emerald-100/80 border border-emerald-300 px-2.5 py-1.5 rounded-full inline-flex items-center gap-1 whitespace-nowrap shrink-0">
-                    <CheckCircle2 size={13} className="text-emerald-700 shrink-0" />
-                    <span>Economisești 10% din tarif</span>
+                  <div className="mt-2.5 text-xs font-bold text-emerald-800 bg-emerald-100/80 border border-emerald-300 px-3 py-1.5 rounded-full inline-flex items-center gap-1.5 whitespace-nowrap shrink-0">
+                    <CheckCircle2 size={14} className="text-emerald-700 shrink-0" />
+                    <span>Economisești 20% din tarif</span>
                   </div>
                   <p className="text-[11px] text-slate-500 mt-1.5">
                     Se aplică automat pentru toți salariații odată ce depășești 50 de angajați.
                   </p>
                 </div>
 
-                <div className="border-t border-blue-100 pt-4 mb-6">
+                <div className="border-t border-blue-100 pt-5 mb-6">
                   <p className="text-xs font-bold text-slate-800 mb-3">Tot din pachetul Standard, plus:</p>
-                  <ul className="space-y-2.5 text-xs text-slate-700 font-medium">
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+                  <ul className="space-y-3 text-xs text-slate-700 font-medium">
+                    <li className="flex items-center gap-2.5">
+                      <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
                       <span>Terminale Kiosk nelimitate pe puncte de lucru / secții</span>
                     </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+                    <li className="flex items-center gap-2.5">
+                      <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
                       <span>Coduri QR dinamice + geolocație GPS opțională</span>
                     </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+                    <li className="flex items-center gap-2.5">
+                      <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
                       <span>Condică ITM și export automat SAGA Salarii</span>
                     </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+                    <li className="flex items-center gap-2.5">
+                      <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
                       <span>Asistență prioritară la configurare și import inițial</span>
                     </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+                    <li className="flex items-center gap-2.5">
+                      <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
                       <span>Calcul avansat ture și schimburi de noapte</span>
+                    </li>
+                    <li className="flex items-center gap-2.5">
+                      <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+                      <span>Onboarding dedicat & asistență tehnică prioritară</span>
                     </li>
                   </ul>
                 </div>
@@ -1079,7 +1095,7 @@ export default function LandingRomania() {
                 <button
                   type="button"
                   onClick={() => openPlanModal('pro', 'demo')}
-                  className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-full shadow-lg shadow-blue-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap shrink-0"
+                  className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-full shadow-lg shadow-blue-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap shrink-0"
                 >
                   <Sparkles size={14} />
                   <span>Testează Gratuit 15 Zile</span>
@@ -1087,69 +1103,33 @@ export default function LandingRomania() {
               </div>
             </div>
 
-            {/* Tier 3: 100+ angajați */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-md hover:shadow-xl transition-all p-7 flex flex-col justify-between relative">
+          </div>
+
+          {/* Banner Corporate 150+ salariați */}
+          <div className="max-w-4xl mx-auto mb-8 bg-gradient-to-r from-slate-900 to-slate-800 text-white rounded-2xl p-6 sm:p-7 shadow-lg flex flex-col sm:flex-row items-center justify-between gap-5 border border-slate-700">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-blue-600/30 border border-blue-500/50 flex items-center justify-center text-blue-400 shrink-0">
+                <Building2 size={24} />
+              </div>
               <div>
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Echipe Mari</span>
-                  <span className="text-xs font-bold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-full whitespace-nowrap shrink-0">
-                    100+ salariați
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-base font-bold text-white">Echipă de peste 150 de angajați sau locații multiple?</span>
+                  <span className="text-[11px] font-bold text-blue-300 bg-blue-950/80 border border-blue-800 px-3 py-1 rounded-full whitespace-nowrap shrink-0">
+                    Tarif preferențial negociabil
                   </span>
                 </div>
-
-                <div className="mb-4">
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight">4.00 €</span>
-                    <span className="text-xs font-semibold text-slate-500 whitespace-nowrap shrink-0">/ angajat / lună</span>
-                  </div>
-                  <div className="mt-2 text-xs font-bold text-indigo-800 bg-indigo-100/80 border border-indigo-300 px-2.5 py-1.5 rounded-full inline-flex items-center gap-1 whitespace-nowrap shrink-0">
-                    <CheckCircle2 size={13} className="text-indigo-700 shrink-0" />
-                    <span>Economisești 20% din tarif</span>
-                  </div>
-                  <p className="text-[11px] text-slate-500 mt-1.5">
-                    Tarif preferențial optimizat pentru companii cu volum ridicat și fabrici.
-                  </p>
-                </div>
-
-                <div className="border-t border-slate-100 pt-4 mb-6">
-                  <p className="text-xs font-bold text-slate-800 mb-3">Totul inclus, plus:</p>
-                  <ul className="space-y-2.5 text-xs text-slate-600 font-medium">
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
-                      <span>Terminale Kiosk nelimitate la toate porțile și birourile</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
-                      <span>Scanare ultra-rapidă sub 1 secundă pe schimburi mari</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
-                      <span>Export instant SAGA & fișiere dedicate salarizare</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
-                      <span>Account manager dedicat și onboarding personalizat</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
-                      <span>SLA garantat și asistență tehnică prioritară</span>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-
-              <div>
-                <button
-                  type="button"
-                  onClick={() => openPlanModal('enterprise', 'demo')}
-                  className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-full transition-all flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap shrink-0 shadow-sm"
-                >
-                  <Sparkles size={14} />
-                  <span>Testează Gratuit 15 Zile</span>
-                </button>
+                <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+                  Beneficiezi de tarif preferențial negociabil, SLA garantat, server dedicat la cerere și asistență tehnică prioritară.
+                </p>
               </div>
             </div>
-
+            <button
+              type="button"
+              onClick={() => openPlanModal('enterprise', 'subscribe')}
+              className="px-6 py-3 bg-white hover:bg-slate-100 text-slate-900 text-xs font-bold rounded-full transition-all whitespace-nowrap shrink-0 shadow-md cursor-pointer hover:scale-105"
+            >
+              Cere Ofertă Personalizată
+            </button>
           </div>
 
           {/* Banner Recapitulativ Garanții & Condiții */}
@@ -1255,7 +1235,9 @@ export default function LandingRomania() {
                     </div>
                     <div className="text-right">
                       <span className="text-base font-black text-blue-700 whitespace-nowrap shrink-0">{selectedPlan.price}</span>
-                      <span className="text-[10px] text-slate-500 block whitespace-nowrap shrink-0">/ angajat / lună</span>
+                      <span className="text-[10px] text-slate-500 block whitespace-nowrap shrink-0">
+                        {selectedPlan.id === 'enterprise' ? 'ofertă dedicată' : '/ angajat / lună'}
+                      </span>
                     </div>
                   </div>
 
@@ -1369,12 +1351,12 @@ export default function LandingRomania() {
                           setSubForm(prev => ({ ...prev, employeesCount: val }));
                           const count = parseInt(val, 10);
                           if (!isNaN(count)) {
-                            if (count >= 100) {
-                              setSelectedPlan({ id: 'enterprise', name: 'Echipe Mari (100+ salariați)', price: '4.00 €', defaultSeats: 120 });
-                            } else if (count >= 50) {
-                              setSelectedPlan({ id: 'pro', name: 'Popular (50 – 99 salariați)', price: '4.50 €', defaultSeats: 65 });
+                            if (count >= 150) {
+                              setSelectedPlan({ id: 'enterprise', name: 'Corporate (150+ salariați)', price: 'Negociabil', defaultSeats: 160 });
+                            } else if (count > 50) {
+                              setSelectedPlan({ id: 'pro', name: 'Echipe Mari (51+ salariați)', price: '4.00 €', defaultSeats: 65 });
                             } else {
-                              setSelectedPlan({ id: 'standard', name: 'Standard (1 – 49 salariați)', price: '5.00 €', defaultSeats: 15 });
+                              setSelectedPlan({ id: 'standard', name: 'Standard (1 – 50 salariați)', price: '5.00 €', defaultSeats: 15 });
                             }
                           }
                         }}
@@ -1384,7 +1366,15 @@ export default function LandingRomania() {
                       <Users size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                     </div>
                     <p className="text-[10.5px] text-slate-400 mt-1">
-                      Tarif aplicat automat: <strong className="text-slate-700">{selectedPlan.price} / angajat / lună</strong> (minim 50 € / lună / firmă).
+                      Tarif aplicat automat:{' '}
+                      {selectedPlan.id === 'enterprise' ? (
+                        <strong className="text-blue-600 font-bold">Tarif preferențial negociabil (ofertă personalizată inclusă)</strong>
+                      ) : (
+                        <>
+                          <strong className="text-slate-700 font-bold">{selectedPlan.price} / angajat / lună</strong>{' '}
+                          {selectedPlan.id === 'standard' ? '(minim 50 € / lună / firmă).' : '(economisești 20% din tarif).'}
+                        </>
+                      )}
                     </p>
                   </div>
 
@@ -1446,6 +1436,73 @@ export default function LandingRomania() {
                       placeholder="contact@firma.ro..."
                       className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-xs"
                     />
+                  </div>
+
+                  {/* Acord Precontractual & DPA Art. 28 GDPR */}
+                  <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-2 text-left shadow-2xs">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
+                        <ShieldCheck size={14} className="text-emerald-600 shrink-0" />
+                        <span>Conformitate Legală &bull; GDPR Art. 28</span>
+                      </div>
+                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100/80 px-2.5 py-0.5 rounded-full whitespace-nowrap shrink-0 border border-emerald-200">
+                        Pistă Audit Electronică
+                      </span>
+                    </div>
+
+                    <label className="flex items-start gap-2.5 cursor-pointer text-xs text-slate-700 select-none">
+                      <input
+                        type="checkbox"
+                        required
+                        checked={acceptTerms}
+                        onChange={(e) => setAcceptTerms(e.target.checked)}
+                        className="mt-0.5 rounded-sm text-blue-600 focus:ring-blue-500 h-4 w-4 shrink-0 cursor-pointer"
+                      />
+                      <span className="leading-snug">
+                        Sunt de acord cu{' '}
+                        <button
+                          type="button"
+                          onClick={() => setLegalModalType('terms')}
+                          className="text-blue-600 underline font-semibold hover:text-blue-800 cursor-pointer"
+                        >
+                          Termenii de Utilizare
+                        </button>{' '}
+                        și{' '}
+                        <button
+                          type="button"
+                          onClick={() => setLegalModalType('privacy')}
+                          className="text-blue-600 underline font-semibold hover:text-blue-800 cursor-pointer"
+                        >
+                          Politica de Confidențialitate
+                        </button>
+                        .
+                      </span>
+                    </label>
+
+                    <label className="flex items-start gap-2.5 cursor-pointer text-xs text-slate-700 select-none">
+                      <input
+                        type="checkbox"
+                        required
+                        checked={acceptDpa}
+                        onChange={(e) => setAcceptDpa(e.target.checked)}
+                        className="mt-0.5 rounded-sm text-blue-600 focus:ring-blue-500 h-4 w-4 shrink-0 cursor-pointer"
+                      />
+                      <span className="leading-snug">
+                        În calitate de reprezentant legal / împuternicit, accept{' '}
+                        <button
+                          type="button"
+                          onClick={() => setLegalModalType('dpa')}
+                          className="text-blue-600 underline font-bold hover:text-blue-800 cursor-pointer"
+                        >
+                          Acordul de Prelucrare a Datelor (DPA - Art. 28 GDPR)
+                        </button>{' '}
+                        pentru datele salariaților în perioada de test și utilizare.
+                      </span>
+                    </label>
+
+                    <p className="text-[10px] text-slate-400 leading-tight pt-1 border-t border-slate-200/60">
+                      Acceptarea electronică are valoare de precontract conform Legii 365/2002 și GDPR Art. 28(9). Fără card bancar, fără obligații.
+                    </p>
                   </div>
 
                   <button
@@ -1510,6 +1567,181 @@ export default function LandingRomania() {
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL INFORMAȚII LEGALE / DPA / TERMENI / CONFIDENȚIALITATE */}
+      {legalModalType && (
+        <div 
+          className="fixed inset-0 z-60 flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-xs animate-fade-in text-left select-none"
+          onClick={() => setLegalModalType(null)}
+        >
+          <div 
+            className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[88vh]"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Header Modal */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/70">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100">
+                  <ShieldCheck size={18} />
+                </div>
+                <div>
+                  <h3 className="text-sm sm:text-base font-bold text-slate-900">
+                    {legalModalType === 'dpa' && 'Acord de Prelucrare a Datelor (DPA - Art. 28 GDPR)'}
+                    {legalModalType === 'terms' && 'Termeni și Condiții de Utilizare SaaS (Pontaj.app)'}
+                    {legalModalType === 'privacy' && 'Politica de Confidențialitate & Protecția Datelor'}
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    {legalModalType === 'dpa' && 'Regulamentul (UE) 2016/679 • Relația Operator - Persoană Împuternicită'}
+                    {legalModalType === 'terms' && 'Condiții aplicabile perioadei de probă de 15 zile și abonamentului'}
+                    {legalModalType === 'privacy' && 'Transparență totală privind securitatea și confidențialitatea datelor'}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setLegalModalType(null)}
+                className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors shrink-0 cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Corp Modal Scrollabil */}
+            <div className="p-6 overflow-y-auto text-xs text-slate-600 space-y-4 leading-relaxed">
+              {legalModalType === 'dpa' && (
+                <>
+                  <div className="p-3.5 bg-blue-50/80 border border-blue-200 rounded-2xl text-blue-950 space-y-1">
+                    <div className="font-bold flex items-center gap-1.5 text-xs text-blue-900">
+                      <Lock size={14} className="text-blue-600 shrink-0" />
+                      <span>Calitatea Părților & Valoare de Precontract Electronic</span>
+                    </div>
+                    <p className="text-[11.5px] text-blue-900/90 leading-relaxed">
+                      Prezentul Acord (DPA) este încheiat în mod valabil prin mijloace electronice la crearea contului, conform <strong>Art. 28 alin. (9) din GDPR</strong> și <strong>Legii 365/2002</strong>. Compania înregistrată are calitatea de <strong>Operator de Date</strong>, iar Pontaj.app are calitatea de <strong>Persoană Împuternicită</strong>.
+                    </p>
+                  </div>
+
+                  <div>
+                    <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider mb-1">
+                      1. Obiectul și scopul prelucrării
+                    </h4>
+                    <p>
+                      Persoana Împuternicită prelucrează datele cu caracter personal ale salariaților Operatorului exclusiv în scopul furnizării serviciului software SaaS de pontaj digital QR dinamic, monitorizare conform Art. 119 din Codul Muncii, generare a condicii de prezență și export în formatele SAGA Salarii / Excel.
+                    </p>
+                  </div>
+
+                  <div>
+                    <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider mb-1">
+                      2. Categoriile de date și garanția „Zero Biometrie Invazivă”
+                    </h4>
+                    <p>
+                      Datele prelucrate includ: nume, prenume, identificator salariat, ore intrare/ieșire, pauze, fotografii de confirmare la terminalul Kiosk (cu rol strict de audit vizual antifraudă, fără extragere de vectori biometrici faciali conform Art. 9 GDPR) și geolocație GPS (opțională, exclusiv la scanare mobilă).
+                    </p>
+                  </div>
+
+                  <div>
+                    <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider mb-1">
+                      3. Securitate, criptare și localizare exclusivă în UE
+                    </h4>
+                    <p>
+                      Toate datele sunt transmise criptat (TLS 1.3 / HTTPS), parolele sunt stocate ireversibil prin bcrypt, iar bazele de date sunt găzduite exclusiv pe servere din spațiul Uniunii Europene (UE/SEE), cu backup zilnic criptat și izolare strictă multi-tenant pe fiecare companie.
+                    </p>
+                  </div>
+
+                  <div>
+                    <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider mb-1">
+                      4. Asistență privind drepturile salariaților (Art. 15-22 GDPR)
+                    </h4>
+                    <p>
+                      Persoana Împuternicită pune la dispoziția Operatorului instrumentele tehnice necesare pentru a răspunde cererilor salariaților privind accesul, rectificarea sau ștergerea datelor din condica de pontaj.
+                    </p>
+                  </div>
+
+                  <div>
+                    <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider mb-1">
+                      5. Ștergerea datelor la încetarea perioadei de probă / utilizare
+                    </h4>
+                    <p>
+                      În cazul în care contul demonstrativ de 15 zile nu este convertit într-un abonament comercial activ, datele introduse de către Operator sunt șterse definitiv și ireversibil din sistemele active în termen de maximum 30 de zile.
+                    </p>
+                  </div>
+                </>
+              )}
+
+              {legalModalType === 'terms' && (
+                <>
+                  <div>
+                    <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider mb-1">
+                      1. Perioada de probă gratuită (15 Zile)
+                    </h4>
+                    <p>
+                      Accesul demonstrativ la platforma Pontaj.app este oferit gratuit timp de 15 zile calendaristice de la înregistrare. Nu se solicită date de card bancar la creare, iar contul nu generează costuri automate sau obligații contractuale de prelungire forțată.
+                    </p>
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider mb-1">
+                      2. Disponibilitate și natură 100% Cloud
+                    </h4>
+                    <p>
+                      Pontaj.app funcționează ca un serviciu web SaaS direct în browser. Tabletele, telefoanele sau ecranele Smart TV utilizate la sediile companiei sunt în responsabilitatea tehnică a clientului.
+                    </p>
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider mb-1">
+                      3. Drepturi de proprietate intelectuală
+                    </h4>
+                    <p>
+                      Codul sursă, algoritmii de generare QR dinamic, designul și mărcile Pontaj.app sunt proprietatea exclusivă a furnizorului. Clientul deține toate drepturile asupra datelor companiei și a înregistrărilor de pontaj generate.
+                    </p>
+                  </div>
+                </>
+              )}
+
+              {legalModalType === 'privacy' && (
+                <>
+                  <div>
+                    <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider mb-1">
+                      1. Datele colectate despre reprezentantul companiei
+                    </h4>
+                    <p>
+                      Colectăm numele de contact, numărul de telefon, adresa de email și datele fiscale oficiale (CUI ANAF) exclusiv în scopul creării instanței de lucru, comunicării tehnice și emiterii facturilor fiscale.
+                    </p>
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider mb-1">
+                      2. Fără vânzare sau partajare de date
+                    </h4>
+                    <p>
+                      Datele dvs. nu sunt înstrăinate, vândute sau utilizate în scopuri de marketing terț. Comunicațiile tranzacționale de email sunt securizate prin protocoale europene Brevo.
+                    </p>
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider mb-1">
+                      3. Date de contact responsabil GDPR
+                    </h4>
+                    <p>
+                      Pentru orice întrebare privind protecția datelor, ne puteți contacta direct la <strong>contact@pontaj.app</strong> sau telefonic la <strong>0757 77 77 12</strong>.
+                    </p>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Footer Modal */}
+            <div className="px-6 py-3.5 border-t border-slate-100 bg-slate-50/70 flex items-center justify-between gap-3">
+              <span className="text-[11px] font-semibold text-slate-500 whitespace-nowrap shrink-0">
+                Pistă electronică de audit &bull; Pontaj.app
+              </span>
+              <button
+                type="button"
+                onClick={() => setLegalModalType(null)}
+                className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-full transition-all whitespace-nowrap shrink-0 cursor-pointer shadow-xs"
+              >
+                Am Înțeles și Închid
+              </button>
             </div>
           </div>
         </div>

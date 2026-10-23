@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Mail, Send, Sparkles, RefreshCw, CheckCircle2, AlertCircle, ExternalLink, Globe, Phone, MapPin, Building2, Save, Languages } from 'lucide-react';
+import { getApiUrl, getAuthHeaders } from '../../utils/apiUrl';
 
 // Steaguri vectoriale SVG compacte, clare, fără caractere emoji
 const FlagRO = () => (
@@ -118,10 +119,10 @@ export default function HarveyReviewEmailModal({ isOpen, onClose, lead, onUpdate
     setSuccessMsg(null);
 
     try {
-      const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
+      const baseUrl = getApiUrl();
       const res = await fetch(`${baseUrl}/api/admin/harvey/leads/${lead.id}/generate-pitch`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           language: newLang,
           pitchFocus,
@@ -150,10 +151,10 @@ export default function HarveyReviewEmailModal({ isOpen, onClose, lead, onUpdate
     setError(null);
     setSuccessMsg(null);
     try {
-      const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
+      const baseUrl = getApiUrl();
       const res = await fetch(`${baseUrl}/api/admin/harvey/leads/${lead.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           draftSubject: subject,
           draftBody: body,
@@ -182,10 +183,10 @@ export default function HarveyReviewEmailModal({ isOpen, onClose, lead, onUpdate
     setError(null);
     setSuccessMsg(null);
     try {
-      const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
+      const baseUrl = getApiUrl();
       const res = await fetch(`${baseUrl}/api/admin/harvey/leads/${lead.id}/generate-pitch`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           pitchFocus,
           customNotes,
@@ -221,10 +222,10 @@ export default function HarveyReviewEmailModal({ isOpen, onClose, lead, onUpdate
 
     try {
       // Mai întâi salvăm ultimele modificări din formular
-      const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
+      const baseUrl = getApiUrl();
       await fetch(`${baseUrl}/api/admin/harvey/leads/${lead.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           draftSubject: subject,
           draftBody: body,
@@ -236,7 +237,7 @@ export default function HarveyReviewEmailModal({ isOpen, onClose, lead, onUpdate
       // Apoi apelăm endpoint-ul de trimitere prin Brevo
       const res = await fetch(`${baseUrl}/api/admin/harvey/leads/${lead.id}/send`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        headers: getAuthHeaders()
       });
 
       const data = await res.json();
@@ -261,10 +262,10 @@ export default function HarveyReviewEmailModal({ isOpen, onClose, lead, onUpdate
     setError(null);
     setSuccessMsg(null);
     try {
-      const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
+      const baseUrl = getApiUrl();
       const res = await fetch(`${baseUrl}/api/admin/harvey/leads/${lead.id}/test-send`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ testEmail: 'jeka7ro@gmail.com' })
       });
       const data = await res.json();
