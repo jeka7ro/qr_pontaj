@@ -394,7 +394,7 @@ export default function TrafficAnalyticsView() {
           {/* Notă Google Analytics Integrat */}
           <div className="mt-5 p-3 bg-blue-50/70 dark:bg-blue-950/30 rounded-2xl border border-blue-200 dark:border-blue-900 text-[11px] text-blue-800 dark:text-blue-300 flex items-center justify-between">
             <div>
-              <strong className="block font-bold">Google Analytics (G-EZ3PHK4D9B)</strong>
+              <strong className="block font-bold">Google Analytics (G-T6HVXGEJEK)</strong>
               <span>Sincronizat în paralel în tag-ul site-ului.</span>
             </div>
             <span className="px-2.5 py-0.5 bg-emerald-500 text-white font-bold rounded-full text-[10px] whitespace-nowrap shrink-0">
