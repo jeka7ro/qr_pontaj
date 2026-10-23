@@ -69,12 +69,17 @@ router.post('/track', async (req, res) => {
     let detectedSource = utm_source;
     if (!detectedSource && referrer) {
       const refLower = referrer.toLowerCase();
-      if (refLower.includes('tiktok')) detectedSource = 'tiktok';
-      else if (refLower.includes('facebook') || refLower.includes('fb.com') || refLower.includes('instagram')) detectedSource = 'meta';
-      else if (refLower.includes('google')) detectedSource = 'google';
-      else if (refLower.includes('linkedin')) detectedSource = 'linkedin';
-      else if (refLower.includes('youtube')) detectedSource = 'youtube';
-      else detectedSource = 'referral';
+      const isInternal = refLower.includes('qr.pontaj.app') || refLower.includes('pontaj.app') || refLower.includes('localhost') || refLower.includes('127.0.0.1');
+      if (!isInternal) {
+        if (refLower.includes('tiktok')) detectedSource = 'tiktok';
+        else if (refLower.includes('facebook') || refLower.includes('fb.com') || refLower.includes('instagram') || refLower.includes('meta')) detectedSource = 'meta';
+        else if (refLower.includes('google')) detectedSource = 'google';
+        else if (refLower.includes('linkedin')) detectedSource = 'linkedin';
+        else if (refLower.includes('youtube')) detectedSource = 'youtube';
+        else detectedSource = 'referral';
+      } else {
+        detectedSource = 'direct';
+      }
     } else if (!detectedSource) {
       detectedSource = 'direct';
     }
@@ -130,29 +135,36 @@ router.get('/overview', requireSuperAdmin, async (req, res) => {
       intervalFilter = "created_at >= NOW() - INTERVAL '30 days'";
     }
 
+    // Excludem traficul de test local
+    const baseFilter = `${intervalFilter} AND ip_address NOT IN ('::1') AND (referrer IS NULL OR referrer NOT LIKE '%localhost%')`;
+
     // 1. Vizitatori activi în timp real (ultimele 15 minute)
     const liveNowRes = await pool.query(`
-      SELECT COUNT(DISTINCT session_id) as count 
+      SELECT COUNT(DISTINCT COALESCE(visitor_id, session_id)) as count 
       FROM site_analytics 
       WHERE created_at >= NOW() - INTERVAL '15 minutes'
+        AND ip_address NOT IN ('::1')
     `);
     const liveNow = parseInt(liveNowRes.rows[0]?.count || 0, 10);
 
     // 2. Vizitatori unici azi vs ieri
     const todayRes = await pool.query(`
       SELECT 
-        COUNT(DISTINCT session_id) as unique_visitors,
+        COUNT(DISTINCT COALESCE(visitor_id, session_id)) as unique_visitors,
         COUNT(*) as total_pageviews
       FROM site_analytics 
       WHERE created_at >= CURRENT_DATE
+        AND ip_address NOT IN ('::1')
+        AND (referrer IS NULL OR referrer NOT LIKE '%localhost%')
     `);
     const todayVisitors = parseInt(todayRes.rows[0]?.unique_visitors || 0, 10);
     const todayPageviews = parseInt(todayRes.rows[0]?.total_pageviews || 0, 10);
 
     const yesterdayRes = await pool.query(`
-      SELECT COUNT(DISTINCT session_id) as count 
+      SELECT COUNT(DISTINCT COALESCE(visitor_id, session_id)) as count 
       FROM site_analytics 
       WHERE created_at >= CURRENT_DATE - INTERVAL '1 day' AND created_at < CURRENT_DATE
+        AND ip_address NOT IN ('::1')
     `);
     const yesterdayVisitors = parseInt(yesterdayRes.rows[0]?.count || 0, 10);
 
@@ -160,10 +172,10 @@ router.get('/overview', requireSuperAdmin, async (req, res) => {
     const sourcesRes = await pool.query(`
       SELECT 
         COALESCE(NULLIF(utm_source, ''), 'direct') as source,
-        COUNT(DISTINCT session_id) as visitors,
+        COUNT(DISTINCT COALESCE(visitor_id, session_id)) as visitors,
         COUNT(*) as events
       FROM site_analytics
-      WHERE ${intervalFilter}
+      WHERE ${baseFilter}
       GROUP BY source
       ORDER BY visitors DESC
       LIMIT 10
@@ -173,9 +185,9 @@ router.get('/overview', requireSuperAdmin, async (req, res) => {
     const devicesRes = await pool.query(`
       SELECT 
         COALESCE(NULLIF(device_type, ''), 'mobile') as device,
-        COUNT(DISTINCT session_id) as visitors
+        COUNT(DISTINCT COALESCE(visitor_id, session_id)) as visitors
       FROM site_analytics
-      WHERE ${intervalFilter}
+      WHERE ${baseFilter}
       GROUP BY device
       ORDER BY visitors DESC
     `);

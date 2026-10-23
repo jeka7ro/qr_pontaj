@@ -1,3 +1,5 @@
+import { apiUrl } from './apiUrl';
+
 // Frontend Analytics Tracker: trimite în paralel către sistemul intern și Google Analytics (gtag)
 
 // Generare / recuperare Session ID (stocat în sessionStorage)
@@ -40,15 +42,46 @@ const getDeviceType = () => {
   return 'desktop';
 };
 
-// Extragere parametri UTM din URL
+// Extragere parametri UTM și Click IDs (fbclid, gclid, ttclid) cu persistență per sesiune
 const getUtmParams = () => {
   try {
     const params = new URLSearchParams(window.location.search);
-    return {
-      utm_source: params.get('utm_source') || null,
-      utm_medium: params.get('utm_medium') || null,
-      utm_campaign: params.get('utm_campaign') || null
-    };
+    let source = params.get('utm_source');
+    let medium = params.get('utm_medium');
+    let campaign = params.get('utm_campaign');
+
+    // Detectare automată click reclame Facebook / Meta
+    if (!source && params.get('fbclid')) {
+      source = 'facebook';
+      medium = 'cpc';
+      campaign = 'meta_ads';
+    }
+    // Detectare automată click reclame Google
+    if (!source && params.get('gclid')) {
+      source = 'google';
+      medium = 'cpc';
+      campaign = 'google_ads';
+    }
+    // Detectare automată click reclame TikTok
+    if (!source && params.get('ttclid')) {
+      source = 'tiktok';
+      medium = 'cpc';
+      campaign = 'tiktok_ads';
+    }
+
+    if (source) {
+      const utmObj = { utm_source: source, utm_medium: medium, utm_campaign: campaign };
+      sessionStorage.setItem('qrp_utm', JSON.stringify(utmObj));
+      return utmObj;
+    }
+
+    // Păstrăm sursa inițială din sesiune pentru navigare între pagini
+    const saved = sessionStorage.getItem('qrp_utm');
+    if (saved) {
+      return JSON.parse(saved);
+    }
+
+    return { utm_source: null, utm_medium: null, utm_campaign: null };
   } catch (e) {
     return { utm_source: null, utm_medium: null, utm_campaign: null };
   }
@@ -80,7 +113,7 @@ export const trackEvent = (eventType, metadata = {}) => {
     };
 
     // 1. Trimitere internă (silent beacon sau fetch rapid)
-    const apiEndpoint = '/api/analytics/track';
+    const apiEndpoint = apiUrl('/api/analytics/track');
     if (navigator.sendBeacon) {
       const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
       navigator.sendBeacon(apiEndpoint, blob);

@@ -335,15 +335,15 @@ export default function LandingRomania() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans antialiased selection:bg-blue-600 selection:text-white">
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans antialiased selection:bg-blue-600 selection:text-white overflow-x-hidden w-full">
       {/* 1. Header de Navigație Simplificat */}
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-6">
-          <Link to="/" className="flex items-center gap-2.5 group cursor-pointer focus:outline-none shrink-0">
-            <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-sm shadow-blue-500/20 group-hover:scale-105 transition-transform">
-              <QrCode size={20} strokeWidth={2.4} />
+      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs overflow-hidden w-full">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
+          <Link to="/" className="flex items-center gap-2 group cursor-pointer focus:outline-none shrink-0">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-sm shadow-blue-500/20 group-hover:scale-105 transition-transform">
+              <QrCode size={18} strokeWidth={2.4} />
             </div>
-            <span className="text-xl font-black text-slate-900 tracking-tight leading-none">
+            <span className="text-lg sm:text-xl font-black text-slate-900 tracking-tight leading-none whitespace-nowrap">
               Pontaj<span className="text-blue-600">.app</span>
             </span>
           </Link>
@@ -363,7 +363,7 @@ export default function LandingRomania() {
             </a>
           </nav>
 
-          <div className="flex items-center gap-2.5 shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
             <a
               href="tel:0757777712"
               className="hidden lg:flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-blue-600 px-3 py-1.5 rounded-full hover:bg-slate-100 transition-colors whitespace-nowrap shrink-0"
@@ -373,29 +373,30 @@ export default function LandingRomania() {
             </a>
             <Link
               to="/admin/login"
-              className="text-xs font-bold text-slate-600 hover:text-slate-900 px-3 h-9 rounded-full hover:bg-slate-100 transition-colors flex items-center whitespace-nowrap shrink-0"
+              className="hidden sm:flex text-xs font-bold text-slate-600 hover:text-slate-900 px-3 h-9 rounded-full hover:bg-slate-100 transition-colors items-center whitespace-nowrap shrink-0"
             >
               Autentificare
             </Link>
             <button
               type="button"
               onClick={() => openPlanModal('standard', 'demo')}
-              className="px-4 h-9 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-full shadow-sm shadow-blue-500/25 transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0"
+              className="px-3.5 sm:px-4 h-9 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-full shadow-sm shadow-blue-500/25 transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0"
             >
               <Sparkles size={13} />
-              <span>Activează Demo (15 Zile)</span>
+              <span className="hidden sm:inline">Activează Demo (15 Zile)</span>
+              <span className="sm:hidden">Cont Demo</span>
             </button>
           </div>
         </div>
       </header>
 
       {/* 2. HERO PRINCIPAL: IMPACT VIZUAL + BENEFICII CLARE */}
-      <section id="hero" className="pt-10 pb-16 bg-gradient-to-b from-white via-slate-50 to-slate-100 border-b border-slate-200">
+      <section id="hero" className="pt-6 sm:pt-10 pb-12 sm:pb-16 bg-gradient-to-b from-white via-slate-50 to-slate-100 border-b border-slate-200 overflow-hidden w-full">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
             
             {/* Stânga: Text + CTAs + Beneficii rapide */}
-            <div className="lg:col-span-6 space-y-4">
+            <div className="lg:col-span-6 space-y-4 text-center lg:text-left flex flex-col items-center lg:items-start">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-blue-200 bg-blue-50 text-xs font-bold text-blue-600 whitespace-nowrap shrink-0">
                 <ShieldCheck size={14} className="text-blue-600" />
                 <span>100% Conform Art. 119 Codul Muncii</span>
@@ -406,14 +407,14 @@ export default function LandingRomania() {
               </h1>
 
               <p className="text-sm sm:text-base text-slate-600 leading-relaxed max-w-xl">
-                Pui o tabletă sau un Smart TV pe perete. Salariații scanează codul QR cu telefonul — codul se schimbă la 15 secunde, deci <strong>nu poate fi trimis colegilor</strong>. Condica ITM și exportul SAGA se fac automat.
+                Pui o tabletă sau un ecran pe perete. Salariații scanează codul QR cu telefonul — codul se schimbă la 15 secunde, deci <strong>nu poate fi trimis colegilor</strong>. Condica ITM și exportul SAGA se fac automat.
               </p>
 
-              <div className="flex flex-wrap items-center gap-3 pt-1">
+              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 pt-1 w-full sm:w-auto">
                 <button
                   type="button"
                   onClick={() => openPlanModal('standard', 'demo')}
-                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-full shadow-lg shadow-blue-500/25 transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap shrink-0"
+                  className="w-full sm:w-auto px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-full shadow-lg shadow-blue-500/25 transition-all cursor-pointer flex items-center justify-center gap-2 whitespace-nowrap shrink-0"
                 >
                   <Sparkles size={16} />
                   <span>Testează Gratuit 15 Zile</span>
@@ -421,14 +422,14 @@ export default function LandingRomania() {
 
                 <a
                   href="#tarife"
-                  className="px-5 py-3 border border-slate-300 hover:border-blue-600 hover:text-blue-600 text-slate-700 text-sm font-bold rounded-full bg-white hover:bg-slate-50 transition-all flex items-center gap-2 whitespace-nowrap shrink-0"
+                  className="w-full sm:w-auto px-5 py-3.5 border border-slate-300 hover:border-blue-600 hover:text-blue-600 text-slate-700 text-sm font-bold rounded-full bg-white hover:bg-slate-50 transition-all flex items-center justify-center gap-2 whitespace-nowrap shrink-0"
                 >
                   <CreditCard size={16} className="text-blue-600" />
                   <span>Vezi Grila de Tarife</span>
                 </a>
               </div>
 
-              <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-slate-600 pt-2">
+              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 text-xs font-semibold text-slate-600 pt-2">
                 <div className="flex items-center gap-1.5 whitespace-nowrap shrink-0">
                   <CheckCircle2 size={15} className="text-emerald-500" />
                   <span>Fără card bancar</span>
@@ -439,35 +440,14 @@ export default function LandingRomania() {
                 </div>
                 <div className="flex items-center gap-1.5 whitespace-nowrap shrink-0">
                   <CheckCircle2 size={15} className="text-emerald-500" />
-                  <span>Export SAGA &amp; Condică ITM</span>
+                  <span>Export 1-Click SAGA</span>
                 </div>
               </div>
-
-              <div className="flex flex-wrap items-center gap-1.5 pt-2">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mr-1 whitespace-nowrap shrink-0">
-                  Pe orice ecran:
-                </span>
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-white rounded-full text-xs font-semibold text-slate-700 border border-slate-200 shadow-2xs whitespace-nowrap shrink-0">
-                  <Tablet size={13} className="text-blue-600" /> Tabletă
-                </span>
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-white rounded-full text-xs font-semibold text-slate-700 border border-slate-200 shadow-2xs whitespace-nowrap shrink-0">
-                  <Tv size={13} className="text-blue-600" /> Smart TV
-                </span>
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-white rounded-full text-xs font-semibold text-slate-700 border border-slate-200 shadow-2xs whitespace-nowrap shrink-0">
-                  <Monitor size={13} className="text-blue-600" /> Monitor PC
-                </span>
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-white rounded-full text-xs font-semibold text-slate-700 border border-slate-200 shadow-2xs whitespace-nowrap shrink-0">
-                  <Laptop size={13} className="text-blue-600" /> Laptop
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-500 pt-1 leading-normal">
-                * Tableta și/sau suportul digital nu sunt oferite de noi și sunt în responsabilitatea clientului (soluție 100% software în cloud, compatibilă cu orice dispozitiv deja existent).
-              </p>
             </div>
 
-            {/* Dreapta: Fotografie Scanare Kiosk + Badge-uri Plutitoare */}
-            <div className="lg:col-span-6">
-              <div className="relative rounded-2xl overflow-hidden shadow-2xl border-2 border-slate-800 bg-slate-950 aspect-[4/3] group">
+            {/* Dreapta: Fotografie Scanare Kiosk Centrată pe Mobile */}
+            <div className="lg:col-span-6 flex justify-center w-full">
+              <div className="relative rounded-2xl overflow-hidden shadow-2xl border-2 border-slate-800 bg-slate-950 aspect-[4/3] w-full max-w-lg lg:max-w-none group mx-auto">
                 <img
                   src="/media/hero-scan.jpg"
                   alt="Angajată scanează codul QR dinamic de pe tabletă"
@@ -475,17 +455,17 @@ export default function LandingRomania() {
                 />
 
                 {/* Badge Plutitor Dreapta Sus */}
-                <div className="absolute top-4 right-4 bg-slate-900/90 text-white backdrop-blur-md rounded-2xl border border-white/20 px-3.5 py-2 shadow-xl flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <div className="absolute top-3 right-3 sm:top-4 sm:right-4 bg-slate-900/90 text-white backdrop-blur-md rounded-2xl border border-white/20 px-3 py-1.5 sm:px-3.5 sm:py-2 shadow-xl flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
                   <div className="text-left">
-                    <p className="text-[10px] uppercase tracking-wider text-blue-300 font-bold whitespace-nowrap shrink-0">QR Dinamic</p>
-                    <p className="text-xs font-black text-white whitespace-nowrap shrink-0">Se schimbă la 15s</p>
+                    <p className="text-[9px] sm:text-[10px] uppercase tracking-wider text-blue-300 font-bold whitespace-nowrap shrink-0">QR Dinamic</p>
+                    <p className="text-[11px] sm:text-xs font-black text-white whitespace-nowrap shrink-0">Se schimbă la 15s</p>
                   </div>
                 </div>
 
                 {/* Card Plutitor Stânga Jos: Elena Rusu Intrare Validată */}
-                <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200 p-3 flex items-center gap-3 max-w-[270px]">
-                  <div className="relative w-12 h-12 rounded-full overflow-hidden ring-3 ring-emerald-500 shrink-0">
+                <div className="absolute bottom-3 left-3 sm:bottom-4 sm:left-4 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200 p-2 sm:p-3 flex items-center gap-2.5 sm:gap-3 max-w-[220px] sm:max-w-[270px]">
+                  <div className="relative w-9 h-9 sm:w-12 sm:h-12 rounded-full overflow-hidden ring-2 sm:ring-3 ring-emerald-500 shrink-0">
                     <img
                       src="/media/emp-elena.jpg"
                       alt="Poză profil Elena Rusu"
@@ -493,9 +473,9 @@ export default function LandingRomania() {
                     />
                   </div>
                   <div className="text-left overflow-hidden">
-                    <p className="text-[10px] font-black text-emerald-600 uppercase tracking-wide whitespace-nowrap shrink-0">Intrare Înregistrată</p>
-                    <p className="text-xs font-bold text-slate-900 truncate">Bine ai venit, Elena!</p>
-                    <p className="text-[11px] text-slate-500 whitespace-nowrap shrink-0">08:00:15 • Kiosk Intrare</p>
+                    <p className="text-[9px] sm:text-[10px] font-black text-emerald-600 uppercase tracking-wide whitespace-nowrap shrink-0">Intrare Înregistrată</p>
+                    <p className="text-[11px] sm:text-xs font-bold text-slate-900 truncate">Bine ai venit, Elena!</p>
+                    <p className="text-[10px] sm:text-[11px] text-slate-500 whitespace-nowrap shrink-0">08:00:15 • Kiosk Intrare</p>
                   </div>
                 </div>
               </div>

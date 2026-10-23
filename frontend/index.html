@@ -13,15 +13,24 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link id="app-favicon" rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><rect width='24' height='24' rx='6' fill='%232563eb'/><path d='M5 5h6v6H5zm2 2v2h2V7zm6-2h6v6h-6zm2 2v2h2V7zM5 13h6v6H5zm2 2v2h2v-2zm8 0h2v2h-2zm2-2h2v2h-2zm0 4h2v2h-2zm-4 0h2v2h-2z' fill='white'/></svg>">
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-T6HVXGEJEK"></script>
+    <!-- Google tag (gtag.js) safe loader -->
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
-      gtag('config', 'G-T6HVXGEJEK', {
-        send_page_view: false
-      });
+      gtag('config', 'G-T6HVXGEJEK', { send_page_view: false });
+
+      (function() {
+        try {
+          var s = document.createElement('script');
+          s.async = true;
+          s.src = 'https://www.googletagmanager.com/gtag/js?id=G-T6HVXGEJEK';
+          s.onerror = function(e) {
+            if (e && e.stopPropagation) e.stopPropagation();
+          };
+          document.head.appendChild(s);
+        } catch(e) {}
+      })();
     </script>
   </head>
   <body>
@@ -121,16 +130,25 @@
       (function () {
         function recover() {
           try {
-            if (sessionStorage.getItem('qrp_reload')) return;
-            sessionStorage.setItem('qrp_reload', '1');
+            var last = sessionStorage.getItem('qrp_reload');
+            if (last && (Date.now() - parseInt(last, 10)) < 30000) return;
+            sessionStorage.setItem('qrp_reload', String(Date.now()));
             var u = new URL(location.href);
             u.searchParams.set('_v', Date.now());
             location.replace(u.toString());
-          } catch (e) { location.reload(); }
+          } catch (e) {}
         }
         window.addEventListener('error', function (e) {
           var t = e.target;
-          if (t && t.tagName === 'SCRIPT' && t.src) recover();
+          if (t && t.tagName === 'SCRIPT' && t.src) {
+            var src = String(t.src).toLowerCase();
+            if (src.indexOf('googletagmanager') !== -1 || src.indexOf('google-analytics') !== -1 || src.indexOf('google') !== -1) {
+              return;
+            }
+            if (src.indexOf('/assets/') !== -1) {
+              recover();
+            }
+          }
         }, true);
         window.addEventListener('unhandledrejection', function (e) {
           var m = String((e.reason && e.reason.message) || '');
