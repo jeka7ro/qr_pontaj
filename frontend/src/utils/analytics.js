@@ -112,19 +112,14 @@ export const trackEvent = (eventType, metadata = {}) => {
       metadata
     };
 
-    // 1. Trimitere internă (silent beacon sau fetch rapid)
+    // 1. Trimitere internă prin fetch CORS garantat cu keepalive
     const apiEndpoint = apiUrl('/api/analytics/track');
-    if (navigator.sendBeacon) {
-      const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
-      navigator.sendBeacon(apiEndpoint, blob);
-    } else {
-      fetch(apiEndpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-        keepalive: true
-      }).catch(() => {});
-    }
+    fetch(apiEndpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      keepalive: true
+    }).catch(() => {});
 
     // 2. Trimitere în paralel către Google Analytics dacă gtag este activ
     if (typeof window !== 'undefined' && typeof window.gtag === 'function') {

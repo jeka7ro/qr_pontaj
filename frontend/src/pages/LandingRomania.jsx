@@ -43,6 +43,7 @@ import {
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { trackEvent } from '../utils/analytics';
+import { apiUrl } from '../utils/apiUrl';
 
 export default function LandingRomania() {
   const navigate = useNavigate();
@@ -255,7 +256,7 @@ export default function LandingRomania() {
     setCuiLoading(true);
     setCuiError(null);
     try {
-      const res = await fetch(`/api/company/lookup?cui=${cuiDigits}`);
+      const res = await fetch(apiUrl(`/api/company/lookup?cui=${cuiDigits}`));
       const data = await res.json();
       if (data.success && data.found && data.company) {
         setSubForm(prev => ({ 
@@ -286,7 +287,7 @@ export default function LandingRomania() {
     setIsSubmittingForm(true);
 
     try {
-      const res = await fetch('/api/auth/demo-request', {
+      const res = await fetch(apiUrl('/api/auth/demo-request'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

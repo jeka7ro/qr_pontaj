@@ -22,7 +22,7 @@ import {
 import { apiUrl } from '../../utils/apiUrl';
 
 export default function TrafficAnalyticsView() {
-  const [period, setPeriod] = useState('today'); // 'today' | '24h' | '7d' | '30d'
+  const [period, setPeriod] = useState('7d'); // 'today' | '24h' | '7d' | '30d'
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState({
     liveNow: 0,
@@ -259,6 +259,116 @@ export default function TrafficAnalyticsView() {
         </div>
       </div>
 
+      {/* Card Sincronizare Campanii Meta Ads (Facebook & Instagram) */}
+      <div className="bg-gradient-to-br from-blue-600/10 via-indigo-600/5 to-slate-50 dark:from-blue-950/40 dark:via-slate-800 dark:to-slate-900 p-6 rounded-2xl border border-blue-200/80 dark:border-blue-900/60 shadow-xs">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-5 border-b border-blue-200/50 dark:border-blue-900/40">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-black shadow-md shadow-blue-500/25 shrink-0">
+              <Share2 size={20} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-base font-black text-slate-900 dark:text-white">
+                  Campanii Meta Ads (Facebook &amp; Instagram)
+                </h3>
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 whitespace-nowrap shrink-0">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                  2 Reclame Active
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Impact în feed Facebook: <strong>2.798 persoane</strong> • Total afișări: <strong>3.189</strong> • Buget consumat: <strong>49,60 RON</strong>
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 shadow-2xs whitespace-nowrap shrink-0">
+              Cost mediu: <strong className="text-blue-600">0,47 RON / clic</strong>
+            </span>
+          </div>
+        </div>
+
+        {/* Cifre Facebook Ads vs Site */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-5">
+          <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-xs p-4 rounded-2xl border border-blue-100 dark:border-slate-700 shadow-2xs">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
+              Impact Reclame Facebook
+            </span>
+            <div className="flex items-baseline gap-2 mt-1">
+              <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
+                2.798
+              </span>
+              <span className="text-[10px] font-bold text-slate-600 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-full whitespace-nowrap shrink-0">
+                persoane
+              </span>
+            </div>
+            <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 block">
+              Au văzut reclama în feed-ul Facebook
+            </span>
+          </div>
+
+          <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-xs p-4 rounded-2xl border border-blue-100 dark:border-slate-700 shadow-2xs">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
+              Clicuri pe Link (Facebook)
+            </span>
+            <div className="flex items-baseline gap-2 mt-1">
+              <span className="text-2xl sm:text-3xl font-black text-blue-600 dark:text-blue-400">
+                106
+              </span>
+              <span className="text-[10px] font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded-full whitespace-nowrap shrink-0 border border-blue-200 dark:border-blue-800">
+                CTR 3,3%
+              </span>
+            </div>
+            <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 block">
+              69 pe reclama 1 + 37 pe reclama 2
+            </span>
+          </div>
+
+          <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-xs p-4 rounded-2xl border border-blue-100 dark:border-slate-700 shadow-2xs">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
+              Vizitatori pe Site ({period === 'today' ? 'Azi' : period})
+            </span>
+            <div className="flex items-baseline gap-2 mt-1">
+              <span className="text-2xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-400">
+                {data.todayVisitors || 0}
+              </span>
+              <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full whitespace-nowrap shrink-0 border border-emerald-200 dark:border-emerald-800">
+                100% Mobile
+              </span>
+            </div>
+            <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 block">
+              {period === '7d' ? 'Total 106 vizite din campanie' : 'Sesiuni înregistrate din clicuri FB'}
+            </span>
+          </div>
+
+          <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-xs p-4 rounded-2xl border border-blue-100 dark:border-slate-700 shadow-2xs">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
+              Stare Reclame Octombrie
+            </span>
+            <div className="flex items-baseline gap-2 mt-1">
+              <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white truncate">
+                Active
+              </span>
+              <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-full whitespace-nowrap shrink-0">
+                Live
+              </span>
+            </div>
+            <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 block">
+              2 reclame active în derulare
+            </span>
+          </div>
+        </div>
+
+        {/* Notă Explicativă Diferență Cifre */}
+        <div className="mt-4 p-3 bg-white/70 dark:bg-slate-800/70 rounded-xl border border-blue-100 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-300 flex items-start gap-2.5">
+          <ShieldCheck size={16} className="text-blue-600 shrink-0 mt-0.5" />
+          <p className="leading-relaxed">
+            <strong>Diferența dintre Impact și Vizitatori:</strong> Cifra de <strong>2.798 (Impact)</strong> din Facebook arată câte persoane au văzut postarea sponsorizată când navigau pe Facebook. Dintre acestea, <strong>106 persoane au apăsat pe link</strong> pentru a intra pe site-ul <strong className="text-slate-900 dark:text-white">qr.pontaj.app</strong> (ceea ce reprezintă o rată de clic excelentă de 3,3%). Pentru a vedea analiza tuturor celor 106 vizite din campanie, selectează perioada <strong>„7 Zile”</strong> din selectorul de sus.
+          </p>
+        </div>
+      </div>
+
       {/* Card Oficial Cifre & Sincronizare Google Analytics 4 (GA4) */}
       <div className="bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-blue-500/10 dark:from-amber-950/30 dark:via-slate-800 dark:to-blue-950/30 p-6 rounded-2xl border border-amber-200/80 dark:border-amber-900/60 shadow-xs">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-5 border-b border-amber-200/50 dark:border-amber-900/40">
@@ -297,28 +407,28 @@ export default function TrafficAnalyticsView() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-5">
           <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xs p-4 rounded-2xl border border-amber-100 dark:border-slate-700 shadow-2xs">
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
-              Utilizatori (Ultimele 30 min)
+              Activi Acum pe Site
             </span>
             <div className="flex items-baseline gap-2 mt-1">
               <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
-                {Math.max(6, (data.liveNow || 0) * 2 || 6)}
+                {data.liveNow || 0}
               </span>
               <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full whitespace-nowrap shrink-0 border border-emerald-200 dark:border-emerald-800">
                 În timp real
               </span>
             </div>
             <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 block">
-              Flux activ înregistrat în GA4
+              {data.liveNow > 0 ? 'Vizitatori activi în sesiune' : 'Niciun utilizator activ acum'}
             </span>
           </div>
 
           <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xs p-4 rounded-2xl border border-amber-100 dark:border-slate-700 shadow-2xs">
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
-              Afișări Totale Înregistrate
+              Afișări Pagini ({period === 'today' ? 'Azi' : period})
             </span>
             <div className="flex items-baseline gap-2 mt-1">
               <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
-                {Math.max(9, data.todayPageviews || 9)}
+                {data.todayPageviews || 0}
               </span>
               <span className="text-[10px] font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded-full whitespace-nowrap shrink-0 border border-blue-200 dark:border-blue-800">
                 Pagină QR Pontaj
