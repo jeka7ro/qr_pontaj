@@ -2313,6 +2313,130 @@ const harveyService = {
     return { success: true, imported, skipped, errorsCount: errors.length };
   },
 
+  // Preluare statistici și evenimente reale de tracking email din Brevo
+  async getEmailTrackingStats() {
+    const apiKey = process.env.BREVO_API_KEY;
+    if (!apiKey) {
+      return {
+        success: false,
+        message: 'Lipsește cheia BREVO_API_KEY',
+        summary: {
+          totalDelivered: 0,
+          uniqueOpens: 0,
+          totalOpens: 0,
+          openRate: '0.0',
+          uniqueClicks: 0,
+          totalClicks: 0,
+          clickRate: '0.0',
+          totalBounces: 0
+        },
+        byEmail: {}
+      };
+    }
+
+    try {
+      const [repRes, evRes] = await Promise.all([
+        fetch('https://api.brevo.com/v3/smtp/statistics/reports?limit=30', {
+          headers: { 'api-key': apiKey, 'accept': 'application/json' }
+        }),
+        fetch('https://api.brevo.com/v3/smtp/statistics/events?limit=250&sort=desc', {
+          headers: { 'api-key': apiKey, 'accept': 'application/json' }
+        })
+      ]);
+
+      const repData = await repRes.json();
+      const evData = await evRes.json();
+
+      let totalDelivered = 0;
+      let totalOpens = 0;
+      let uniqueOpens = 0;
+      let totalClicks = 0;
+      let uniqueClicks = 0;
+      let totalBounces = 0;
+
+      for (const r of (repData.reports || [])) {
+        totalDelivered += (r.delivered || 0);
+        totalOpens += (r.opens || 0);
+        uniqueOpens += (r.uniqueOpens || 0);
+        totalClicks += (r.clicks || 0);
+        uniqueClicks += (r.uniqueClicks || 0);
+        totalBounces += (r.hardBounces || 0) + (r.softBounces || 0);
+      }
+
+      const openRate = totalDelivered > 0 ? ((uniqueOpens / totalDelivered) * 100).toFixed(1) : '0.0';
+      const clickRate = totalDelivered > 0 ? ((uniqueClicks / totalDelivered) * 100).toFixed(1) : '0.0';
+
+      const byEmail = {};
+      for (const e of (evData.events || [])) {
+        if (!e.email) continue;
+        const em = e.email.toLowerCase().trim();
+        if (!byEmail[em]) {
+          byEmail[em] = {
+            opens: 0,
+            clicks: 0,
+            links: [],
+            firstOpenAt: null,
+            lastOpenAt: null,
+            firstClickAt: null,
+            lastClickAt: null,
+            bounces: 0,
+            bounceType: null
+          };
+        }
+        const record = byEmail[em];
+        if (e.event === 'opened') {
+          record.opens++;
+          if (!record.lastOpenAt) record.lastOpenAt = e.date;
+          record.firstOpenAt = e.date;
+        }
+        if (e.event === 'clicks') {
+          record.clicks++;
+          if (!record.lastClickAt) record.lastClickAt = e.date;
+          record.firstClickAt = e.date;
+          if (e.link && !record.links.includes(e.link)) {
+            record.links.push(e.link);
+          }
+        }
+        if (e.event === 'hardBounces' || e.event === 'softBounces') {
+          record.bounces++;
+          record.bounceType = e.event === 'hardBounces' ? 'hard' : 'soft';
+        }
+      }
+
+      return {
+        success: true,
+        summary: {
+          totalDelivered,
+          uniqueOpens,
+          totalOpens,
+          openRate,
+          uniqueClicks,
+          totalClicks,
+          clickRate,
+          totalBounces
+        },
+        byEmail
+      };
+    } catch (err) {
+      console.error('[HarveyService] Eroare la preluarea statisticilor Brevo:', err);
+      return {
+        success: false,
+        message: err.message,
+        summary: {
+          totalDelivered: 0,
+          uniqueOpens: 0,
+          totalOpens: 0,
+          openRate: '0.0',
+          uniqueClicks: 0,
+          totalClicks: 0,
+          clickRate: '0.0',
+          totalBounces: 0
+        },
+        byEmail: {}
+      };
+    }
+  },
+
   generateFallbackPitch,
   generateClaudePitch,
   detectLeadLanguage

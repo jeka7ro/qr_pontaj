@@ -28,6 +28,7 @@ import {
   Upload,
   ShieldCheck,
   Tag,
+  MousePointerClick,
   X
 } from 'lucide-react';
 import HarveySearchModal, { 
@@ -67,6 +68,19 @@ export default function HarveySdrView({ onConvertToTenant }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [stats, setStats] = useState({ totalLeads: 0, pendingReview: 0, sentToday: 0, converted: 0 });
+  const [tracking, setTracking] = useState({
+    summary: {
+      totalDelivered: 0,
+      uniqueOpens: 0,
+      totalOpens: 0,
+      openRate: '0.0',
+      uniqueClicks: 0,
+      totalClicks: 0,
+      clickRate: '0.0',
+      totalBounces: 0
+    },
+    byEmail: {}
+  });
   const [toastMessage, setToastMessage] = useState(null);
 
   // Multi-selectie lead-uri
@@ -110,19 +124,24 @@ export default function HarveySdrView({ onConvertToTenant }) {
     try {
       const baseUrl = getApiUrl();
       const authHeaders = getAuthHeaders();
-      const [leadsRes, statsRes] = await Promise.all([
+      const [leadsRes, statsRes, trackingRes] = await Promise.all([
         fetch(`${baseUrl}/api/admin/harvey/leads`, { headers: authHeaders }),
-        fetch(`${baseUrl}/api/admin/harvey/stats`, { headers: authHeaders })
+        fetch(`${baseUrl}/api/admin/harvey/stats`, { headers: authHeaders }),
+        fetch(`${baseUrl}/api/admin/harvey/tracking`, { headers: authHeaders })
       ]);
 
       const leadsData = await leadsRes.json();
       const statsData = await statsRes.json();
+      const trackingData = await trackingRes.json();
 
       if (leadsData.success) {
         setLeads(leadsData.leads || []);
       }
       if (statsData.success) {
         setStats(statsData.stats);
+      }
+      if (trackingData.success) {
+        setTracking(trackingData);
       }
     } catch (err) {
       setError('Eroare la preluarea datelor Harvey.');
@@ -238,9 +257,27 @@ export default function HarveySdrView({ onConvertToTenant }) {
     };
   };
 
+  // Numărătoare evenimente Brevo (deschise, click-uri, bounces)
+  const trackingCounts = useMemo(() => {
+    let opened = 0;
+    let clicked = 0;
+    let bounced = 0;
+    for (const lead of leads) {
+      const em = lead.email ? lead.email.toLowerCase().trim() : '';
+      const t = tracking.byEmail ? tracking.byEmail[em] : null;
+      if (t?.clicks > 0) clicked++;
+      if (t?.opens > 0) opened++;
+      if (t?.bounces > 0) bounced++;
+    }
+    return { opened, clicked, bounced };
+  }, [leads, tracking]);
+
   // Filtrare lead-uri
   const filteredLeads = useMemo(() => {
     return leads.filter((lead) => {
+      const em = lead.email ? lead.email.toLowerCase().trim() : '';
+      const emailTracking = tracking.byEmail ? tracking.byEmail[em] : null;
+
       const matchesStatus =
         statusFilter === 'all'
           ? true
@@ -248,6 +285,12 @@ export default function HarveySdrView({ onConvertToTenant }) {
           ? lead.status === 'pending_review'
           : statusFilter === 'sent'
           ? lead.status === 'sent'
+          : statusFilter === 'opened'
+          ? (emailTracking?.opens > 0)
+          : statusFilter === 'clicked'
+          ? (emailTracking?.clicks > 0)
+          : statusFilter === 'bounced'
+          ? (emailTracking?.bounces > 0)
           : statusFilter === 'converted'
           ? lead.status === 'converted'
           : true;
@@ -271,7 +314,7 @@ export default function HarveySdrView({ onConvertToTenant }) {
 
       return matchesStatus && matchesCountry && matchesCity && matchesIndustry && matchesSearch;
     });
-  }, [leads, statusFilter, countryFilter, cityFilter, industryFilter, searchQuery]);
+  }, [leads, statusFilter, countryFilter, cityFilter, industryFilter, searchQuery, tracking]);
 
   // Paginare date
   const totalItems = filteredLeads.length;
@@ -479,11 +522,11 @@ export default function HarveySdrView({ onConvertToTenant }) {
         </div>
 
         {/* Metrici compacte interactive (filtrare la 1-click) */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink-0 flex-wrap sm:flex-nowrap">
           <button
             type="button"
-            onClick={() => { setStatusFilter('pending'); setCurrentPage(1); }}
-            className={`px-3.5 py-1.5 rounded-xl border text-center shrink-0 cursor-pointer transition-all ${
+            onClick={() => { setStatusFilter(statusFilter === 'pending' ? 'all' : 'pending'); setCurrentPage(1); }}
+            className={`px-3 py-1.5 rounded-xl border text-center shrink-0 cursor-pointer transition-all ${
               statusFilter === 'pending'
                 ? 'bg-amber-50 border-amber-300 dark:bg-amber-950/40 dark:border-amber-700 shadow-xs'
                 : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 hover:border-amber-300'
@@ -496,8 +539,8 @@ export default function HarveySdrView({ onConvertToTenant }) {
 
           <button
             type="button"
-            onClick={() => { setStatusFilter('sent'); setCurrentPage(1); }}
-            className={`px-3.5 py-1.5 rounded-xl border text-center shrink-0 cursor-pointer transition-all ${
+            onClick={() => { setStatusFilter(statusFilter === 'sent' ? 'all' : 'sent'); setCurrentPage(1); }}
+            className={`px-3 py-1.5 rounded-xl border text-center shrink-0 cursor-pointer transition-all ${
               statusFilter === 'sent'
                 ? 'bg-blue-50 border-blue-300 dark:bg-blue-950/40 dark:border-blue-700 shadow-xs'
                 : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 hover:border-blue-300'
@@ -512,8 +555,40 @@ export default function HarveySdrView({ onConvertToTenant }) {
 
           <button
             type="button"
-            onClick={() => { setStatusFilter('converted'); setCurrentPage(1); }}
-            className={`px-3.5 py-1.5 rounded-xl border text-center shrink-0 cursor-pointer transition-all ${
+            onClick={() => { setStatusFilter(statusFilter === 'opened' ? 'all' : 'opened'); setCurrentPage(1); }}
+            className={`px-3 py-1.5 rounded-xl border text-center shrink-0 cursor-pointer transition-all ${
+              statusFilter === 'opened'
+                ? 'bg-emerald-50 border-emerald-300 dark:bg-emerald-950/40 dark:border-emerald-700 shadow-xs'
+                : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 hover:border-emerald-300'
+            }`}
+            title="Filtrează companiile care au deschis emailul"
+          >
+            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 whitespace-nowrap shrink-0">Deschise</div>
+            <div className="text-sm font-black text-emerald-600 whitespace-nowrap shrink-0">
+              {tracking.summary.uniqueOpens} <span className="text-[10px] font-normal text-slate-400">({tracking.summary.openRate}%)</span>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => { setStatusFilter(statusFilter === 'clicked' ? 'all' : 'clicked'); setCurrentPage(1); }}
+            className={`px-3 py-1.5 rounded-xl border text-center shrink-0 cursor-pointer transition-all ${
+              statusFilter === 'clicked'
+                ? 'bg-indigo-50 border-indigo-300 dark:bg-indigo-950/40 dark:border-indigo-700 shadow-xs'
+                : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 hover:border-indigo-300'
+            }`}
+            title="Filtrează companiile care au accesat linkul din email"
+          >
+            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 whitespace-nowrap shrink-0">Click Link</div>
+            <div className="text-sm font-black text-indigo-600 whitespace-nowrap shrink-0">
+              {tracking.summary.uniqueClicks} <span className="text-[10px] font-normal text-slate-400">({tracking.summary.clickRate}%)</span>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => { setStatusFilter(statusFilter === 'converted' ? 'all' : 'converted'); setCurrentPage(1); }}
+            className={`px-3 py-1.5 rounded-xl border text-center shrink-0 cursor-pointer transition-all ${
               statusFilter === 'converted'
                 ? 'bg-emerald-50 border-emerald-300 dark:bg-emerald-950/40 dark:border-emerald-700 shadow-xs'
                 : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 hover:border-emerald-300'
@@ -776,6 +851,26 @@ export default function HarveySdrView({ onConvertToTenant }) {
               Trimise ({leads.filter((l) => l.status === 'sent').length})
             </button>
             <button
+              onClick={() => { setStatusFilter('opened'); setCurrentPage(1); }}
+              className={`px-3 h-8 rounded-full text-xs font-semibold transition-all whitespace-nowrap shrink-0 cursor-pointer ${
+                statusFilter === 'opened'
+                  ? 'bg-emerald-600 text-white shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
+              }`}
+            >
+              Deschise ({trackingCounts.opened})
+            </button>
+            <button
+              onClick={() => { setStatusFilter('clicked'); setCurrentPage(1); }}
+              className={`px-3 h-8 rounded-full text-xs font-semibold transition-all whitespace-nowrap shrink-0 cursor-pointer ${
+                statusFilter === 'clicked'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
+              }`}
+            >
+              Click Link ({trackingCounts.clicked})
+            </button>
+            <button
               onClick={() => { setStatusFilter('converted'); setCurrentPage(1); }}
               className={`px-3 h-8 rounded-full text-xs font-semibold transition-all whitespace-nowrap shrink-0 cursor-pointer ${
                 statusFilter === 'converted'
@@ -949,31 +1044,101 @@ export default function HarveySdrView({ onConvertToTenant }) {
 
                       {/* Status */}
                       <td className="py-3 px-4 text-center">
-                        {lead.status === 'sent' ? (
-                          <div className="flex flex-col items-center gap-0.5">
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 whitespace-nowrap shrink-0">
-                              Email Trimis
+                        {(() => {
+                          const em = lead.email ? lead.email.toLowerCase().trim() : '';
+                          const emailTracking = tracking.byEmail ? tracking.byEmail[em] : null;
+
+                          if (lead.status === 'converted') {
+                            return (
+                              <div className="flex flex-col items-center gap-0.5">
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 whitespace-nowrap shrink-0">
+                                  <CheckCircle2 size={12} className="shrink-0" />
+                                  <span>Convertit</span>
+                                </span>
+                                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold whitespace-nowrap shrink-0">
+                                  Tenant Activ
+                                </span>
+                              </div>
+                            );
+                          }
+
+                          if (emailTracking?.clicks > 0) {
+                            return (
+                              <div className="flex flex-col items-center gap-0.5">
+                                <span 
+                                  className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 whitespace-nowrap shrink-0 shadow-xs"
+                                  title={`Link-uri accesate:\n${emailTracking.links?.join('\n') || 'Link landing/WhatsApp'}`}
+                                >
+                                  <MousePointerClick size={12} className="shrink-0" />
+                                  <span>Click Link ({emailTracking.clicks})</span>
+                                </span>
+                                {emailTracking.lastClickAt && (
+                                  <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-medium whitespace-nowrap shrink-0" title={new Date(emailTracking.lastClickAt).toLocaleString('ro-RO')}>
+                                    {new Date(emailTracking.lastClickAt).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          }
+
+                          if (emailTracking?.opens > 0) {
+                            return (
+                              <div className="flex flex-col items-center gap-0.5">
+                                <span 
+                                  className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 whitespace-nowrap shrink-0 shadow-xs"
+                                  title={`Emailul a fost deschis de ${emailTracking.opens} ori`}
+                                >
+                                  <Eye size={12} className="shrink-0" />
+                                  <span>Deschis ({emailTracking.opens})</span>
+                                </span>
+                                {emailTracking.lastOpenAt && (
+                                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium whitespace-nowrap shrink-0" title={new Date(emailTracking.lastOpenAt).toLocaleString('ro-RO')}>
+                                    {new Date(emailTracking.lastOpenAt).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          }
+
+                          if (emailTracking?.bounces > 0) {
+                            return (
+                              <div className="flex flex-col items-center gap-0.5">
+                                <span 
+                                  className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300 border border-rose-200 dark:border-rose-800 whitespace-nowrap shrink-0"
+                                  title="Adresa de email este inexistentă sau a respins mesajul (Bounce)"
+                                >
+                                  <AlertCircle size={12} className="shrink-0" />
+                                  <span>Email Bounced</span>
+                                </span>
+                                <span className="text-[10px] text-rose-500 font-medium whitespace-nowrap shrink-0">
+                                  {emailTracking.bounceType === 'hard' ? 'Inexistent' : 'Respins'}
+                                </span>
+                              </div>
+                            );
+                          }
+
+                          if (lead.status === 'sent') {
+                            return (
+                              <div className="flex flex-col items-center gap-0.5">
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 whitespace-nowrap shrink-0">
+                                  <Mail size={12} className="shrink-0" />
+                                  <span>Email Trimis</span>
+                                </span>
+                                {lead.email_sent_at && (
+                                  <span className="text-[10px] text-slate-400 font-medium whitespace-nowrap shrink-0" title={new Date(lead.email_sent_at).toLocaleString('ro-RO')}>
+                                    {new Date(lead.email_sent_at).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          }
+
+                          return (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 whitespace-nowrap shrink-0">
+                              În Așteptare
                             </span>
-                            {lead.email_sent_at && (
-                              <span className="text-[10px] text-slate-400 font-medium whitespace-nowrap shrink-0" title={new Date(lead.email_sent_at).toLocaleString('ro-RO')}>
-                                {new Date(lead.email_sent_at).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                              </span>
-                            )}
-                          </div>
-                        ) : lead.status === 'converted' ? (
-                          <div className="flex flex-col items-center gap-0.5">
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 whitespace-nowrap shrink-0">
-                              Convertit
-                            </span>
-                            <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold whitespace-nowrap shrink-0">
-                              Tenant Activ
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 whitespace-nowrap shrink-0">
-                            În Așteptare
-                          </span>
-                        )}
+                          );
+                        })()}
                       </td>
 
                       {/* Acțiuni */}

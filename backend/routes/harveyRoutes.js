@@ -55,6 +55,17 @@ router.get('/stats', checkAdmin, async (req, res) => {
   }
 });
 
+// GET /api/admin/harvey/tracking — Preluare statistici și evenimente reale de deschidere și click Brevo
+router.get('/tracking', checkAdmin, async (req, res) => {
+  try {
+    const tracking = await harveyService.getEmailTrackingStats();
+    res.json(tracking);
+  } catch (err) {
+    console.error('Eroare tracking Brevo Harvey:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // GET /api/admin/harvey/leads
 router.get('/leads', checkAdmin, async (req, res) => {
   try {
