@@ -93,6 +93,8 @@ export default function LandingRomania() {
   const [cuiLoading, setCuiLoading] = useState(false);
   const [cuiError, setCuiError] = useState(null);
   const [companyVerified, setCompanyVerified] = useState(null);
+  const [isPersonalAccount, setIsPersonalAccount] = useState(false);
+  const [formSubmitError, setFormSubmitError] = useState('');
   const [isSubmittingForm, setIsSubmittingForm] = useState(false);
   const [subSubmitted, setSubSubmitted] = useState(false);
   const [assignedTempPassword, setAssignedTempPassword] = useState(null);
@@ -103,6 +105,10 @@ export default function LandingRomania() {
 
   const openPlanModal = (planId = 'standard', mode = 'demo') => {
     setModalMode(mode);
+    setIsPersonalAccount(false); // OBLIGATORIU: Persoană Juridică (CUI) activat implicit la fiecare deschidere
+    setCuiError(null);
+    setCompanyVerified(null);
+    setFormSubmitError('');
     let planData = {
       id: 'standard',
       name: 'Standard (1 – 50 salariați)',
@@ -311,7 +317,6 @@ export default function LandingRomania() {
 
 
   const cuiDebounceTimer = useRef(null);
-  const [isPersonalAccount, setIsPersonalAccount] = useState(false);
 
   // Căutare CUI ANAF cu Debounce de 350ms
   const handleCuiChange = (e) => {
@@ -346,6 +351,7 @@ export default function LandingRomania() {
   };
 
   const handleAutoCuiSearch = async (cuiDigits) => {
+    if (!cuiDigits || cuiDigits.length < 6) return;
     setCuiLoading(true);
     setCuiError(null);
     try {
@@ -381,6 +387,7 @@ export default function LandingRomania() {
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     setIsSubmittingForm(true);
+    setFormSubmitError('');
 
     try {
       const res = await fetch(apiUrl('/api/auth/demo-request'), {
@@ -409,8 +416,10 @@ export default function LandingRomania() {
           dpaAccepted: acceptDpa
         })
       });
+
+      const data = await res.json().catch(() => ({}));
+
       if (res.ok) {
-        const data = await res.json();
         // Nu suprascriem sesiunea SuperAdmin pe domeniul principal!
         const existingUserStr = localStorage.getItem('user');
         let isExistingSuper = false;
@@ -434,12 +443,16 @@ export default function LandingRomania() {
           cui: subForm.cui,
           company: subForm.companyName || companyVerified?.name
         });
+        setSubSubmitted(true);
+      } else {
+        const errorMsg = data.error || data.message || 'Nu s-a putut activa contul. Verifică datele introduse sau încearcă din nou.';
+        setFormSubmitError(errorMsg);
       }
     } catch (err) {
       console.warn('Eroare apel demo-request API:', err);
+      setFormSubmitError('Eroare de conexiune la server. Te rugăm să verifici conexiunea la internet și să încerci din nou.');
     } finally {
       setIsSubmittingForm(false);
-      setSubSubmitted(true);
     }
   };
 
@@ -1807,6 +1820,14 @@ export default function LandingRomania() {
                       </span>
                     </label>
                   </div>
+
+                  {/* Eroare Salvare Formular */}
+                  {formSubmitError && (
+                    <div className="p-3 bg-rose-50 border border-rose-200 rounded-2xl text-xs text-rose-900 flex items-start gap-2 animate-fade-in shadow-2xs">
+                      <AlertCircle size={15} className="text-rose-600 shrink-0 mt-0.5" />
+                      <span className="leading-snug font-medium">{formSubmitError}</span>
+                    </div>
+                  )}
 
                   <button
                     type="submit"
