@@ -289,15 +289,20 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
         {!isOpen && (
           <button
             onClick={() => setIsOpen(true)}
-            className="flex items-center gap-2.5 px-4 py-2.5 rounded-full backdrop-blur-2xl bg-white/90 dark:bg-slate-900/90 text-slate-800 dark:text-white shadow-xl hover:shadow-2xl border border-slate-200/90 dark:border-white/15 transition-all duration-200 hover:scale-105 active:scale-95 whitespace-nowrap shrink-0 group"
-            title="Deschide Asistentul QR Pontaj"
+            className="flex items-center gap-2.5 px-4 py-2.5 rounded-full bg-slate-900 hover:bg-slate-800 text-white shadow-[0_12px_32px_-4px_rgba(0,0,0,0.45)] hover:shadow-[0_16px_36px_-4px_rgba(0,122,255,0.35)] border border-slate-700/80 hover:border-[#007AFF]/60 ring-1 ring-white/15 transition-all duration-200 hover:scale-105 active:scale-95 whitespace-nowrap shrink-0 group cursor-pointer"
+            title="Deschide Asistentul AI QR Pontaj"
           >
-            <div className="w-7 h-7 rounded-full bg-[#007AFF]/15 text-[#007AFF] dark:bg-[#007AFF]/25 dark:text-blue-300 flex items-center justify-center shrink-0 group-hover:rotate-12 transition-transform">
+            <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-[#007AFF] to-blue-400 text-white flex items-center justify-center shrink-0 shadow-sm group-hover:rotate-12 transition-transform">
               <Sparkles size={15} />
             </div>
-            <span className="font-semibold text-xs sm:text-sm tracking-tight whitespace-nowrap shrink-0">
-              Asistent QR Pontaj
-            </span>
+            <div className="flex items-center gap-1.5 whitespace-nowrap shrink-0">
+              <span className="font-bold text-xs sm:text-sm tracking-tight text-white whitespace-nowrap shrink-0">
+                Asistent AI QR Pontaj
+              </span>
+              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-extrabold bg-[#007AFF] text-white tracking-wider whitespace-nowrap shrink-0 shadow-2xs">
+                AI
+              </span>
+            </div>
           </button>
         )}
       </div>
