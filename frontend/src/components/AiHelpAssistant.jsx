@@ -37,6 +37,11 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
   const [devicePlatform, setDevicePlatform] = useState('ipad'); // 'ipad' | 'android' | 'tv'
   const [copiedLink, setCopiedLink] = useState(false);
 
+  // Logo-ul oficial QR Pontaj sau cel personalizat al companiei
+  const brandLogoUrl = (tenant?.logo_url && !tenant.logo_url.includes('default') && !tenant.logo_url.includes('smartqr') && !tenant.logo_url.includes('1792931780859'))
+    ? tenant.logo_url
+    : '/favicon.png';
+
   // Stare pentru modalul de Onboarding la prima încărcare
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [onboardingStep, setOnboardingStep] = useState(0);
@@ -65,8 +70,7 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
       badgeColor: 'bg-blue-100 text-[#007AFF] dark:bg-blue-950/60 dark:text-blue-400',
       title: 'Bun venit pe QR Pontaj!',
       subtitle: 'Asistentul tău dedicat este gata să te ajute 24/7',
-      icon: Sparkles,
-      iconBg: 'bg-gradient-to-tr from-blue-600 to-indigo-600 text-white',
+      isLogo: true,
       description: 'Platforma QR Pontaj include un asistent inteligent permanent în colțul din dreapta-jos. Te ghidează pas cu pas în configurarea tabletelor, adăugarea locațiilor și gestionarea prezenței.',
       highlights: [
         'Ghid pas cu pas oricând ai nevoie, direct din colțul ecranului',
@@ -442,22 +446,16 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
               style={{ animation: 'attentionWiggle 6.5s ease-in-out infinite' }}
               title="Deschide Asistentul AI QR Pontaj"
             >
-              {/* Logo QR Pontaj — Format mărit, cu respirație luminoasă și laser optic */}
-              <div className="relative w-9 h-9 rounded-full bg-gradient-to-tr from-[#007AFF] via-blue-600 to-indigo-600 text-white flex items-center justify-center shrink-0 shadow-md overflow-hidden group-hover:scale-105 transition-transform">
-                {/* Iluminare ambientală subtilă */}
-                <div className="absolute inset-0 bg-white/20 rounded-full animate-pulse pointer-events-none" />
-                
-                {/* Cod QR interior cu animație subtilă de respirație/puls */}
-                <div 
-                  className="relative z-10 flex items-center justify-center"
+              {/* Logo Oficial QR Pontaj / Companie — Format mărit, cu respirație luminoasă și laser optic */}
+              <div className="relative w-9 h-9 rounded-full overflow-hidden shadow-md shrink-0 flex items-center justify-center bg-white dark:bg-slate-900 border border-slate-700/80 group-hover:scale-105 transition-transform p-0.5">
+                <img 
+                  src={brandLogoUrl} 
+                  alt="Logo QR Pontaj" 
+                  className="w-full h-full object-contain rounded-full"
                   style={{ animation: 'qrBreathe 3.2s ease-in-out infinite' }}
-                >
-                  <QrCode size={19} className="text-white drop-shadow-xs" />
-                </div>
-                
-                {/* Fascicul laser de scanare cu efect optic fluid */}
+                />
                 <div 
-                  className="absolute left-1.5 right-1.5 h-[2px] bg-gradient-to-r from-transparent via-cyan-200 to-transparent rounded-full shadow-[0_0_8px_2px_rgba(56,189,248,0.95)] z-20 pointer-events-none"
+                  className="absolute left-1 right-1 h-[2px] bg-gradient-to-r from-transparent via-cyan-300 to-transparent rounded-full shadow-[0_0_8px_2px_rgba(56,189,248,0.95)] z-20 pointer-events-none"
                   style={{ animation: 'smoothQrLaser 2.2s ease-in-out infinite' }}
                 />
               </div>
@@ -533,10 +531,10 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
               <button
                 type="button"
                 onClick={handleOpenOnboarding}
-                className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold text-slate-600 dark:text-slate-300 hover:text-[#007AFF] dark:hover:text-blue-400 bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-950/50 transition-colors whitespace-nowrap shrink-0 border border-slate-200/80 dark:border-slate-700/60 cursor-pointer"
+                className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold text-slate-700 dark:text-slate-300 hover:text-[#007AFF] dark:hover:text-blue-400 bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-950/50 transition-colors whitespace-nowrap shrink-0 border border-slate-200/80 dark:border-slate-700/60 cursor-pointer"
                 title="Deschide Turul Ghidat al Platformei"
               >
-                <Sparkles size={10} className="text-[#007AFF] shrink-0" />
+                <img src={brandLogoUrl} alt="Logo" className="w-3.5 h-3.5 object-contain rounded-full shrink-0" />
                 <span>Ghid Rapid</span>
               </button>
               <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-500 dark:text-slate-400 whitespace-nowrap shrink-0">
@@ -583,10 +581,14 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
                       className={`flex items-start gap-2.5 ${isUser ? 'justify-end' : 'justify-start'}`}
                     >
                       {!isUser && (
-                        <div className="relative w-7 h-7 rounded-full bg-gradient-to-tr from-[#007AFF] to-blue-500 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-xs overflow-hidden">
-                          <QrCode size={13} className="relative z-10 text-white" />
+                        <div className="relative w-7 h-7 rounded-full overflow-hidden shadow-xs shrink-0 mt-0.5 border border-slate-200/60 dark:border-slate-700 bg-white dark:bg-slate-800 flex items-center justify-center p-0.5">
+                          <img 
+                            src={brandLogoUrl} 
+                            alt="Logo" 
+                            className="w-full h-full object-contain rounded-full" 
+                          />
                           <div 
-                            className="absolute left-1 right-1 h-[1.5px] bg-gradient-to-r from-transparent via-cyan-200 to-transparent rounded-full shadow-[0_0_5px_1px_rgba(56,189,248,0.9)] z-20 pointer-events-none"
+                            className="absolute left-0.5 right-0.5 h-[1.5px] bg-gradient-to-r from-transparent via-cyan-200 to-transparent rounded-full shadow-[0_0_5px_1px_rgba(56,189,248,0.9)] z-20 pointer-events-none"
                             style={{ animation: 'smoothQrLaser 2.2s ease-in-out infinite' }}
                           />
                         </div>
@@ -620,8 +622,8 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
                                     className="w-full flex items-center justify-between p-2 rounded-xl bg-blue-50/80 hover:bg-blue-100/70 dark:bg-blue-950/40 dark:hover:bg-blue-900/50 border border-blue-200/80 hover:border-[#007AFF] dark:border-blue-800/60 transition-all text-left group cursor-pointer shadow-2xs"
                                   >
                                     <div className="flex items-center gap-2.5 min-w-0">
-                                      <div className="w-6 h-6 rounded-lg bg-[#007AFF] text-white flex items-center justify-center shrink-0 shadow-xs">
-                                        <Sparkles size={13} />
+                                      <div className="w-6 h-6 rounded-lg overflow-hidden shrink-0 shadow-xs flex items-center justify-center bg-white dark:bg-slate-800 border border-blue-200/60 p-0.5">
+                                        <img src={brandLogoUrl} alt="Logo" className="w-full h-full object-contain rounded-md" />
                                       </div>
                                       <div className="min-w-0">
                                         <div className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
@@ -1307,8 +1309,12 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
             {/* Header Modal */}
             <div className="px-5 sm:px-6 pt-5 pb-3.5 flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/50 shrink-0">
               <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-950/50 border border-blue-200/50 dark:border-blue-800/50 flex items-center justify-center text-[#007AFF] shadow-xs shrink-0">
-                  <Sparkles size={16} />
+                <div className="w-8 h-8 rounded-full overflow-hidden shadow-xs shrink-0 border border-slate-200/80 dark:border-slate-700 bg-white dark:bg-slate-800 flex items-center justify-center p-0.5">
+                  <img 
+                    src={brandLogoUrl} 
+                    alt={tenant?.name || 'Logo'} 
+                    className="w-full h-full object-contain rounded-full" 
+                  />
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
@@ -1320,7 +1326,7 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
                     </span>
                   </div>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                    QR Pontaj • Ghidul tău pas cu pas
+                    {tenant?.name ? `${tenant.name} • QR Pontaj` : 'QR Pontaj • Ghidul tău pas cu pas'}
                   </p>
                 </div>
               </div>
@@ -1342,11 +1348,26 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
 
               return (
                 <div className="p-5 sm:p-6 overflow-y-auto space-y-4">
-                  {/* Titlu & Iconiță mare cu gradient */}
+                  {/* Titlu & Logo mare cu efecte fluide */}
                   <div className="flex items-start gap-4">
-                    <div className={`w-13 h-13 sm:w-14 sm:h-14 rounded-2xl ${currentSlide.iconBg} flex items-center justify-center shrink-0 shadow-md`}>
-                      <SlideIcon size={26} />
-                    </div>
+                    {currentSlide.isLogo ? (
+                      <div className="relative w-16 h-16 sm:w-18 sm:h-18 rounded-2xl p-1 bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 shadow-md shrink-0 flex items-center justify-center overflow-hidden">
+                        <img 
+                          src={brandLogoUrl} 
+                          alt={tenant?.name || 'QR Pontaj'} 
+                          className="w-full h-full object-contain"
+                          style={{ animation: 'qrBreathe 3.2s ease-in-out infinite' }}
+                        />
+                        <div 
+                          className="absolute left-1.5 right-1.5 h-[2px] bg-gradient-to-r from-transparent via-cyan-300 to-transparent rounded-full shadow-[0_0_8px_2px_rgba(56,189,248,0.95)] z-20 pointer-events-none"
+                          style={{ animation: 'smoothQrLaser 2.2s ease-in-out infinite' }}
+                        />
+                      </div>
+                    ) : (
+                      <div className={`w-13 h-13 sm:w-14 sm:h-14 rounded-2xl ${currentSlide.iconBg} flex items-center justify-center shrink-0 shadow-md`}>
+                        <SlideIcon size={26} />
+                      </div>
+                    )}
                     <div className="min-w-0 flex-1">
                       <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white tracking-tight leading-snug">
                         {currentSlide.title}
