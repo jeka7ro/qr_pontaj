@@ -100,3 +100,43 @@ input[type="color"]::-moz-color-swatch {
 .animate-colon-blink {
   animation: colonBlink 1s infinite;
 }
+
+@keyframes qrBreathe {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 0px rgba(255,255,255,0));
+  }
+  50% {
+    transform: scale(1.05);
+    filter: drop-shadow(0 0 5px rgba(56,189,248,0.5));
+  }
+}
+
+@keyframes smoothQrLaser {
+  0% {
+    top: 8%;
+    opacity: 0.15;
+  }
+  18% {
+    opacity: 1;
+  }
+  50% {
+    top: 85%;
+    opacity: 1;
+  }
+  82% {
+    opacity: 1;
+  }
+  100% {
+    top: 8%;
+    opacity: 0.15;
+  }
+}
+
+.animate-qr-breathe {
+  animation: qrBreathe 3.2s ease-in-out infinite;
+}
+
+.animate-qr-laser {
+  animation: smoothQrLaser 2.2s ease-in-out infinite;
+}

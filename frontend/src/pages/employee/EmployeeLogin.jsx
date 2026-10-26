@@ -154,16 +154,21 @@ export default function EmployeeLogin() {
 
       <div className="w-full max-w-md bg-white/95 dark:bg-slate-900/90 backdrop-blur-2xl rounded-3xl shadow-2xl overflow-hidden border border-white/30 dark:border-slate-800 z-10">
         <div className="p-8 text-center text-white" style={{ backgroundColor: tc }}>
-          <div className="w-[84px] h-[84px] bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4 backdrop-blur-sm overflow-hidden">
+          <div className="relative w-[84px] h-[84px] bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4 backdrop-blur-sm overflow-hidden">
             {tenant?.logo_url ? (
               <img 
                 src={( tenant.logo_url?.startsWith('http') ? tenant.logo_url : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${tenant.logo_url}` )} 
                 alt="Logo" 
-                className="w-full h-full object-contain p-2" 
+                className="w-full h-full object-contain p-2 animate-qr-breathe" 
               />
             ) : (
-              <User size={32} />
+              <div className="animate-qr-breathe">
+                <User size={32} />
+              </div>
             )}
+            <div 
+              className="absolute left-1.5 right-1.5 h-[2px] bg-gradient-to-r from-transparent via-cyan-300 to-transparent rounded-full shadow-[0_0_8px_2px_rgba(56,189,248,0.95)] z-20 pointer-events-none animate-qr-laser"
+            />
           </div>
           <h1 className="text-2xl font-bold mb-1">{tenant?.name || 'Portal Angajați'}</h1>
           <p className="text-white/80 text-sm">Autentificare rapidă & program</p>

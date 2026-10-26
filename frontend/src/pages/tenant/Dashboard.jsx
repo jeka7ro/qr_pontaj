@@ -335,22 +335,30 @@ export default function TenantDashboard() {
               {tenant.logo_url && !tenant.logo_url.includes('default') && !tenant.logo_url.includes('smartqr') && !tenant.logo_url.includes('1792931780859') ? (
                 <div 
                   onClick={toggleSidebarCollapsed}
-                  className="h-10 w-10 shrink-0 bg-white dark:bg-slate-800 rounded-xl flex items-center justify-center p-1 shadow-xs border border-slate-200 dark:border-slate-700 cursor-pointer hover:ring-2 hover:ring-primary-500 transition-all overflow-hidden" 
+                  className="relative h-10 w-10 shrink-0 bg-white dark:bg-slate-800 rounded-xl flex items-center justify-center p-1 shadow-xs border border-slate-200 dark:border-slate-700 cursor-pointer hover:ring-2 hover:ring-primary-500 transition-all overflow-hidden" 
                   title={`${tenant.name} — Apasă pentru a extinde meniul`}
                 >
                   <img 
                     src={tenant.logo_url} 
                     alt={tenant.name} 
-                    className="max-h-full max-w-full object-contain" 
+                    className="max-h-full max-w-full object-contain animate-qr-breathe" 
+                  />
+                  <div 
+                    className="absolute left-1 right-1 h-[2px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent rounded-full shadow-[0_0_8px_2px_rgba(56,189,248,0.95)] z-20 pointer-events-none animate-qr-laser"
                   />
                 </div>
               ) : (
                 <div 
                   onClick={toggleSidebarCollapsed}
-                  className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/25 shrink-0 cursor-pointer hover:ring-2 hover:ring-primary-500 transition-all"
+                  className="relative w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/25 shrink-0 cursor-pointer hover:ring-2 hover:ring-primary-500 transition-all overflow-hidden"
                   title={`${tenant.name} — Apasă pentru a extinde meniul`}
                 >
-                  <QrCode size={22} />
+                  <div className="animate-qr-breathe">
+                    <QrCode size={22} />
+                  </div>
+                  <div 
+                    className="absolute left-1 right-1 h-[2px] bg-gradient-to-r from-transparent via-cyan-300 to-transparent rounded-full shadow-[0_0_8px_2px_rgba(56,189,248,0.95)] z-20 pointer-events-none animate-qr-laser"
+                  />
                 </div>
               )}
               {/* Buton discret plutitor pe marginea sidebar-ului */}
@@ -367,19 +375,27 @@ export default function TenantDashboard() {
             <>
               <div className="flex items-center gap-3 overflow-hidden min-w-0">
                 {tenant.logo_url && !tenant.logo_url.includes('default') && !tenant.logo_url.includes('smartqr') && !tenant.logo_url.includes('1792931780859') ? (
-                  <div className="h-10 w-10 shrink-0 bg-white dark:bg-slate-800 rounded-xl flex items-center justify-center p-1 shadow-xs border border-slate-200 dark:border-slate-700 overflow-hidden" title={tenant.name}>
+                  <div className="relative h-10 w-10 shrink-0 bg-white dark:bg-slate-800 rounded-xl flex items-center justify-center p-1 shadow-xs border border-slate-200 dark:border-slate-700 overflow-hidden" title={tenant.name}>
                     <img 
                       src={tenant.logo_url} 
                       alt={tenant.name} 
-                      className="max-h-full max-w-full object-contain" 
+                      className="max-h-full max-w-full object-contain animate-qr-breathe" 
+                    />
+                    <div 
+                      className="absolute left-1 right-1 h-[2px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent rounded-full shadow-[0_0_8px_2px_rgba(56,189,248,0.95)] z-20 pointer-events-none animate-qr-laser"
                     />
                   </div>
                 ) : (
                   <div 
-                    className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/25 shrink-0"
+                    className="relative w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/25 shrink-0 overflow-hidden"
                     title={tenant.name}
                   >
-                    <QrCode size={22} />
+                    <div className="animate-qr-breathe">
+                      <QrCode size={22} />
+                    </div>
+                    <div 
+                      className="absolute left-1 right-1 h-[2px] bg-gradient-to-r from-transparent via-cyan-300 to-transparent rounded-full shadow-[0_0_8px_2px_rgba(56,189,248,0.95)] z-20 pointer-events-none animate-qr-laser"
+                    />
                   </div>
                 )}
                 <div className="flex flex-col min-w-0 overflow-hidden">
