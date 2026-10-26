@@ -19,6 +19,7 @@ import {
   AlertCircle,
   MapPin,
   Smartphone,
+  TabletSmartphone,
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
@@ -628,15 +629,21 @@ export default function TenantLogsModule({ tenant, themeColor = '#2563EB' }) {
 
                           {/* Locație / Kiosk */}
                           <td className="py-3 px-4 whitespace-nowrap text-slate-600 dark:text-slate-300">
-                            <div className="flex items-center gap-1 font-semibold">
-                              <MapPin size={12} className="text-slate-400" />
-                              <span>{log.location_name || L.defaultLocation}</span>
+                            <div className="flex items-center gap-1.5 font-semibold">
+                              <MapPin size={12} className="text-slate-400 shrink-0" />
+                              <span>{(log.location_name && log.location_name !== '1') ? log.location_name : (L.defaultLocation || 'Sediu Principal')}</span>
                             </div>
-                            {log.kiosk_id && (
-                              <div className="text-[10px] text-slate-400">
-                                Kiosk #{log.kiosk_id}
+                            {log.kiosk_name && !/^\d+$/.test(log.kiosk_name.trim()) ? (
+                              <div className="text-[10px] text-slate-400 font-medium flex items-center gap-1 mt-0.5">
+                                <TabletSmartphone size={10} className="text-slate-400 shrink-0" />
+                                <span>{log.kiosk_name}</span>
                               </div>
-                            )}
+                            ) : (log.kiosk_id ? (
+                              <div className="text-[10px] text-slate-400 font-medium flex items-center gap-1 mt-0.5">
+                                <TabletSmartphone size={10} className="text-slate-400 shrink-0" />
+                                <span>{L.kioskTablet || 'Tabletă Kiosk'}</span>
+                              </div>
+                            ) : null)}
                           </td>
 
                           {/* Detalii / Motiv */}

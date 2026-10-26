@@ -72,12 +72,26 @@ const AdminRouter = () => {
   }
   const isSuper = user && (user.role === 'SUPERADMIN' || user.role === 'Super Admin');
 
-  // Pe subdomenii (unda.qr.pontaj.app, sushihan.qr.pontaj.app etc.) SAU dacă utilizatorul logat este Tenant Admin, afișăm panoul tenantului
-  if (isSubdomain || (user && !isSuper)) {
+  // Pe subdomenii (unda.qr.pontaj.app, sushihan.qr.pontaj.app etc.) afișăm EXCLUSIV panoul tenantului
+  if (isSubdomain) {
     return <TenantDashboard />;
   }
   
-  // Doar SuperAdmin vede panoul centralizat de administrare a platformei
+  // Pe domeniul general (qr.pontaj.app, pontaj.app):
+  // NICIUN TENANT nu rulează pe domeniul general!
+  // Dacă utilizatorul logat în browser este un Tenant Admin, îl redirecționăm automat pe subdomeniul lui dedicat
+  if (user && !isSuper) {
+    const targetSub = user.tenant_subdomain || user.subdomain;
+    if (targetSub) {
+      window.location.href = `https://${targetSub}.qr.pontaj.app${window.location.pathname}`;
+      return null;
+    }
+    // Dacă nu are subdomeniu sau e o sesiune reziduală, curățăm localStorage pentru a elibera domeniul general
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+  }
+
+  // Doar SuperAdmin vede panoul centralizat de administrare a platformei pe domeniul general
   return <AdminDashboard />;
 };
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
-import { Loader2, AlertCircle, Maximize, Smartphone, WifiOff, ScanLine, CheckCircle2, User, Lock, Delete, ShieldCheck, RefreshCw, X, Sparkles } from 'lucide-react';
+import { Loader2, AlertCircle, Maximize, Smartphone, WifiOff, ScanLine, CheckCircle2, User, Lock, Delete, ShieldCheck, RefreshCw, X, Sparkles, XCircle } from 'lucide-react';
 import { updatePageFavicon } from '../../utils/favicon';
 
 export default function KioskDisplay() {
@@ -63,9 +63,7 @@ export default function KioskDisplay() {
         if (!isMounted) return;
         setTenant(data);
         setError(null);
-        if (data.favicon_url || data.logo_url) {
-          updatePageFavicon(data.favicon_url || data.logo_url, `${data.name || 'Kiosk'} - Pontaj`);
-        }
+        updatePageFavicon(data.favicon_url || '/favicon.png', `${data.name || 'Kiosk'} - Pontaj`);
         localStorage.setItem(`kiosk_tenant_${tenantId}`, JSON.stringify(data));
       } catch (err) {
         if (!isMounted) return;
@@ -130,9 +128,14 @@ export default function KioskDisplay() {
       if (window.location.hostname.includes('localhost') && resolvedIp) {
         baseUrl = `${window.location.protocol}//${resolvedIp}:${window.location.port || 5188}`;
       } else if (!window.location.hostname.includes('localhost')) {
-        // În producție, folosim garantat domeniul oficial railway.app pentru scanare QR
-        // pentru ca nicio rețea cu filtru / firewall (Fortinet etc.) să nu blocheze telefoanele angajaților
-        baseUrl = 'https://qr-pontaj.up.railway.app';
+        // În producție, folosim subdomeniul dedicat al tenantului sau domeniul oficial qr.pontaj.app
+        if (tenant?.subdomain) {
+          baseUrl = `https://${tenant.subdomain}.qr.pontaj.app`;
+        } else if (window.location.hostname.endsWith('pontaj.app')) {
+          baseUrl = window.location.origin;
+        } else {
+          baseUrl = 'https://qr.pontaj.app';
+        }
       }
       
       const syncedNow = Date.now() + (serverTimeOffsetRef.current || 0);

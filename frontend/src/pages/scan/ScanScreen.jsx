@@ -98,6 +98,26 @@ export default function ScanScreen() {
             if (isMounted) {
               setTenant(data);
               setTenantId(resolvedTenantId);
+              
+              // Verificare dacă credențialele salvate aparțin acestui tenant sau altuia
+              try {
+                const tenantSpecific = localStorage.getItem(`emp_saved_credentials_${resolvedTenantId}`);
+                if (tenantSpecific) {
+                  const p = JSON.parse(tenantSpecific);
+                  if (p.code) {
+                    setEmployeeCode(p.code);
+                    setPinCode(p.pin || '');
+                    setRememberMe(true);
+                  }
+                } else if (employeeCode) {
+                  // Dacă codul existent provine din alt tenant (ex: ROL de la Roll Master când tenantul e Trade Invest), îl resetăm
+                  const expectedPrefix = (data.name || '').substring(0, 3).toUpperCase();
+                  if (expectedPrefix && !employeeCode.toUpperCase().startsWith(expectedPrefix)) {
+                    setEmployeeCode('');
+                    setPinCode('');
+                  }
+                }
+              } catch (e) {}
             }
           }
         } catch (err) {
@@ -155,12 +175,20 @@ export default function ScanScreen() {
     }
 
     if (rememberMe) {
+      if (tenantId) {
+        try {
+          localStorage.setItem(`emp_saved_credentials_${tenantId}`, JSON.stringify({ code: employeeCode, pin: pinCode }));
+        } catch (e) {}
+      }
       localStorage.setItem('saved_employee_code', employeeCode);
       localStorage.setItem('saved_employee_pin', pinCode);
       try {
         localStorage.setItem('emp_saved_credentials', JSON.stringify({ code: employeeCode, pin: pinCode }));
       } catch (e) {}
     } else {
+      if (tenantId) {
+        localStorage.removeItem(`emp_saved_credentials_${tenantId}`);
+      }
       localStorage.removeItem('saved_employee_code');
       localStorage.removeItem('saved_employee_pin');
       localStorage.removeItem('emp_saved_credentials');

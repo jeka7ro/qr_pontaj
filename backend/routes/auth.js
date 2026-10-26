@@ -459,10 +459,12 @@ router.post('/demo-request', async (req, res) => {
       }
     } else {
       // 2. Generăm subdomeniu unic
-      let baseSub = finalCompanyName
+      let cleanedName = finalCompanyName
         .toLowerCase()
         .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-        .replace(/[^a-z0-9]/g, '');
+        .replace(/\b(s\.?r\.?l\.?|s\.?a\.?|pfa|i\.?i\.?|srl-d)\b/gi, '')
+        .trim();
+      let baseSub = cleanedName.replace(/[^a-z0-9]/g, '');
       if (!baseSub || baseSub.length < 3) {
         baseSub = 'client' + Math.floor(100 + Math.random() * 900);
       }
@@ -481,17 +483,17 @@ router.post('/demo-request', async (req, res) => {
       const demoExpiresAt = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000);
       const defaultModules = {
         billing: true,
-        leaves: true,
         export_saga: true,
+        leaves: false,
+        shifts: false,
         geofence: false,
         offline: false,
-        revisal: true,
-        erp: true,
-        shifts: true,
+        revisal: false,
+        erp: false,
         face_recognition: false,
         whatsapp: false,
         assets: false,
-        show_upsells: true
+        show_upsells: false
       };
 
       const tenantInsertRes = await client.query(`
@@ -536,8 +538,8 @@ router.post('/demo-request', async (req, res) => {
         '#2563EB',
         true,
         true,
-        '/logo_getapp_smartqr.jpg',
-        '/logo_getapp_smartqr.jpg',
+        '/logo_default_tenant.png',
+        '/favicon.png',
         clientIp,
         contactName || cleanEmail,
         termsVersion
@@ -759,7 +761,7 @@ router.post('/google', async (req, res) => {
           $1, $2, $3, $4,
           'DEMO', 10, 5.00, true,
           NOW() + INTERVAL '15 days', $5, 'RO', 'Europe/Bucharest', 'RON', '#2563EB',
-          true, true, '/logo_getapp_smartqr.jpg', '/logo_getapp_smartqr.jpg', NOW()
+          true, true, '/logo_default_tenant.png', '/favicon.png', NOW()
         )
         RETURNING id
       `, [companyName, finalSub, name || cleanEmail.split('@')[0], cleanEmail, defaultModules]);

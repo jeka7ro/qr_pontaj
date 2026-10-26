@@ -563,8 +563,8 @@ router.post('/', async (req, res) => {
     `;
     const tenantResult = await client.query(tenantQuery, [
       finalLocationName,
-      logo_url || null,
-      sanitizeFaviconUrl(favicon_url),
+      logo_url || '/logo_default_tenant.png',
+      sanitizeFaviconUrl(favicon_url) || '/favicon.png',
       culoare_tema || '#2563EB',
       subdomain,
       modules || {},

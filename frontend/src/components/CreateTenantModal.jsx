@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Upload, Copy, ExternalLink, Image as ImageIcon, Globe, Smartphone, Coffee, Eye, EyeOff, CheckCircle2, RefreshCw, AlertCircle, Building } from 'lucide-react';
+import { X, Upload, Copy, ExternalLink, Image as ImageIcon, Globe, Smartphone, Coffee, Eye, EyeOff, CheckCircle2, RefreshCw, AlertCircle, Building, Loader2 } from 'lucide-react';
 import { resolveFaviconUrl } from '../utils/favicon';
 
 export default function CreateTenantModal({ onClose, onTenantCreated, editTenant = null, initialLead = null }) {

@@ -22,10 +22,16 @@ async function createCheckoutSession({
   cancelUrl
 }) {
   const parsedSeats = Math.max(1, parseInt(seats, 10) || 1);
-  const priceId = process.env.STRIPE_PRICE_ID_EUR;
+  const isBelgium = (countryCode || '').toUpperCase() === 'BE';
 
-  if (!priceId) {
-    throw new Error('STRIPE_PRICE_ID_EUR nu este configurat');
+  let effectiveRate = isBelgium ? 9.90 : 5.00;
+  if (tenantId) {
+    try {
+      const tRes = await db.query('SELECT price_per_employee FROM qrp_tenants WHERE id = $1', [tenantId]);
+      if (tRes.rows[0]?.price_per_employee) {
+        effectiveRate = parseFloat(tRes.rows[0].price_per_employee);
+      }
+    } catch(e) {}
   }
 
   const cleanSubdomain = (subdomain || companyName || 'client')
@@ -37,7 +43,15 @@ async function createCheckoutSession({
     mode: 'subscription',
     line_items: [
       {
-        price: priceId,
+        price_data: {
+          currency: 'eur',
+          unit_amount: Math.round(effectiveRate * 100),
+          recurring: { interval: 'month' },
+          product_data: {
+            name: `Abonament QR Pontaj (${companyName})`,
+            description: `${effectiveRate.toFixed(2)} € / angajat / lună • ${parsedSeats} angajați`
+          }
+        },
         quantity: parsedSeats
       }
     ],
@@ -181,7 +195,7 @@ async function handleWebhookEvent(event) {
             subscription_seats = $3,
             subscription_status = 'ACTIVE',
             billing_per_employee = true,
-            price_per_employee = 9.90,
+            price_per_employee = COALESCE(price_per_employee, 5.00),
             currency = 'EUR',
             vat_number = COALESCE(NULLIF($5, ''), vat_number),
             vat_status = $6,
@@ -242,7 +256,7 @@ async function handleWebhookEvent(event) {
           true, // portal angajati activat implicit
           true, // pauze activate conform legii belgiene
           true, // tarifare per angajat
-          9.90,
+          countryCode === 'BE' ? 9.90 : 5.00,
           customerId,
           subscriptionId,
           seats,

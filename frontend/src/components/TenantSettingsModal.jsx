@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { X, Settings, Coffee, Smartphone, Check, Loader2, AlertCircle, Image, Upload, Trash2, RotateCcw, Building2 } from 'lucide-react';
+import { X, Settings, Coffee, Smartphone, Check, Loader2, AlertCircle, Image, Upload, Trash2, RotateCcw, Building2, Globe, ExternalLink, Copy, CheckCheck } from 'lucide-react';
 import { useTranslation } from '../utils/i18n.jsx';
 
-const APP_DEFAULT_LOGO = '/logo_getapp_smartqr.jpg';
+const APP_DEFAULT_LOGO = '/logo_default_tenant.png';
 
 export default function TenantSettingsModal({ isOpen, onClose, tenant, onUpdateTenant }) {
   const { t } = useTranslation();
@@ -16,6 +16,7 @@ export default function TenantSettingsModal({ isOpen, onClose, tenant, onUpdateT
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
 
   useEffect(() => {
     if (tenant) {
@@ -30,6 +31,14 @@ export default function TenantSettingsModal({ isOpen, onClose, tenant, onUpdateT
   }, [tenant, isOpen]);
 
   if (!isOpen) return null;
+
+  const handleCopyLink = () => {
+    if (!tenant?.subdomain) return;
+    const url = `https://${tenant.subdomain}.qr.pontaj.app`;
+    navigator.clipboard.writeText(url);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2000);
+  };
 
   const handleLogoUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -164,6 +173,49 @@ export default function TenantSettingsModal({ isOpen, onClose, tenant, onUpdateT
             <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/50 rounded-2xl flex items-center gap-3 text-emerald-700 dark:text-emerald-400 text-xs font-semibold">
               <Check size={18} className="shrink-0" />
               <span>{t('settingsSavedSuccess')}</span>
+            </div>
+          )}
+
+          {/* Adresă Dedicată Subdomeniu */}
+          {tenant?.subdomain && (
+            <div className="p-4 rounded-2xl border border-blue-200 dark:border-blue-900/60 bg-blue-50/50 dark:bg-blue-950/20 space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-blue-100 dark:bg-blue-900/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                    <Globe size={18} />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">Adresă Dedicată Portal & Kiosk</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Domeniul unic al companiei tale pentru pontaj</p>
+                  </div>
+                </div>
+                <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 whitespace-nowrap shrink-0">
+                  ACTIV
+                </span>
+              </div>
+              <div className="flex items-center gap-2 p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                <span className="font-semibold text-xs text-blue-600 dark:text-blue-400 flex-1 truncate select-all px-2">
+                  https://{tenant.subdomain}.qr.pontaj.app
+                </span>
+                <button
+                  type="button"
+                  onClick={handleCopyLink}
+                  className="px-3 h-8 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer"
+                  title="Copiază adresa în clipboard"
+                >
+                  {copiedLink ? <CheckCheck size={13} className="text-emerald-600" /> : <Copy size={13} />}
+                  <span>{copiedLink ? 'Copiat!' : 'Copiază'}</span>
+                </button>
+                <a
+                  href={`https://${tenant.subdomain}.qr.pontaj.app`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 h-8 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer"
+                >
+                  <ExternalLink size={12} />
+                  <span>Deschide</span>
+                </a>
+              </div>
             </div>
           )}
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { CreditCard, Download, CheckCircle, Clock, Search, ChevronLeft, ChevronRight, AlertCircle, ExternalLink, PlusCircle, ShieldCheck, ArrowRight, X } from 'lucide-react';
 import SelfServiceSubscribeModal from '../../../components/SelfServiceSubscribeModal';
 import UpgradeSubscriptionModal from '../../../components/UpgradeSubscriptionModal';
+import { getApiUrl, getAuthHeaders } from '../../../utils/apiUrl';
 
 export default function BillingModule({ tenant, themeColor }) {
   const [invoices, setInvoices] = useState([]);
@@ -23,9 +24,20 @@ export default function BillingModule({ tenant, themeColor }) {
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
+  const getBaseUrl = () => {
+    return getApiUrl();
+  };
+
+  const getHeaders = () => {
+    return getAuthHeaders();
+  };
+
   const fetchStripeStatus = async () => {
     try {
-      const res = await fetch(`/api/stripe/subscription/${tenant.id}`);
+      const baseUrl = getBaseUrl();
+      const res = await fetch(`${baseUrl}/api/stripe/subscription/${tenant.id}`, {
+        headers: getHeaders()
+      });
       if (res.ok) {
         const data = await res.json();
         setStripeSub(data);
@@ -37,17 +49,46 @@ export default function BillingModule({ tenant, themeColor }) {
 
   const fetchData = async () => {
     setLoading(true);
+    setErrorMsg(null);
     try {
+      const baseUrl = getBaseUrl();
       const [planRes, invRes] = await Promise.all([
-        fetch(`/api/tenants/${tenant.id}/billing/plan`),
-        fetch(`/api/tenants/${tenant.id}/billing/invoices`)
+        fetch(`${baseUrl}/api/tenants/${tenant.id}/billing/plan`, { headers: getHeaders() }),
+        fetch(`${baseUrl}/api/tenants/${tenant.id}/billing/invoices`, { headers: getHeaders() })
       ]);
-      if (planRes.ok) setPlan(await planRes.json());
+      if (planRes.ok) {
+        setPlan(await planRes.json());
+      } else {
+        // Fallback pe datele tenant-ului din sesiune
+        setPlan({
+          plan_name: tenant?.subscription_status === 'DEMO' ? 'Perioadă de Testare Gratuită (15 Zile)' : 'Tarifare per Angajat',
+          is_demo: tenant?.subscription_status === 'DEMO',
+          demo_expires_at: tenant?.demo_expires_at,
+          price_per_employee: parseFloat(tenant?.price_per_employee) || 5.00,
+          billing_type: 'per_employee',
+          active_employees: 1,
+          full_rate_count: 1,
+          half_rate_count: 0,
+          estimated_eur: 0.00,
+          renewal_date: tenant?.demo_expires_at || new Date().toISOString()
+        });
+      }
       if (invRes.ok) setInvoices(await invRes.json());
       await fetchStripeStatus();
     } catch (err) {
-      console.error(err);
-      setErrorMsg('A apărut o eroare la încărcarea datelor.');
+      console.warn('Eroare fetch date facturare, se folosește profilul tenant-ului:', err.message);
+      setPlan({
+        plan_name: tenant?.subscription_status === 'DEMO' ? 'Perioadă de Testare Gratuită (15 Zile)' : 'Tarifare per Angajat',
+        is_demo: tenant?.subscription_status === 'DEMO',
+        demo_expires_at: tenant?.demo_expires_at,
+        price_per_employee: parseFloat(tenant?.price_per_employee) || 5.00,
+        billing_type: 'per_employee',
+        active_employees: 1,
+        full_rate_count: 1,
+        half_rate_count: 0,
+        estimated_eur: 0.00,
+        renewal_date: tenant?.demo_expires_at || new Date().toISOString()
+      });
     } finally {
       setLoading(false);
     }
@@ -60,9 +101,10 @@ export default function BillingModule({ tenant, themeColor }) {
   const handleOpenStripePortal = async () => {
     try {
       setOpeningPortal(true);
-      const res = await fetch('/api/stripe/create-portal-session', {
+      const baseUrl = getBaseUrl();
+      const res = await fetch(`${baseUrl}/api/stripe/create-portal-session`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getHeaders(),
         body: JSON.stringify({
           tenantId: tenant.id,
           returnUrl: window.location.href
@@ -89,10 +131,11 @@ export default function BillingModule({ tenant, themeColor }) {
       setUpdatingSeats(true);
       const currentSeats = stripeSub.subscription_seats || 10;
       const targetSeats = currentSeats + parseInt(seatsToAdd, 10);
+      const baseUrl = getBaseUrl();
 
-      const res = await fetch('/api/stripe/update-seats', {
+      const res = await fetch(`${baseUrl}/api/stripe/update-seats`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getHeaders(),
         body: JSON.stringify({
           tenantId: tenant.id,
           subscriptionId: stripeSub.stripe_subscription_id,
@@ -115,6 +158,7 @@ export default function BillingModule({ tenant, themeColor }) {
       setUpdatingSeats(false);
     }
   };
+
 
   // Filtering & Pagination Logic
   const filteredInvoices = invoices.filter(inv => {
@@ -171,19 +215,61 @@ export default function BillingModule({ tenant, themeColor }) {
               <div className="animate-pulse h-32 bg-slate-100 dark:bg-slate-800 rounded-2xl"></div>
             ) : plan ? (
               <>
-                <div className="flex items-center justify-between mb-1">
-                  <div className="text-xl font-bold text-slate-900 dark:text-white">{plan.plan_name}</div>
-                  {plan.billing_type === 'per_employee' && (
-                    <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                      Per Angajat
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <div className="text-lg font-bold text-slate-900 dark:text-white leading-tight">
+                    {plan.is_demo ? 'Perioadă Testare Gratuită' : plan.plan_name}
+                  </div>
+                  {plan.is_demo ? (
+                    <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 whitespace-nowrap shrink-0">
+                      TRIAL 15 ZILE
                     </span>
+                  ) : (
+                    plan.billing_type === 'per_employee' && (
+                      <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap shrink-0">
+                        Per Angajat
+                      </span>
+                    )
                   )}
                 </div>
 
-                {plan.billing_type === 'per_employee' ? (
+                {plan.is_demo ? (
+                  <>
+                    <div className="flex items-baseline gap-1.5 mb-4">
+                      <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">0.00 €</span>
+                      <span className="text-xs font-medium text-slate-500 dark:text-slate-400">(Gratuit pe durata testării)</span>
+                    </div>
+
+                    <div className="space-y-3 mb-6 p-4 rounded-2xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/40 text-xs">
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-600 dark:text-slate-400 font-medium">Status cont:</span>
+                        <span className="font-bold text-emerald-700 dark:text-emerald-300">Demo Activ (15 zile)</span>
+                      </div>
+                      <div className="flex justify-between items-center text-slate-600 dark:text-slate-400">
+                        <span>Angajați activi:</span>
+                        <span className="font-bold text-slate-900 dark:text-white">{plan.active_employees || 1}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-slate-600 dark:text-slate-400">
+                        <span>Tarif convenit post-demo:</span>
+                        <span className="font-bold text-slate-900 dark:text-white">
+                          {(plan.price_per_employee || 5.00).toFixed(2)} € / angajat / lună
+                        </span>
+                      </div>
+                      <div className="pt-2 border-t border-emerald-200/60 dark:border-emerald-800/40 flex justify-between items-center">
+                        <span className="font-bold text-slate-700 dark:text-slate-300">Valabil gratuit până la:</span>
+                        <span className="font-bold text-slate-900 dark:text-white">
+                          {plan.demo_expires_at ? new Date(plan.demo_expires_at).toLocaleDateString('ro-RO') : '09.11.2026'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 mb-2 leading-relaxed">
+                      În perioada de testare ai acces gratuit la toate funcționalitățile de pontaj, fără costuri ascunse și fără obligații de plată.
+                    </div>
+                  </>
+                ) : plan.billing_type === 'per_employee' ? (
                   <>
                     <div className="flex items-baseline gap-1 mb-4">
-                      <span className="text-2xl font-bold text-slate-900 dark:text-white">{plan.price_per_employee.toFixed(2)} €</span>
+                      <span className="text-2xl font-bold text-slate-900 dark:text-white">{(plan.price_per_employee || 5.00).toFixed(2)} €</span>
                       <span className="text-xs font-medium text-slate-500 dark:text-slate-400">/ angajat / lună</span>
                     </div>
 
@@ -205,7 +291,7 @@ export default function BillingModule({ tenant, themeColor }) {
                       <div className="pt-2 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center">
                         <span className="font-bold text-slate-700 dark:text-slate-300">Cost estimat:</span>
                         <div className="text-right">
-                          <div className="font-bold text-slate-900 dark:text-white text-sm">{plan.estimated_eur.toFixed(2)} €</div>
+                          <div className="font-bold text-slate-900 dark:text-white text-sm">{(plan.estimated_eur || 0).toFixed(2)} €</div>
                           {plan.is_romania ? (
                             <div className="text-[11px] text-slate-500 dark:text-slate-400">~{plan.estimated_ron ? plan.estimated_ron.toFixed(2) : '-'} RON + TVA (21%)</div>
                           ) : (
@@ -241,9 +327,7 @@ export default function BillingModule({ tenant, themeColor }) {
                   </>
                 )}
               </>
-            ) : (
-              <p className="text-sm text-slate-500">Plan nedisponibil.</p>
-            )}
+            ) : null}
 
             {/* Secțiune Stripe Subscription & Portal */}
             <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700 space-y-3">
@@ -294,18 +378,28 @@ export default function BillingModule({ tenant, themeColor }) {
                     </button>
                   </div>
                 </>
+              ) : plan?.is_demo || tenant?.subscription_status === 'DEMO' ? (
+                <div className="p-3.5 bg-blue-50/80 dark:bg-blue-950/40 rounded-xl border border-blue-100 dark:border-blue-900/40 text-xs space-y-1.5">
+                  <div className="font-bold text-blue-900 dark:text-blue-200 flex items-center gap-1.5">
+                    <ShieldCheck size={14} className="text-blue-600 shrink-0" />
+                    <span>Perioadă de testare activă</span>
+                  </div>
+                  <p className="text-slate-600 dark:text-slate-300 text-[11px] leading-relaxed">
+                    Testare gratuită până la {plan?.demo_expires_at ? new Date(plan.demo_expires_at).toLocaleDateString('ro-RO') : '09.11.2026'}. Tariful agreat după expirarea demo-ului este de {(plan?.price_per_employee || 5.00).toFixed(2)} € / angajat / lună.
+                  </p>
+                </div>
               ) : (
                 <div className="space-y-2">
                   <div className="text-xs text-slate-500 dark:text-slate-400">
-                    Activează plata recurentă cu cardul prin Stripe (€9.90 / angajat).
+                    Tarif standard: {(plan?.price_per_employee || 5.00).toFixed(2)} € / angajat / lună.
                   </div>
                   <button
                     type="button"
                     onClick={() => setShowSubscribeModal(true)}
-                    className="w-full h-10 rounded-full bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+                    className="w-full h-10 rounded-full bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap shrink-0"
                   >
                     <CreditCard size={16} />
-                    <span>Activează Abonament Stripe</span>
+                    <span>Configurează Plată Card</span>
                   </button>
                 </div>
               )}
@@ -441,6 +535,7 @@ export default function BillingModule({ tenant, themeColor }) {
         isOpen={showSubscribeModal}
         onClose={() => setShowSubscribeModal(false)}
         initialTenant={tenant}
+        lang={tenant?.country_code === 'RO' ? 'ro' : (tenant?.country_code === 'NL' ? 'nl' : 'ro')}
       />
 
       {/* Modal Marire Locuri Prorata Stripe */}

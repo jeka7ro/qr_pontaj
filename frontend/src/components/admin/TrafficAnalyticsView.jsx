@@ -17,7 +17,8 @@ import {
   Sparkles,
   ArrowUpRight,
   Clock,
-  Layers
+  Layers,
+  ShieldCheck
 } from 'lucide-react';
 import { apiUrl } from '../../utils/apiUrl';
 

@@ -29,8 +29,9 @@ import {
   RefreshCw,
   AlertCircle,
   Megaphone,
-  FileCheck,
-  TrendingUp
+  TrendingUp,
+  ShieldCheck,
+  FileCheck
 } from 'lucide-react';
 import DataTable from '../../components/DataTable';
 import ProfileModal from '../../components/ProfileModal';
@@ -880,8 +881,8 @@ function TenantsList({ defaultTab = 'tenants' }) {
                   alt={row.nume} 
                   className="w-full h-full object-contain p-0.5" 
                   onError={(e) => {
-                    if (!e.currentTarget.src.includes('/logo_getapp_smartqr.jpg')) {
-                      e.currentTarget.src = '/logo_getapp_smartqr.jpg';
+                    if (!e.currentTarget.src.includes('/logo_default_tenant.png')) {
+                      e.currentTarget.src = '/logo_default_tenant.png';
                     }
                   }}
                 />
@@ -889,11 +890,11 @@ function TenantsList({ defaultTab = 'tenants' }) {
             ) : (
               <div 
                 className="w-7 h-7 rounded-full border border-slate-200 dark:border-slate-700 bg-white shadow-xs overflow-hidden flex items-center justify-center shrink-0"
-                title="Logo Implicit (GetApp Smart QR)"
+                title="Logo Implicit (QR Pontaj)"
               >
                 <img 
-                  src="/logo_getapp_smartqr.jpg" 
-                  alt="GetApp Smart QR" 
+                  src="/logo_default_tenant.png" 
+                  alt="QR Pontaj" 
                   className="w-full h-full object-contain p-0.5" 
                 />
               </div>
@@ -960,6 +961,13 @@ function TenantsList({ defaultTab = 'tenants' }) {
             title="Vezi Toate Detaliile Companiei"
           >
             <Eye size={13} strokeWidth={2.2} />
+          </button>
+          <button 
+            className="w-7 h-7 flex items-center justify-center rounded-full border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 text-emerald-600 dark:text-emerald-400 transition-colors cursor-pointer shrink-0"
+            onClick={() => setSelectedTenantForAdmins(row)}
+            title="Admini & Parole (Useri)"
+          >
+            <Users size={13} strokeWidth={2.2} />
           </button>
           <button 
             className="w-7 h-7 flex items-center justify-center rounded-full border border-slate-200 dark:border-slate-700 hover:bg-primary-50 hover:text-primary-600 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer shrink-0"

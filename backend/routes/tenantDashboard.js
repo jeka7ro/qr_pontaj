@@ -461,24 +461,30 @@ router.get('/logs', async (req, res) => {
 
     const logsRes = await pool.query(
       `SELECT 
-        id, 
-        tenant_id, 
-        kiosk_id, 
-        location_id, 
-        location_name, 
-        employee_id, 
-        employee_code, 
-        employee_name, 
-        action_type, 
-        status, 
-        failure_reason, 
-        ip_address, 
-        user_agent, 
-        metadata, 
-        created_at
-      FROM qrp_scan_logs
+        l.id, 
+        l.tenant_id, 
+        l.kiosk_id, 
+        (SELECT k.name FROM qrp_kiosks k WHERE k.id = l.kiosk_id LIMIT 1) as kiosk_name,
+        l.location_id, 
+        COALESCE(
+          NULLIF(l.location_name, '1'), 
+          (SELECT loc.name FROM qrp_locations loc WHERE loc.id = l.location_id AND loc.name != '1' LIMIT 1),
+          (SELECT loc.name FROM qrp_kiosks k JOIN qrp_locations loc ON loc.id = k.location_id WHERE k.id = l.kiosk_id AND loc.name != '1' LIMIT 1),
+          'Sediul Central'
+        ) as location_name, 
+        l.employee_id, 
+        l.employee_code, 
+        l.employee_name, 
+        l.action_type, 
+        l.status, 
+        l.failure_reason, 
+        l.ip_address, 
+        l.user_agent, 
+        l.metadata, 
+        l.created_at
+      FROM qrp_scan_logs l
       ${whereClause}
-      ORDER BY created_at DESC
+      ORDER BY l.created_at DESC
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
       [...params, limit, offset]
     );

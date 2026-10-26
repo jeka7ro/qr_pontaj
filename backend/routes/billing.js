@@ -23,7 +23,7 @@ router.get('/plan', async (req, res) => {
   try {
     const { id } = req.params;
     const tenantRes = await db.query(
-      `SELECT id, name, billing_per_employee, price_per_employee, COALESCE(country_code, 'RO') as country_code, COALESCE(currency, 'RON') as currency FROM qrp_tenants WHERE id = $1`,
+      `SELECT id, name, billing_per_employee, price_per_employee, subscription_status, demo_expires_at, subscription_seats, COALESCE(country_code, 'RO') as country_code, COALESCE(currency, 'RON') as currency FROM qrp_tenants WHERE id = $1`,
       [id]
     );
     if (tenantRes.rows.length === 0) {
@@ -90,11 +90,16 @@ router.get('/plan', async (req, res) => {
       estimatedRon = parseFloat((estimatedEur * exchangeRate).toFixed(2));
     }
 
-    const nextRenewal = new Date(year, month, 1);
+    const isDemo = tenant.subscription_status === 'DEMO';
+    const nextRenewal = isDemo && tenant.demo_expires_at ? new Date(tenant.demo_expires_at) : new Date(year, month, 1);
 
     res.json({
       billing_type: isPerEmployee ? 'per_employee' : 'flat',
-      plan_name: isPerEmployee ? 'Tarifare per Angajat' : 'Plan Standard',
+      plan_name: isDemo ? 'Perioadă de Testare Gratuită (15 Zile)' : (isPerEmployee ? 'Tarifare per Angajat' : 'Plan Standard'),
+      subscription_status: tenant.subscription_status || 'ACTIVE',
+      is_demo: isDemo,
+      demo_expires_at: tenant.demo_expires_at,
+      subscription_seats: tenant.subscription_seats || 10,
       country_code: tenant.country_code || 'RO',
       is_romania: isRomania,
       price_per_employee: price,

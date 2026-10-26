@@ -2,10 +2,19 @@
  * Utility for resolving and dynamically updating the page Favicon and document title
  */
 
+export const DEFAULT_FAVICON = '/favicon.png';
+
 export const resolveFaviconUrl = (url) => {
-  if (!url || typeof url !== 'string') return null;
+  if (!url || typeof url !== 'string') return DEFAULT_FAVICON;
   const trimmed = url.trim();
-  if (!trimmed) return null;
+  if (
+    !trimmed || 
+    trimmed === DEFAULT_FAVICON || 
+    trimmed === '/logo_default_tenant.png' || 
+    trimmed === '/logo_getapp_smartqr.jpg'
+  ) {
+    return DEFAULT_FAVICON;
+  }
 
   // Relative backend upload path
   if (trimmed.startsWith('/uploads')) {
@@ -34,15 +43,14 @@ export const resolveFaviconUrl = (url) => {
     if (domain && domain.includes('.')) {
       return `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
     }
-    return trimmed;
+    return trimmed || DEFAULT_FAVICON;
   } catch {
-    return trimmed;
+    return trimmed || DEFAULT_FAVICON;
   }
 };
 
 export const updatePageFavicon = (rawUrl, newTitle = null) => {
-  const resolved = resolveFaviconUrl(rawUrl);
-  if (!resolved) return;
+  const resolved = resolveFaviconUrl(rawUrl) || DEFAULT_FAVICON;
 
   if (newTitle && typeof newTitle === 'string') {
     document.title = newTitle;
@@ -54,7 +62,7 @@ export const updatePageFavicon = (rawUrl, newTitle = null) => {
 
   // Create new icon link
   const link = document.createElement('link');
-  link.type = 'image/x-icon';
+  link.type = 'image/png';
   link.rel = 'shortcut icon';
   link.href = resolved;
   document.head.appendChild(link);

@@ -119,9 +119,7 @@ export default function EmployeeDashboard() {
     }
     const parsed = JSON.parse(empData);
     setEmployee(parsed);
-    if (parsed?.tenant_favicon || parsed?.tenant_logo) {
-      updatePageFavicon(parsed.tenant_favicon || parsed.tenant_logo, `${parsed.tenant_nume || 'Portal Angajat'}`);
-    }
+    updatePageFavicon(parsed?.tenant_favicon || '/favicon.png', `${parsed?.tenant_nume || 'Portal Angajat'}`);
     fetchShifts(token, currentDate, false);
     fetchLeaves(token);
 

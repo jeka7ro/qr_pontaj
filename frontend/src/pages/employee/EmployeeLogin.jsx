@@ -58,9 +58,7 @@ export default function EmployeeLogin() {
           const data = await res.json();
           if (data && data.found) {
             setTenant(data);
-            if (data.favicon_url || data.logo_url) {
-              updatePageFavicon(data.favicon_url || data.logo_url, `${data.name || 'Portal'} - Autentificare`);
-            }
+            updatePageFavicon(data.favicon_url || '/favicon.png', `${data.name || 'Portal'} - Autentificare`);
           }
         }
       } catch (err) {

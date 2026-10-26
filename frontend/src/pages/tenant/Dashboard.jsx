@@ -5,7 +5,7 @@ import {
   CalendarDays, FileSpreadsheet, Globe, Map, BookOpenCheck, Calculator, 
   CalendarClock, ScanFace, MessageSquare, Wrench, Table, ChevronDown,
   Bell, LogIn, Briefcase, Clock, User, PanelLeftClose, PanelLeftOpen, ChevronRight, Settings,
-  Activity, AlertCircle, RefreshCw
+  Activity, AlertCircle, RefreshCw, ExternalLink
 } from 'lucide-react';
 import TenantSettingsModal from '../../components/TenantSettingsModal';
 
@@ -144,9 +144,7 @@ export default function TenantDashboard() {
       }
 
       // Aplicăm Favicon-ul specific tenantului și titlul paginii
-      if (data.tenant?.favicon_url || data.tenant?.logo_url) {
-        updatePageFavicon(data.tenant.favicon_url || data.tenant.logo_url, `${data.tenant.name || 'QR Pontaj'} - Panou Administrare`);
-      }
+      updatePageFavicon(data.tenant?.favicon_url || '/favicon.png', `${data.tenant?.name || 'QR Pontaj'} - Panou Administrare`);
     } catch (err) {
       if (retryCount < 3) {
         setTimeout(() => fetchInfo(retryCount + 1), 1000);
@@ -314,8 +312,8 @@ export default function TenantDashboard() {
                     alt={tenant.name} 
                     className="max-h-full max-w-full object-contain drop-shadow-sm" 
                     onError={(e) => {
-                      if (!e.currentTarget.src.includes('/logo_getapp_smartqr.jpg')) {
-                        e.currentTarget.src = '/logo_getapp_smartqr.jpg';
+                      if (!e.currentTarget.src.includes('/logo_default_tenant.png')) {
+                        e.currentTarget.src = '/logo_default_tenant.png';
                       }
                     }}
                   />
@@ -350,8 +348,8 @@ export default function TenantDashboard() {
                       alt={tenant.name} 
                       className="max-h-full max-w-full object-contain drop-shadow-sm" 
                       onError={(e) => {
-                        if (!e.currentTarget.src.includes('/logo_getapp_smartqr.jpg')) {
-                          e.currentTarget.src = '/logo_getapp_smartqr.jpg';
+                        if (!e.currentTarget.src.includes('/logo_default_tenant.png')) {
+                          e.currentTarget.src = '/logo_default_tenant.png';
                         }
                       }}
                     />
@@ -365,7 +363,21 @@ export default function TenantDashboard() {
                     {tenant.name ? tenant.name.substring(0, 2).toUpperCase() : 'QR'}
                   </div>
                 )}
-                <span className="font-bold text-slate-800 dark:text-white truncate" title={tenant.name}>{tenant.name}</span>
+                <div className="flex flex-col min-w-0 overflow-hidden">
+                  <span className="font-bold text-slate-800 dark:text-white truncate text-sm" title={tenant.name}>{tenant.name}</span>
+                  {tenant.subdomain && (
+                    <a 
+                      href={`https://${tenant.subdomain}.qr.pontaj.app`} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 font-medium whitespace-nowrap shrink-0 group"
+                      title={`Deschide portalul dedicat ${tenant.subdomain}.qr.pontaj.app`}
+                    >
+                      <span className="truncate">{tenant.subdomain}.qr.pontaj.app</span>
+                      <ExternalLink size={10} className="shrink-0 opacity-70 group-hover:opacity-100" />
+                    </a>
+                  )}
+                </div>
               </div>
 
               <div className="flex items-center gap-1 shrink-0">
@@ -738,6 +750,18 @@ export default function TenantDashboard() {
         {/* Desktop Header Bar with Language Selector */}
         <header className="hidden md:flex h-16 bg-white dark:bg-slate-800 border-b border-slate-200/80 dark:border-slate-700/80 items-center justify-between px-6 shrink-0 z-10 transition-colors">
           <div className="flex items-center gap-3">
+            {tenant?.subdomain && (
+              <a 
+                href={`https://${tenant.subdomain}.qr.pontaj.app`} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-900/60 text-blue-700 dark:text-blue-300 text-xs font-semibold transition-all whitespace-nowrap shrink-0 shadow-2xs group"
+                title={`Deschide portalul dedicat https://${tenant.subdomain}.qr.pontaj.app`}
+              >
+                <span>{tenant.subdomain}.qr.pontaj.app</span>
+                <ExternalLink size={12} className="shrink-0 opacity-70 group-hover:opacity-100" />
+              </a>
+            )}
           </div>
 
           <div className="flex items-center gap-3">
@@ -769,11 +793,24 @@ export default function TenantDashboard() {
 
         {/* Mobile Header */}
         <header className="h-16 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-4 shrink-0 md:hidden z-10 transition-colors">
-          <div className="flex items-center gap-2">
-            <button className="p-2 -ml-2 text-slate-500 dark:text-slate-400" onClick={() => setSidebarOpen(true)}>
+          <div className="flex items-center gap-2 min-w-0">
+            <button className="p-2 -ml-2 text-slate-500 dark:text-slate-400 shrink-0" onClick={() => setSidebarOpen(true)}>
               <Menu size={24} />
             </button>
-            <span className="font-bold text-slate-800 dark:text-white truncate max-w-[120px]">{tenant.name}</span>
+            <div className="flex flex-col min-w-0">
+              <span className="font-bold text-slate-800 dark:text-white truncate max-w-[140px] text-xs">{tenant.name}</span>
+              {tenant?.subdomain && (
+                <a 
+                  href={`https://${tenant.subdomain}.qr.pontaj.app`} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="text-[10px] text-blue-600 dark:text-blue-400 truncate max-w-[140px] font-medium whitespace-nowrap shrink-0 flex items-center gap-0.5"
+                >
+                  <span className="truncate">{tenant.subdomain}.qr.pontaj.app</span>
+                  <ExternalLink size={9} className="shrink-0" />
+                </a>
+              )}
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <LanguageToggle countryCode={tenant?.country_code} variant="compact" />

@@ -140,6 +140,29 @@ async function logScanEvent({
       resolvedTenantName = tRes.rows[0]?.name || null;
     }
 
+    let resolvedLocationId = location_id || null;
+    let resolvedLocationName = location_name || null;
+
+    if (kiosk_id && (!resolvedLocationId || !resolvedLocationName || resolvedLocationName === '1')) {
+      try {
+        const kRes = await pool.query(
+          `SELECT k.location_id, l.name as loc_name 
+           FROM qrp_kiosks k 
+           LEFT JOIN qrp_locations l ON k.location_id = l.id 
+           WHERE k.id = $1`,
+          [kiosk_id]
+        );
+        if (kRes.rows.length > 0) {
+          if (!resolvedLocationId) resolvedLocationId = kRes.rows[0].location_id;
+          if (!resolvedLocationName || resolvedLocationName === '1') {
+            resolvedLocationName = (kRes.rows[0].loc_name && kRes.rows[0].loc_name !== '1') ? kRes.rows[0].loc_name : 'Sediul Central';
+          }
+        }
+      } catch (kErr) {
+        console.warn('Eroare rezolvare locatie kiosk:', kErr.message);
+      }
+    }
+
     await pool.query(
       `INSERT INTO qrp_scan_logs 
         (tenant_id, tenant_name, kiosk_id, location_id, location_name, employee_id, employee_code, employee_name, action_type, status, failure_reason, ip_address, user_agent, metadata)
@@ -148,8 +171,8 @@ async function logScanEvent({
         tenant_id || null,
         resolvedTenantName,
         kiosk_id || null,
-        location_id || null,
-        location_name || null,
+        resolvedLocationId,
+        resolvedLocationName,
         employee_id || null,
         employee_code || null,
         employee_name || null,

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Users, Plus, ShieldCheck, ArrowRight, CheckCircle, AlertCircle, Sparkles } from 'lucide-react';
+import { getApiUrl } from '../utils/apiUrl';
 
 export default function UpgradeSubscriptionModal({
   isOpen,
@@ -20,7 +21,7 @@ export default function UpgradeSubscriptionModal({
   const currentCount = parseInt(currentSeats, 10) || 10;
   const addition = customSeats ? (parseInt(customSeats, 10) || 0) : seatsToAdd;
   const targetSeats = currentCount + addition;
-  const pricePerSeat = 9.90;
+  const pricePerSeat = tenant?.price_per_employee ? parseFloat(tenant.price_per_employee) : (tenant?.country_code === 'BE' ? 9.90 : 5.00);
   const newMonthlyTotal = parseFloat((targetSeats * pricePerSeat).toFixed(2));
   const additionalMonthlyTotal = parseFloat((addition * pricePerSeat).toFixed(2));
 
@@ -39,7 +40,7 @@ export default function UpgradeSubscriptionModal({
       setLoading(true);
       setError(null);
 
-      const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
+      const baseUrl = getApiUrl();
       const res = await fetch(`${baseUrl}/api/stripe/update-seats`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -178,7 +179,7 @@ export default function UpgradeSubscriptionModal({
                   <span className="font-bold text-slate-900 dark:text-white text-sm">{targetSeats} angajați</span>
                 </div>
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-slate-600 dark:text-slate-300">Nou tarif lunar de bază (€9.90 / angajat):</span>
+                  <span className="text-slate-600 dark:text-slate-300">Nou tarif lunar de bază ({pricePerSeat.toFixed(2)} € / angajat):</span>
                   <span className="font-bold text-slate-900 dark:text-white">{newMonthlyTotal.toFixed(2)} € / lună</span>
                 </div>
                 <div className="pt-2 border-t border-primary-200/60 dark:border-primary-900/40 text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">

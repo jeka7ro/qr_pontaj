@@ -8,7 +8,7 @@ const db = require('../db');
 router.get('/config', (req, res) => {
   res.json({
     publishableKey: process.env.STRIPE_PUBLISHABLE_KEY || '',
-    pricePerSeatEur: 9.90,
+    pricePerSeatEur: 5.00,
     currency: 'EUR'
   });
 });
@@ -170,8 +170,8 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
       if (!process.env.STRIPE_SECRET_KEY) {
         return res.status(500).send('STRIPE_SECRET_KEY lipsește din mediu');
       }
-      const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-      event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+      const payload = req.rawBody || req.body;
+      event = stripe.webhooks.constructEvent(payload, sig, webhookSecret);
     } else {
       // Daca nu este configurat webhook secret (in dev/test), parsam direct json
       event = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;

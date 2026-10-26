@@ -113,6 +113,7 @@ export default function LandingRomania() {
   const [assignedTempPassword, setAssignedTempPassword] = useState(null);
   const [acceptTerms, setAcceptTerms] = useState(true);
   const [acceptDpa, setAcceptDpa] = useState(true);
+  const [createdSubdomain, setCreatedSubdomain] = useState('');
   const [legalModalType, setLegalModalType] = useState(null); // 'terms' | 'privacy' | 'dpa'
 
   // Ceas Digital Live și Dată
@@ -310,12 +311,23 @@ export default function LandingRomania() {
       });
       if (res.ok) {
         const data = await res.json();
-        if (data.token && data.user) {
+        // Nu suprascriem sesiunea SuperAdmin pe domeniul principal!
+        const existingUserStr = localStorage.getItem('user');
+        let isExistingSuper = false;
+        try {
+          const eu = JSON.parse(existingUserStr);
+          isExistingSuper = eu && (eu.role === 'SUPERADMIN' || eu.role === 'Super Admin');
+        } catch {}
+
+        if (!isExistingSuper && data.token && data.user) {
           localStorage.setItem('token', data.token);
           localStorage.setItem('user', JSON.stringify(data.user));
         }
         if (data.tempPassword) {
           setAssignedTempPassword(data.tempPassword);
+        }
+        if (data.subdomain) {
+          setCreatedSubdomain(data.subdomain);
         }
         trackEvent('demo_submitted', {
           plan: selectedPlan.name,
@@ -1531,12 +1543,30 @@ export default function LandingRomania() {
                     </div>
                   )}
 
+                  {createdSubdomain && (
+                    <div className="p-3.5 bg-emerald-50/80 border border-emerald-200 rounded-2xl text-xs text-slate-700 max-w-xs mx-auto text-left space-y-1 shadow-2xs">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-800">Adresa ta dedicată de pontaj:</div>
+                      <a 
+                        href={`https://${createdSubdomain}.qr.pontaj.app`} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="font-bold text-blue-600 hover:underline block truncate text-xs"
+                      >
+                        https://{createdSubdomain}.qr.pontaj.app
+                      </a>
+                    </div>
+                  )}
+
                   <div className="flex flex-col gap-2 max-w-xs mx-auto pt-2">
                     <button
                       type="button"
                       onClick={() => {
                         setIsSubscribeModalOpen(false);
-                        navigate('/admin/dashboard');
+                        if (createdSubdomain) {
+                          window.location.href = `https://${createdSubdomain}.qr.pontaj.app/admin/dashboard`;
+                        } else {
+                          navigate('/admin/dashboard');
+                        }
                       }}
                       className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-full shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap shrink-0"
                     >

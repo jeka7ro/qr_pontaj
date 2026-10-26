@@ -78,11 +78,7 @@ export default function AdminLogin() {
         if (data && data.found) {
           setTenantBranding(data);
           setLogoError(false);
-          if (data.favicon_url || data.logo_url) {
-            updatePageFavicon(data.favicon_url || data.logo_url, `${data.name || 'Panou'} - Autentificare`);
-          } else if (data.name) {
-            document.title = `${data.name} - Autentificare`;
-          }
+          updatePageFavicon(data.favicon_url || '/favicon.png', `${data.name || 'Panou'} - Autentificare`);
           return true;
         } else {
           setTenantBranding(null);

@@ -50,10 +50,12 @@ export default function SagaModule({ tenant }) {
             Alegeți formatul de export
           </label>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <button
-              type="button"
+            <div
+              role="button"
+              tabIndex={0}
               onClick={() => setExportType('events')}
-              className={`p-5 rounded-2xl text-left border-2 transition-all cursor-pointer ${
+              onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setExportType('events')}
+              className={`p-5 rounded-2xl text-left border-2 transition-all cursor-pointer whitespace-normal ${
                 exportType === 'events'
                   ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20 text-slate-900 dark:text-white shadow-sm'
                   : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-slate-700 dark:text-slate-300'
@@ -63,15 +65,17 @@ export default function SagaModule({ tenant }) {
                 <Clock className={`shrink-0 ${exportType === 'events' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`} size={20} />
                 <span className="font-bold text-base whitespace-nowrap">Pontaj Electronic SAGA</span>
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed whitespace-normal break-words">
                 Log detaliat al fiecărei scanări (Marcă, CNP, Dată, Oră, Sens intrare/ieșire). Format standard pentru importul de ceasuri/aparate de pontaj în SAGA C.
               </p>
-            </button>
+            </div>
 
-            <button
-              type="button"
+            <div
+              role="button"
+              tabIndex={0}
               onClick={() => setExportType('summary')}
-              className={`p-5 rounded-2xl text-left border-2 transition-all cursor-pointer ${
+              onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setExportType('summary')}
+              className={`p-5 rounded-2xl text-left border-2 transition-all cursor-pointer whitespace-normal ${
                 exportType === 'summary'
                   ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20 text-slate-900 dark:text-white shadow-sm'
                   : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-slate-700 dark:text-slate-300'
@@ -81,10 +85,10 @@ export default function SagaModule({ tenant }) {
                 <CalendarDays className={`shrink-0 ${exportType === 'summary' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`} size={20} />
                 <span className="font-bold text-base whitespace-nowrap">Centralizator Lunar Salarii</span>
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed whitespace-normal break-words">
                 Centralizator per angajat: Zile lucrate, Ore normale, Ore noapte (22:00-06:00), Ore weekend și Ore suplimentare. Gata pentru calculul statului de plată.
               </p>
-            </button>
+            </div>
           </div>
         </div>
 

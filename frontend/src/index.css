@@ -22,14 +22,27 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* REGULĂ STRICTĂ: Butoane, pastile și badge-uri NICIODATĂ pe 2 rânduri */
-button,
-[role="button"],
+/* REGULĂ STRICTĂ: Butoane simple de acțiune, pastile și badge-uri NICIODATĂ pe 2 rânduri */
 .btn,
 .badge,
 .pill,
 .whitespace-nowrap {
   white-space: nowrap !important;
+}
+
+/* Butoanele simple de acțiune fără texte lungi rămân pe un singur rând */
+button:not(:has(p)):not(:has(div)):not(.whitespace-normal),
+[role="button"]:not(:has(p)):not(:has(div)):not(.whitespace-normal) {
+  white-space: nowrap;
+}
+
+/* Paragrafele și descrierile din interiorul cardurilor/butoanelor se înfășoară natural */
+button p,
+button .whitespace-normal,
+[role="button"] p,
+[role="button"] .whitespace-normal,
+.whitespace-normal {
+  white-space: normal !important;
 }
 
 

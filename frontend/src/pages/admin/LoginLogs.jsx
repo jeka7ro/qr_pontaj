@@ -841,7 +841,11 @@ export default function LoginLogs() {
                           </td>
                           <td className="py-3 px-4 whitespace-nowrap text-slate-500 text-[11px]">
                             <div>IP: {log.ip_address || '-'}</div>
-                            {log.kiosk_id && <div className="text-[10px] text-slate-400">Kiosk #{log.kiosk_id}</div>}
+                            {log.kiosk_name && !/^\d+$/.test(log.kiosk_name.trim()) ? (
+                              <div className="text-[10px] text-slate-400">{log.kiosk_name}</div>
+                            ) : (log.kiosk_id ? (
+                              <div className="text-[10px] text-slate-400">Tabletă Kiosk</div>
+                            ) : null)}
                           </td>
                           <td className="py-3 px-4 text-right whitespace-nowrap">
                             <button

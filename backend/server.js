@@ -12,7 +12,14 @@ const app = express();
 const PORT = process.env.PORT || 5001;
 
 app.use(cors({ exposedHeaders: ['X-Active-Count', 'X-Archived-Count'] }));
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({
+  limit: '10mb',
+  verify: (req, res, buf) => {
+    if (req.originalUrl && req.originalUrl.startsWith('/api/stripe/webhook')) {
+      req.rawBody = buf;
+    }
+  }
+}));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 const path = require('path');
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

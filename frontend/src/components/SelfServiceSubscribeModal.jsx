@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { getApiUrl } from '../utils/apiUrl';
 import { 
   X, 
   Check, 
@@ -126,68 +127,75 @@ const MODAL_I18N = {
     errStripe: "Error creating Stripe Checkout session.",
   },
   ro: {
-    badge: "Plan Profesional",
-    title: "Comandă Online & Plată Securizată",
+    badge: "QR Pontaj • Abonament Lunar",
+    title: "Comandă Online & Plată Securizată Stripe",
     seatsTitle: "Număr de angajați contractați",
     seatsSub: "Poți mări oricând numărul pe parcurs cu calcul prorata automat",
-    seatsUnit: "locuri",
+    seatsUnit: "angajați",
     rateLabel: "Tarif :",
-    ratePerSeat: "€9.90 / angajat / lună",
+    ratePerSeat: "5.00 € / angajat / lună",
     perMonth: "/ lună",
     vatNoteBe: "TVA 21% inclus pe factură",
-    vatNoteEu: "TVA 0% • Taxare Inversă B2B",
-    companyLabel: "Nume Companie *",
-    companyPlaceholder: "ex: Brasserie Bruxelles SPRL",
+    vatNoteEu: "Factură fiscală B2B • Plată securizată Stripe",
+    companyLabel: "Nume Companie (SRL / SA) *",
+    companyPlaceholder: "ex: TRADE INVEST NETWORK S.R.L.",
     countryLabel: "Țară de Înregistrare *",
     emailLabel: "Email Administrator (Facturare) *",
-    emailPlaceholder: "admin@companie.be",
-    adminNameLabel: "Nume Administrator",
-    adminNamePlaceholder: "ex: Jean Dupont",
-    vatLabel: "Cod Fiscal / VAT ID",
-    vatPlaceholder: "ex: BE 0123.456.789",
+    emailPlaceholder: "admin@companie.ro",
+    adminNameLabel: "Nume Administrator / Semnatar",
+    adminNamePlaceholder: "ex: Eugeniu Cazmal",
+    vatLabel: "Cod Fiscal / CUI (cu sau fără RO)",
+    vatPlaceholder: "ex: RO 42322117",
     addressLabel: "Adresă Sediu Social / Facturare",
-    addressPlaceholder: "ex: Rue de la Loi 16, 1000 Bruxelles",
+    addressPlaceholder: "ex: București, Str...",
     subdomainLabel: "Adresă Portal Kiosk Dedicat",
     subdomainPlaceholder: "subdomeniu",
-    subdomainDomain: ".pontaj.app",
+    subdomainDomain: ".qr.pontaj.app",
     benefitsTitle: "Ce include abonamentul :",
-    benefit1: "Pontaj nelimitat pe tablete și telefoane",
-    benefit2: "Exporturi conforme legislației muncii",
-    benefit3: "Conformitate legală CJUE și audit imuabil",
-    benefit4: "Facturare lunară flexibilă, fără angajament",
+    benefit1: "Pontaj nelimitat pe tablete kiosk și telefoane",
+    benefit2: "Export direct în format compatibil SAGA",
+    benefit3: "Conformitate Codul Muncii (Art. 119) & GDPR (Art. 28)",
+    benefit4: "Facturare lunară flexibilă, fără angajament contractual",
     btnSubmit: "Plătește Securizat cu Stripe",
-    securityNote: "Plată securizată prin Stripe Inc. Poți anula sau modifica abonamentul în orice moment.",
+    securityNote: "Plată securizată prin Stripe Inc. cu criptare SSL 256-bit. Poți anula sau modifica abonamentul în orice moment.",
     errCompany: "Vă rugăm să introduceți denumirea companiei.",
     errEmail: "Vă rugăm să introduceți o adresă de email validă.",
     errStripe: "Eroare la crearea sesiunii Stripe Checkout.",
   }
 };
 
-export default function SelfServiceSubscribeModal({ isOpen, onClose, initialTenant = null, lang = 'fr' }) {
-  const [seats, setSeats] = useState(15);
+export default function SelfServiceSubscribeModal({ isOpen, onClose, initialTenant = null, lang = null }) {
+  const isRo = !initialTenant?.country_code || initialTenant?.country_code === 'RO';
+  const resolvedLang = lang || (isRo ? 'ro' : (initialTenant?.country_code === 'NL' ? 'nl' : 'fr'));
+  const m = MODAL_I18N[resolvedLang] || MODAL_I18N.ro;
+
+  const [seats, setSeats] = useState(initialTenant?.subscription_seats || 10);
   const [companyName, setCompanyName] = useState(initialTenant?.name || '');
   const [subdomain, setSubdomain] = useState(initialTenant?.subdomain || '');
-  const [adminEmail, setAdminEmail] = useState('');
-  const [adminName, setAdminName] = useState('');
-  const [countryCode, setCountryCode] = useState(initialTenant?.country_code || 'BE');
-  const [vatNumber, setVatNumber] = useState('');
-  const [billingAddress, setBillingAddress] = useState('');
+  const [adminEmail, setAdminEmail] = useState(initialTenant?.contact_email || '');
+  const [adminName, setAdminName] = useState(initialTenant?.contact_name || '');
+  const [countryCode, setCountryCode] = useState(initialTenant?.country_code || (isRo ? 'RO' : 'BE'));
+  const [vatNumber, setVatNumber] = useState(initialTenant?.vat_number || '');
+  const [billingAddress, setBillingAddress] = useState(initialTenant?.billing_address || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-
-  const m = MODAL_I18N[lang] || MODAL_I18N.fr;
 
   React.useEffect(() => {
     if (initialTenant) {
       if (initialTenant.name) setCompanyName(initialTenant.name);
       if (initialTenant.subdomain) setSubdomain(initialTenant.subdomain);
       if (initialTenant.country_code) setCountryCode(initialTenant.country_code);
+      if (initialTenant.contact_email) setAdminEmail(initialTenant.contact_email);
+      if (initialTenant.contact_name) setAdminName(initialTenant.contact_name);
+      if (initialTenant.vat_number) setVatNumber(initialTenant.vat_number);
+      if (initialTenant.billing_address) setBillingAddress(initialTenant.billing_address);
+      if (initialTenant.subscription_seats) setSeats(initialTenant.subscription_seats);
     }
   }, [initialTenant]);
 
   if (!isOpen) return null;
 
-  const pricePerSeat = 9.90;
+  const pricePerSeat = countryCode === 'BE' ? 9.90 : (initialTenant?.price_per_employee ? parseFloat(initialTenant.price_per_employee) : 5.00);
   const totalEur = parseFloat((seats * pricePerSeat).toFixed(2));
   const tvaEur = parseFloat((totalEur * 0.21).toFixed(2));
   const totalWithTvaEur = parseFloat((totalEur + tvaEur).toFixed(2));
@@ -213,11 +221,12 @@ export default function SelfServiceSubscribeModal({ isOpen, onClose, initialTena
     try {
       setLoading(true);
       setError(null);
-      const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
+      const baseUrl = getApiUrl();
       const res = await fetch(`${baseUrl}/api/stripe/create-checkout-session`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          tenantId: initialTenant?.id,
           companyName: companyName.trim(),
           subdomain: (subdomain.trim() || companyName.trim().toLowerCase().replace(/[^a-z0-9]/g, '')),
           adminEmail: adminEmail.trim(),
@@ -225,9 +234,9 @@ export default function SelfServiceSubscribeModal({ isOpen, onClose, initialTena
           vatNumber: vatNumber.trim(),
           billingAddress: billingAddress.trim(),
           seats: Math.max(1, parseInt(seats, 10)),
-          countryCode: countryCode || 'BE',
-          successUrl: `${window.location.origin}/admin/login?subscribed=true`,
-          cancelUrl: `${window.location.origin}/`
+          countryCode: countryCode || 'RO',
+          successUrl: `${window.location.origin}/admin/billing?subscribed=true`,
+          cancelUrl: `${window.location.origin}/admin/billing`
         })
       });
 
@@ -361,11 +370,14 @@ export default function SelfServiceSubscribeModal({ isOpen, onClose, initialTena
                   onChange={(e) => setCountryCode(e.target.value)}
                   className="w-full text-sm font-medium text-slate-900 bg-transparent outline-none cursor-pointer"
                 >
+                  <option value="RO">România (RO)</option>
                   <option value="BE">Belgique / België (BE)</option>
                   <option value="FR">France (FR)</option>
                   <option value="NL">Nederland (NL)</option>
                   <option value="LU">Luxembourg (LU)</option>
                   <option value="DE">Deutschland (DE)</option>
+                  <option value="IT">Italia (IT)</option>
+                  <option value="ES">España (ES)</option>
                 </select>
               </div>
             </div>
