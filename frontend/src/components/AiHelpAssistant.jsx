@@ -38,7 +38,7 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      text: 'Bună ziua! Sunt asistentul inteligent QR Pontaj. Vă pot ajuta cu pașii exacți pentru configurarea unui Kiosk pe tabletă (inclusiv crearea punctului de lucru obligatoriu), blocarea ecranului pe iPad sau Android, scanarea pentru angajați sau rapoartele pentru contabilitate.'
+      text: 'Bună ziua! Sunt asistentul AI QR Pontaj. Cu ce vă pot ajuta astăzi?'
     }
   ]);
   const [input, setInput] = useState('');
@@ -123,7 +123,7 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
     setMessages([
       {
         role: 'assistant',
-        text: 'Conversația a fost resetată. Cu ce vă mai pot ajuta legat de QR Pontaj sau configurarea Kiosk-urilor?'
+        text: 'Bună ziua! Sunt asistentul AI QR Pontaj. Cu ce vă pot ajuta astăzi?'
       }
     ]);
   };
@@ -239,10 +239,10 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
 
       {/* macOS Window Card */}
       {isOpen && (
-        <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 w-[calc(100vw-2rem)] sm:w-[500px] h-[640px] max-h-[88vh] backdrop-blur-3xl bg-white/95 dark:bg-slate-900/95 rounded-2xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.35)] border border-slate-200/80 dark:border-white/10 flex flex-col overflow-hidden animate-in slide-in-from-bottom-6 fade-in duration-200">
+        <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 w-[calc(100vw-2rem)] sm:w-[415px] h-[525px] max-h-[82vh] backdrop-blur-3xl bg-white/95 dark:bg-slate-900/95 rounded-2xl shadow-[0_20px_50px_-10px_rgba(0,0,0,0.32)] border border-slate-200/80 dark:border-white/10 flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 fade-in duration-200">
           
           {/* macOS Title Bar with Traffic Lights */}
-          <div className="px-4 py-3 bg-slate-100/80 dark:bg-slate-800/70 border-b border-slate-200/70 dark:border-slate-800 flex items-center justify-between select-none shrink-0">
+          <div className="px-3.5 py-2.5 bg-slate-100/80 dark:bg-slate-800/70 border-b border-slate-200/70 dark:border-slate-800 flex items-center justify-between select-none shrink-0">
             {/* Traffic Lights */}
             <div className="flex items-center gap-2">
               <button
@@ -304,29 +304,32 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
           {/* TAB 1: Conversație Chat AI */}
           {activeTab === 'chat' && (
             <>
-              {/* Quick Questions macOS Segmented Chips */}
-              <div className="px-3.5 py-2.5 bg-slate-50/80 dark:bg-slate-900/60 border-b border-slate-200/60 dark:border-slate-800/60 overflow-x-auto flex items-center gap-1.5 scrollbar-none shrink-0">
-                {quickQuestions.map((q, qIdx) => {
-                  const IconComp = q.icon;
-                  return (
-                    <button
-                      key={qIdx}
-                      onClick={() => handleQuickQuestionClick(q)}
-                      disabled={loading}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-[#007AFF] hover:text-[#007AFF] dark:hover:text-blue-400 hover:bg-blue-50/40 dark:hover:bg-blue-950/20 transition-all whitespace-nowrap shrink-0 shadow-xs disabled:opacity-50 cursor-pointer"
-                    >
-                      <IconComp size={12} className="text-[#007AFF] shrink-0" />
-                      <span className="whitespace-nowrap shrink-0">{q.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
+              {/* Quick Questions macOS Segmented Chips (afișate doar în conversație activă) */}
+              {messages.length > 1 && (
+                <div className="px-3 py-2 bg-slate-50/80 dark:bg-slate-900/60 border-b border-slate-200/60 dark:border-slate-800/60 overflow-x-auto flex items-center gap-1.5 scrollbar-none shrink-0">
+                  {quickQuestions.map((q, qIdx) => {
+                    const IconComp = q.icon;
+                    return (
+                      <button
+                        key={qIdx}
+                        onClick={() => handleQuickQuestionClick(q)}
+                        disabled={loading}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-[#007AFF] hover:text-[#007AFF] dark:hover:text-blue-400 hover:bg-blue-50/40 dark:hover:bg-blue-950/20 transition-all whitespace-nowrap shrink-0 shadow-xs disabled:opacity-50 cursor-pointer"
+                      >
+                        <IconComp size={11} className="text-[#007AFF] shrink-0" />
+                        <span className="whitespace-nowrap shrink-0">{q.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
 
               {/* Chat Messages */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-3.5 bg-slate-50/30 dark:bg-slate-950/20">
+              <div className="flex-1 overflow-y-auto p-3.5 space-y-3 bg-slate-50/30 dark:bg-slate-950/20">
                 {messages.map((msg, mIdx) => {
                   const isUser = msg.role === 'user';
-                  const showInteractiveCard = !isUser && (isKioskRelated(msg.text) || msg.actionType === 'show_inline_create');
+                  // Cardul de pași apare DOAR după ce utilizatorul întreabă sau alege un topic (niciodată la deschidere pe mIdx === 0)
+                  const showInteractiveCard = !isUser && mIdx > 0 && (isKioskRelated(msg.text) || msg.actionType === 'show_inline_create');
                   const isLocationSuccess = !isUser && msg.actionType === 'location_created';
 
                   return (
@@ -352,6 +355,102 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
                         ) : (
                           <div className="space-y-1">
                             {renderFormattedText(msg.text)}
+
+                            {/* Selector de Topice Apple macOS (Apare DOAR la primul mesaj până când utilizatorul alege un topic sau scrie o întrebare) */}
+                            {mIdx === 0 && messages.length === 1 && (
+                              <div className="mt-3 pt-2.5 border-t border-slate-200/60 dark:border-slate-700/60 space-y-2">
+                                <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-600 dark:text-slate-300">
+                                  <Sparkles size={12} className="text-[#007AFF] shrink-0" />
+                                  <span>Alegeți un subiect sau adresați orice întrebare:</span>
+                                </div>
+
+                                <div className="grid grid-cols-1 gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleSend('Configurare Kiosk Tabletă')}
+                                    className="w-full flex items-center justify-between p-2 rounded-xl bg-slate-50/90 hover:bg-blue-50/50 dark:bg-slate-800/80 dark:hover:bg-blue-950/30 border border-slate-200/80 hover:border-[#007AFF]/60 dark:border-slate-700/70 transition-all text-left group cursor-pointer shadow-2xs"
+                                  >
+                                    <div className="flex items-center gap-2.5 min-w-0">
+                                      <div className="w-6 h-6 rounded-lg bg-blue-100/80 dark:bg-blue-900/50 text-[#007AFF] flex items-center justify-center shrink-0">
+                                        <TabletSmartphone size={13} />
+                                      </div>
+                                      <div className="min-w-0">
+                                        <div className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">
+                                          Configurare Kiosk Tabletă
+                                        </div>
+                                        <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                                          Punct de lucru obligatoriu + adăugare Kiosk
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <ChevronRight size={13} className="text-slate-400 group-hover:text-[#007AFF] group-hover:translate-x-0.5 transition-all shrink-0 ml-1" />
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => handleSend('Cum blochez ecranul pe iPad cu Guided Access pentru modul Kiosk?')}
+                                    className="w-full flex items-center justify-between p-2 rounded-xl bg-slate-50/90 hover:bg-indigo-50/50 dark:bg-slate-800/80 dark:hover:bg-indigo-950/30 border border-slate-200/80 hover:border-indigo-400/60 dark:border-slate-700/70 transition-all text-left group cursor-pointer shadow-2xs"
+                                  >
+                                    <div className="flex items-center gap-2.5 min-w-0">
+                                      <div className="w-6 h-6 rounded-lg bg-indigo-100/80 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                                        <ShieldCheck size={13} />
+                                      </div>
+                                      <div className="min-w-0">
+                                        <div className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">
+                                          Ghid iPad Guided Access
+                                        </div>
+                                        <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                                          Blocare ecran tabletă anti-ieșire
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <ChevronRight size={13} className="text-slate-400 group-hover:text-indigo-600 group-hover:translate-x-0.5 transition-all shrink-0 ml-1" />
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => handleSend('Cum se pontează un angajat?')}
+                                    className="w-full flex items-center justify-between p-2 rounded-xl bg-slate-50/90 hover:bg-emerald-50/50 dark:bg-slate-800/80 dark:hover:bg-emerald-950/30 border border-slate-200/80 hover:border-emerald-400/60 dark:border-slate-700/70 transition-all text-left group cursor-pointer shadow-2xs"
+                                  >
+                                    <div className="flex items-center gap-2.5 min-w-0">
+                                      <div className="w-6 h-6 rounded-lg bg-emerald-100/80 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                                        <Smartphone size={13} />
+                                      </div>
+                                      <div className="min-w-0">
+                                        <div className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">
+                                          Scanare & Pontaj Angajați
+                                        </div>
+                                        <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                                          Scanare QR dinamic cu camera fără aplicație
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <ChevronRight size={13} className="text-slate-400 group-hover:text-emerald-600 group-hover:translate-x-0.5 transition-all shrink-0 ml-1" />
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => handleSend('Cum funcționează condica de prezență și exportul pentru Saga Software?')}
+                                    className="w-full flex items-center justify-between p-2 rounded-xl bg-slate-50/90 hover:bg-amber-50/50 dark:bg-slate-800/80 dark:hover:bg-amber-950/30 border border-slate-200/80 hover:border-amber-400/60 dark:border-slate-700/70 transition-all text-left group cursor-pointer shadow-2xs"
+                                  >
+                                    <div className="flex items-center gap-2.5 min-w-0">
+                                      <div className="w-6 h-6 rounded-lg bg-amber-100/80 dark:bg-amber-900/50 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                                        <FileSpreadsheet size={13} />
+                                      </div>
+                                      <div className="min-w-0">
+                                        <div className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">
+                                          Export Saga & Rapoarte
+                                        </div>
+                                        <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                                          Condică lunară PDF/Excel și salarii
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <ChevronRight size={13} className="text-slate-400 group-hover:text-amber-600 group-hover:translate-x-0.5 transition-all shrink-0 ml-1" />
+                                  </button>
+                                </div>
+                              </div>
+                            )}
 
                             {/* Card de confirmare creare locație cu succes */}
                             {isLocationSuccess && (

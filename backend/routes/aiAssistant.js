@@ -28,135 +28,116 @@ router.post('/assistant', async (req, res) => {
       });
     }
 
-    // 2. Fast-path instantaneu (<15ms) pentru întrebările rapide prestabilite din interfață
-    const pTrim = prompt.trim().toLowerCase();
-    if (
-      pTrim.includes('cum pun ecranul pe tablet') || 
-      pTrim.includes('cum pun ecranul pe tv') || 
-      pTrim.includes('cum blochez pe tableta') ||
-      pTrim.includes('kiosk pe tableta') ||
-      pTrim.includes('cum conectez un kiosk') ||
-      pTrim.includes('cum creez un kiosk') ||
-      pTrim.includes('conectez un kiosk') ||
-      pTrim.includes('creez un kiosk')
-    ) {
-      const instantAnswer = `Pentru a conecta și afișa un ecran de pontaj (Kiosk) pe tabletă sau televizor, este esențial să parcurgeți acești **4 pași clari**:
+    // 2. Fast-path instantaneu (<10ms) EXCLUSIV pentru clicurile exacte pe butoanele prestabilite
+    const pTrim = prompt.trim();
+    const pLower = pTrim.toLowerCase();
+
+    // Numai dacă utilizatorul a apăsat pe o opțiune predefinită exactă folosim template-ul optimizat
+    const isExactKioskSetup = pTrim === 'Cum conectez un Kiosk?' || pTrim === 'Configurare Kiosk Tabletă' || pTrim === 'Pasul 2: Adăugare Kiosk Nou';
+    const isExactLocationSetup = pTrim === 'Pasul 1: Creare Punct de Lucru' || pTrim === 'Creare Punct de Lucru';
+    const isExactScanGuide = pTrim === 'Cum se pontează un angajat?' || pTrim === 'Scanare & Pontaj Angajați';
+    const isExactPinBackup = pTrim === 'Pontaj de rezervă cu PIN' || pTrim === 'Pontaj cu PIN';
+
+    if (isExactKioskSetup) {
+      const instantAnswer = `Pentru a conecta și afișa un ecran de pontaj (Kiosk) pe tabletă sau televizor, parcurgeți acești **4 pași clari**:
 
 ### Pasul 1: Crearea Punctului de Lucru (OBLIGATORIU)
-Un ecran Kiosk NU poate fi creat dacă nu există cel puțin un punct de lucru în sistem, deoarece fiecare tabletă trebuie asociată unei locații fizice:
+Un ecran Kiosk NU poate fi creat dacă nu există cel puțin un punct de lucru salvat în sistem:
 1. Mergeți în meniul din stânga la **Puncte de Lucru** (sau accesați **/admin/locations**).
 2. Apăsați pe butonul **+ Adaugă Punct de Lucru**.
-3. Introduceți numele locației (ex: *Sediul Central*, *Depozit*, *Magazin*) și adresa, apoi apăsați **Salvează**.
+3. Introduceți denumirea (ex: *Sediul Central*, *Depozit*, *Magazin*) și adresa, apoi apăsați **Salvează**.
 
 ### Pasul 2: Adăugarea Kiosk-ului
-După ce aveți cel puțin un Punct de Lucru salvat:
-1. Mergeți în meniul din stânga la **Tablete Kiosk** (sau **/admin/qr**).
-2. Apăsați pe butonul **+ Adaugă Kiosk**.
-3. Introduceți un nume pentru tabletă (ex: *Tableta Intrare Recepție*).
-4. La rubrica **Punct de Lucru**, selectați din listă locația creată la Pasul 1.
-5. (Opțional) Bifați opțiunea de backup **Permite Pontaj cu PIN** pentru salariații fără telefon.
-6. Apăsați **Salvează**.
+După ce aveți locația salvată:
+1. Mergeți la **Tablete Kiosk** (sau **/admin/qr**).
+2. Apăsați **+ Adaugă Kiosk**.
+3. Denumiți tableta (ex: *Tableta Recepție*) și selectați Punctul de Lucru creat la Pasul 1.
+4. (Opțional) Bifați **Permite Pontaj cu PIN** pentru salariații fără telefon.
+5. Apăsați **Salvează**.
 
-### Pasul 3: Copierea Link-ului pe Tabletă sau TV
-1. În tabelul cu Kiosk-uri, apăsați pe butonul albastru **Copiază Link Tabletă**.
-2. Deschideți browser-ul de pe dispozitiv (Safari pe iPad, Chrome pe Android sau browser-ul Smart TV).
-3. Introduceți linkul copiat (sau trimiteți-l pe tabletă prin WhatsApp / Email) și accesați-l. Ecranul de pontaj cu cod QR dinamic va porni automat.
+### Pasul 3: Copierea Link-ului pe Dispozitiv
+1. În tabelul cu Kiosk-uri, apăsați butonul **Copiază Link Tabletă**.
+2. Deschideți browser-ul de pe tabletă (Safari pe iPad sau Chrome pe Android) și accesați linkul. Ecranul de pontaj cu QR dinamic va porni automat.
 
-### Pasul 4: Blocarea ecranului (Kiosk Mode Anti-Ieșire)
-Pentru ca angajații să nu poată ieși din ecranul de pontaj:
-- **Pe iPad (Recomandat)**: Din **Configurări -> Accesibilitate -> Acces Ghidat**, activați opțiunea. Deschideți linkul în Safari și apăsați de 3 ori consecutiv pe butonul fizic Power -> apăsați **Start** în colțul din dreapta-sus. Tableta va rămâne blocată exclusiv pe pontaj.
-- **Pe Android**: Din **Configurări -> Securitate**, activați **Fixare aplicație (Pin App)**. Deschideți Chrome cu linkul și fixați ecranul.
-- **Pe Smart TV / PC**: Apăsați tasta **F11** sau butonul de Full Screen din browser.
+### Pasul 4: Blocarea ecranului (Mod Kiosk)
+- **Pe iPad**: Din *Configurări -> Accesibilitate -> Acces Ghidat*, activați opțiunea. În Safari apăsați de 3 ori pe butonul fizic Power și apăsați *Start*.
+- **Pe Android**: Din *Securitate*, activați *Fixare aplicație (Pin App)*.
 
----
-**Vrei să te ajut să creezi un Punct de Lucru chiar acum?**
-Sau vrei să te duc direct pe pagina Puncte de Lucru cu formularul deschis? Alege una dintre acțiunile de mai jos:`;
+Puteți folosi butoanele de acțiune directă de mai jos pentru a deschide fereastra dorită:`;
 
       return res.json({ answer: instantAnswer });
     }
 
-    if (
-      pTrim.includes('punct de lucru') || 
-      pTrim.includes('puncte de lucru') || 
-      pTrim.includes('creez punct') || 
-      pTrim.includes('creaza punct') || 
-      pTrim.includes('adauga punct') ||
-      pTrim.includes('du-ma la puncte') ||
-      pTrim.includes('du ma la puncte') ||
-      pTrim.includes('ajuta-ma sa creez') ||
-      pTrim.includes('vreau sa creez un punct')
-    ) {
-      const instantAnswer = `Pentru a începe configurarea pontajului pe tablete, primul pas obligatoriu este **crearea unui Punct de Lucru**:
+    if (isExactLocationSetup) {
+      const instantAnswer = `Primul pas obligatoriu în sistem este **crearea unui Punct de Lucru**:
 
-Fiecare punct de lucru reprezintă sediul fizic (ex: *Sediul Central*, *Depozit*, *Magazin*, *Șantier*) la care vor fi alocate tabletele Kiosk.
+Fiecare tabletă sau ecran Kiosk trebuie asociat unui sediu fizic (ex: *Sediul Central*, *Depozit*, *Magazin*, *Șantier*). Fără acest pas, crearea Kiosk-ului este blocată.
 
-**Vrei să te duc la pagina Puncte de Lucru și să deschid direct formularul?**
-Sau vrei să creăm punctul de lucru chiar acum, direct de aici din asistent?
-
-Alege acțiunea dorită din butoanele interactive de mai jos:`;
+Apăsați pe butonul de mai jos pentru a deschide direct fereastra de creare a punctului de lucru:`;
 
       return res.json({ answer: instantAnswer });
     }
 
-    if (pTrim.includes('cum se ponteaz') || pTrim.includes('cum se scaneaz')) {
+    if (isExactScanGuide) {
       const instantAnswer = `Procedura de pontaj pentru salariați (fără aplicație instalată):
 
 1. **Deschiderea camerei foto**:
-   - Angajatul deschide camera foto standard a telefonului său mobil (iPhone sau Android).
+   - Angajatul deschide camera foto standard a telefonului său mobil (iOS sau Android).
    - Nu este necesară instalarea niciunei aplicații din App Store sau Google Play.
 
 2. **Scanarea codului QR dinamic**:
-   - Îndreaptă camera către codul QR afișat pe tableta Kiosk. Codul se regenerează la fiecare 5 secunde împotriva fraudelor.
+   - Îndreaptă camera către codul QR afișat pe tableta Kiosk. Codul se regenerează la fiecare 5 secunde pentru securitate anti-fraudă.
 
-3. **Confirmarea pontajului**:
-   - Pe telefon apare notificarea web securizată; angajatul apasă pe ea, alege **Venire** sau **Plecare** și confirmă. Pontajul este înregistrat instantaneu cu timestamp și verificare GPS.`;
+3. **Confirmarea prezenței**:
+   - Pe telefon apare notificarea web securizată; angajatul apasă pe ea, alege **Venire** sau **Plecare** și confirmă. Pontajul este salvat instantaneu cu timestamp și verificare GPS.`;
 
       return res.json({ answer: instantAnswer });
     }
 
-    if (pTrim.includes('pontaj cu pin') || pTrim.includes('fara telefon') || pTrim.includes('fara baterie')) {
+    if (isExactPinBackup) {
       const instantAnswer = `Pontajul de rezervă cu cod PIN pe tabletă:
 
 1. **Activarea opțiunii**:
    - La crearea sau editarea Kiosk-ului, asigurați-vă că este bifată opțiunea **Permite Pontaj cu PIN**.
 
 2. **Utilizarea de către angajat**:
-   - Pe ecranul tabletei Kiosk apăsați pe butonul **Pontaj cu PIN**.
-   - Angajatul își introduce codul PIN alocat din panoul de administrare pentru validarea prezenței.`;
+   - Pe ecranul tabletei Kiosk există butonul dedicat **Pontaj cu PIN**.
+   - Angajatul își introduce codul PIN alocat din panoul de administrare pentru validarea prezenței chiar dacă nu are telefon sau bateria s-a descărcat.`;
 
       return res.json({ answer: instantAnswer });
     }
 
-    // 3. Construim contextul de sistem pentru QR Pontaj
-    const systemInstructionText = `Ești Asistentul Oficial QR Pontaj (asistent de suport tehnic și operațional). Răspunzi exclusiv în limba română, amabil, extrem de clar, structurat cu pași simpli (1, 2, 3) și formatat în markdown curat.
+    // 3. Toate celelalte întrebări sunt procesate conversațional prin Google Gemini
+    const systemInstructionText = `Ești Asistentul AI Oficial QR Pontaj. Ești un asistent inteligent, prietenos, comunicativ și extrem de bine informat despre platforma QR Pontaj și legislația muncii din România.
 
-DESPRE QR PONTAJ:
-- Este o platformă românească B2B & B2C de pontaj digital inteligent, conformă cu legislația muncii din România (Codul Muncii, ITM).
+ROLUL TĂU:
+- Comunici natural, conversațional și clar cu utilizatorul, ca un asistent AI dedicat.
+- Înțelegi contextul întrebărilor și răspunzi specific la ce te întreabă utilizatorul, fără șabloane rigide.
+- Răspunzi exclusiv în limba română corectă și profesionistă.
+
+DESPRE PLATFORMA QR PONTAJ:
+- Platformă românească B2B & B2C de pontaj digital inteligent, conformă cu legislația muncii din România (Codul Muncii, ITM).
 - Pontajul se face prin coduri QR dinamice (anti-fraudă), care se regenerează automat la fiecare 5 secunde.
-- Angajații NU trebuie să instaleze nicio aplicație din magazin! Deschid doar camera foto a telefonului personal și scanează codul de pe ecran.
-- Sistemul verifică geolocația GPS la scanare pentru a valida prezența la sediu.
-- Există și mod de backup 'Pontaj cu PIN' direct pe tabletă pentru angajații fără telefon sau cu bateria descărcată.
+- Angajații NU au nevoie de aplicație instalată! Scanează direct cu camera foto a telefonului personal (iPhone sau Android).
+- Verificare geolocație GPS la scanare pentru a preveni pontajele din afara sediului.
+- Opțiune 'Pontaj cu PIN' de backup direct pe tableta Kiosk pentru salariații fără telefon mobil sau cu bateria descărcată.
 - Generare condică de prezență lunară (PDF, Excel) și fișiere compatibile cu Saga Software (import direct în salarii).
+- Multi-locație: o companie poate avea oricâte puncte de lucru (sedii, magazine, șantiere) și oricâte tablete Kiosk.
 
-CUM SE CONFIGUREAZĂ UN KIOSK (REGULĂ OBLIGATORIE):
-- ATENȚIE MAXIMĂ: Pentru a crea un Kiosk, este OBLIGATORIU să fie creat mai întâi cel puțin un Punct de Lucru în meniul 'Puncte de Lucru' (/admin/locations). Un Kiosk cere obligatoriu asocierea unui punct de lucru.
-- Pasul 1: Creare Punct de Lucru (Meniu 'Puncte de Lucru' -> '+ Adaugă Punct de Lucru').
-- Pasul 2: Adăugare Kiosk (Meniu 'Tablete Kiosk' -> '+ Adaugă Kiosk' -> selectare Punct de Lucru creat la Pasul 1).
-- Pasul 3: Copiere Link Tabletă (apăsare pe butonul 'Copiază Link Tabletă' și deschidere în Safari pe iPad, Chrome pe Android sau Smart TV).
-- Pasul 4: Blocare ecran în mod Kiosk (iPad: Acces Ghidat cu 3 click-uri Power; Android: Fixare aplicație / Pin App; Smart TV: tasta F11).
+REGULĂ IMPORTANTĂ PENTRU KIOSK-URI:
+- Pentru a crea un Kiosk, este OBLIGATORIU să existe cel puțin un Punct de Lucru creat în prealabil în meniul 'Puncte de Lucru' (/admin/locations).
+- Dispozitive recomandate: Tablete iPad (cu funcția Acces Ghidat / Guided Access activată pentru blocarea ecranului), tablete Android (cu funcția Pin App / Fixare aplicație) sau Smart TV / monitoare.
 
 REGULI STRICTE DE RĂSPUNS:
-- REGULĂ ABSOLUTĂ: ESTE STRICT INTERZISĂ FOLOSIREA DE CARACTERE EMOJI (fără fețe, fără emoticoane, fără simboluri grafice emoji sub nicio formă).
-- Folosește exclusiv text curat și litere în limba română.
-- Răspunde concis și la obiect în pași numerotați clari.
+- REGULĂ ABSOLUTĂ: ESTE STRICT INTERZISĂ FOLOSIREA DE CARACTERE EMOJI (fără emoticoane, fără fețe, fără simboluri grafice emoji). Folosește exclusiv text și litere în limba română.
 - Nu folosi fonturi robotizate monospace.
-- Fii amabil, profesionist și orientat spre soluții practice.`;
+- Fii amabil, concis, orientat spre rezolvarea imediată a nevoii utilizatorului.`;
 
     // 4. Formatăm istoricul pentru API-ul Google Gemini v1beta
     const contents = [];
 
     if (Array.isArray(history) && history.length > 0) {
-      for (const msg of history.slice(-6)) {
+      for (const msg of history.slice(-8)) {
         contents.push({
           role: msg.role === 'user' ? 'user' : 'model',
           parts: [{ text: String(msg.text || msg.content || '') }]
@@ -174,8 +155,8 @@ REGULI STRICTE DE RĂSPUNS:
       parts: [{ text: userMessageWithContext }]
     });
 
-    // 5. Apelăm prioritar modelul Google Gemini 3.8 Flash, cu fallback rapid la Gemini 3 Flash Preview
-    const modelsToTry = ['gemini-3.8-flash', 'gemini-3-flash-preview'];
+    // 5. Apelăm prioritar gemini-3.6-flash (rapid, cotă disponibilă), urmat de gemini-3-flash-preview, gemini-3.5-flash și gemini-3.8-flash
+    const modelsToTry = ['gemini-3.6-flash', 'gemini-3-flash-preview', 'gemini-3.5-flash', 'gemini-3.8-flash'];
     let candidateText = null;
 
     const requestPayload = {
@@ -184,8 +165,8 @@ REGULI STRICTE DE RĂSPUNS:
       },
       contents: contents,
       generationConfig: {
-        temperature: 0.2,
-        maxOutputTokens: 700,
+        temperature: 0.3,
+        maxOutputTokens: 800,
       }
     };
 
@@ -193,7 +174,7 @@ REGULI STRICTE DE RĂSPUNS:
       try {
         const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 3500);
+        const timeout = setTimeout(() => controller.abort(), 6500);
 
         const geminiRes = await fetch(geminiUrl, {
           method: 'POST',
@@ -208,28 +189,28 @@ REGULI STRICTE DE RĂSPUNS:
           const text = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
           if (text && text.trim()) {
             candidateText = text;
-            console.log(`[AI Assistant] Răspuns generat cu succes via ${modelName}`);
+            console.log(`[AI Assistant] Răspuns conversațional generat cu succes via ${modelName}`);
             break;
           }
         } else {
-          console.warn(`[AI Assistant] Modelul ${modelName} a returnat HTTP ${geminiRes.status}. Se încearcă modelul de rezervă...`);
+          console.warn(`[AI Assistant] Modelul ${modelName} a returnat status ${geminiRes.status}. Se încearcă următorul model...`);
         }
       } catch (callErr) {
-        console.warn(`[AI Assistant] Modelul ${modelName} indisponibil sau timeout (${callErr.message}). Se încearcă modelul de rezervă...`);
+        console.warn(`[AI Assistant] Modelul ${modelName} eroare/timeout (${callErr.message}). Se încearcă următorul model...`);
       }
     }
 
     if (!candidateText) {
-      // Fallback inteligent instant pe baza ghidului oficial QR Pontaj dacă rețeaua Google este indisponibilă
+      // Fallback inteligent dacă toate modelele sunt indisponibile
       const p = prompt.toLowerCase();
       if (p.includes('tableta') || p.includes('tv') || p.includes('kiosk') || p.includes('ecran')) {
-        candidateText = `Pentru a afișa ecranul de pontaj pe tabletă sau televizor:\n\n1. **Creați Kiosk-ul**: Mergeți în meniul **Tablete Kiosk** și apăsați **+ Adaugă Kiosk**.\n2. **Copiați Linkul**: În tabelul de Kiosk-uri, apăsați pe butonul **Copiază Link Tabletă**.\n3. **Deschideți pe tabletă**: Introduceți linkul în Safari (pe iPad), Chrome (pe Android) sau browser-ul din Smart TV.\n4. **Blocați pe ecranul de pontaj (Kiosk Mode)**:\n   - **Pe iPad**: Din Configurări -> Accesibilitate -> activați **Acces Ghidat**. Deschideți linkul în Safari și apăsați de 3 ori pe butonul Power -> Start.\n   - **Pe Android**: Activați **Fixare aplicație (Pin App)** din Securitate.\n   - **Pe Smart TV / PC**: Apăsați tasta F11 sau butonul Full Screen.`;
+        candidateText = `Pentru a afișa ecranul de pontaj pe tabletă sau televizor:\n\n1. **Creați un Punct de Lucru**: În meniul Puncte de Lucru, adăugați sediul firmei (pas obligatoriu).\n2. **Creați Kiosk-ul**: În meniul Tablete Kiosk, apăsați + Adaugă Kiosk și asociați punctul de lucru.\n3. **Copiați Linkul**: Apăsați butonul Copiază Link Tabletă și deschideți-l pe dispozitiv în Safari sau Chrome.\n4. **Blocați ecranul**: Pe iPad activați Acces Ghidat (3 apăsări pe butonul Power), iar pe Android activați Fixare aplicație.`;
       } else if (p.includes('ponteaz') || p.includes('scan') || p.includes('camera')) {
-        candidateText = `Procedura de pontaj pentru salariați:\n\n1. Angajatul deschide camera foto a telefonului personal (fără a instala nicio aplicație suplimentară).\n2. Îndreaptă camera către codul QR dinamic afișat pe tabletă.\n3. Pe ecranul telefonului apare notificarea web securizată; apasă pe ea, selectează **Venire** sau **Plecare** și confirmă. Pontajul este salvat instant.`;
+        candidateText = `Procedura de pontaj pentru salariați:\n\n1. Angajatul deschide camera foto standard a telefonului său mobil.\n2. Îndreaptă camera către codul QR dinamic afișat pe tabletă.\n3. Apasă pe notificarea apărută pe telefon, alege Venire sau Plecare și confirmă. Pontajul este înregistrat instant cu timestamp și verificare GPS.`;
       } else if (p.includes('pin') || p.includes('fara telefon') || p.includes('baterie')) {
-        candidateText = `Pontajul de rezervă cu cod PIN:\n\n1. Din pagina de editare a Kiosk-ului, asigurați-vă că este activată opțiunea de pontaj cu PIN.\n2. Pe ecranul tabletei Kiosk există butonul **Pontaj cu PIN**.\n3. Angajatul fără telefon sau cu bateria descărcată își introduce codul PIN propriu pentru înregistrare.`;
+        candidateText = `Pontajul de rezervă cu cod PIN pe tabletă:\n\n1. Asigurați-vă că este bifată opțiunea Permite Pontaj cu PIN în setările Kiosk-ului.\n2. Pe ecranul tabletei există butonul Pontaj cu PIN.\n3. Angajatul își introduce codul PIN alocat pentru pontaj direct de pe tabletă.`;
       } else {
-        candidateText = 'Nu am putut genera un răspuns în acest moment din cauza indisponibilității temporare a serverelor AI. Vă rugăm să consultați ghidul din pagina Tablete Kiosk sau să reformulați întrebarea.';
+        candidateText = 'Vă stau la dispoziție cu orice detalii despre configurarea pontajului, tablete Kiosk, rapoarte sau gestionarea salariaților. Cu ce vă pot fi de folos?';
       }
     }
 
