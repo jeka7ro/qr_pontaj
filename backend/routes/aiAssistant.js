@@ -59,10 +59,11 @@ CUM SE REZOLVĂ CELE MAI FRECVENTE SITUAȚII:
    - Din meniul 'Rapoarte' sau 'Saga', selectează luna dorită și descarcă raportul de pontaj sau fișierul de import pentru Saga.
 
 REGULI STRICTE DE RĂSPUNS:
-- Răspunde concis și la obiect.
-- Nu folosi caractere emoji.
-- Nu folosi fonturi ciudate sau blocuri de cod robotizate dacă nu e nevoie de cod.
-- Fii cald, politicos și orientat spre soluții practice.`;
+- REGULĂ ABSOLUTĂ: ESTE STRICT INTERZISĂ FOLOSIREA DE CARACTERE EMOJI (fără fețe, fără emoticoane, fără simboluri grafice emoji sub nicio formă).
+- Folosește exclusiv text curat și litere în limba română.
+- Răspunde concis și la obiect în pași numerotați clari.
+- Nu folosi fonturi robotizate monospace.
+- Fii amabil, profesionist și orientat spre soluții practice.`;
 
     // 3. Formatăm istoricul pentru API-ul Google Gemini v1beta
     const contents = [];
@@ -125,7 +126,12 @@ REGULI STRICTE DE RĂSPUNS:
       });
     }
 
-    return res.json({ answer: candidateText });
+    // Curățare forțată de caractere emoji (inclusiv diverse blocuri unicode emoji)
+    const cleanAnswer = candidateText
+      .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{1F000}-\u{1F2FF}\u{1F900}-\u{1F9FF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2300}-\u{23FF}\u{2B50}\u{2B55}]/gu, '')
+      .trim();
+
+    return res.json({ answer: cleanAnswer });
   } catch (err) {
     console.error('[AI Assistant] Eroare internă:', err);
     return res.status(500).json({

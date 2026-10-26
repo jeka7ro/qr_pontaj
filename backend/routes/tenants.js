@@ -542,7 +542,7 @@ router.post('/', async (req, res) => {
     }
 
     const rawVat = String(cui || vat_number || '').trim();
-    let finalVat = rawVat || null;
+    let finalVat = rawVat ? rawVat.toUpperCase() : null;
     let finalAddress = billing_address || null;
     let finalLocationName = nume_locatie;
     let isVatPayer = false;
@@ -552,7 +552,7 @@ router.post('/', async (req, res) => {
       const anafData = await lookupAnafCompany(rawVat);
       if (anafData) {
         isVatPayer = Boolean(anafData.isVatPayer);
-        finalVat = isVatPayer ? `RO${anafData.cui}` : anafData.cui;
+        finalVat = isVatPayer ? `RO${anafData.cui}` : String(anafData.cui).toUpperCase();
         if (!finalAddress) finalAddress = anafData.address;
         if (!finalLocationName || finalLocationName === 'Noua Locatie' || finalLocationName === 'Companie Noua') {
           finalLocationName = anafData.name;
@@ -562,8 +562,27 @@ router.post('/', async (req, res) => {
 
     await client.query('BEGIN'); // Start transaction
 
-    // 2. Inserare în qrp_tenants
-    const subdomain = finalLocationName.toLowerCase().replace(/[^a-z0-9]/g, '');
+    // 2. Inserare în qrp_tenants cu garantare subdomeniu / link unic (fără coliziuni)
+    let cleanedSubName = finalLocationName
+      .toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/\b(s\.?r\.?l\.?|s\.?a\.?|pfa|i\.?i\.?|srl-d)\b/gi, '')
+      .trim();
+    let baseSub = cleanedSubName.replace(/[^a-z0-9]/g, '');
+    if (!baseSub || baseSub.length < 3) {
+      baseSub = 'client' + Math.floor(100 + Math.random() * 900);
+    }
+    baseSub = baseSub.substring(0, 20);
+
+    let subdomain = baseSub;
+    let counter = 2;
+    while (true) {
+      const existingSub = await client.query('SELECT id FROM qrp_tenants WHERE LOWER(subdomain) = LOWER($1)', [subdomain]);
+      if (existingSub.rows.length === 0) break;
+      subdomain = `${baseSub}${counter}`;
+      counter++;
+    }
+
     const finalCountry = country_code === 'BE' ? 'BE' : 'RO';
     const finalTimezone = timezone || (finalCountry === 'BE' ? 'Europe/Brussels' : 'Europe/Bucharest');
     const finalCurrency = finalCountry === 'BE' ? 'EUR' : 'RON';
@@ -953,10 +972,31 @@ router.put('/:id', async (req, res) => {
 
     await client.query('BEGIN');
 
-    // 1. Update qrp_tenants
-    const subdomain = nume_locatie.toLowerCase().replace(/[^a-z0-9]/g, '');
+    // 1. Update qrp_tenants cu păstrarea subdomeniului existent (pentru a nu altera link-urile existente)
+    const currentTenantRes = await client.query('SELECT subdomain FROM qrp_tenants WHERE id = $1', [req.params.id]);
+    let subdomain = currentTenantRes.rows[0]?.subdomain;
+    if (!subdomain) {
+      let cleanedSubName = nume_locatie
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/\b(s\.?r\.?l\.?|s\.?a\.?|pfa|i\.?i\.?|srl-d)\b/gi, '')
+        .trim();
+      let baseSub = cleanedSubName.replace(/[^a-z0-9]/g, '');
+      if (!baseSub || baseSub.length < 3) baseSub = 'client' + Math.floor(100 + Math.random() * 900);
+      baseSub = baseSub.substring(0, 20);
+
+      subdomain = baseSub;
+      let counter = 2;
+      while (true) {
+        const existingSub = await client.query('SELECT id FROM qrp_tenants WHERE LOWER(subdomain) = LOWER($1) AND id != $2', [subdomain, req.params.id]);
+        if (existingSub.rows.length === 0) break;
+        subdomain = `${baseSub}${counter}`;
+        counter++;
+      }
+    }
+
     let finalVat = cui !== undefined ? cui : vat_number;
-    if (finalVat) finalVat = String(finalVat).trim();
+    if (finalVat) finalVat = String(finalVat).trim().toUpperCase();
     let finalAddress = billing_address !== undefined ? billing_address : null;
 
     let isVatPayer = null;
@@ -971,7 +1011,7 @@ router.put('/:id', async (req, res) => {
         if (anafData) {
           if (!finalAddress) finalAddress = anafData.address;
           isVatPayer = Boolean(anafData.isVatPayer);
-          finalVat = isVatPayer ? `RO${anafData.cui}` : anafData.cui;
+          finalVat = isVatPayer ? `RO${anafData.cui}` : String(anafData.cui).toUpperCase();
         }
       }
     }

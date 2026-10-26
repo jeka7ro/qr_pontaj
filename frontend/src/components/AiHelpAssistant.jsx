@@ -9,16 +9,17 @@ import {
   FileSpreadsheet, 
   HelpCircle, 
   Bot, 
-  ChevronDown,
-  RotateCcw
+  RotateCcw,
+  Minus,
+  Maximize2
 } from 'lucide-react';
 
-export default function AiHelpAssistant({ tenant, themeColor = '#2563EB', pageContext = '' }) {
+export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageContext = '' }) {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      text: 'Bună ziua! Sunt asistentul inteligent QR Pontaj. Vă pot ajuta cu pașii exacți pentru configurarea unui Kiosk pe tabletă, blocarea ecranului (iPad sau Android), modul de scanare pentru angajați sau exportul rapoartelor pentru contabilitate. Cu ce vă pot fi de folos?'
+      text: 'Bună ziua! Sunt asistentul inteligent QR Pontaj. Vă pot ajuta cu pașii exacți pentru configurarea unui Kiosk pe tabletă, blocarea ecranului pe iPad sau Android, modul de scanare pentru angajați sau descărcarea rapoartelor pentru contabilitate. Cu ce vă pot fi de folos?'
     }
   ]);
   const [input, setInput] = useState('');
@@ -107,7 +108,7 @@ export default function AiHelpAssistant({ tenant, themeColor = '#2563EB', pageCo
     ]);
   };
 
-  // Formatare simplă text markdown (bold, liste numerotate, paragrafe)
+  // Formatare simplă text markdown fără fonturi robotizate și fără emoji
   const renderFormattedText = (text) => {
     if (!text) return null;
     const lines = text.split('\n');
@@ -124,7 +125,7 @@ export default function AiHelpAssistant({ tenant, themeColor = '#2563EB', pageCo
       if (line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
         return (
           <div key={idx} className="flex items-start gap-2 ml-2 my-1 text-slate-700 dark:text-slate-300">
-            <span className="w-1.5 h-1.5 rounded-full bg-primary-500 mt-2 shrink-0"></span>
+            <span className="w-1.5 h-1.5 rounded-full bg-[#007AFF] mt-2 shrink-0"></span>
             <span>{formattedParts}</span>
           </div>
         );
@@ -152,73 +153,74 @@ export default function AiHelpAssistant({ tenant, themeColor = '#2563EB', pageCo
 
   return (
     <>
-      {/* Floating Launcher Button */}
+      {/* macOS Style Floating Launcher Pill */}
       <div className="fixed bottom-6 right-6 z-40">
         {!isOpen && (
           <button
             onClick={() => setIsOpen(true)}
-            className="flex items-center gap-2.5 px-5 h-12 rounded-full text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 border-2 border-white/20 whitespace-nowrap shrink-0 group"
-            style={{ backgroundColor: themeColor }}
+            className="flex items-center gap-2.5 px-4 py-2.5 rounded-full backdrop-blur-2xl bg-white/90 dark:bg-slate-900/90 text-slate-800 dark:text-white shadow-xl hover:shadow-2xl border border-slate-200/90 dark:border-white/15 transition-all duration-200 hover:scale-105 active:scale-95 whitespace-nowrap shrink-0 group"
             title="Deschide Asistentul QR Pontaj"
           >
-            <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center shrink-0 group-hover:rotate-12 transition-transform">
-              <Sparkles size={16} className="text-white" />
+            <div className="w-7 h-7 rounded-full bg-[#007AFF]/15 text-[#007AFF] dark:bg-[#007AFF]/25 dark:text-blue-300 flex items-center justify-center shrink-0 group-hover:rotate-12 transition-transform">
+              <Sparkles size={15} />
             </div>
-            <span className="font-bold text-sm tracking-tight whitespace-nowrap shrink-0">
+            <span className="font-semibold text-xs sm:text-sm tracking-tight whitespace-nowrap shrink-0">
               Asistent QR Pontaj
             </span>
           </button>
         )}
       </div>
 
-      {/* Floating Chat Modal / Drawer */}
+      {/* macOS Window Card */}
       {isOpen && (
-        <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 w-[calc(100vw-2rem)] sm:w-[460px] h-[600px] max-h-[85vh] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden animate-in slide-in-from-bottom-6 fade-in duration-200">
+        <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 w-[calc(100vw-2rem)] sm:w-[470px] h-[610px] max-h-[86vh] backdrop-blur-3xl bg-white/90 dark:bg-slate-900/90 rounded-2xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.35)] border border-slate-200/80 dark:border-white/10 flex flex-col overflow-hidden animate-in slide-in-from-bottom-6 fade-in duration-200">
           
-          {/* Header */}
-          <div 
-            className="px-5 py-4 flex items-center justify-between text-white shrink-0 shadow-md"
-            style={{ backgroundColor: themeColor }}
-          >
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center shrink-0">
-                <Bot size={22} className="text-white" />
-              </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-black text-sm tracking-tight truncate">
-                    Asistent Inteligent QR Pontaj
-                  </h3>
-                  <span className="text-[10px] font-black uppercase tracking-wider bg-white/20 px-2 py-0.5 rounded-full whitespace-nowrap shrink-0">
-                    AI Online
-                  </span>
-                </div>
-                <p className="text-xs text-white/80 truncate mt-0.5">
-                  Ghidaj pas cu pas pentru Kiosk, tabletă și pontaj
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-1 shrink-0">
+          {/* macOS Title Bar with Traffic Lights */}
+          <div className="px-4 py-3 bg-slate-100/70 dark:bg-slate-800/60 border-b border-slate-200/70 dark:border-slate-800 flex items-center justify-between select-none shrink-0">
+            {/* Traffic Lights */}
+            <div className="flex items-center gap-2">
               <button
-                onClick={handleResetChat}
-                className="w-8 h-8 rounded-full flex items-center justify-center text-white/80 hover:text-white hover:bg-white/10 transition-colors"
-                title="Resetează conversația"
+                onClick={() => setIsOpen(false)}
+                className="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E] hover:opacity-80 active:opacity-60 transition-opacity cursor-pointer shadow-xs flex items-center justify-center group"
+                title="Închide"
               >
-                <RotateCcw size={16} />
+                <X size={8} className="text-[#4A0002] opacity-0 group-hover:opacity-100 transition-opacity" />
               </button>
               <button
                 onClick={() => setIsOpen(false)}
-                className="w-8 h-8 rounded-full flex items-center justify-center text-white/80 hover:text-white hover:bg-white/10 transition-colors"
-                title="Închide asistentul"
+                className="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#DEA123] hover:opacity-80 active:opacity-60 transition-opacity cursor-pointer shadow-xs flex items-center justify-center group"
+                title="Minimizează"
               >
-                <X size={20} />
+                <Minus size={8} className="text-[#5B3E00] opacity-0 group-hover:opacity-100 transition-opacity" />
+              </button>
+              <button
+                onClick={handleResetChat}
+                className="w-3 h-3 rounded-full bg-[#27C93F] border border-[#1AAB29] hover:opacity-80 active:opacity-60 transition-opacity cursor-pointer shadow-xs flex items-center justify-center group"
+                title="Resetează"
+              >
+                <RotateCcw size={7} className="text-[#004A0E] opacity-0 group-hover:opacity-100 transition-opacity" />
               </button>
             </div>
+
+            {/* Window Title */}
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 tracking-tight">
+              <Bot size={14} className="text-[#007AFF]" />
+              <span>Asistent QR Pontaj</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 ml-1"></span>
+            </div>
+
+            {/* Action */}
+            <button
+              onClick={handleResetChat}
+              className="text-[11px] font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white px-2 py-0.5 rounded-full hover:bg-slate-200/60 dark:hover:bg-slate-700/60 transition-colors whitespace-nowrap shrink-0"
+              title="Resetează conversația"
+            >
+              Curăță
+            </button>
           </div>
 
-          {/* Quick Questions Pills */}
-          <div className="px-4 py-2.5 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-100 dark:border-slate-800 overflow-x-auto flex items-center gap-2 scrollbar-none shrink-0">
+          {/* Quick Questions macOS Segmented Chips */}
+          <div className="px-3.5 py-2.5 bg-slate-50/70 dark:bg-slate-900/50 border-b border-slate-200/60 dark:border-slate-800/60 overflow-x-auto flex items-center gap-1.5 scrollbar-none shrink-0">
             {quickQuestions.map((q, qIdx) => {
               const IconComp = q.icon;
               return (
@@ -226,9 +228,9 @@ export default function AiHelpAssistant({ tenant, themeColor = '#2563EB', pageCo
                   key={qIdx}
                   onClick={() => handleSend(q.label)}
                   disabled={loading}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-primary-500 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-950/30 transition-all whitespace-nowrap shrink-0 shadow-sm disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-[#007AFF] hover:text-[#007AFF] dark:hover:text-blue-400 hover:bg-blue-50/40 dark:hover:bg-blue-950/20 transition-all whitespace-nowrap shrink-0 shadow-xs disabled:opacity-50"
                 >
-                  <IconComp size={13} className="text-primary-500 shrink-0" />
+                  <IconComp size={12} className="text-[#007AFF] shrink-0" />
                   <span className="whitespace-nowrap shrink-0">{q.label}</span>
                 </button>
               );
@@ -236,7 +238,7 @@ export default function AiHelpAssistant({ tenant, themeColor = '#2563EB', pageCo
           </div>
 
           {/* Chat Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <div className="flex-1 overflow-y-auto p-4 space-y-3.5 bg-slate-50/30 dark:bg-slate-950/20">
             {messages.map((msg, mIdx) => {
               const isUser = msg.role === 'user';
               return (
@@ -245,24 +247,20 @@ export default function AiHelpAssistant({ tenant, themeColor = '#2563EB', pageCo
                   className={`flex items-start gap-2.5 ${isUser ? 'justify-end' : 'justify-start'}`}
                 >
                   {!isUser && (
-                    <div 
-                      className="w-7 h-7 rounded-full flex items-center justify-center text-white shrink-0 mt-0.5 shadow-sm"
-                      style={{ backgroundColor: themeColor }}
-                    >
-                      <Bot size={15} />
+                    <div className="w-7 h-7 rounded-full bg-[#007AFF] text-white flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
+                      <Bot size={14} />
                     </div>
                   )}
 
                   <div 
-                    className={`max-w-[85%] rounded-2xl p-3.5 text-xs sm:text-sm shadow-sm ${
+                    className={`max-w-[85%] text-xs sm:text-sm leading-relaxed ${
                       isUser 
-                        ? 'text-white rounded-br-none font-medium' 
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-bl-none border border-slate-200/60 dark:border-slate-700'
+                        ? 'bg-[#007AFF] text-white rounded-2xl rounded-br-sm px-4 py-2.5 shadow-xs font-medium' 
+                        : 'bg-white/90 dark:bg-slate-800/90 text-slate-800 dark:text-slate-200 rounded-2xl rounded-bl-sm px-4 py-3 border border-slate-200/70 dark:border-white/10 shadow-xs'
                     }`}
-                    style={isUser ? { backgroundColor: themeColor } : {}}
                   >
                     {isUser ? (
-                      <p className="whitespace-pre-wrap leading-relaxed">{msg.text}</p>
+                      <p className="whitespace-pre-wrap">{msg.text}</p>
                     ) : (
                       <div className="space-y-1">
                         {renderFormattedText(msg.text)}
@@ -275,17 +273,14 @@ export default function AiHelpAssistant({ tenant, themeColor = '#2563EB', pageCo
 
             {loading && (
               <div className="flex items-start gap-2.5 justify-start">
-                <div 
-                  className="w-7 h-7 rounded-full flex items-center justify-center text-white shrink-0 mt-0.5 shadow-sm"
-                  style={{ backgroundColor: themeColor }}
-                >
-                  <Bot size={15} />
+                <div className="w-7 h-7 rounded-full bg-[#007AFF] text-white flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
+                  <Bot size={14} />
                 </div>
-                <div className="bg-slate-100 dark:bg-slate-800 rounded-2xl rounded-bl-none p-3.5 border border-slate-200/60 dark:border-slate-700 flex items-center gap-1.5">
-                  <div className="w-2 h-2 rounded-full bg-primary-500 animate-bounce"></div>
-                  <div className="w-2 h-2 rounded-full bg-primary-500 animate-bounce [animation-delay:0.2s]"></div>
-                  <div className="w-2 h-2 rounded-full bg-primary-500 animate-bounce [animation-delay:0.4s]"></div>
-                  <span className="text-xs text-slate-400 font-medium ml-1">Asistentul tastează...</span>
+                <div className="bg-white/90 dark:bg-slate-800/90 rounded-2xl rounded-bl-sm px-4 py-3 border border-slate-200/70 dark:border-white/10 shadow-xs flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-[#007AFF] animate-bounce"></div>
+                  <div className="w-2 h-2 rounded-full bg-[#007AFF] animate-bounce [animation-delay:0.2s]"></div>
+                  <div className="w-2 h-2 rounded-full bg-[#007AFF] animate-bounce [animation-delay:0.4s]"></div>
+                  <span className="text-xs text-slate-400 font-medium ml-1">Asistentul analizează...</span>
                 </div>
               </div>
             )}
@@ -293,8 +288,8 @@ export default function AiHelpAssistant({ tenant, themeColor = '#2563EB', pageCo
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input Footer */}
-          <div className="p-3 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 shrink-0">
+          {/* Input Footer in macOS Spotlight Style */}
+          <div className="p-3 bg-white/80 dark:bg-slate-900/80 border-t border-slate-200/70 dark:border-slate-800 shrink-0">
             <form 
               onSubmit={(e) => {
                 e.preventDefault();
@@ -306,18 +301,17 @@ export default function AiHelpAssistant({ tenant, themeColor = '#2563EB', pageCo
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Scrie o întrebare... (ex: Cum deschid linkul pe tabletă?)"
+                placeholder="Scrie o întrebare... (ex: Cum blochez tableta?)"
                 disabled={loading}
-                className="flex-1 px-4 h-11 text-xs sm:text-sm rounded-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 placeholder-slate-400 outline-none focus:ring-2 focus:ring-primary-500 transition-all font-medium"
+                className="flex-1 px-4 h-10 text-xs sm:text-sm rounded-full bg-slate-100/90 dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700 text-slate-800 dark:text-slate-100 placeholder-slate-400 outline-none focus:ring-2 focus:ring-[#007AFF] transition-all font-medium"
               />
               <button
                 type="submit"
                 disabled={!input.trim() || loading}
-                className="w-11 h-11 rounded-full flex items-center justify-center text-white shadow-md disabled:opacity-40 disabled:cursor-not-allowed hover:-translate-y-0.5 active:translate-y-0 transition-all shrink-0"
-                style={{ backgroundColor: themeColor }}
-                title="Trimite întrebarea"
+                className="w-10 h-10 rounded-full flex items-center justify-center bg-[#007AFF] text-white shadow-md disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90 active:scale-95 transition-all shrink-0"
+                title="Trimite"
               >
-                <Send size={16} />
+                <Send size={15} />
               </button>
             </form>
           </div>

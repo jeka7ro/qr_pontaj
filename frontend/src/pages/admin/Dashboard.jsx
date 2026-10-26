@@ -304,6 +304,29 @@ export default function AdminDashboard() {
   );
 }
 
+const formatCuiDisplay = (rawCui, isVatPayer) => {
+  if (!rawCui) return '';
+  const trimmed = String(rawCui).trim();
+  const digits = trimmed.replace(/\D/g, '');
+  if (digits.length === 13) {
+    return digits; // Persoană Fizică (CNP)
+  }
+  const upper = trimmed.toUpperCase();
+  if (upper.startsWith('RO')) {
+    return upper;
+  }
+  if (isVatPayer) {
+    return `RO${digits || upper}`;
+  }
+  return upper;
+};
+
+const isCuiVatPayer = (rawCui, isVatPayer) => {
+  if (!rawCui) return false;
+  const upper = String(rawCui).trim().toUpperCase();
+  return upper.startsWith('RO') || Boolean(isVatPayer);
+};
+
 function TenantDetailsModal({ tenant, onClose, onTenantUpdated, onManageAdmins }) {
   if (!tenant) return null;
 
@@ -312,7 +335,7 @@ function TenantDetailsModal({ tenant, onClose, onTenantUpdated, onManageAdmins }
   const [syncError, setSyncError] = useState(null);
   const [syncSuccess, setSyncSuccess] = useState(false);
   const [editingCui, setEditingCui] = useState(false);
-  const [cuiInput, setCuiInput] = useState(tenant.cui || '');
+  const [cuiInput, setCuiInput] = useState(formatCuiDisplay(tenant.cui, tenant.is_vat_payer));
 
   const handleSync = async (cuiToUse) => {
     const targetCui = cuiToUse !== undefined ? cuiToUse : (cuiInput || activeTenant.cui);
@@ -416,12 +439,12 @@ function TenantDetailsModal({ tenant, onClose, onTenantUpdated, onManageAdmins }
                 {isSuspended ? 'SUSPENDAT' : isOnline ? (isDemo ? 'DEMO ONLINE (15 ZILE)' : 'ABONAMENT ONLINE') : 'CONTRACT DIRECT (MANUAL)'}
               </span>
               {activeTenant.cui && (
-                <span className={`px-2 py-0.5 rounded-md text-xs font-bold whitespace-nowrap shrink-0 ${
-                  activeTenant.cui.startsWith('RO') || activeTenant.is_vat_payer
+                <span className={`px-2 py-0.5 rounded-full text-xs font-bold whitespace-nowrap shrink-0 ${
+                  isCuiVatPayer(activeTenant.cui, activeTenant.is_vat_payer)
                     ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300'
                     : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
                 }`}>
-                  CUI: {activeTenant.cui.startsWith('RO') ? activeTenant.cui : (activeTenant.is_vat_payer ? `RO${activeTenant.cui}` : activeTenant.cui)}
+                  CUI: {formatCuiDisplay(activeTenant.cui, activeTenant.is_vat_payer)}
                 </span>
               )}
             </div>
@@ -605,15 +628,15 @@ function TenantDetailsModal({ tenant, onClose, onTenantUpdated, onManageAdmins }
                 ) : (
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-slate-900 dark:text-white">
-                      {activeTenant.cui ? (activeTenant.cui.startsWith('RO') ? activeTenant.cui : (activeTenant.is_vat_payer ? `RO${activeTenant.cui}` : activeTenant.cui)) : 'Nespecificat'}
+                      {activeTenant.cui ? formatCuiDisplay(activeTenant.cui, activeTenant.is_vat_payer) : 'Nespecificat'}
                     </span>
                     {activeTenant.cui && (
                       <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap shrink-0 ${
-                        activeTenant.cui.startsWith('RO') || activeTenant.is_vat_payer
+                        isCuiVatPayer(activeTenant.cui, activeTenant.is_vat_payer)
                           ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
                           : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
                       }`}>
-                        {activeTenant.cui.startsWith('RO') || activeTenant.is_vat_payer ? 'Plătitor TVA (RO)' : 'Neplătitor TVA'}
+                        {isCuiVatPayer(activeTenant.cui, activeTenant.is_vat_payer) ? 'Plătitor TVA (RO)' : 'Neplătitor TVA'}
                       </span>
                     )}
                   </div>
@@ -817,12 +840,12 @@ function TenantsList({ defaultTab = 'tenants' }) {
                 {row.nume}
               </button>
               {row.cui && (
-                <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold whitespace-nowrap shrink-0 ${
-                  row.cui.startsWith('RO') || row.is_vat_payer
+                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap shrink-0 ${
+                  isCuiVatPayer(row.cui, row.is_vat_payer)
                     ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-800/40'
                     : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
                 }`}>
-                  {row.cui.startsWith('RO') ? row.cui : (row.is_vat_payer ? `RO${row.cui}` : row.cui)}
+                  {formatCuiDisplay(row.cui, row.is_vat_payer)}
                 </span>
               )}
             </div>
