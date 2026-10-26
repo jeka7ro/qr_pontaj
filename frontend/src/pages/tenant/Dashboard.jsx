@@ -344,6 +344,7 @@ export default function TenantDashboard() {
   };
 
   const tenantLogoSrc = getTenantLogoSrc(tenant);
+  const isUnda = tenant?.subdomain === 'unda' || tenant?.name?.toLowerCase().includes('unda');
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-800/50 flex">
@@ -361,7 +362,7 @@ export default function TenantDashboard() {
               {tenantLogoSrc && !tenantLogoSrc.includes('default') && !tenantLogoSrc.includes('smartqr') && !tenantLogoSrc.includes('1792931780859') ? (
                 <div 
                   onClick={toggleSidebarCollapsed}
-                  className="relative h-10 w-10 shrink-0 bg-white dark:bg-slate-800 rounded-xl flex items-center justify-center p-1 shadow-xs border border-slate-200 dark:border-slate-700 cursor-pointer hover:ring-2 hover:ring-primary-500 transition-all overflow-hidden" 
+                  className={`relative h-10 w-10 shrink-0 ${isUnda ? 'bg-black border-slate-900' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'} rounded-xl flex items-center justify-center p-1 shadow-xs border cursor-pointer hover:ring-2 hover:ring-primary-500 transition-all overflow-hidden`} 
                   title={`${tenant.name} — Apasă pentru a extinde meniul`}
                 >
                   <img 
@@ -369,8 +370,8 @@ export default function TenantDashboard() {
                     alt={tenant.name} 
                     className="max-h-full max-w-full object-contain"
                     onError={(e) => {
-                      if (tenant.subdomain === 'unda' || tenant.name?.toLowerCase().includes('unda')) {
-                        e.currentTarget.src = '/logos/unda.png';
+                      if (isUnda) {
+                        e.currentTarget.src = 'https://unda.ro/wp-content/uploads/2022/06/cropped-icon-180x180.jpg';
                       }
                     }} 
                   />
@@ -403,14 +404,14 @@ export default function TenantDashboard() {
             <>
               <div className="flex items-center gap-3 overflow-hidden min-w-0">
                 {tenantLogoSrc && !tenantLogoSrc.includes('default') && !tenantLogoSrc.includes('smartqr') && !tenantLogoSrc.includes('1792931780859') ? (
-                  <div className="relative h-10 w-10 shrink-0 bg-white dark:bg-slate-800 rounded-xl flex items-center justify-center p-1 shadow-xs border border-slate-200 dark:border-slate-700 overflow-hidden" title={tenant.name}>
+                  <div className={`relative h-10 w-10 shrink-0 ${isUnda ? 'bg-black border-slate-900' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'} rounded-xl flex items-center justify-center p-1 shadow-xs border overflow-hidden`} title={tenant.name}>
                     <img 
                       src={tenantLogoSrc} 
                       alt={tenant.name} 
                       className="max-h-full max-w-full object-contain"
                       onError={(e) => {
-                        if (tenant.subdomain === 'unda' || tenant.name?.toLowerCase().includes('unda')) {
-                          e.currentTarget.src = '/logos/unda.png';
+                        if (isUnda) {
+                          e.currentTarget.src = 'https://unda.ro/wp-content/uploads/2022/06/cropped-icon-180x180.jpg';
                         }
                       }} 
                     />
