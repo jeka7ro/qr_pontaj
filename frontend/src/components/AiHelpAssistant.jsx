@@ -521,17 +521,13 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
               style={{ animation: 'attentionWiggle 6.5s ease-in-out infinite' }}
               title="Deschide Asistentul AI QR Pontaj"
             >
-              {/* Logo Oficial QR Pontaj / Companie — Format mărit, cu respirație luminoasă și laser optic */}
-              <div className="relative w-9 h-9 rounded-full overflow-hidden shadow-md shrink-0 flex items-center justify-center bg-white dark:bg-slate-900 border border-slate-700/80 group-hover:scale-105 transition-transform p-0.5">
-                <img 
-                  src={brandLogoUrl} 
-                  alt="Logo QR Pontaj" 
-                  className="w-full h-full object-contain rounded-full"
-                  style={{ animation: 'qrBreathe 3.2s ease-in-out infinite' }}
-                />
+              {/* Logo Oficial QR Pontaj cu respirație luminoasă și laser optic */}
+              <div className="relative w-9 h-9 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/30 shrink-0 border border-white/20 group-hover:scale-105 transition-transform overflow-hidden">
+                <div className="animate-qr-breathe">
+                  <QrCode size={19} strokeWidth={2.4} />
+                </div>
                 <div 
-                  className="absolute left-1 right-1 h-[2px] bg-gradient-to-r from-transparent via-cyan-300 to-transparent rounded-full shadow-[0_0_8px_2px_rgba(56,189,248,0.95)] z-20 pointer-events-none"
-                  style={{ animation: 'smoothQrLaser 2.2s ease-in-out infinite' }}
+                  className="absolute left-1 right-1 h-[2px] bg-gradient-to-r from-transparent via-cyan-300 to-transparent rounded-full shadow-[0_0_8px_2px_rgba(56,189,248,0.95)] z-20 pointer-events-none animate-qr-laser"
                 />
               </div>
 
@@ -1355,12 +1351,10 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
             {/* Header Modal */}
             <div className="px-5 sm:px-6 pt-5 pb-3.5 flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/50 shrink-0">
               <div className="flex items-center gap-2.5 min-w-0">
-                <div className="relative w-8 h-8 rounded-full overflow-hidden shadow-xs shrink-0 border border-slate-200/80 dark:border-slate-700 bg-white dark:bg-slate-800 flex items-center justify-center p-0.5">
-                  <img 
-                    src={brandLogoUrl} 
-                    alt={tenant?.name || 'Logo'} 
-                    className="w-full h-full object-contain rounded-full animate-qr-breathe" 
-                  />
+                <div className="relative w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-xs shrink-0 border border-white/20 overflow-hidden">
+                  <div className="animate-qr-breathe">
+                    <QrCode size={18} strokeWidth={2.4} />
+                  </div>
                   <div 
                     className="absolute left-1 right-1 h-[1.5px] bg-gradient-to-r from-transparent via-cyan-300 to-transparent rounded-full shadow-[0_0_6px_1.5px_rgba(56,189,248,0.95)] z-20 pointer-events-none animate-qr-laser"
                   />

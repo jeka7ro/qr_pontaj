@@ -341,10 +341,7 @@ export default function TenantDashboard() {
                   <img 
                     src={tenant.logo_url} 
                     alt={tenant.name} 
-                    className="max-h-full max-w-full object-contain animate-qr-breathe" 
-                  />
-                  <div 
-                    className="absolute left-1 right-1 h-[2px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent rounded-full shadow-[0_0_8px_2px_rgba(56,189,248,0.95)] z-20 pointer-events-none animate-qr-laser"
+                    className="max-h-full max-w-full object-contain" 
                   />
                 </div>
               ) : (
@@ -379,10 +376,7 @@ export default function TenantDashboard() {
                     <img 
                       src={tenant.logo_url} 
                       alt={tenant.name} 
-                      className="max-h-full max-w-full object-contain animate-qr-breathe" 
-                    />
-                    <div 
-                      className="absolute left-1 right-1 h-[2px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent rounded-full shadow-[0_0_8px_2px_rgba(56,189,248,0.95)] z-20 pointer-events-none animate-qr-laser"
+                      className="max-h-full max-w-full object-contain" 
                     />
                   </div>
                 ) : (

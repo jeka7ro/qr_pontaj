@@ -62,6 +62,45 @@ export default function LandingRomania() {
     defaultSeats: 15
   });
 
+  const [subForm, setSubForm] = useState({
+    contactName: '',
+    email: '',
+    password: '',
+    companyName: '',
+    phone: '',
+    anafPhone: '',
+    cui: '',
+    cnp: '',
+    address: '',
+    city: '',
+    county: '',
+    regCom: '',
+    employeesCount: '15',
+    notes: ''
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showSuccessPassword, setShowSuccessPassword] = useState(false);
+  const [copiedField, setCopiedField] = useState(null);
+
+  const copyToClipboard = (text, fieldName) => {
+    if (!text) return;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text);
+    }
+    setCopiedField(fieldName);
+    setTimeout(() => setCopiedField(null), 2500);
+  };
+  const [cuiLoading, setCuiLoading] = useState(false);
+  const [cuiError, setCuiError] = useState(null);
+  const [companyVerified, setCompanyVerified] = useState(null);
+  const [isSubmittingForm, setIsSubmittingForm] = useState(false);
+  const [subSubmitted, setSubSubmitted] = useState(false);
+  const [assignedTempPassword, setAssignedTempPassword] = useState(null);
+  const [acceptTerms, setAcceptTerms] = useState(true);
+  const [acceptDpa, setAcceptDpa] = useState(true);
+  const [createdSubdomain, setCreatedSubdomain] = useState('');
+  const [legalModalType, setLegalModalType] = useState(null); // 'terms' | 'privacy' | 'dpa'
+
   const openPlanModal = (planId = 'standard', mode = 'demo') => {
     setModalMode(mode);
     let planData = {
@@ -145,45 +184,6 @@ export default function LandingRomania() {
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [legalModalType]);
-
-  const [subForm, setSubForm] = useState({
-    contactName: '',
-    email: '',
-    password: '',
-    companyName: '',
-    phone: '',
-    anafPhone: '',
-    cui: '',
-    cnp: '',
-    address: '',
-    city: '',
-    county: '',
-    regCom: '',
-    employeesCount: '15',
-    notes: ''
-  });
-  const [showPassword, setShowPassword] = useState(false);
-  const [showSuccessPassword, setShowSuccessPassword] = useState(false);
-  const [copiedField, setCopiedField] = useState(null);
-
-  const copyToClipboard = (text, fieldName) => {
-    if (!text) return;
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text);
-    }
-    setCopiedField(fieldName);
-    setTimeout(() => setCopiedField(null), 2500);
-  };
-  const [cuiLoading, setCuiLoading] = useState(false);
-  const [cuiError, setCuiError] = useState(null);
-  const [companyVerified, setCompanyVerified] = useState(null);
-  const [isSubmittingForm, setIsSubmittingForm] = useState(false);
-  const [subSubmitted, setSubSubmitted] = useState(false);
-  const [assignedTempPassword, setAssignedTempPassword] = useState(null);
-  const [acceptTerms, setAcceptTerms] = useState(true);
-  const [acceptDpa, setAcceptDpa] = useState(true);
-  const [createdSubdomain, setCreatedSubdomain] = useState('');
-  const [legalModalType, setLegalModalType] = useState(null); // 'terms' | 'privacy' | 'dpa'
 
   // Ceas Digital Live și Dată
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -453,8 +453,13 @@ export default function LandingRomania() {
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs overflow-hidden w-full">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
           <Link to="/" className="flex items-center gap-2 group cursor-pointer focus:outline-none shrink-0">
-            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-sm shadow-blue-500/20 group-hover:scale-105 transition-transform">
-              <QrCode size={18} strokeWidth={2.4} />
+            <div className="relative w-8 h-8 sm:w-9 sm:h-9 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-sm shadow-blue-500/20 group-hover:scale-105 transition-transform overflow-hidden">
+              <div className="animate-qr-breathe">
+                <QrCode size={18} strokeWidth={2.4} />
+              </div>
+              <div 
+                className="absolute left-0.5 right-0.5 h-[1.5px] bg-gradient-to-r from-transparent via-cyan-300 to-transparent rounded-full shadow-[0_0_8px_1px_rgba(56,189,248,0.95)] z-20 pointer-events-none animate-qr-laser"
+              />
             </div>
             <span className="text-lg sm:text-xl font-black text-slate-900 tracking-tight leading-none whitespace-nowrap">
               Pontaj<span className="text-blue-600">.app</span>

@@ -159,16 +159,18 @@ export default function EmployeeLogin() {
               <img 
                 src={( tenant.logo_url?.startsWith('http') ? tenant.logo_url : `${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}${tenant.logo_url}` )} 
                 alt="Logo" 
-                className="w-full h-full object-contain p-2 animate-qr-breathe" 
+                className="w-full h-full object-contain p-2" 
               />
             ) : (
-              <div className="animate-qr-breathe">
-                <User size={32} />
-              </div>
+              <>
+                <div className="animate-qr-breathe">
+                  <User size={32} />
+                </div>
+                <div 
+                  className="absolute left-1.5 right-1.5 h-[2px] bg-gradient-to-r from-transparent via-cyan-300 to-transparent rounded-full shadow-[0_0_8px_2px_rgba(56,189,248,0.95)] z-20 pointer-events-none animate-qr-laser"
+                />
+              </>
             )}
-            <div 
-              className="absolute left-1.5 right-1.5 h-[2px] bg-gradient-to-r from-transparent via-cyan-300 to-transparent rounded-full shadow-[0_0_8px_2px_rgba(56,189,248,0.95)] z-20 pointer-events-none animate-qr-laser"
-            />
           </div>
           <h1 className="text-2xl font-bold mb-1">{tenant?.name || 'Portal Angajați'}</h1>
           <p className="text-white/80 text-sm">Autentificare rapidă & program</p>

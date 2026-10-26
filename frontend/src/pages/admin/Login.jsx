@@ -281,27 +281,21 @@ export default function AdminLogin() {
         {tenantBranding?.logo_url && !logoError ? (
           <div className="flex flex-col items-center">
             {isRestaurantTheme ? (
-              <div className="relative inline-flex items-center justify-center p-3 rounded-3xl bg-black/40 backdrop-blur-xl border border-white/15 shadow-2xl mb-4 transition-all hover:scale-105 overflow-hidden">
+              <div className="relative inline-flex items-center justify-center p-3 rounded-3xl bg-black/40 backdrop-blur-xl border border-white/15 shadow-2xl mb-4 transition-all hover:scale-105">
                 <img 
                   src={tenantBranding.logo_url} 
                   alt={tenantBranding.name || 'Logo'} 
-                  className="h-16 max-w-[220px] object-contain drop-shadow-md animate-qr-breathe"
+                  className="h-16 max-w-[220px] object-contain drop-shadow-md"
                   onError={() => setLogoError(true)}
-                />
-                <div 
-                  className="absolute left-2 right-2 h-[2px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent rounded-full shadow-[0_0_10px_2px_rgba(56,189,248,0.95)] z-20 pointer-events-none animate-qr-laser"
                 />
               </div>
             ) : (
-              <div className="relative inline-flex items-center justify-center p-3 bg-white dark:bg-slate-800 rounded-3xl shadow-md shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-700/80 mb-3.5 transition-transform hover:scale-105 overflow-hidden">
+              <div className="relative inline-flex items-center justify-center p-3 bg-white dark:bg-slate-800 rounded-3xl shadow-md shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-700/80 mb-3.5 transition-transform hover:scale-105">
                 <img 
                   src={tenantBranding.logo_url} 
                   alt={tenantBranding.name || 'Logo'} 
-                  className="h-20 max-w-[200px] object-contain animate-qr-breathe"
+                  className="h-20 max-w-[200px] object-contain"
                   onError={() => setLogoError(true)}
-                />
-                <div 
-                  className="absolute left-2 right-2 h-[2px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent rounded-full shadow-[0_0_10px_2px_rgba(56,189,248,0.95)] z-20 pointer-events-none animate-qr-laser"
                 />
               </div>
             )}
