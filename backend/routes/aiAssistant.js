@@ -34,25 +34,39 @@ router.post('/assistant', async (req, res) => {
       pTrim.includes('cum pun ecranul pe tablet') || 
       pTrim.includes('cum pun ecranul pe tv') || 
       pTrim.includes('cum blochez pe tableta') ||
-      pTrim.includes('kiosk pe tableta')
+      pTrim.includes('kiosk pe tableta') ||
+      pTrim.includes('cum conectez un kiosk') ||
+      pTrim.includes('cum creez un kiosk') ||
+      pTrim.includes('conectez un kiosk') ||
+      pTrim.includes('creez un kiosk')
     ) {
-      const instantAnswer = `Pentru a afișa ecranul de pontaj pe tabletă sau televizor:
+      const instantAnswer = `Pentru a conecta și afișa un ecran de pontaj (Kiosk) pe tabletă sau televizor, este esențial să parcurgeți acești **4 pași clari**:
 
-1. **Creați sau alegeți Kiosk-ul**:
-   - Mergeți în meniul **Tablete Kiosk** din panoul de administrare și apăsați **+ Adaugă Kiosk**.
-   - Introduceți un nume sugestiv (ex: Recepție, Intrare) și asociați punctul de lucru.
+### Pasul 1: Crearea Punctului de Lucru (OBLIGATORIU)
+Un ecran Kiosk NU poate fi creat dacă nu există cel puțin un punct de lucru în sistem, deoarece fiecare tabletă trebuie asociată unei locații fizice:
+1. Mergeți în meniul din stânga la **Puncte de Lucru** (sau accesați **/admin/locations**).
+2. Apăsați pe butonul **+ Adaugă Punct de Lucru**.
+3. Introduceți numele locației (ex: *Sediul Central*, *Depozit*, *Magazin*) și adresa, apoi apăsați **Salvează**.
 
-2. **Copiați Linkul Kiosk**:
-   - În lista de Kiosk-uri, apăsați pe butonul **Copiază Link Tabletă**.
+### Pasul 2: Adăugarea Kiosk-ului
+După ce aveți cel puțin un Punct de Lucru salvat:
+1. Mergeți în meniul din stânga la **Tablete Kiosk** (sau **/admin/qr**).
+2. Apăsați pe butonul **+ Adaugă Kiosk**.
+3. Introduceți un nume pentru tabletă (ex: *Tableta Intrare Recepție*).
+4. La rubrica **Punct de Lucru**, selectați din listă locația creată la Pasul 1.
+5. (Opțional) Bifați opțiunea de backup **Permite Pontaj cu PIN** pentru salariații fără telefon.
+6. Apăsați **Salvează**.
 
-3. **Deschideți pe tabletă / Smart TV**:
-   - Deschideți browser-ul de pe dispozitiv (Safari pe iPad, Chrome pe tablete Android sau browser-ul din Smart TV).
-   - Introduceți linkul copiat și accesați-l. Ecranul de pontaj QR dinamic va porni automat.
+### Pasul 3: Copierea Link-ului pe Tabletă sau TV
+1. În tabelul cu Kiosk-uri, apăsați pe butonul albastru **Copiază Link Tabletă**.
+2. Deschideți browser-ul de pe dispozitiv (Safari pe iPad, Chrome pe Android sau browser-ul Smart TV).
+3. Introduceți linkul copiat (sau trimiteți-l pe tabletă prin WhatsApp / Email) și accesați-l. Ecranul de pontaj cu cod QR dinamic va porni automat.
 
-4. **Blocați pe ecranul de pontaj (Kiosk Mode)**:
-   - **Pe iPad (Recomandat)**: Din Configurări -> Accesibilitate -> activați **Acces Ghidat**. Deschideți linkul în Safari și apăsați de 3 ori pe butonul fizic Power -> Start. Tableta rămâne blocată exclusiv pe pontaj.
-   - **Pe Android**: Activați opțiunea **Fixare aplicație (Pin App)** din Setări de Securitate.
-   - **Pe Smart TV / PC**: Apăsați tasta **F11** sau butonul de Full Screen din browser.`;
+### Pasul 4: Blocarea ecranului (Kiosk Mode Anti-Ieșire)
+Pentru ca angajații să nu poată ieși din ecranul de pontaj:
+- **Pe iPad (Recomandat)**: Din **Configurări -> Accesibilitate -> Acces Ghidat**, activați opțiunea. Deschideți linkul în Safari și apăsați de 3 ori consecutiv pe butonul fizic Power -> apăsați **Start** în colțul din dreapta-sus. Tableta va rămâne blocată exclusiv pe pontaj.
+- **Pe Android**: Din **Configurări -> Securitate**, activați **Fixare aplicație (Pin App)**. Deschideți Chrome cu linkul și fixați ecranul.
+- **Pe Smart TV / PC**: Apăsați tasta **F11** sau butonul de Full Screen din browser.`;
 
       return res.json({ answer: instantAnswer });
     }
@@ -96,6 +110,13 @@ DESPRE QR PONTAJ:
 - Sistemul verifică geolocația GPS la scanare pentru a valida prezența la sediu.
 - Există și mod de backup 'Pontaj cu PIN' direct pe tabletă pentru angajații fără telefon sau cu bateria descărcată.
 - Generare condică de prezență lunară (PDF, Excel) și fișiere compatibile cu Saga Software (import direct în salarii).
+
+CUM SE CONFIGUREAZĂ UN KIOSK (REGULĂ OBLIGATORIE):
+- ATENȚIE MAXIMĂ: Pentru a crea un Kiosk, este OBLIGATORIU să fie creat mai întâi cel puțin un Punct de Lucru în meniul 'Puncte de Lucru' (/admin/locations). Un Kiosk cere obligatoriu asocierea unui punct de lucru.
+- Pasul 1: Creare Punct de Lucru (Meniu 'Puncte de Lucru' -> '+ Adaugă Punct de Lucru').
+- Pasul 2: Adăugare Kiosk (Meniu 'Tablete Kiosk' -> '+ Adaugă Kiosk' -> selectare Punct de Lucru creat la Pasul 1).
+- Pasul 3: Copiere Link Tabletă (apăsare pe butonul 'Copiază Link Tabletă' și deschidere în Safari pe iPad, Chrome pe Android sau Smart TV).
+- Pasul 4: Blocare ecran în mod Kiosk (iPad: Acces Ghidat cu 3 click-uri Power; Android: Fixare aplicație / Pin App; Smart TV: tasta F11).
 
 REGULI STRICTE DE RĂSPUNS:
 - REGULĂ ABSOLUTĂ: ESTE STRICT INTERZISĂ FOLOSIREA DE CARACTERE EMOJI (fără fețe, fără emoticoane, fără simboluri grafice emoji sub nicio formă).
