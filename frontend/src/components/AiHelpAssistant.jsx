@@ -215,26 +215,73 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
 
   return (
     <>
-      {/* Keyframe styles pentru animația fluidă a laserului QR */}
+      {/* Keyframe styles pentru animațiile QR-ului și efectul de atenție periodică */}
       <style>{`
         @keyframes smoothQrLaser {
           0% {
-            top: 14%;
+            top: 10%;
             opacity: 0.2;
           }
           18% {
             opacity: 1;
           }
           50% {
-            top: 78%;
+            top: 80%;
             opacity: 1;
           }
           82% {
             opacity: 1;
           }
           100% {
-            top: 14%;
+            top: 10%;
             opacity: 0.2;
+          }
+        }
+        @keyframes qrBreathe {
+          0%, 100% {
+            transform: scale(1);
+            filter: drop-shadow(0 0 0px rgba(255,255,255,0));
+          }
+          50% {
+            transform: scale(1.05);
+            filter: drop-shadow(0 0 4px rgba(255,255,255,0.7));
+          }
+        }
+        @keyframes attentionWiggle {
+          0%, 82%, 100% {
+            transform: scale(1) rotate(0deg);
+          }
+          85% {
+            transform: scale(1.04) rotate(-2deg);
+          }
+          88% {
+            transform: scale(1.05) rotate(2.5deg);
+          }
+          91% {
+            transform: scale(1.03) rotate(-1.5deg);
+          }
+          94% {
+            transform: scale(1.02) rotate(1deg);
+          }
+          97% {
+            transform: scale(1) rotate(0deg);
+          }
+        }
+        @keyframes haloWave {
+          0%, 82% {
+            opacity: 0;
+            transform: scale(0.96);
+          }
+          86% {
+            opacity: 0.65;
+          }
+          95% {
+            opacity: 0;
+            transform: scale(1.18);
+          }
+          100% {
+            opacity: 0;
+            transform: scale(1.22);
           }
         }
       `}</style>
@@ -242,24 +289,45 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
       {/* macOS Style Floating Launcher Pill */}
       <div className="fixed bottom-6 right-6 z-40">
         {!isOpen && (
-          <button
-            onClick={() => setIsOpen(true)}
-            className="flex items-center gap-2.5 px-4 py-2.5 rounded-full bg-slate-900 hover:bg-slate-800 text-white shadow-[0_12px_32px_-4px_rgba(0,0,0,0.45)] hover:shadow-[0_16px_36px_-4px_rgba(0,122,255,0.35)] border border-slate-700/80 hover:border-[#007AFF]/60 ring-1 ring-white/15 transition-all duration-200 hover:scale-105 active:scale-95 whitespace-nowrap shrink-0 group cursor-pointer"
-            title="Deschide Asistentul AI QR Pontaj"
-          >
-            {/* Logo QR Pontaj Oficial cu Animație Laser Smooth */}
-            <div className="relative w-7 h-7 rounded-full bg-gradient-to-tr from-[#007AFF] to-blue-500 text-white flex items-center justify-center shrink-0 shadow-sm overflow-hidden group-hover:scale-110 transition-transform">
-              <div className="absolute inset-0 bg-white/15 rounded-full animate-pulse pointer-events-none" />
-              <QrCode size={15} className="relative z-10 text-white drop-shadow-xs" />
-              <div 
-                className="absolute left-1 right-1 h-[2px] bg-gradient-to-r from-transparent via-cyan-200 to-transparent rounded-full shadow-[0_0_6px_1.5px_rgba(56,189,248,0.95)] z-20 pointer-events-none"
-                style={{ animation: 'smoothQrLaser 2.2s ease-in-out infinite' }}
-              />
-            </div>
-            <span className="font-bold text-xs sm:text-sm tracking-tight text-white whitespace-nowrap shrink-0 pr-1">
-              Asistent AI QR Pontaj
-            </span>
-          </button>
+          <div className="relative">
+            {/* Halo fin de lumină sincronizat cu mișcarea periodică de atenție */}
+            <div 
+              className="absolute inset-0 rounded-full border border-blue-400/50 pointer-events-none"
+              style={{ animation: 'haloWave 6.5s ease-out infinite' }}
+            />
+
+            <button
+              onClick={() => setIsOpen(true)}
+              className="relative flex items-center gap-3 pl-2 pr-4 py-2 rounded-full bg-slate-900 hover:bg-slate-800 text-white shadow-[0_14px_36px_-4px_rgba(0,0,0,0.5)] hover:shadow-[0_16px_40px_-4px_rgba(0,122,255,0.45)] border border-slate-700/80 hover:border-[#007AFF]/70 ring-1 ring-white/15 transition-all duration-200 hover:scale-105 active:scale-95 whitespace-nowrap shrink-0 group cursor-pointer"
+              style={{ animation: 'attentionWiggle 6.5s ease-in-out infinite' }}
+              title="Deschide Asistentul AI QR Pontaj"
+            >
+              {/* Logo QR Pontaj — Format mărit, cu respirație luminoasă și laser optic */}
+              <div className="relative w-9 h-9 rounded-full bg-gradient-to-tr from-[#007AFF] via-blue-600 to-indigo-600 text-white flex items-center justify-center shrink-0 shadow-md overflow-hidden group-hover:scale-105 transition-transform">
+                {/* Iluminare ambientală subtilă */}
+                <div className="absolute inset-0 bg-white/20 rounded-full animate-pulse pointer-events-none" />
+                
+                {/* Cod QR interior cu animație subtilă de respirație/puls */}
+                <div 
+                  className="relative z-10 flex items-center justify-center"
+                  style={{ animation: 'qrBreathe 3.2s ease-in-out infinite' }}
+                >
+                  <QrCode size={19} className="text-white drop-shadow-xs" />
+                </div>
+                
+                {/* Fascicul laser de scanare cu efect optic fluid */}
+                <div 
+                  className="absolute left-1.5 right-1.5 h-[2px] bg-gradient-to-r from-transparent via-cyan-200 to-transparent rounded-full shadow-[0_0_8px_2px_rgba(56,189,248,0.95)] z-20 pointer-events-none"
+                  style={{ animation: 'smoothQrLaser 2.2s ease-in-out infinite' }}
+                />
+              </div>
+
+              {/* Denumire clară Asistent AI */}
+              <span className="font-bold text-xs sm:text-sm tracking-tight text-white whitespace-nowrap shrink-0 pr-1">
+                Asistent AI QR Pontaj
+              </span>
+            </button>
+          </div>
         )}
       </div>
 
