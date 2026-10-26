@@ -71,4 +71,11 @@ app.listen(PORT, () => {
   } catch (err) {
     console.error('Eroare pornire job backup:', err.message);
   }
+
+  try {
+    const { startTelegramBotListener } = require('./services/telegramBot');
+    startTelegramBotListener();
+  } catch (err) {
+    console.error('Eroare pornire Telegram Bot listener:', err.message);
+  }
 });
