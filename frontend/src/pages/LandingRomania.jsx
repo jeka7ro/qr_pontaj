@@ -39,7 +39,10 @@ import {
   LogOut,
   UserCheck,
   RotateCcw,
-  Lock
+  Lock,
+  Eye,
+  EyeOff,
+  Copy
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { trackEvent } from '../utils/analytics';
@@ -94,6 +97,7 @@ export default function LandingRomania() {
   const [subForm, setSubForm] = useState({
     contactName: '',
     email: '',
+    password: '',
     companyName: '',
     phone: '',
     anafPhone: '',
@@ -105,6 +109,18 @@ export default function LandingRomania() {
     employeesCount: '15',
     notes: ''
   });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showSuccessPassword, setShowSuccessPassword] = useState(false);
+  const [copiedField, setCopiedField] = useState(null);
+
+  const copyToClipboard = (text, fieldName) => {
+    if (!text) return;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text);
+    }
+    setCopiedField(fieldName);
+    setTimeout(() => setCopiedField(null), 2500);
+  };
   const [cuiLoading, setCuiLoading] = useState(false);
   const [cuiError, setCuiError] = useState(null);
   const [companyVerified, setCompanyVerified] = useState(null);
@@ -294,6 +310,7 @@ export default function LandingRomania() {
         body: JSON.stringify({
           contactName: subForm.contactName,
           email: subForm.email,
+          password: subForm.password,
           companyName: subForm.companyName,
           phone: subForm.phone,
           anafPhone: subForm.anafPhone || companyVerified?.phone || '',
@@ -728,7 +745,7 @@ export default function LandingRomania() {
                   {/* QR Code cu animație laser */}
                   <div className="relative w-44 h-44 mx-auto mb-4 p-2 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-center overflow-hidden">
                     <QRCodeSVG
-                      value={`https://pontaj.app/scan?kiosk=demo&mode=${simMode}&t=${simCountdown}`}
+                      value={`https://qr.pontaj.app/scan?kiosk=demo&mode=${simMode}&t=${simCountdown}`}
                       size={144}
                       level="M"
                       includeMargin={false}
@@ -1425,9 +1442,11 @@ export default function LandingRomania() {
                     </div>
                   </div>
 
+                  {/* Email Oficial (Username de conectare) */}
                   <div>
-                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1 block">
-                      Email Oficial
+                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1 flex items-center justify-between">
+                      <span>Email Oficial (Username Conectare) *</span>
+                      <span className="text-[10px] text-blue-600 font-semibold lowercase">pentru login în panou</span>
                     </label>
                     <input
                       type="email"
@@ -1437,6 +1456,37 @@ export default function LandingRomania() {
                       placeholder="contact@firma.ro..."
                       className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-xs"
                     />
+                  </div>
+
+                  {/* Parola aleasă de utilizator */}
+                  <div>
+                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1 flex items-center justify-between">
+                      <span>Alege Parola de Acces *</span>
+                      <span className="text-[10px] text-slate-400 font-semibold">minim 6 caractere</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        required
+                        minLength={6}
+                        value={subForm.password}
+                        onChange={(e) => setSubForm(prev => ({ ...prev, password: e.target.value }))}
+                        placeholder="Alege parola ta sigură..."
+                        className="w-full pl-9 pr-10 h-10 text-sm rounded-full border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-xs"
+                      />
+                      <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+                        title={showPassword ? "Ascunde parola" : "Afișează parola"}
+                      >
+                        {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                      </button>
+                    </div>
+                    <p className="text-[10.5px] text-slate-400 mt-1">
+                      Vei folosi acest email și această parolă pentru a te conecta oricând în panoul de administrare.
+                    </p>
                   </div>
 
                   {/* Acord Precontractual & DPA Art. 28 GDPR */}
@@ -1525,37 +1575,103 @@ export default function LandingRomania() {
                   </button>
                 </form>
               ) : (
-                <div className="text-center py-6 space-y-4">
+                <div className="text-center py-5 space-y-3.5">
                   <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
                     <CheckCircle2 size={24} />
                   </div>
-                  <h4 className="text-lg font-black text-slate-900">Contul Demo a Fost Activat!</h4>
-                  <p className="text-xs text-slate-600 max-w-xs mx-auto">
-                    Instanța pentru <strong className="text-slate-800">{subForm.companyName}</strong> ({subForm.employeesCount} salariați &bull; {selectedPlan.price}/om) este gata. Ai acces complet 15 zile gratuit.
-                  </p>
+                  <div>
+                    <h4 className="text-lg font-black text-slate-900">Contul Demo a Fost Activat!</h4>
+                    <p className="text-xs text-slate-600 max-w-xs mx-auto mt-1">
+                      Instanța pentru <strong className="text-slate-800">{subForm.companyName}</strong> ({subForm.employeesCount} salariați) este gata. Ai acces complet 15 zile gratuit.
+                    </p>
+                  </div>
                   
-                  {assignedTempPassword && (
-                    <div className="p-3.5 bg-blue-50/80 border border-blue-200 rounded-2xl text-xs text-slate-700 max-w-xs mx-auto text-left space-y-1 shadow-2xs">
-                      <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Datele tale de conectare:</div>
-                      <div>Email: <strong className="text-slate-900">{subForm.email}</strong></div>
-                      <div>Parolă temporară: <strong className="text-blue-700 font-bold text-sm tracking-wide">{assignedTempPassword}</strong></div>
-                      <div className="text-[10px] text-slate-400 pt-0.5">Ți-am trimis o copie a acestor date și pe email.</div>
+                  {/* Card Date Oficiale Conectare */}
+                  <div className="p-4 bg-emerald-50/90 border border-emerald-200 rounded-2xl text-xs text-slate-800 max-w-sm mx-auto text-left space-y-2.5 shadow-xs">
+                    <div className="flex items-center justify-between pb-1.5 border-b border-emerald-200/80">
+                      <span className="text-[11px] font-black uppercase tracking-wider text-emerald-950">
+                        Datele tale de acces
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 whitespace-nowrap shrink-0">
+                        15 Zile Gratuit
+                      </span>
                     </div>
-                  )}
 
-                  {createdSubdomain && (
-                    <div className="p-3.5 bg-emerald-50/80 border border-emerald-200 rounded-2xl text-xs text-slate-700 max-w-xs mx-auto text-left space-y-1 shadow-2xs">
-                      <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-800">Adresa ta dedicată de pontaj:</div>
-                      <a 
-                        href={`https://${createdSubdomain}.qr.pontaj.app`} 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
-                        className="font-bold text-blue-600 hover:underline block truncate text-xs"
-                      >
-                        https://{createdSubdomain}.qr.pontaj.app
-                      </a>
+                    <div className="space-y-2 text-xs">
+                      {/* Username / Email */}
+                      <div className="flex items-center justify-between gap-2 bg-white/95 p-2.5 rounded-xl border border-emerald-100 shadow-2xs">
+                        <div className="min-w-0">
+                          <span className="text-slate-400 block text-[10px] font-bold uppercase">Username (Email Conectare)</span>
+                          <span className="font-bold text-slate-900 truncate block">{subForm.email}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => copyToClipboard(subForm.email, 'email')}
+                          className="p-1.5 text-slate-400 hover:text-emerald-700 bg-slate-50 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer shrink-0"
+                          title="Copiază email"
+                        >
+                          {copiedField === 'email' ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
+                        </button>
+                      </div>
+
+                      {/* Parolă */}
+                      <div className="flex items-center justify-between gap-2 bg-white/95 p-2.5 rounded-xl border border-emerald-100 shadow-2xs">
+                        <div className="min-w-0">
+                          <span className="text-slate-400 block text-[10px] font-bold uppercase">Parolă de acces</span>
+                          <span className="font-bold text-blue-700 tracking-wide text-sm block">
+                            {showSuccessPassword ? (subForm.password || assignedTempPassword) : '••••••••'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => setShowSuccessPassword(!showSuccessPassword)}
+                            className="p-1.5 text-slate-400 hover:text-slate-700 bg-slate-50 rounded-lg transition-colors cursor-pointer"
+                            title={showSuccessPassword ? "Ascunde parola" : "Afișează parola"}
+                          >
+                            {showSuccessPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => copyToClipboard(subForm.password || assignedTempPassword, 'pass')}
+                            className="p-1.5 text-slate-400 hover:text-emerald-700 bg-slate-50 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
+                            title="Copiază parola"
+                          >
+                            {copiedField === 'pass' ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Link Panou Dedicat */}
+                      {createdSubdomain && (
+                        <div className="flex items-center justify-between gap-2 bg-white/95 p-2.5 rounded-xl border border-emerald-100 shadow-2xs">
+                          <div className="min-w-0">
+                            <span className="text-slate-400 block text-[10px] font-bold uppercase">Link Panou Companie</span>
+                            <a 
+                              href={`https://${createdSubdomain}.qr.pontaj.app/admin`} 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              className="font-bold text-blue-600 hover:underline block truncate text-xs"
+                            >
+                              https://{createdSubdomain}.qr.pontaj.app/admin
+                            </a>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => copyToClipboard(`https://${createdSubdomain}.qr.pontaj.app/admin`, 'link')}
+                            className="p-1.5 text-slate-400 hover:text-emerald-700 bg-slate-50 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer shrink-0"
+                            title="Copiază link"
+                          >
+                            {copiedField === 'link' ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
+                          </button>
+                        </div>
+                      )}
                     </div>
-                  )}
+
+                    <div className="text-[11px] text-emerald-800 pt-1.5 border-t border-emerald-200/80 leading-snug">
+                      Ți-am trimis automat aceste date de conectare pe emailul <strong className="text-emerald-950">{subForm.email}</strong>. Verifică și folderul Spam/Promoții dacă nu apare în Inbox în 1 minut.
+                    </div>
+                  </div>
 
                   <div className="flex flex-col gap-2 max-w-xs mx-auto pt-2">
                     <button

@@ -484,14 +484,14 @@ async function sendDemoAccessEmail({ to, contactName, companyName, initialPasswo
                         <td style="padding: 8px 0; font-size: 13px; color: #0f172a; font-weight: 700; text-align: right; border-bottom: 1px solid #edf2f7;">${company}</td>
                       </tr>
                       <tr>
-                        <td style="padding: 8px 0; font-size: 13px; color: #64748b; font-weight: 600; border-bottom: 1px solid #edf2f7;">Email utilizator:</td>
+                        <td style="padding: 8px 0; font-size: 13px; color: #64748b; font-weight: 600; border-bottom: 1px solid #edf2f7;">Username (Email):</td>
                         <td style="padding: 8px 0; font-size: 13px; color: #0f172a; font-weight: 700; text-align: right; border-bottom: 1px solid #edf2f7;">${to}</td>
                       </tr>
                       ${initialPassword ? `
                       <tr>
-                        <td style="padding: 8px 0; font-size: 13px; color: #64748b; font-weight: 600; border-bottom: 1px solid #edf2f7;">Parolă temporară:</td>
+                        <td style="padding: 8px 0; font-size: 13px; color: #64748b; font-weight: 600; border-bottom: 1px solid #edf2f7;">Parolă de acces:</td>
                         <td style="padding: 8px 0; font-size: 13px; color: #0f172a; font-weight: 700; text-align: right; border-bottom: 1px solid #edf2f7;">
-                          <span style="background-color: #e2e8f0; color: #0f172a; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 12px;">${initialPassword}</span>
+                          <span style="background-color: #e0e7ff; color: #1e40af; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 13px; letter-spacing: 0.5px;">${initialPassword}</span>
                         </td>
                       </tr>
                       ` : ''}

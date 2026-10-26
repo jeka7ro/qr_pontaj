@@ -130,10 +130,10 @@ const MODAL_I18N = {
     badge: "QR Pontaj • Abonament Lunar",
     title: "Comandă Online & Plată Securizată Stripe",
     seatsTitle: "Număr de angajați contractați",
-    seatsSub: "Poți mări oricând numărul pe parcurs cu calcul prorata automat",
+    seatsSub: "Pachetul minim inițial este de 10 angajați (50.00 € / lună). Ulterior, poți adăuga oricâți dorești (chiar și câte 1)",
     seatsUnit: "angajați",
     rateLabel: "Tarif :",
-    ratePerSeat: "5.00 € / angajat / lună",
+    ratePerSeat: "5.00 € / angajat / lună (Minim 50 €)",
     perMonth: "/ lună",
     vatNoteBe: "TVA 21% inclus pe factură",
     vatNoteEu: "Factură fiscală B2B • Plată securizată Stripe",
@@ -169,7 +169,7 @@ export default function SelfServiceSubscribeModal({ isOpen, onClose, initialTena
   const resolvedLang = lang || (isRo ? 'ro' : (initialTenant?.country_code === 'NL' ? 'nl' : 'fr'));
   const m = MODAL_I18N[resolvedLang] || MODAL_I18N.ro;
 
-  const [seats, setSeats] = useState(initialTenant?.subscription_seats || 10);
+  const [seats, setSeats] = useState(Math.max(10, initialTenant?.subscription_seats || 10));
   const [companyName, setCompanyName] = useState(initialTenant?.name || '');
   const [subdomain, setSubdomain] = useState(initialTenant?.subdomain || '');
   const [adminEmail, setAdminEmail] = useState(initialTenant?.contact_email || '');
@@ -189,7 +189,7 @@ export default function SelfServiceSubscribeModal({ isOpen, onClose, initialTena
       if (initialTenant.contact_name) setAdminName(initialTenant.contact_name);
       if (initialTenant.vat_number) setVatNumber(initialTenant.vat_number);
       if (initialTenant.billing_address) setBillingAddress(initialTenant.billing_address);
-      if (initialTenant.subscription_seats) setSeats(initialTenant.subscription_seats);
+      if (initialTenant.subscription_seats) setSeats(Math.max(10, initialTenant.subscription_seats));
     }
   }, [initialTenant]);
 
@@ -233,7 +233,7 @@ export default function SelfServiceSubscribeModal({ isOpen, onClose, initialTena
           adminName: adminName.trim() || companyName.trim(),
           vatNumber: vatNumber.trim(),
           billingAddress: billingAddress.trim(),
-          seats: Math.max(1, parseInt(seats, 10)),
+          seats: Math.max(10, parseInt(seats, 10) || 10),
           countryCode: countryCode || 'RO',
           successUrl: `${window.location.origin}/admin/billing?subscribed=true`,
           cancelUrl: `${window.location.origin}/admin/billing`
@@ -303,10 +303,10 @@ export default function SelfServiceSubscribeModal({ isOpen, onClose, initialTena
               <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-full border border-slate-300 shadow-2xs">
                 <input
                   type="number"
-                  min="1"
+                  min="10"
                   max="500"
                   value={seats}
-                  onChange={(e) => setSeats(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                  onChange={(e) => setSeats(Math.max(10, parseInt(e.target.value, 10) || 10))}
                   className="w-12 text-center text-sm font-black text-slate-900 outline-none"
                 />
                 <span className="text-xs font-bold text-slate-500">{m.seatsUnit}</span>
@@ -316,10 +316,10 @@ export default function SelfServiceSubscribeModal({ isOpen, onClose, initialTena
             {/* Slider */}
             <input
               type="range"
-              min="1"
+              min="10"
               max="100"
               value={seats}
-              onChange={(e) => setSeats(parseInt(e.target.value, 10))}
+              onChange={(e) => setSeats(Math.max(10, parseInt(e.target.value, 10) || 10))}
               className="w-full accent-blue-600 cursor-pointer"
             />
 
@@ -473,7 +473,7 @@ export default function SelfServiceSubscribeModal({ isOpen, onClose, initialTena
                 placeholder={m.subdomainPlaceholder}
               />
               <span className="text-xs font-bold text-slate-500 shrink-0 select-none bg-slate-200 px-2 py-0.5 rounded-full ml-2">
-                {countryCode === 'BE' ? '.time.be' : '.pontaj.app'}
+                {countryCode === 'BE' ? '.time.be' : '.qr.pontaj.app'}
               </span>
             </div>
           </div>

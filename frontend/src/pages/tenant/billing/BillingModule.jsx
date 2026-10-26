@@ -379,14 +379,24 @@ export default function BillingModule({ tenant, themeColor }) {
                   </div>
                 </>
               ) : plan?.is_demo || tenant?.subscription_status === 'DEMO' ? (
-                <div className="p-3.5 bg-blue-50/80 dark:bg-blue-950/40 rounded-xl border border-blue-100 dark:border-blue-900/40 text-xs space-y-1.5">
-                  <div className="font-bold text-blue-900 dark:text-blue-200 flex items-center gap-1.5">
-                    <ShieldCheck size={14} className="text-blue-600 shrink-0" />
-                    <span>Perioadă de testare activă</span>
+                <div className="space-y-3">
+                  <div className="p-3.5 bg-blue-50/80 dark:bg-blue-950/40 rounded-xl border border-blue-100 dark:border-blue-900/40 text-xs space-y-1.5">
+                    <div className="font-bold text-blue-900 dark:text-blue-200 flex items-center gap-1.5">
+                      <ShieldCheck size={14} className="text-blue-600 shrink-0" />
+                      <span>Perioadă de testare activă</span>
+                    </div>
+                    <p className="text-slate-600 dark:text-slate-300 text-[11px] leading-relaxed">
+                      Testare gratuită până la {plan?.demo_expires_at ? new Date(plan.demo_expires_at).toLocaleDateString('ro-RO') : '09.11.2026'}. Pachet minim: 10 angajați (50.00 € / lună).
+                    </p>
                   </div>
-                  <p className="text-slate-600 dark:text-slate-300 text-[11px] leading-relaxed">
-                    Testare gratuită până la {plan?.demo_expires_at ? new Date(plan.demo_expires_at).toLocaleDateString('ro-RO') : '09.11.2026'}. Tariful agreat după expirarea demo-ului este de {(plan?.price_per_employee || 5.00).toFixed(2)} € / angajat / lună.
-                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setShowSubscribeModal(true)}
+                    className="w-full h-10 rounded-full bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap shrink-0"
+                  >
+                    <CreditCard size={15} />
+                    <span>Activează Abonamentul Acum</span>
+                  </button>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -455,13 +465,13 @@ export default function BillingModule({ tenant, themeColor }) {
                         {(safePage - 1) * rowsPerPage + index + 1}
                       </td>
                       <td className="py-3 px-4 font-bold text-slate-900 dark:text-white text-sm">
-                        INV-{invoice.id.toString().padStart(4, '0')}
+                        {invoice.invoice_number || `INV-${invoice.id.toString().padStart(4, '0')}`}
                       </td>
                       <td className="py-3 px-4 text-sm font-medium text-slate-700 dark:text-slate-300">
                         {new Date(invoice.due_date).toLocaleDateString('ro-RO')}
                       </td>
                       <td className="py-3 px-4 text-sm font-bold text-slate-900 dark:text-white text-right">
-                        {invoice.amount} RON
+                        {parseFloat(invoice.amount).toFixed(2)} {invoice.currency || 'RON'}
                       </td>
                       <td className="py-3 px-4 text-center">
                         <span className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-700 dark:text-slate-300">

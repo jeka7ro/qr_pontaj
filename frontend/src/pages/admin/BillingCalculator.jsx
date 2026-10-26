@@ -16,7 +16,10 @@ import {
   Plus,
   Download,
   Calendar,
-  Globe
+  Globe,
+  FileText,
+  Receipt,
+  AlertTriangle
 } from 'lucide-react';
 import DataTable from '../../components/DataTable';
 import * as XLSX from 'xlsx';
@@ -42,6 +45,14 @@ export default function BillingCalculator() {
   const [modalPage, setModalPage] = useState(1);
   const [modalRowsPerPage, setModalRowsPerPage] = useState(10);
 
+  // Modal Smart Invoice State
+  const [smartInvoiceTenant, setSmartInvoiceTenant] = useState(null);
+  const [sendingSmartInvoice, setSendingSmartInvoice] = useState(false);
+  const [smartInvoicePaymentDate, setSmartInvoicePaymentDate] = useState(todayStr);
+  const [smartInvoiceRate, setSmartInvoiceRate] = useState('');
+  const [smartInvoiceBnrDate, setSmartInvoiceBnrDate] = useState('');
+  const [fetchingSmartInvoiceRate, setFetchingSmartInvoiceRate] = useState(false);
+
   // Modal Editare Tarif State
   const [editingTariffTenant, setEditingTariffTenant] = useState(null);
   const [newTariffValue, setNewTariffValue] = useState('');
@@ -57,6 +68,13 @@ export default function BillingCalculator() {
   const [selectedTenantToAdd, setSelectedTenantToAdd] = useState('');
   const [newTenantTariff, setNewTenantTariff] = useState('3.50');
   const [addingTenant, setAddingTenant] = useState(false);
+
+  // Evidență Facturi SuperAdmin State
+  const [invoicesList, setInvoicesList] = useState([]);
+  const [loadingInvoices, setLoadingInvoices] = useState(false);
+  const [invoiceToDelete, setInvoiceToDelete] = useState(null);
+  const [deletingInvoice, setDeletingInvoice] = useState(false);
+  const [previewInvoice, setPreviewInvoice] = useState(null);
 
   const months = [
     { value: 1, name: 'Ianuarie' },
@@ -145,22 +163,64 @@ export default function BillingCalculator() {
     }
   }, [selectedMonth, selectedYear, selectedDate, exchangeRate]);
 
+  const fetchInvoices = useCallback(async () => {
+    try {
+      setLoadingInvoices(true);
+      const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
+      const res = await fetch(`${baseUrl}/api/billing/deviz/invoices`);
+      if (res.ok) {
+        const data = await res.json();
+        setInvoicesList(Array.isArray(data) ? data : []);
+      }
+    } catch (err) {
+      console.error('Eroare preluare facturi:', err);
+    } finally {
+      setLoadingInvoices(false);
+    }
+  }, []);
+
+  const handleDeleteInvoice = async () => {
+    if (!invoiceToDelete) return;
+    try {
+      setDeletingInvoice(true);
+      const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
+      const res = await fetch(`${baseUrl}/api/billing/deviz/invoices/${invoiceToDelete.id}`, {
+        method: 'DELETE'
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Eroare la ștergerea facturii');
+      }
+      showToast(data.message || 'Factura a fost ștearsă cu succes.');
+      setInvoiceToDelete(null);
+      await fetchInvoices();
+    } catch (err) {
+      showToast('Eroare: ' + err.message);
+    } finally {
+      setDeletingInvoice(false);
+    }
+  };
+
   useEffect(() => {
     let isMounted = true;
     const initData = async () => {
       const rate = await fetchBnrRate(selectedDate);
       if (isMounted) {
         fetchBillingSummary(rate);
+        fetchInvoices();
       }
     };
     initData();
     return () => { isMounted = false; };
-  }, [selectedDate, selectedMonth, selectedYear]);
+  }, [selectedDate, selectedMonth, selectedYear, fetchInvoices]);
 
   const handleRefreshAll = async () => {
     const rate = await fetchBnrRate(selectedDate, true);
-    await fetchBillingSummary(rate);
-    showToast(`Curs BNR sincronizat pentru ${selectedDate}: ${rate} RON`);
+    await Promise.all([
+      fetchBillingSummary(rate),
+      fetchInvoices()
+    ]);
+    showToast(`Curs BNR și evidența facturilor sincronizate pentru ${selectedDate}: ${rate} RON`);
   };
 
   // Deschidere modal borderou
@@ -318,6 +378,87 @@ export default function BillingCalculator() {
     }
   };
 
+  const openSmartInvoiceModal = async (tenant) => {
+    setSmartInvoiceTenant(tenant);
+    const initialDate = selectedDate || todayStr;
+    setSmartInvoicePaymentDate(initialDate);
+    try {
+      setFetchingSmartInvoiceRate(true);
+      const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
+      const res = await fetch(`${baseUrl}/api/billing/deviz/bnr-rate?date=${initialDate}`);
+      if (res.ok) {
+        const data = await res.json();
+        setSmartInvoiceRate(data.rate?.toString() || exchangeRate);
+        setSmartInvoiceBnrDate(data.bnr_date || initialDate);
+      } else {
+        setSmartInvoiceRate(exchangeRate);
+        setSmartInvoiceBnrDate(initialDate);
+      }
+    } catch (err) {
+      setSmartInvoiceRate(exchangeRate);
+      setSmartInvoiceBnrDate(initialDate);
+    } finally {
+      setFetchingSmartInvoiceRate(false);
+    }
+  };
+
+  const handleSmartInvoicePaymentDateChange = async (newDate) => {
+    setSmartInvoicePaymentDate(newDate);
+    if (!newDate) return;
+    try {
+      setFetchingSmartInvoiceRate(true);
+      const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
+      const res = await fetch(`${baseUrl}/api/billing/deviz/bnr-rate?date=${newDate}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.rate) {
+          setSmartInvoiceRate(data.rate.toString());
+          setSmartInvoiceBnrDate(data.bnr_date || newDate);
+        }
+      }
+    } catch (err) {
+      console.error('Eroare preluare curs BNR:', err);
+    } finally {
+      setFetchingSmartInvoiceRate(false);
+    }
+  };
+
+  const handleSendSmartInvoice = async () => {
+    if (!smartInvoiceTenant) return;
+    try {
+      setSendingSmartInvoice(true);
+      const baseUrl = import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001');
+      const rate = parseFloat(smartInvoiceRate) || parseFloat(exchangeRate) || 0;
+      const res = await fetch(`${baseUrl}/api/billing/deviz/send-to-smart-invoice`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tenant_id: smartInvoiceTenant.tenant_id,
+          month: selectedMonth,
+          year: selectedYear,
+          payment_date: smartInvoicePaymentDate,
+          exchange_rate: rate > 0 ? rate : undefined,
+          payment_method: 'ORDIN_PLATA',
+          period_note: `Abonament servicii Smart QR Pontaj • Curs BNR din data plății (${smartInvoiceBnrDate || smartInvoicePaymentDate}): ${rate} RON/EUR • Emisă de TRADE INVEST NETWORK S.R.L.`
+        })
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json();
+        throw new Error(errJson.error || 'Eroare la procesarea facturii în Smart Invoice');
+      }
+
+      const data = await res.json();
+      showToast(data.message || `Factura a fost pregătită cu succes pentru Smart Invoice (curs din ziua plății: ${rate} RON).`);
+      setSmartInvoiceTenant(null);
+      await fetchInvoices();
+    } catch (err) {
+      showToast('Eroare: ' + err.message);
+    } finally {
+      setSendingSmartInvoice(false);
+    }
+  };
+
   const copySummaryReport = () => {
     if (!billingData || !billingData.tenants) return;
     const monthName = months.find(m => m.value === selectedMonth)?.name || selectedMonth;
@@ -459,7 +600,7 @@ export default function BillingCalculator() {
                 </span>
               </div>
               <div className="text-xs text-slate-500 dark:text-slate-400">
-                {row.subdomain}.pontaj.app
+                {row.subdomain}.qr.pontaj.app
               </div>
             </div>
           </div>
@@ -526,28 +667,35 @@ export default function BillingCalculator() {
               setEditingTariffTenant(row);
               setNewTariffValue(row.price_per_employee.toString());
             }}
-            className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors flex items-center justify-center cursor-pointer"
+            className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors flex items-center justify-center cursor-pointer whitespace-nowrap shrink-0"
             title="Modifică tarif contractual"
           >
             <Pencil size={14} />
           </button>
           <button
             onClick={() => openBorderouModal(row)}
-            className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors flex items-center justify-center cursor-pointer"
+            className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors flex items-center justify-center cursor-pointer whitespace-nowrap shrink-0"
             title="Vezi borderoul nominal al angajaților"
           >
             <Eye size={14} />
           </button>
           <button
+            onClick={() => openSmartInvoiceModal(row)}
+            className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800 transition-colors flex items-center justify-center cursor-pointer whitespace-nowrap shrink-0"
+            title="Generează / Transmite în Smart Invoice (Trade Invest)"
+          >
+            <FileText size={14} />
+          </button>
+          <button
             onClick={() => copyInvoiceText(row)}
-            className="w-8 h-8 rounded-full bg-primary-50 dark:bg-primary-950/40 text-primary-600 dark:text-primary-400 hover:bg-primary-100 dark:hover:bg-primary-900/60 transition-colors flex items-center justify-center cursor-pointer"
+            className="w-8 h-8 rounded-full bg-primary-50 dark:bg-primary-950/40 text-primary-600 dark:text-primary-400 hover:bg-primary-100 dark:hover:bg-primary-900/60 transition-colors flex items-center justify-center cursor-pointer whitespace-nowrap shrink-0"
             title="Copiază datele pentru facturare"
           >
             <Copy size={14} />
           </button>
           <button
             onClick={() => setDeletingTariffTenant(row)}
-            className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-red-50 hover:border-red-200 dark:hover:bg-red-950/40 text-slate-400 hover:text-red-600 transition-colors flex items-center justify-center cursor-pointer"
+            className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-red-50 hover:border-red-200 dark:hover:bg-red-950/40 text-slate-400 hover:text-red-600 transition-colors flex items-center justify-center cursor-pointer whitespace-nowrap shrink-0"
             title="Dezactivează tarifarea per angajat"
           >
             <Trash2 size={14} />
@@ -556,6 +704,140 @@ export default function BillingCalculator() {
       )
     }
   ], [selectedMonth, selectedYear]);
+
+  // Coloane pentru Evidența Facturilor SuperAdmin (Smart Invoice)
+  const invoiceColumns = useMemo(() => [
+    {
+      key: 'invoice_number',
+      label: 'Număr Factură',
+      render: (row) => {
+        const paymentDate = row.smart_invoice_payload?.invoice_header?.payment_date
+          ? new Date(row.smart_invoice_payload.invoice_header.payment_date).toLocaleDateString('ro-RO')
+          : (row.created_at ? new Date(row.created_at).toLocaleDateString('ro-RO') : '-');
+        const rate = row.smart_invoice_payload?.invoice_header?.exchange_rate;
+        return (
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 flex items-center justify-center shrink-0">
+              <Receipt size={16} />
+            </div>
+            <div>
+              <div className="font-bold text-slate-900 dark:text-white">
+                {row.invoice_number || `QRP-#${row.id}`}
+              </div>
+              <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                Ziua plății: <span className="font-semibold text-slate-700 dark:text-slate-300">{paymentDate}</span>
+                {rate && <span className="text-blue-600 dark:text-blue-400 font-bold ml-1.5">• BNR: {rate}</span>}
+              </div>
+            </div>
+          </div>
+        );
+      }
+    },
+    {
+      key: 'tenant_name',
+      label: 'Client / Cumpărător',
+      render: (row) => (
+        <div>
+          <div className="font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+            <span>{row.tenant_name || 'Client'}</span>
+            {row.tenant_vat_number && (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 whitespace-nowrap shrink-0">
+                {row.tenant_vat_number}
+              </span>
+            )}
+          </div>
+          <div className="text-xs text-slate-500 dark:text-slate-400">
+            {row.tenant_subdomain ? `${row.tenant_subdomain}.qr.pontaj.app` : '-'}
+          </div>
+        </div>
+      )
+    },
+    {
+      key: 'amount',
+      label: 'Valoare Totală',
+      render: (row) => {
+        const val = parseFloat(row.amount) || 0;
+        const curr = row.currency || 'RON';
+        return (
+          <div>
+            <div className="font-bold text-slate-900 dark:text-white">
+              {val.toFixed(2)} {curr}
+            </div>
+            <div className="text-[11px] text-slate-500 dark:text-slate-400">
+              Inclusiv TVA 21%
+            </div>
+          </div>
+        );
+      }
+    },
+    {
+      key: 'smart_invoice_status',
+      label: 'Status Smart Invoice / SPV',
+      render: (row) => {
+        const isReady = row.smart_invoice_status === 'READY_FOR_EXPORT' || !row.smart_invoice_status;
+        const isSent = row.smart_invoice_status === 'SENT';
+        return (
+          <div className="flex flex-col gap-1 items-start">
+            {isReady && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800 whitespace-nowrap shrink-0">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                Pregătit Smart Invoice (Manual SPV)
+              </span>
+            )}
+            {isSent && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 whitespace-nowrap shrink-0">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                Generat în Smart Invoice
+              </span>
+            )}
+            <span className="text-[10px] text-slate-400">
+              Fără trimitere automată în SPV
+            </span>
+          </div>
+        );
+      }
+    },
+    {
+      key: 'status',
+      label: 'Status Plată',
+      render: (row) => {
+        const isPaid = row.status === 'PAID';
+        return (
+          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap shrink-0 ${
+            isPaid
+              ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+              : 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
+          }`}>
+            {isPaid ? 'Achitată' : 'În așteptare plată'}
+          </span>
+        );
+      }
+    },
+    {
+      key: 'actions',
+      label: 'Acțiuni',
+      sortable: false,
+      render: (row) => (
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setPreviewInvoice(row)}
+            className="px-3.5 h-8 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 shadow-sm"
+            title="Vezi detalii deviz și JSON Smart Invoice"
+          >
+            <Eye size={13} />
+            <span>Detalii</span>
+          </button>
+          <button
+            onClick={() => setInvoiceToDelete(row)}
+            className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-red-50 hover:border-red-200 dark:hover:bg-red-950/40 text-slate-400 hover:text-red-600 transition-colors flex items-center justify-center cursor-pointer whitespace-nowrap shrink-0 shadow-sm"
+            title="Șterge factura de test din evidență"
+          >
+            <Trash2 size={14} />
+          </button>
+        </div>
+      )
+    }
+  ], []);
 
   return (
     <div className="space-y-6 w-full max-w-7xl mx-auto">
@@ -601,10 +883,10 @@ export default function BillingCalculator() {
             ))}
           </select>
 
-          {/* Selector Dată Curs BNR în funcție de zi */}
-          <div className="flex items-center h-10 px-3.5 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm focus-within:ring-2 focus-within:ring-primary-500" title="Data pentru care se preia cursul oficial BNR (exclusiv pentru clienții din România)">
+          {/* Selector Dată Plată / Curs BNR în funcție de zi */}
+          <div className="flex items-center h-10 px-3.5 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm focus-within:ring-2 focus-within:ring-primary-500" title="Data plății pentru care se preia cursul oficial BNR (conform Codului Fiscal art. 290, conversia se face la cursul din ziua plății)">
             <Calendar size={14} className="text-slate-400 mr-2 shrink-0" />
-            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 mr-1.5 whitespace-nowrap">Dată BNR:</span>
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 mr-1.5 whitespace-nowrap">Data Plății (BNR):</span>
             <input
               type="date"
               value={selectedDate}
@@ -788,6 +1070,28 @@ export default function BillingCalculator() {
           </div>
         )}
       />
+
+      {/* Secțiune Evidență Facturi Smart Invoice & SPV */}
+      <div className="pt-2">
+        <DataTable
+          title="Evidență Facturi Smart Invoice & SPV"
+          data={invoicesList}
+          columns={invoiceColumns}
+          searchPlaceholder="Caută după număr factură, client sau CUI..."
+          rowKey="id"
+          headerActions={
+            <button
+              onClick={fetchInvoices}
+              disabled={loadingInvoices}
+              className="px-4 h-10 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap shrink-0 shadow-sm"
+              title="Reîmprospătează lista facturilor"
+            >
+              <RotateCw size={14} className={loadingInvoices ? "animate-spin" : ""} />
+              <span>{loadingInvoices ? "Se actualizează..." : "Reîmprospătează"}</span>
+            </button>
+          }
+        />
+      </div>
 
       {/* Modal Borderou Nominal Angajați Fără Scroll (Regula 9 - Modal) */}
       {selectedTenantDetails && (
@@ -975,27 +1279,35 @@ export default function BillingCalculator() {
               <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
                 Total de facturat: {selectedTenantDetails.total_eur.toFixed(2)} EUR ({selectedTenantDetails.total_ron.toFixed(2)} RON) + TVA
               </span>
-              <div className="flex items-center gap-2.5">
+              <div className="flex flex-wrap items-center gap-2.5">
                 <button
                   onClick={() => setSelectedTenantDetails(null)}
-                  className="px-5 h-10 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-sm font-bold transition-colors cursor-pointer"
+                  className="px-5 h-10 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-sm font-bold transition-colors cursor-pointer whitespace-nowrap shrink-0"
                 >
                   Închide
                 </button>
                 <button
+                  onClick={() => openSmartInvoiceModal(selectedTenantDetails)}
+                  className="px-5 h-10 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold shadow-sm transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap shrink-0"
+                  title="Generează / Transmite în Smart Invoice (Trade Invest Network S.R.L. RO42322117)"
+                >
+                  <FileText size={16} />
+                  <span>Trimite în Smart Invoice</span>
+                </button>
+                <button
                   onClick={() => handleDownloadDevizJson(selectedTenantDetails)}
-                  className="px-5 h-10 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold shadow-sm transition-all flex items-center gap-2 cursor-pointer"
+                  className="px-5 h-10 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold shadow-sm transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap shrink-0"
                   title="Descarcă devizul complet în format JSON gata pentru aplicația de facturi"
                 >
                   <Download size={16} />
-                  Deviz JSON SPV
+                  <span>Deviz JSON SPV</span>
                 </button>
                 <button
                   onClick={() => copyInvoiceText(selectedTenantDetails)}
-                  className="px-5 h-10 rounded-full bg-primary-600 hover:bg-primary-700 text-white text-sm font-bold shadow-sm transition-all flex items-center gap-2 cursor-pointer"
+                  className="px-5 h-10 rounded-full bg-primary-600 hover:bg-primary-700 text-white text-sm font-bold shadow-sm transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap shrink-0"
                 >
                   <Copy size={16} />
-                  Copiază Detalii Factură
+                  <span>Copiază Detalii Factură</span>
                 </button>
               </div>
             </div>
@@ -1162,7 +1474,7 @@ export default function BillingCalculator() {
                       className="w-full px-4 h-10 text-sm font-semibold rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-primary-500 shadow-sm cursor-pointer"
                     >
                       {availableTenants.map(t => (
-                        <option key={t.id} value={t.id}>{t.name} ({t.subdomain}.pontaj.app)</option>
+                        <option key={t.id} value={t.id}>{t.name} ({t.subdomain}.qr.pontaj.app)</option>
                       ))}
                     </select>
                   </div>
@@ -1190,7 +1502,7 @@ export default function BillingCalculator() {
             <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 flex justify-end items-center gap-2.5 bg-white dark:bg-slate-900">
               <button
                 onClick={() => setIsAddTenantModalOpen(false)}
-                className="px-5 h-10 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-sm font-bold transition-colors cursor-pointer"
+                className="px-5 h-10 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-sm font-bold transition-colors cursor-pointer whitespace-nowrap shrink-0"
               >
                 Anulează
               </button>
@@ -1198,12 +1510,400 @@ export default function BillingCalculator() {
                 <button
                   onClick={handleAddTenantToBilling}
                   disabled={addingTenant}
-                  className="px-5 h-10 rounded-full bg-primary-600 hover:bg-primary-700 text-white text-sm font-bold shadow-sm transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                  className="px-5 h-10 rounded-full bg-primary-600 hover:bg-primary-700 text-white text-sm font-bold shadow-sm transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50 whitespace-nowrap shrink-0"
                 >
                   <Plus size={16} />
-                  {addingTenant ? 'Se adaugă...' : 'Activează Tarifare'}
+                  <span>{addingTenant ? 'Se adaugă...' : 'Activează Tarifare'}</span>
                 </button>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Confirmare Transmitere Smart Invoice */}
+      {smartInvoiceTenant && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-lg shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col animate-in fade-in zoom-in-95 text-left">
+            <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/80 dark:bg-slate-800/40">
+              <div>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+                  Emitere la Cerere • Smart Invoice
+                </span>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white mt-0.5">
+                  Generare Factură Fiscală
+                </h3>
+              </div>
+              <button
+                onClick={() => setSmartInvoiceTenant(null)}
+                className="w-9 h-9 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4 text-xs">
+              <div className="p-4 rounded-2xl bg-blue-50/60 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/40 space-y-2">
+                <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
+                  <span className="font-semibold">Furnizor (Emitent):</span>
+                  <span className="font-bold text-slate-900 dark:text-white">S.C. TRADE INVEST NETWORK S.R.L.</span>
+                </div>
+                <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
+                  <span>CUI Furnizor:</span>
+                  <span className="font-bold text-slate-900 dark:text-white">RO42322117</span>
+                </div>
+                <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
+                  <span>Cont Bancar:</span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">UniCredit Bank</span>
+                </div>
+              </div>
+
+              {(() => {
+                const currentModalRate = parseFloat(smartInvoiceRate) || parseFloat(exchangeRate) || 0;
+                const isRoTenant = smartInvoiceTenant.is_romania !== false && (smartInvoiceTenant.country_code === 'RO' || !smartInvoiceTenant.country_code);
+                const baseEur = smartInvoiceTenant.total_eur;
+                const tvaEur = parseFloat((baseEur * 0.21).toFixed(2));
+                const totalWithTvaEur = parseFloat((baseEur + tvaEur).toFixed(2));
+
+                const baseRon = (isRoTenant && currentModalRate > 0) ? parseFloat((baseEur * currentModalRate).toFixed(2)) : null;
+                const tvaRon = (isRoTenant && baseRon !== null) ? parseFloat((baseRon * 0.21).toFixed(2)) : null;
+                const totalWithTvaRon = (isRoTenant && baseRon !== null && tvaRon !== null) ? parseFloat((baseRon + tvaRon).toFixed(2)) : null;
+
+                return (
+                  <>
+                    {/* Selector Data Plății & Curs BNR Ziua Plății (Codul Fiscal) */}
+                    <div className="p-4 rounded-2xl bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 space-y-2.5">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                          <span className="font-bold text-amber-950 dark:text-amber-200 text-xs flex items-center gap-1.5">
+                            <Calendar size={14} className="text-amber-600 dark:text-amber-400" />
+                            Data Plății (Ziua Încasării) *
+                          </span>
+                          <p className="text-[11px] text-amber-800/80 dark:text-amber-400/80">
+                            Conform Codului Fiscal (art. 290), cursul BNR se preia din ziua plății.
+                          </p>
+                        </div>
+                        <input
+                          type="date"
+                          value={smartInvoicePaymentDate}
+                          onChange={(e) => handleSmartInvoicePaymentDateChange(e.target.value)}
+                          className="h-9 px-3 text-xs font-bold rounded-full border border-amber-300 dark:border-amber-700 bg-white dark:bg-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer shadow-sm"
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between pt-2 border-t border-amber-200/60 dark:border-amber-900/40 text-xs">
+                        <span className="text-slate-600 dark:text-slate-400 font-medium">
+                          Curs BNR oficial ({smartInvoiceBnrDate || smartInvoicePaymentDate}):
+                        </span>
+                        <span className="font-black text-slate-900 dark:text-white px-2.5 py-1 rounded-full bg-white dark:bg-slate-800 border border-amber-300 dark:border-amber-800 text-xs shadow-sm">
+                          {fetchingSmartInvoiceRate ? 'Se verifică...' : `${currentModalRate.toFixed(4)} RON / EUR`}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2">
+                      <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-700">
+                        <div className="flex items-center gap-2">
+                          <ShieldCheck size={18} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                          <span className="font-bold text-slate-900 dark:text-white text-xs">Destinatar Unic (Strict Izolat):</span>
+                        </div>
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 whitespace-nowrap shrink-0">
+                          {smartInvoiceTenant.is_online_registration === false ? 'Client Manual (Non-Stripe)' : 'Client Online'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-500 dark:text-slate-400">Companie / Tenant:</span>
+                        <span className="font-black text-slate-950 dark:text-white text-sm">{smartInvoiceTenant.name}</span>
+                      </div>
+                      {smartInvoiceTenant.vat_number && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-slate-500 dark:text-slate-400">Cod Fiscal (CUI):</span>
+                          <span className="font-bold text-slate-900 dark:text-white">{smartInvoiceTenant.vat_number}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-500 dark:text-slate-400">Angajați facturați:</span>
+                        <span className="font-bold text-slate-900 dark:text-white">{smartInvoiceTenant.active_employees} pers ({smartInvoiceTenant.price_per_employee.toFixed(2)} € / pers)</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-500 dark:text-slate-400">Total Bază:</span>
+                        <span className="font-bold text-slate-900 dark:text-white">{baseEur.toFixed(2)} EUR {baseRon !== null ? `(~${baseRon.toFixed(2)} RON)` : ''}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-500 dark:text-slate-400">TVA (21%):</span>
+                        <span className="font-bold text-slate-900 dark:text-white">{tvaEur.toFixed(2)} EUR {tvaRon !== null ? `(~${tvaRon.toFixed(2)} RON)` : ''}</span>
+                      </div>
+                      <div className="pt-2 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                        <span className="font-bold text-slate-700 dark:text-slate-200">Total de plată:</span>
+                        <span className="text-sm font-black text-slate-900 dark:text-white">{totalWithTvaEur.toFixed(2)} EUR {totalWithTvaRon !== null ? `(${totalWithTvaRon.toFixed(2)} RON)` : ''}</span>
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
+
+              <div className="p-3 bg-emerald-50 dark:bg-emerald-950/20 rounded-2xl border border-emerald-200 dark:border-emerald-900/40 text-[11px] text-emerald-800 dark:text-emerald-300 leading-relaxed flex items-start gap-2">
+                <ShieldCheck size={16} className="text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                <span>
+                  <strong>Garanție de izolare absolută:</strong> Factura se generează strict și exclusiv pentru <strong>{smartInvoiceTenant.name}</strong>. Niciun alt tenant nu este atins, modificat sau trimis.
+                </span>
+              </div>
+            </div>
+
+            <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3 bg-slate-50/60 dark:bg-slate-800/40">
+              <button
+                type="button"
+                onClick={() => setSmartInvoiceTenant(null)}
+                className="px-5 h-11 rounded-full border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer whitespace-nowrap shrink-0"
+              >
+                Anulează
+              </button>
+              <button
+                type="button"
+                disabled={sendingSmartInvoice}
+                onClick={handleSendSmartInvoice}
+                className="px-6 h-11 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-sm flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap shrink-0"
+              >
+                <FileText size={16} />
+                <span>{sendingSmartInvoice ? 'Se procesează...' : 'Confirmă & Generează Factură'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Previzualizare Factură & Detalii Smart Invoice */}
+      {previewInvoice && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col animate-in fade-in zoom-in-95 text-left max-h-[90vh]">
+            <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/80 dark:bg-slate-800/40 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                  <Receipt size={20} />
+                </div>
+                <div>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+                    Detalii Factură • Smart Invoice
+                  </span>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                    {previewInvoice.invoice_number || `Factura #${previewInvoice.id}`}
+                  </h3>
+                </div>
+              </div>
+              <button
+                onClick={() => setPreviewInvoice(null)}
+                className="w-9 h-9 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4 overflow-y-auto text-xs">
+              {/* Carduri Furnizor & Client */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="p-4 rounded-2xl bg-blue-50/60 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/40 space-y-1.5">
+                  <span className="font-bold text-blue-800 dark:text-blue-300 uppercase tracking-wider text-[10px]">
+                    Furnizor (Emitent)
+                  </span>
+                  <div className="font-bold text-slate-900 dark:text-white text-sm">
+                    S.C. TRADE INVEST NETWORK S.R.L.
+                  </div>
+                  <div className="text-slate-600 dark:text-slate-300">
+                    CUI: <strong>RO42322117</strong> • J40/2965/2020
+                  </div>
+                  <div className="text-slate-600 dark:text-slate-300">
+                    Banca: UniCredit Bank
+                  </div>
+                  <div className="text-slate-500 dark:text-slate-400 text-[11px]">
+                    IBAN: RO31BACX0000001999343001
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-1.5">
+                  <span className="font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-[10px]">
+                    Cumpărător (Client)
+                  </span>
+                  <div className="font-bold text-slate-900 dark:text-white text-sm">
+                    {previewInvoice.tenant_name || previewInvoice.smart_invoice_payload?.client?.name}
+                  </div>
+                  <div className="text-slate-600 dark:text-slate-300">
+                    CUI: <strong>{previewInvoice.tenant_vat_number || previewInvoice.smart_invoice_payload?.client?.cui || '-'}</strong>
+                  </div>
+                  <div className="text-slate-500 dark:text-slate-400 text-[11px] truncate">
+                    {previewInvoice.smart_invoice_payload?.client?.address || 'România'}
+                  </div>
+                  <div className="text-slate-500 dark:text-slate-400 text-[11px]">
+                    Subdomeniu: {previewInvoice.tenant_subdomain || '-'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Linii Factură */}
+              <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-500 uppercase tracking-wider text-[10px] font-bold border-b border-slate-200 dark:border-slate-800">
+                    <tr>
+                      <th className="px-3.5 py-2.5">Descriere Serviciu</th>
+                      <th className="px-3.5 py-2.5 text-center">Cant.</th>
+                      <th className="px-3.5 py-2.5 text-right">Preț Unitar</th>
+                      <th className="px-3.5 py-2.5 text-right">TVA (21%)</th>
+                      <th className="px-3.5 py-2.5 text-right">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+                    {(previewInvoice.smart_invoice_payload?.lines || []).map((line, idx) => (
+                      <tr key={idx}>
+                        <td className="px-3.5 py-2.5 font-medium">{line.description}</td>
+                        <td className="px-3.5 py-2.5 text-center">{line.quantity} {line.unit_measure || 'pers'}</td>
+                        <td className="px-3.5 py-2.5 text-right font-semibold">{line.unit_price} {previewInvoice.currency || 'RON'}</td>
+                        <td className="px-3.5 py-2.5 text-right text-slate-500">{line.vat_amount} {previewInvoice.currency || 'RON'}</td>
+                        <td className="px-3.5 py-2.5 text-right font-bold text-slate-900 dark:text-white">{line.total_amount} {previewInvoice.currency || 'RON'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Totaluri & Recomandare SPV */}
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700">
+                <div className="space-y-1">
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Status generare: <strong className="text-slate-800 dark:text-slate-200">{previewInvoice.smart_invoice_status || 'READY_FOR_EXPORT'}</strong>
+                  </div>
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Data plății: <strong className="text-blue-600 dark:text-blue-400">{previewInvoice.smart_invoice_payload?.invoice_header?.payment_date || new Date(previewInvoice.created_at).toLocaleDateString('ro-RO')}</strong>
+                  </div>
+                  {previewInvoice.smart_invoice_payload?.invoice_header?.exchange_rate && (
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                      Curs BNR din ziua plății: <strong className="text-emerald-600 dark:text-emerald-400">{previewInvoice.smart_invoice_payload?.invoice_header?.exchange_rate} RON / EUR</strong>
+                    </div>
+                  )}
+                  <div className="text-[10px] text-slate-400">
+                    Creat la: {new Date(previewInvoice.created_at).toLocaleString('ro-RO')}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-xs text-slate-500 dark:text-slate-400">Total de plată cu TVA</div>
+                  <div className="text-xl font-black text-slate-900 dark:text-white">
+                    {parseFloat(previewInvoice.amount).toFixed(2)} {previewInvoice.currency || 'RON'}
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-3 bg-amber-50 dark:bg-amber-950/20 rounded-2xl border border-amber-200 dark:border-amber-900/40 text-[11px] text-amber-800 dark:text-amber-300 leading-relaxed">
+                Factura nu se trimite niciodată automat în ANAF SPV. O puteți descărca sau verifica în Smart Invoice și decide dumneavoastră transmiterea în SPV.
+              </div>
+            </div>
+
+            <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/60 dark:bg-slate-800/40 shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  const blob = new Blob([JSON.stringify(previewInvoice.smart_invoice_payload, null, 2)], { type: 'application/json' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `factura_${previewInvoice.invoice_number || previewInvoice.id}.json`;
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                  URL.revokeObjectURL(url);
+                  showToast('Datele facturii au fost descărcate în format JSON.');
+                }}
+                className="px-4 h-10 rounded-full border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer flex items-center gap-1.5 whitespace-nowrap shrink-0"
+              >
+                <Download size={14} />
+                <span>Descarcă JSON SPV</span>
+              </button>
+
+              <div className="flex items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const toDelete = previewInvoice;
+                    setPreviewInvoice(null);
+                    setInvoiceToDelete(toDelete);
+                  }}
+                  className="px-4 h-10 rounded-full border border-red-200 dark:border-red-900/60 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 whitespace-nowrap shrink-0"
+                >
+                  <Trash2 size={14} />
+                  <span>Șterge Factură</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewInvoice(null)}
+                  className="px-5 h-10 rounded-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-xs font-bold hover:opacity-90 transition-opacity cursor-pointer whitespace-nowrap shrink-0"
+                >
+                  Închide
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Confirmare Ștergere Factură */}
+      {invoiceToDelete && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-md shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col animate-in fade-in zoom-in-95 text-left">
+            <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-red-50/50 dark:bg-red-950/20">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-full bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 flex items-center justify-center shrink-0">
+                  <AlertTriangle size={18} />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                    Ștergere Factură
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    {invoiceToDelete.invoice_number || `Factura #${invoiceToDelete.id}`}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setInvoiceToDelete(null)}
+                className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-3 text-xs">
+              <p className="text-slate-600 dark:text-slate-300 text-sm">
+                Ești sigur că vrei să ștergi factura <strong className="text-slate-900 dark:text-white">{invoiceToDelete.invoice_number || `#${invoiceToDelete.id}`}</strong> emisă pentru clientul <strong className="text-slate-900 dark:text-white">{invoiceToDelete.tenant_name}</strong>?
+              </p>
+              <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Valoare totală:</span>
+                  <span className="font-bold text-slate-900 dark:text-white">{parseFloat(invoiceToDelete.amount).toFixed(2)} {invoiceToDelete.currency || 'RON'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Dată emitere:</span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">{new Date(invoiceToDelete.created_at).toLocaleDateString('ro-RO')}</span>
+                </div>
+              </div>
+              <div className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 text-[11px] text-amber-800 dark:text-amber-300 leading-relaxed">
+                Siguranță: datele companiei, pontajele angajaților și setările contractuale rămân 100% neatinse. Se șterge exclusiv această factură din evidență.
+              </div>
+            </div>
+
+            <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 flex justify-end items-center gap-2.5 bg-slate-50/60 dark:bg-slate-800/40">
+              <button
+                type="button"
+                onClick={() => setInvoiceToDelete(null)}
+                className="px-5 h-10 rounded-full border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer whitespace-nowrap shrink-0"
+              >
+                Anulează
+              </button>
+              <button
+                type="button"
+                disabled={deletingInvoice}
+                onClick={handleDeleteInvoice}
+                className="px-5 h-10 rounded-full bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-sm transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50 whitespace-nowrap shrink-0"
+              >
+                <Trash2 size={15} />
+                <span>{deletingInvoice ? 'Se șterge...' : 'Confirmă & Șterge Factura'}</span>
+              </button>
             </div>
           </div>
         </div>
@@ -1211,3 +1911,4 @@ export default function BillingCalculator() {
     </div>
   );
 }
+

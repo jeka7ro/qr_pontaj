@@ -221,11 +221,14 @@ router.get('/', async (req, res) => {
         COALESCE(t.price_per_employee, 0)::numeric as price_per_employee,
         s.qr_mode as mod_qr, s.allowed_radius_meters as raza_gps, s.name as tip_modul,
         t.vat_number as cui,
+        COALESCE(t.is_vat_payer, false) as is_vat_payer,
         t.billing_address,
         t.country_code,
         t.subscription_status,
         t.subscription_seats,
         t.demo_expires_at,
+        t.is_online_registration,
+        t.terms_accepted_at,
         t.registration_notes,
         t.created_at,
         COALESCE(t.contact_name, (
@@ -241,7 +244,8 @@ router.get('/', async (req, res) => {
           WHERE u.tenant_id = t.id AND u.role = 'TENANT_ADMIN' 
           ORDER BY u.id ASC LIMIT 1
         )) as contact_email,
-        COALESCE((SELECT count(*)::int FROM qrp_employees e WHERE e.tenant_id = t.id AND (e.is_archived = false OR e.is_archived IS NULL)), 0) as active_employees_count
+        COALESCE((SELECT count(*)::int FROM qrp_employees e WHERE e.tenant_id = t.id AND (e.is_archived = false OR e.is_archived IS NULL)), 0) as active_employees_count,
+        COALESCE((SELECT count(*)::int FROM qrp_employees e WHERE e.tenant_id = t.id), 0) as total_employees_count
       FROM qrp_tenants t
       LEFT JOIN qrp_sites s ON s.tenant_id = t.id
       ORDER BY t.created_at DESC
@@ -529,12 +533,14 @@ router.post('/', async (req, res) => {
     let finalVat = rawVat || null;
     let finalAddress = billing_address || null;
     let finalLocationName = nume_locatie;
+    let isVatPayer = false;
 
     // Interogare automată ANAF dacă este specificat CUI
     if (rawVat) {
       const anafData = await lookupAnafCompany(rawVat);
       if (anafData) {
-        finalVat = anafData.cui;
+        isVatPayer = Boolean(anafData.isVatPayer);
+        finalVat = isVatPayer ? `RO${anafData.cui}` : anafData.cui;
         if (!finalAddress) finalAddress = anafData.address;
         if (!finalLocationName || finalLocationName === 'Noua Locatie' || finalLocationName === 'Companie Noua') {
           finalLocationName = anafData.name;
@@ -551,14 +557,16 @@ router.post('/', async (req, res) => {
     const finalCurrency = finalCountry === 'BE' ? 'EUR' : 'RON';
     const finalAllowPortal = allow_employee_portal !== false;
     const finalAllowBreaks = allow_breaks === true || finalCountry === 'BE';
+    const finalModules = { ...(modules || {}), billing: false };
 
     const tenantQuery = `
       INSERT INTO qrp_tenants (
         name, logo_url, favicon_url, theme_color, subdomain, modules, 
         billing_per_employee, price_per_employee, country_code, timezone, 
-        currency, allow_employee_portal, allow_breaks, vat_number, billing_address
+        currency, allow_employee_portal, allow_breaks, vat_number, billing_address,
+        is_online_registration, subscription_status, is_vat_payer, vat_status
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, FALSE, 'ACTIVE', $16, $17)
       RETURNING id
     `;
     const tenantResult = await client.query(tenantQuery, [
@@ -567,7 +575,7 @@ router.post('/', async (req, res) => {
       sanitizeFaviconUrl(favicon_url) || '/favicon.png',
       culoare_tema || '#2563EB',
       subdomain,
-      modules || {},
+      finalModules,
       Boolean(billing_per_employee),
       price_per_employee ? parseFloat(price_per_employee) : 0.00,
       finalCountry,
@@ -576,7 +584,9 @@ router.post('/', async (req, res) => {
       finalAllowPortal,
       finalAllowBreaks,
       finalVat,
-      finalAddress
+      finalAddress,
+      isVatPayer,
+      isVatPayer ? 'VALID' : (finalVat ? 'NEPLATITOR' : 'PENDING')
     ]);
     const tenantId = tenantResult.rows[0].id;
 
@@ -937,12 +947,21 @@ router.put('/:id', async (req, res) => {
     if (finalVat) finalVat = String(finalVat).trim();
     let finalAddress = billing_address !== undefined ? billing_address : null;
 
-    if (finalVat && !finalAddress) {
+    let isVatPayer = null;
+    if (finalVat) {
       const anafData = await lookupAnafCompany(finalVat);
-      if (anafData && anafData.address) {
-        finalAddress = anafData.address;
-        finalVat = anafData.cui;
+      if (anafData) {
+        if (!finalAddress) finalAddress = anafData.address;
+        isVatPayer = Boolean(anafData.isVatPayer);
+        finalVat = isVatPayer ? `RO${anafData.cui}` : anafData.cui;
       }
+    }
+
+    const checkOnlineRes = await client.query('SELECT is_online_registration, terms_accepted_at FROM qrp_tenants WHERE id = $1', [req.params.id]);
+    const isOnline = Boolean(checkOnlineRes.rows[0]?.is_online_registration || checkOnlineRes.rows[0]?.terms_accepted_at);
+    const finalModules = { ...(modules || {}) };
+    if (!isOnline) {
+      finalModules.billing = false;
     }
 
     const tenantQuery = `
@@ -954,7 +973,9 @@ router.put('/:id', async (req, res) => {
           contact_email = COALESCE($13, contact_email),
           vat_number = COALESCE($14, vat_number),
           billing_address = COALESCE($15, billing_address),
-          subscription_status = COALESCE($16, subscription_status)
+          subscription_status = COALESCE($16, subscription_status),
+          is_vat_payer = COALESCE($18, is_vat_payer),
+          vat_status = CASE WHEN $18::boolean = true THEN 'VALID' WHEN $18::boolean = false THEN 'NEPLATITOR' ELSE vat_status END
       WHERE id = $17
     `;
     await client.query(tenantQuery, [
@@ -963,7 +984,7 @@ router.put('/:id', async (req, res) => {
       logo_url || null, 
       sanitizeFaviconUrl(favicon_url), 
       culoare_tema || '#3B82F6',
-      modules || {},
+      finalModules,
       portal_bg_image_url || null,
       portal_bg_color || null,
       Boolean(billing_per_employee),
@@ -974,7 +995,8 @@ router.put('/:id', async (req, res) => {
       finalVat || null,
       finalAddress || null,
       subscription_status || null,
-      req.params.id
+      req.params.id,
+      isVatPayer
     ]);
 
     // 2. Update qrp_sites (Presupunem că e site-ul principal, tenant_id = id)
@@ -1025,16 +1047,21 @@ router.post('/:id/sync-anaf', async (req, res) => {
       return res.status(404).json({ error: 'Compania nu a fost găsită în registrul oficial ANAF' });
     }
 
+    const isVatPayer = Boolean(anafData.isVatPayer);
+    const formattedVat = isVatPayer ? `RO${anafData.cui}` : anafData.cui;
+
     const updateRes = await pool.query(`
       UPDATE qrp_tenants
       SET vat_number = $1,
           billing_address = $2,
           reg_com = COALESCE($3, reg_com),
           anaf_phone = COALESCE($4, anaf_phone),
-          name = CASE WHEN (name IS NULL OR name = '' OR name ILIKE 'Companie%' OR name ILIKE 'Firma Mea%') THEN $5 ELSE name END
-      WHERE id = $6
+          name = CASE WHEN (name IS NULL OR name = '' OR name ILIKE 'Companie%' OR name ILIKE 'Firma Mea%') THEN $5 ELSE name END,
+          is_vat_payer = $6,
+          vat_status = $7
+      WHERE id = $8
       RETURNING *
-    `, [anafData.cui, anafData.address, anafData.regCom || null, anafData.phone || null, anafData.name, tenantId]);
+    `, [formattedVat, anafData.address, anafData.regCom || null, anafData.phone || null, anafData.name, isVatPayer, isVatPayer ? 'VALID' : 'NEPLATITOR', tenantId]);
 
     const updated = updateRes.rows[0];
     res.json({
@@ -2144,4 +2171,46 @@ router.delete('/:id/employees/:empId/documents/:docId', async (req, res) => {
   }
 });
 
+// PUT /api/tenants/:id/status - Modificare manuală status tenant (ACTIVE, DEMO, SUSPENDED)
+router.put('/:id/status', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    const allowed = ['ACTIVE', 'DEMO', 'SUSPENDED'];
+    if (!status || !allowed.includes(status)) {
+      return res.status(400).json({ error: 'Status invalid. Valori permise: ACTIVE, DEMO, SUSPENDED' });
+    }
+
+    const check = await pool.query('SELECT id, name, subscription_status, demo_expires_at FROM qrp_tenants WHERE id = $1', [id]);
+    if (check.rows.length === 0) {
+      return res.status(404).json({ error: 'Compania nu a fost găsită.' });
+    }
+
+    const tenant = check.rows[0];
+    const oldStatus = tenant.subscription_status;
+
+    // Actualizăm statusul în baza de date
+    const updateRes = await pool.query(
+      `UPDATE qrp_tenants 
+       SET subscription_status = $1 
+       WHERE id = $2 
+       RETURNING id, name, subdomain, subscription_status, demo_expires_at`,
+      [status, id]
+    );
+
+    console.log(`[Admin] Tenant status updated for ID ${id} (${tenant.name}): ${oldStatus} -> ${status}`);
+
+    res.json({
+      success: true,
+      message: `Statusul companiei ${tenant.name} a fost actualizat la ${status}.`,
+      tenant: updateRes.rows[0]
+    });
+  } catch (err) {
+    console.error('Eroare actualizare status tenant:', err);
+    res.status(500).json({ error: 'Eroare la actualizarea statusului companiei.' });
+  }
+});
+
 module.exports = router;
+

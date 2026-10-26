@@ -7,6 +7,18 @@ const bnrService = require('../services/bnrService');
 router.get('/invoices', async (req, res) => {
   try {
     const { id } = req.params;
+    const tenantRes = await db.query(
+      `SELECT is_online_registration, terms_accepted_at FROM qrp_tenants WHERE id = $1`,
+      [id]
+    );
+    if (tenantRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Tenant inexistent' });
+    }
+    const isOnline = Boolean(tenantRes.rows[0].is_online_registration || tenantRes.rows[0].terms_accepted_at);
+    if (!isOnline) {
+      return res.json([]);
+    }
+
     const result = await db.query(
       `SELECT * FROM qrp_invoices WHERE tenant_id = $1 ORDER BY due_date DESC`,
       [id]
@@ -23,13 +35,17 @@ router.get('/plan', async (req, res) => {
   try {
     const { id } = req.params;
     const tenantRes = await db.query(
-      `SELECT id, name, billing_per_employee, price_per_employee, subscription_status, demo_expires_at, subscription_seats, COALESCE(country_code, 'RO') as country_code, COALESCE(currency, 'RON') as currency FROM qrp_tenants WHERE id = $1`,
+      `SELECT id, name, billing_per_employee, price_per_employee, subscription_status, demo_expires_at, subscription_seats, COALESCE(country_code, 'RO') as country_code, COALESCE(currency, 'RON') as currency, is_online_registration, terms_accepted_at FROM qrp_tenants WHERE id = $1`,
       [id]
     );
     if (tenantRes.rows.length === 0) {
       return res.status(404).json({ error: 'Tenant inexistent' });
     }
     const tenant = tenantRes.rows[0];
+    const isOnline = Boolean(tenant.is_online_registration || tenant.terms_accepted_at);
+    if (!isOnline) {
+      return res.status(403).json({ error: 'Modulul de facturare online nu este disponibil pentru acest cont creat manual.' });
+    }
 
     const now = new Date();
     const month = now.getMonth() + 1;

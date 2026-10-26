@@ -21,17 +21,22 @@ async function createCheckoutSession({
   successUrl,
   cancelUrl
 }) {
-  const parsedSeats = Math.max(1, parseInt(seats, 10) || 1);
+  const parsedSeats = Math.max(10, parseInt(seats, 10) || 10);
   const isBelgium = (countryCode || '').toUpperCase() === 'BE';
 
   let effectiveRate = isBelgium ? 9.90 : 5.00;
   if (tenantId) {
     try {
-      const tRes = await db.query('SELECT price_per_employee FROM qrp_tenants WHERE id = $1', [tenantId]);
+      const tRes = await db.query('SELECT price_per_employee, is_online_registration FROM qrp_tenants WHERE id = $1', [tenantId]);
+      if (tRes.rows[0]?.is_online_registration === false) {
+        throw new Error('Acest cont a fost creat manual și este exclus de la abonamentele online Stripe.');
+      }
       if (tRes.rows[0]?.price_per_employee) {
         effectiveRate = parseFloat(tRes.rows[0].price_per_employee);
       }
-    } catch(e) {}
+    } catch(e) {
+      if (e.message.includes('creat manual')) throw e;
+    }
   }
 
   const cleanSubdomain = (subdomain || companyName || 'client')
@@ -83,7 +88,7 @@ async function createCheckoutSession({
       vat_number: vatNumber || '',
       billing_address: billingAddress || ''
     },
-    success_url: successUrl || `https://${cleanSubdomain}.pontaj.app/setup-success?session_id={CHECKOUT_SESSION_ID}`,
+    success_url: successUrl || `https://${cleanSubdomain}.qr.pontaj.app/setup-success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: cancelUrl || `https://qr.pontaj.app/pricing`
   });
 
@@ -176,16 +181,22 @@ async function handleWebhookEvent(event) {
       let existingTenant = null;
 
       if (tenantId) {
-        const tRes = await db.query(`SELECT id FROM qrp_tenants WHERE id = $1`, [tenantId]);
+        const tRes = await db.query(`SELECT id, is_online_registration FROM qrp_tenants WHERE id = $1`, [tenantId]);
         if (tRes.rows.length > 0) existingTenant = tRes.rows[0];
       }
 
       if (!existingTenant) {
-        const subRes = await db.query(`SELECT id FROM qrp_tenants WHERE subdomain = $1`, [subdomain]);
+        const subRes = await db.query(`SELECT id, is_online_registration FROM qrp_tenants WHERE subdomain = $1`, [subdomain]);
         if (subRes.rows.length > 0) existingTenant = subRes.rows[0];
       }
 
       if (existingTenant) {
+        // Garanție strictă: Dacă tenantul existent a fost creat manual, nu îi alterăm setările sau abonamentul prin Stripe
+        if (existingTenant.is_online_registration === false) {
+          console.warn(`[StripeWebhook] Ignorată actualizarea Stripe pentru tenantul creat manual ID ${existingTenant.id}`);
+          break;
+        }
+
         // Actualizare tenant existent
         await db.query(`
           UPDATE qrp_tenants
@@ -228,7 +239,7 @@ async function handleWebhookEvent(event) {
           }
         }
       } else {
-        // Creare tenant nou conform specificului belgian/european
+        // Creare tenant nou conform specificului belgian/european (online registration = true)
         const newTenantRes = await db.query(`
           INSERT INTO qrp_tenants (
             name, subdomain, country_code, timezone, currency,
@@ -237,7 +248,7 @@ async function handleWebhookEvent(event) {
             stripe_customer_id, stripe_subscription_id,
             subscription_seats, subscription_status,
             vat_number, vat_status, billing_address,
-            contact_name, contact_email
+            contact_name, contact_email, is_online_registration
           ) VALUES (
             $1, $2, $3, $4, $5,
             $6, $7,
@@ -245,7 +256,7 @@ async function handleWebhookEvent(event) {
             $10, $11,
             $12, $13,
             $14, $15, $16,
-            $17, $18
+            $17, $18, $19
           ) RETURNING id
         `, [
           companyName,
@@ -265,8 +276,10 @@ async function handleWebhookEvent(event) {
           vatStatus,
           billingAddress || null,
           adminName || companyName,
-          adminEmail
+          adminEmail,
+          true // is_online_registration
         ]);
+
 
         const createdTenantId = newTenantRes.rows[0].id;
 
@@ -294,7 +307,7 @@ async function handleWebhookEvent(event) {
             to: adminEmail,
             userName: adminName,
             companyName: companyName,
-            loginUrl: `https://${subdomain}.pontaj.app/admin/login`,
+            loginUrl: `https://${subdomain}.qr.pontaj.app/admin/login`,
             initialPassword: tempPassword,
             subdomain: subdomain
           }).catch(err => console.error('[StripeWebhook] Eroare trimitere email bun venit:', err?.message || err));

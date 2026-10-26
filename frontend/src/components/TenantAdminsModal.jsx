@@ -357,7 +357,7 @@ export default function TenantAdminsModal({ isOpen, onClose, tenant }) {
               <Info size={16} />
             </div>
             <p className="text-sm text-blue-800 leading-relaxed">
-              <strong>Notă:</strong> Adminii locali pot gestiona <strong>doar</strong> datele companiei lor (platforma-centrala.pontaj.app). Nu au acces la alte companii și nu pot vedea acest panou SaaS.
+              <strong>Notă:</strong> Adminii locali pot gestiona <strong>doar</strong> datele companiei lor (qr.pontaj.app). Nu au acces la alte companii și nu pot vedea acest panou SaaS.
             </p>
           </div>
 

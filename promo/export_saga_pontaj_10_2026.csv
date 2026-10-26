@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ro">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="QR Pontaj" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="theme-color" content="#020617" />
+    <title>QR Pontaj</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link id="app-favicon" rel="icon" type="image/png" href="/favicon.png">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <!-- Google tag (gtag.js) safe loader -->
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-T6HVXGEJEK', { send_page_view: false });
+
+      (function() {
+        try {
+          var s = document.createElement('script');
+          s.async = true;
+          s.src = 'https://www.googletagmanager.com/gtag/js?id=G-T6HVXGEJEK';
+          s.onerror = function(e) {
+            if (e && e.stopPropagation) e.stopPropagation();
+          };
+          document.head.appendChild(s);
+        } catch(e) {}
+      })();
+    </script>
+    <script type="module" crossorigin src="/assets/index-fbLIOM8b.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-CP1ifyjd.css">
+  </head>
+  <body>
+    <script>
+      // Compatibilitate telefoane mai vechi: adauga doar functiile care lipsesc din browser
+      (function () {
+        try {
+          if (typeof Promise !== 'undefined' && !Promise.withResolvers) {
+            Promise.withResolvers = function () {
+              var resolve, reject;
+              var promise = new Promise(function (res, rej) { resolve = res; reject = rej; });
+              return { promise: promise, resolve: resolve, reject: reject };
+            };
+          }
+          if (!Array.prototype.at) {
+            Object.defineProperty(Array.prototype, 'at', { value: function (n) { n = Math.trunc(n) || 0; if (n < 0) n += this.length; return this[n]; }, writable: true, configurable: true });
+          }
+          if (!Array.prototype.findLast) {
+            Object.defineProperty(Array.prototype, 'findLast', { value: function (fn, thisArg) { for (var i = this.length - 1; i >= 0; i--) { if (fn.call(thisArg, this[i], i, this)) return this[i]; } return undefined; }, writable: true, configurable: true });
+          }
+          if (!Array.prototype.findLastIndex) {
+            Object.defineProperty(Array.prototype, 'findLastIndex', { value: function (fn, thisArg) { for (var i = this.length - 1; i >= 0; i--) { if (fn.call(thisArg, this[i], i, this)) return i; } return -1; }, writable: true, configurable: true });
+          }
+          if (!String.prototype.at) {
+            Object.defineProperty(String.prototype, 'at', { value: function (n) { n = Math.trunc(n) || 0; if (n < 0) n += this.length; return n < 0 || n >= this.length ? undefined : this.charAt(n); }, writable: true, configurable: true });
+          }
+          if (!String.prototype.replaceAll) {
+            Object.defineProperty(String.prototype, 'replaceAll', { value: function (s, r) { if (s instanceof RegExp) { return this.replace(s, r); } return this.split(String(s)).join(r); }, writable: true, configurable: true });
+          }
+          if (!Object.hasOwn) {
+            Object.hasOwn = function (o, k) { return Object.prototype.hasOwnProperty.call(o, k); };
+          }
+          if (typeof globalThis.structuredClone !== 'function') {
+            globalThis.structuredClone = function (v) { return v === undefined ? v : JSON.parse(JSON.stringify(v)); };
+          }
+          if (typeof globalThis.Iterator === 'undefined') {
+            var IterProto = Object.getPrototypeOf(Object.getPrototypeOf([][Symbol.iterator]()));
+            var IterCtor = function Iterator() {};
+            IterCtor.prototype = IterProto;
+            globalThis.Iterator = IterCtor;
+          }
+          if (typeof Promise.try !== 'function') {
+            Promise.try = function (fn) {
+              var args = Array.prototype.slice.call(arguments, 1);
+              return new Promise(function (resolve) { resolve(fn.apply(undefined, args)); });
+            };
+          }
+          [Map, WeakMap].forEach(function (C) {
+            if (!C.prototype.getOrInsert) {
+              Object.defineProperty(C.prototype, 'getOrInsert', { value: function (k, v) { if (!this.has(k)) this.set(k, v); return this.get(k); }, writable: true, configurable: true });
+            }
+            if (!C.prototype.getOrInsertComputed) {
+              Object.defineProperty(C.prototype, 'getOrInsertComputed', { value: function (k, f) { if (!this.has(k)) this.set(k, f(k)); return this.get(k); }, writable: true, configurable: true });
+            }
+          });
+          if (!window.crypto) { window.crypto = {}; }
+          if (!window.crypto.randomUUID) {
+            window.crypto.randomUUID = function () {
+              return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) { var r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3 | 8)).toString(16); });
+            };
+          }
+        } catch (e) { /* nu blocam pornirea */ }
+      })();
+    </script>
+    <script>
+      // Rezerva stocare: unele telefoane blocheaza localStorage (mod privat, cookie-uri blocate) si aplicatia ramanea alba
+      (function () {
+        function works(name) {
+          try {
+            var s = window[name];
+            var k = '__qrp_test__';
+            s.setItem(k, '1');
+            s.removeItem(k);
+            return true;
+          } catch (e) { return false; }
+        }
+        function memoryStorage() {
+          var d = {};
+          return {
+            getItem: function (k) { return Object.prototype.hasOwnProperty.call(d, k) ? d[k] : null; },
+            setItem: function (k, v) { d[k] = String(v); },
+            removeItem: function (k) { delete d[k]; },
+            clear: function () { d = {}; },
+            key: function (i) { return Object.keys(d)[i] || null; },
+            get length() { return Object.keys(d).length; }
+          };
+        }
+        ['localStorage', 'sessionStorage'].forEach(function (name) {
+          if (!works(name)) {
+            try { Object.defineProperty(window, name, { value: memoryStorage(), configurable: true }); } catch (e) {}
+          }
+        });
+      })();
+    </script>
+    <script>
+      // Auto-recuperare: daca bundle-ul JS vechi din cache nu mai exista dupa un deploy, reincarca o singura data
+      (function () {
+        function recover() {
+          try {
+            var last = sessionStorage.getItem('qrp_reload');
+            if (last && (Date.now() - parseInt(last, 10)) < 30000) return;
+            sessionStorage.setItem('qrp_reload', String(Date.now()));
+            var u = new URL(location.href);
+            u.searchParams.set('_v', Date.now());
+            location.replace(u.toString());
+          } catch (e) {}
+        }
+        window.addEventListener('error', function (e) {
+          var t = e.target;
+          if (t && t.tagName === 'SCRIPT' && t.src) {
+            var src = String(t.src).toLowerCase();
+            if (src.indexOf('googletagmanager') !== -1 || src.indexOf('google-analytics') !== -1 || src.indexOf('google') !== -1) {
+              return;
+            }
+            if (src.indexOf('/assets/') !== -1) {
+              recover();
+            }
+          }
+        }, true);
+        window.addEventListener('unhandledrejection', function (e) {
+          var m = String((e.reason && e.reason.message) || '');
+          if (/Importing a module script failed|Failed to fetch dynamically imported module|Loading chunk/i.test(m)) recover();
+        });
+      })();
+    </script>
+    <script>
+      // Curatare automata parametru tehnic _v din bara de adrese pentru URL 100% curat
+      (function () {
+        try {
+          if (window.history && window.history.replaceState) {
+            var u = new URL(window.location.href);
+            if (u.searchParams.has('_v')) {
+              u.searchParams.delete('_v');
+              var cleanUrl = u.pathname + (u.search ? u.search : '') + (u.hash || '');
+              window.history.replaceState(null, '', cleanUrl);
+            }
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <div id="root"></div>
+    <script>
+      // Daca aplicatia nu porneste in 12 secunde, arata un mesaj in loc de pagina alba + eroarea
+      (function () {
+        var lastErr = '';
+        window.addEventListener('error', function (e) {
+          lastErr = (e && e.message) ? e.message + (e.filename ? ' @ ' + String(e.filename).split('/').pop() + ':' + e.lineno : '') : lastErr;
+        });
+        window.addEventListener('unhandledrejection', function (e) {
+          lastErr = String((e.reason && e.reason.message) || e.reason || lastErr);
+        });
+        setTimeout(function () {
+          var root = document.getElementById('root');
+          if (root && root.children.length === 0) {
+            root.innerHTML =
+              '<div style="font-family:-apple-system,Arial,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;background:#f8fafc;color:#0f172a">' +
+              '<h1 style="font-size:20px;margin:0 0 8px">Pagina nu s-a incarcat</h1>' +
+              '<p style="margin:0 0 16px;font-size:14px;color:#475569">Verifica conexiunea la internet si incearca din nou.</p>' +
+              '<button onclick="location.reload()" style="background:#0f172a;color:#fff;border:0;border-radius:999px;padding:12px 28px;font-size:15px;font-weight:700">Reincarca</button>' +
+              '<p style="margin:20px 0 0;font-size:11px;color:#94a3b8;word-break:break-all;max-width:320px">' + (lastErr ? 'Detalii: ' + lastErr.replace(/</g, '&lt;') : 'Fara detalii de eroare') + '</p>' +
+              '</div>';
+          }
+        }, 12000);
+      })();
+    </script>
+  </body>
+</html>

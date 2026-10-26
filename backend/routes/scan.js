@@ -251,6 +251,27 @@ router.post('/status', async (req, res) => {
   }
 
   try {
+    // 0. Verificare status companie (Suspendat manual sau Demo expirat)
+    if (tenant_id) {
+      const tenantCheck = await pool.query(
+        'SELECT id, name, subscription_status, demo_expires_at FROM qrp_tenants WHERE id = $1',
+        [tenant_id]
+      );
+      if (tenantCheck.rows.length > 0) {
+        const t = tenantCheck.rows[0];
+        if (t.subscription_status === 'SUSPENDED') {
+          return res.status(403).json({ 
+            error: 'Accesul pentru această companie este temporar suspendat. Pontajul a fost oprit.' 
+          });
+        }
+        if (t.subscription_status === 'DEMO' && t.demo_expires_at && new Date(t.demo_expires_at) < new Date()) {
+          return res.status(403).json({ 
+            error: 'Perioada de testare gratuită (demo) a expirat pentru această companie. Te rugăm să contactezi conducerea.' 
+          });
+        }
+      }
+    }
+
     const empResult = await pool.query(
       'SELECT id, first_name, last_name, avatar_path, is_archived FROM qrp_employees WHERE employee_code = $1 AND pin_code = $2 AND tenant_id = $3',
       [employee_code, pin_code, tenant_id]
@@ -399,6 +420,45 @@ router.post('/', async (req, res) => {
   }
 
   try {
+    // 0. Verificare status companie (Suspendat manual sau Demo expirat)
+    if (tenant_id) {
+      const tenantCheck = await pool.query(
+        'SELECT id, name, subscription_status, demo_expires_at FROM qrp_tenants WHERE id = $1',
+        [tenant_id]
+      );
+      if (tenantCheck.rows.length > 0) {
+        const t = tenantCheck.rows[0];
+        if (t.subscription_status === 'SUSPENDED') {
+          await logScanEvent({
+            tenant_id,
+            kiosk_id,
+            employee_code,
+            action_type: type,
+            status: 'BLOCKED',
+            failure_reason: 'Acces companie suspendat de către administrator',
+            req
+          });
+          return res.status(403).json({ 
+            error: 'Accesul pentru această companie este temporar suspendat. Pontajul a fost oprit.' 
+          });
+        }
+        if (t.subscription_status === 'DEMO' && t.demo_expires_at && new Date(t.demo_expires_at) < new Date()) {
+          await logScanEvent({
+            tenant_id,
+            kiosk_id,
+            employee_code,
+            action_type: type,
+            status: 'BLOCKED',
+            failure_reason: 'Perioadă demo expirată',
+            req
+          });
+          return res.status(403).json({ 
+            error: 'Perioada de testare gratuită (demo) a expirat pentru această companie. Te rugăm să contactezi conducerea.' 
+          });
+        }
+      }
+    }
+
     // 1. Gaseste angajatul
     const empResult = await pool.query(
       'SELECT id, first_name, last_name, avatar_path, job_title, birth_date, is_archived FROM qrp_employees WHERE employee_code = $1 AND pin_code = $2 AND tenant_id = $3',

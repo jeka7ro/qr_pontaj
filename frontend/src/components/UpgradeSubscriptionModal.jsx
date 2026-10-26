@@ -139,21 +139,21 @@ export default function UpgradeSubscriptionModal({
                   Câte locuri doriți să adăugați?
                 </label>
                 <div className="grid grid-cols-4 gap-2">
-                  {[5, 10, 20, 50].map((amt) => {
+                  {[1, 5, 10, 20].map((amt) => {
                     const isSelected = !customSeats && seatsToAdd === amt;
                     return (
                       <button
                         key={amt}
                         type="button"
                         onClick={() => handleSelectPreset(amt)}
-                        className={`h-11 rounded-2xl text-xs font-bold transition-all border flex items-center justify-center gap-1 cursor-pointer ${
+                        className={`h-11 rounded-2xl text-xs font-bold transition-all border flex items-center justify-center gap-1 cursor-pointer whitespace-nowrap shrink-0 ${
                           isSelected
                             ? 'bg-primary-600 text-white border-primary-600 shadow-sm'
                             : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750'
                         }`}
                       >
                         <Plus size={13} />
-                        <span>{amt} locuri</span>
+                        <span>+{amt} {amt === 1 ? 'loc' : 'locuri'}</span>
                       </button>
                     );
                   })}

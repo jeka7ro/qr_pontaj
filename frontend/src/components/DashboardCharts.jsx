@@ -133,7 +133,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
       const localDateTime = new Date(`${dateVal}T${shiftModal.time}:00`);
 
       if (localDateTime.getTime() > Date.now() + 5 * 60 * 1000) {
-        alert(t('futureTimeError'));
+        showToast(t('futureTimeError'), 'error');
         return;
       }
 
@@ -159,8 +159,9 @@ export default function DashboardCharts({ tenant, themeColor }) {
 
       setShiftModal({ isOpen: false, type: 'CLOSE', rowData: null, date: '', time: '17:00' });
       fetchLive(); // reload live data
+      showToast(shiftModal.type === 'START' ? 'Tura a fost pornită cu succes' : 'Tura a fost închisă cu succes', 'success');
     } catch (err) {
-      alert(err.message);
+      showToast(err.message, 'error');
     }
   };
 
@@ -180,8 +181,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
   };
 
   const handleOpenCloseShift = (emp) => {
-    const presenceDateStr = emp.last_in_time || emp.absolute_last_scan;
-    const initialDate = presenceDateStr ? new Date(presenceDateStr).toLocaleDateString('en-CA') : new Date().toLocaleDateString('en-CA');
+    const todayStr = new Date().toLocaleDateString('en-CA');
     const now = new Date();
     const currentHours = now.getHours().toString().padStart(2, '0');
     const currentMinutes = now.getMinutes().toString().padStart(2, '0');
@@ -190,7 +190,7 @@ export default function DashboardCharts({ tenant, themeColor }) {
       isOpen: true,
       type: 'CLOSE',
       rowData: emp,
-      date: initialDate,
+      date: todayStr,
       time: currentTime
     });
   };

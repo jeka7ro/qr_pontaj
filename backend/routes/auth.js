@@ -21,7 +21,7 @@ router.post('/login', async (req, res) => {
 
     // Găsim user-ul în BD cu datele tenant-ului
     const userResult = await pool.query(`
-      SELECT u.*, t.name as tenant_name 
+      SELECT u.*, t.name as tenant_name, t.subscription_status, t.demo_expires_at 
       FROM qrp_users u 
       LEFT JOIN qrp_tenants t ON u.tenant_id = t.id 
       WHERE LOWER(u.email) = LOWER($1)
@@ -40,6 +40,27 @@ router.post('/login', async (req, res) => {
     }
 
     const user = userResult.rows[0];
+
+    // Verificăm dacă tenant-ul este suspendat manual de către SuperAdmin
+    if (user.role !== 'SUPERADMIN' && user.subscription_status === 'SUSPENDED') {
+      await logLoginEvent({
+        tenant_id: user.tenant_id,
+        tenant_name: user.tenant_name,
+        user_id: user.id,
+        email: user.email,
+        user_name: user.name,
+        role: user.role,
+        login_type: 'ADMIN',
+        ip_address,
+        user_agent,
+        status: 'BLOCKED',
+        failure_reason: 'Acces companie suspendat de către administrator'
+      });
+      return res.status(403).json({ 
+        error: 'Accesul pentru această companie este temporar suspendat. Te rugăm să contactezi echipa de asistență.',
+        code: 'TENANT_SUSPENDED' 
+      });
+    }
 
     // Verificăm parola unică salvată în baza de date
     const isMatch = await bcrypt.compare(password, user.password_hash);
@@ -339,6 +360,7 @@ router.post('/demo-request', async (req, res) => {
     const { 
       contactName, 
       email, 
+      password,
       companyName, 
       phone, 
       anafPhone,
@@ -372,6 +394,8 @@ router.post('/demo-request', async (req, res) => {
     if (cleanCui) {
       anafData = await lookupAnafCompany(cleanCui);
     }
+    const isVatPayer = Boolean(anafData?.isVatPayer);
+    const finalVatNumber = cleanCui ? (isVatPayer ? `RO${cleanCui}` : cleanCui) : null;
 
     const cleanAnafPhone = (anafPhone || anafData?.phone || '').trim(); // TELEFON OPȚIONAL (din registrul fiscal ANAF)
     const finalCompanyName = anafData?.name || (companyName || '').trim() || `Companie ${contactName || cleanEmail.split('@')[0]}`;
@@ -391,9 +415,12 @@ router.post('/demo-request', async (req, res) => {
 
     const isDemo = mode !== 'subscribe';
     const subStatus = isDemo ? 'DEMO' : 'PENDING_SUBSCRIPTION';
-    const tempPassword = 'Demo' + Math.floor(1000 + Math.random() * 9000) + '!';
+    
+    // Parolă aleasă de client la înregistrare (sau generată automat ca fallback sigur)
+    const userChosenPassword = (password && typeof password === 'string' && password.trim().length >= 6) ? password.trim() : null;
+    const finalPassword = userChosenPassword || ('Demo' + Math.floor(1000 + Math.random() * 9000) + '!');
     const saltRounds = 10;
-    const passwordHash = await bcrypt.hash(tempPassword, saltRounds);
+    const passwordHash = await bcrypt.hash(finalPassword, saltRounds);
 
     await client.query('BEGIN');
 
@@ -504,7 +531,7 @@ router.post('/demo-request', async (req, res) => {
           demo_expires_at, modules, country_code, timezone, currency,
           theme_color, allow_employee_portal, allow_breaks, logo_url, favicon_url,
           terms_accepted_at, terms_accepted_ip, terms_accepted_by, terms_version,
-          dpa_accepted_at, dpa_version, created_at
+          dpa_accepted_at, dpa_version, is_online_registration, is_vat_payer, vat_status, created_at
         )
         VALUES (
           $1, $2, $3, $4,
@@ -513,13 +540,13 @@ router.post('/demo-request', async (req, res) => {
           $14, $15, $16, $17, $18,
           $19, $20, $21, $22, $23,
           NOW(), $24, $25, $26,
-          NOW(), $26, NOW()
+          NOW(), $26, true, $27, $28, NOW()
         )
         RETURNING id
       `, [
         finalCompanyName,
         finalSubdomain,
-        cleanCui || null,
+        finalVatNumber || null,
         cleanAddress || null,
         contactName || null,
         cleanPhone || null,
@@ -542,7 +569,9 @@ router.post('/demo-request', async (req, res) => {
         '/favicon.png',
         clientIp,
         contactName || cleanEmail,
-        termsVersion
+        termsVersion,
+        isVatPayer,
+        isVatPayer ? 'VALID' : (cleanCui ? 'NEPLATITOR' : 'PENDING')
       ]);
       tenantId = tenantInsertRes.rows[0].id;
 
@@ -602,12 +631,12 @@ router.post('/demo-request', async (req, res) => {
     await client.query('COMMIT');
 
     const baseDomain = process.env.BASE_DOMAIN || 'qr.pontaj.app';
-    const targetHost = process.env.FRONTEND_URL && !process.env.FRONTEND_URL.includes('localhost') 
-      ? process.env.FRONTEND_URL 
-      : `https://${baseDomain}`;
+    const targetHost = (process.env.FRONTEND_URL && !process.env.FRONTEND_URL.includes('localhost')) 
+      ? `https://${finalSubdomain}.${baseDomain}` 
+      : (process.env.FRONTEND_URL || `https://${baseDomain}`);
     const loginUrl = `${targetHost}/admin/login?email=${encodeURIComponent(cleanEmail)}`;
 
-    // Trimitem email către client (asincron) cu confirmarea precontractuală DPA
+    // Trimitem email către client (asincron) cu confirmarea precontractuală DPA și datele de conectare
     const isMock = cleanEmail.includes('example.com') || 
                    cleanEmail.includes('exemplu.ro') ||
                    cleanEmail.endsWith('.test') || 
@@ -618,10 +647,11 @@ router.post('/demo-request', async (req, res) => {
         to: cleanEmail,
         contactName: contactName || 'Administrator',
         companyName: finalCompanyName,
-        initialPassword: tempPassword,
+        initialPassword: finalPassword,
         loginUrl,
         employeesCount: seats,
         mode: mode || 'demo',
+        subdomain: finalSubdomain,
         dpaAudit: {
           clientIp,
           termsVersion,
@@ -651,7 +681,7 @@ router.post('/demo-request', async (req, res) => {
       notes: `${notes || ''} [GDPR DPA Art. 28 Acceptat Electronic de la IP: ${clientIp}]`,
       clientIp: clientIp,
       dpaAccepted: true,
-      initialPassword: tempPassword,
+      initialPassword: finalPassword,
       loginUrl: loginUrl
     }).catch(adminMailErr => console.warn('[DemoRequest] Notificare SuperAdmin error:', adminMailErr.message));
 
@@ -685,7 +715,9 @@ router.post('/demo-request', async (req, res) => {
       token,
       user: activeUser,
       email: cleanEmail,
-      tempPassword,
+      password: finalPassword,
+      tempPassword: finalPassword,
+      isUserChosenPassword: Boolean(userChosenPassword),
       loginUrl,
       tenantId,
       subdomain: finalSubdomain
@@ -755,13 +787,13 @@ router.post('/google', async (req, res) => {
           name, subdomain, contact_name, contact_email,
           subscription_status, subscription_seats, price_per_employee, billing_per_employee,
           demo_expires_at, modules, country_code, timezone, currency, theme_color,
-          allow_employee_portal, allow_breaks, logo_url, favicon_url, created_at
+          allow_employee_portal, allow_breaks, logo_url, favicon_url, is_online_registration, created_at
         )
         VALUES (
           $1, $2, $3, $4,
           'DEMO', 10, 5.00, true,
           NOW() + INTERVAL '15 days', $5, 'RO', 'Europe/Bucharest', 'RON', '#2563EB',
-          true, true, '/logo_default_tenant.png', '/favicon.png', NOW()
+          true, true, '/logo_default_tenant.png', '/favicon.png', true, NOW()
         )
         RETURNING id
       `, [companyName, finalSub, name || cleanEmail.split('@')[0], cleanEmail, defaultModules]);

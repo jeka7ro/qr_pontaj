@@ -92,6 +92,13 @@ export default function HarveySdrView({ onConvertToTenant }) {
   const [isAnafModalOpen, setIsAnafModalOpen] = useState(false);
   const [selectedLeadForReview, setSelectedLeadForReview] = useState(null);
 
+  // Modale de confirmare in-app (fără confirm() din browser)
+  const [leadToSendConfirm, setLeadToSendConfirm] = useState(null);
+  const [isSendingConfirm, setIsSendingConfirm] = useState(false);
+  const [isBulkSendConfirmOpen, setIsBulkSendConfirmOpen] = useState(false);
+  const [leadToDeleteConfirm, setLeadToDeleteConfirm] = useState(null);
+  const [isBulkDeleteConfirmOpen, setIsBulkDeleteConfirmOpen] = useState(false);
+
   const showToast = (message, type = 'success') => {
     setToastMessage({ message, type });
     setTimeout(() => setToastMessage(null), 3500);
@@ -296,9 +303,15 @@ export default function HarveySdrView({ onConvertToTenant }) {
     }
   };
 
-  // Acțiuni în lot (Bulk Actions)
-  const handleBulkSend = async () => {
+  // Acțiuni în lot (Bulk Actions) cu confirmare in-app
+  const handleInitiateBulkSend = () => {
     if (selectedLeadIds.length === 0) return;
+    setIsBulkSendConfirmOpen(true);
+  };
+
+  const handleConfirmBulkSend = async () => {
+    if (selectedLeadIds.length === 0) return;
+    setIsBulkSendConfirmOpen(false);
     setBulkActionLoading(true);
     try {
       const baseUrl = getApiUrl();
@@ -321,8 +334,14 @@ export default function HarveySdrView({ onConvertToTenant }) {
     }
   };
 
-  const handleBulkDelete = async () => {
+  const handleInitiateBulkDelete = () => {
     if (selectedLeadIds.length === 0) return;
+    setIsBulkDeleteConfirmOpen(true);
+  };
+
+  const handleConfirmBulkDelete = async () => {
+    if (selectedLeadIds.length === 0) return;
+    setIsBulkDeleteConfirmOpen(false);
     setBulkActionLoading(true);
     try {
       const baseUrl = getApiUrl();
@@ -368,7 +387,13 @@ export default function HarveySdrView({ onConvertToTenant }) {
     }
   };
 
-  const handleDeleteLead = async (leadId) => {
+  const handleInitiateDeleteLead = (lead) => {
+    setLeadToDeleteConfirm(lead);
+  };
+
+  const handleConfirmDeleteLead = async () => {
+    if (!leadToDeleteConfirm) return;
+    const leadId = leadToDeleteConfirm.id;
     try {
       const baseUrl = getApiUrl();
       const res = await fetch(`${baseUrl}/api/admin/harvey/leads/${leadId}`, {
@@ -382,19 +407,26 @@ export default function HarveySdrView({ onConvertToTenant }) {
       }
     } catch (err) {
       showToast('Eroare la ștergerea lead-ului.', 'error');
+    } finally {
+      setLeadToDeleteConfirm(null);
     }
   };
 
-  const handleSendDirect = async (lead) => {
+  const handleInitiateSend = (lead) => {
     if (!lead.email) {
       setSelectedLeadForReview(lead);
       showToast('Adăugați o adresă de email validă înainte de trimitere.', 'error');
       return;
     }
+    setLeadToSendConfirm(lead);
+  };
 
+  const handleConfirmSendDirect = async () => {
+    if (!leadToSendConfirm) return;
+    setIsSendingConfirm(true);
     try {
       const baseUrl = getApiUrl();
-      const res = await fetch(`${baseUrl}/api/admin/harvey/leads/${lead.id}/send`, {
+      const res = await fetch(`${baseUrl}/api/admin/harvey/leads/${leadToSendConfirm.id}/send`, {
         method: 'POST',
         headers: getAuthHeaders()
       });
@@ -402,10 +434,13 @@ export default function HarveySdrView({ onConvertToTenant }) {
       if (!res.ok || !data.success) {
         throw new Error(data.message || 'Trimiterea a eșuat.');
       }
-      showToast(`Email trimis către ${lead.company_name}!`);
+      showToast(`Email trimis cu succes către ${leadToSendConfirm.company_name}!`);
+      setLeadToSendConfirm(null);
       fetchLeadsAndStats();
     } catch (err) {
       showToast(err.message, 'error');
+    } finally {
+      setIsSendingConfirm(false);
     }
   };
 
@@ -511,7 +546,7 @@ export default function HarveySdrView({ onConvertToTenant }) {
 
           <div className="flex items-center gap-2 flex-wrap">
             <button
-              onClick={handleBulkSend}
+              onClick={handleInitiateBulkSend}
               disabled={bulkActionLoading}
               className="px-3.5 h-8 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 disabled:opacity-50 cursor-pointer shadow-xs"
             >
@@ -529,7 +564,7 @@ export default function HarveySdrView({ onConvertToTenant }) {
             </button>
 
             <button
-              onClick={handleBulkDelete}
+              onClick={handleInitiateBulkDelete}
               disabled={bulkActionLoading}
               className="px-3.5 h-8 rounded-full bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 disabled:opacity-50 cursor-pointer shadow-xs"
             >
@@ -953,12 +988,12 @@ export default function HarveySdrView({ onConvertToTenant }) {
                             <Eye size={14} />
                           </button>
 
-                          {/* Trimite Direct dacă e în așteptare */}
+                          {/* Trimite Direct dacă e în așteptare — cu confirmare in-app */}
                           {lead.status === 'pending_review' && (
                             <button
-                              onClick={() => handleSendDirect(lead)}
+                              onClick={() => handleInitiateSend(lead)}
                               className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-emerald-50 hover:text-emerald-600 text-slate-500 dark:text-slate-400 flex items-center justify-center transition-colors shrink-0 cursor-pointer"
-                              title="Aprobă și trimite acum"
+                              title="Aprobă și trimite acum (cu confirmare in-app)"
                             >
                               <Send size={13} />
                             </button>
@@ -973,11 +1008,11 @@ export default function HarveySdrView({ onConvertToTenant }) {
                             <UserPlus size={14} />
                           </button>
 
-                          {/* Șterge */}
+                          {/* Șterge cu confirmare in-app */}
                           <button
-                            onClick={() => handleDeleteLead(lead.id)}
+                            onClick={() => handleInitiateDeleteLead(lead)}
                             className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-red-50 hover:text-red-600 text-slate-500 dark:text-slate-400 flex items-center justify-center transition-colors shrink-0 cursor-pointer"
-                            title="Șterge"
+                            title="Șterge (cu confirmare in-app)"
                           >
                             <Trash2 size={13} />
                           </button>
@@ -1118,6 +1153,231 @@ export default function HarveySdrView({ onConvertToTenant }) {
             fetchLeadsAndStats();
           }}
         />
+      )}
+
+      {/* Modal In-App de Confirmare Trimitere Email Individual */}
+      {leadToSendConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 p-6 space-y-5">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-100 dark:border-emerald-800/40">
+                  <Send size={18} />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                    Confirmare Trimitere Email
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Verificare manuală înainte de expediere Brevo
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => !isSendingConfirm && setLeadToSendConfirm(null)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                disabled={isSendingConfirm}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-100 dark:border-slate-800/80 space-y-2 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500 dark:text-slate-400">Companie:</span>
+                <span className="font-semibold text-slate-900 dark:text-white truncate max-w-[210px]">
+                  {leadToSendConfirm.company_name}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500 dark:text-slate-400">Destinatar:</span>
+                <span className="font-semibold text-emerald-600 dark:text-emerald-400 truncate max-w-[210px]">
+                  {leadToSendConfirm.email}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500 dark:text-slate-400">Subiect:</span>
+                <span className="font-medium text-slate-800 dark:text-slate-200 truncate max-w-[210px]">
+                  {leadToSendConfirm.draft_subject || 'Pontaj digital QR'}
+                </span>
+              </div>
+            </div>
+
+            <div className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+              Ești sigur că vrei să expediezi acest email către <strong>{leadToSendConfirm.company_name}</strong>? Mesajul va fi livrat direct pe adresa de contact salvată.
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setLeadToSendConfirm(null)}
+                disabled={isSendingConfirm}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-full transition-colors whitespace-nowrap shrink-0 cursor-pointer disabled:opacity-50"
+              >
+                Anulează
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmSendDirect}
+                disabled={isSendingConfirm}
+                className="px-5 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-full shadow-sm transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer disabled:opacity-50"
+              >
+                {isSendingConfirm ? (
+                  <>
+                    <RefreshCw size={13} className="animate-spin" />
+                    <span>Se trimite...</span>
+                  </>
+                ) : (
+                  <>
+                    <Send size={13} />
+                    <span>Confirmă &amp; Trimite</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal In-App de Confirmare Trimitere în Lot (Bulk Send) */}
+      {isBulkSendConfirmOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 p-6 space-y-5">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 border border-blue-100 dark:border-blue-800/40">
+                  <Send size={18} />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                    Confirmare Trimitere în Lot
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Trimitere multiplă prin Brevo
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsBulkSendConfirmOpen(false)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed space-y-2.5">
+              <p>
+                Ești pe cale să transmiți email-uri către <strong>{selectedLeadIds.length} companii selectate</strong>.
+              </p>
+              <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 rounded-xl text-amber-800 dark:text-amber-300 flex items-start gap-2">
+                <AlertCircle size={15} className="shrink-0 mt-0.5" />
+                <span>Fiecare companie va primi draftul personalizat generat de AI. Asigură-te că adresele sunt verificate.</span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsBulkSendConfirmOpen(false)}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-full transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+              >
+                Anulează
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmBulkSend}
+                className="px-5 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-full shadow-sm transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer"
+              >
+                <Send size={13} />
+                <span>Confirmă Trimiterea ({selectedLeadIds.length})</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal In-App de Confirmare Ștergere Lead Individual */}
+      {leadToDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="relative w-full max-w-sm bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 flex items-center justify-center shrink-0 border border-red-100 dark:border-red-800/40">
+                <Trash2 size={18} />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                  Ștergere Lead
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Confirmare eliminare din listă
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+              Sigur dorești să elimini compania <strong>{leadToDeleteConfirm.company_name}</strong> din Harvey SDR? Această acțiune nu poate fi anulată.
+            </p>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setLeadToDeleteConfirm(null)}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-full transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+              >
+                Anulează
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteLead}
+                className="px-5 py-2 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 rounded-full shadow-sm transition-all whitespace-nowrap shrink-0 cursor-pointer"
+              >
+                Șterge Lead
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal In-App de Confirmare Ștergere în Lot (Bulk Delete) */}
+      {isBulkDeleteConfirmOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="relative w-full max-w-sm bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 flex items-center justify-center shrink-0 border border-red-100 dark:border-red-800/40">
+                <Trash2 size={18} />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                  Ștergere în Lot
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Confirmare eliminare multiplă
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+              Sigur dorești să ștergi definitiv cele <strong>{selectedLeadIds.length} lead-uri selectate</strong> din baza de date?
+            </p>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsBulkDeleteConfirmOpen(false)}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-full transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+              >
+                Anulează
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmBulkDelete}
+                className="px-5 py-2 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 rounded-full shadow-sm transition-all whitespace-nowrap shrink-0 cursor-pointer"
+              >
+                Șterge ({selectedLeadIds.length})
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

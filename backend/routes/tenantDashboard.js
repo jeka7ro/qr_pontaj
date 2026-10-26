@@ -22,7 +22,9 @@ router.get('/info', async (req, res) => {
       SELECT id, name, logo_url, favicon_url, theme_color, created_at, modules,
              subdomain, country_code, timezone, currency, allow_employee_portal, allow_breaks,
              portal_bg_image_url, portal_bg_color,
-             stripe_customer_id, stripe_subscription_id, subscription_seats, subscription_status
+             stripe_customer_id, stripe_subscription_id, subscription_seats, subscription_status,
+             demo_expires_at, price_per_employee, billing_per_employee,
+             is_online_registration, terms_accepted_at
       FROM qrp_tenants 
       WHERE id = $1
     `;
@@ -33,8 +35,15 @@ router.get('/info', async (req, res) => {
     }
 
     const tenant = tenantResult.rows[0];
+    const isOnline = Boolean(tenant.is_online_registration || tenant.terms_accepted_at);
+    tenant.is_online_registration = isOnline;
+
     if (tenant.modules) {
       tenant.modules = evaluateModules(tenant.modules);
+      // REGULĂ STRICTĂ: Abonament & Facturi apare DOAR la tenanții înregistrați online (self-service)
+      if (!isOnline) {
+        tenant.modules.billing = false;
+      }
     }
 
     // Luăm datele locației (site) asociate acestui tenant (pentru generarea QR)
@@ -47,9 +56,19 @@ router.get('/info', async (req, res) => {
     const siteResult = await pool.query(siteQuery, [tenantId]);
     const site = siteResult.rows[0] || null;
 
+    const isDemoExpired = Boolean(
+      isOnline &&
+      tenant.subscription_status === 'DEMO' && 
+      tenant.demo_expires_at && 
+      new Date(tenant.demo_expires_at) < new Date()
+    );
+    const isSuspended = tenant.subscription_status === 'SUSPENDED';
+
     res.json({
       tenant,
-      site
+      site,
+      is_demo_expired: isDemoExpired,
+      is_suspended: isSuspended
     });
   } catch (error) {
     console.error('Error fetching tenant dashboard info:', error);

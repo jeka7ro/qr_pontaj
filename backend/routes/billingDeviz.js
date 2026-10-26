@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const bnrService = require('../services/bnrService');
+const smartInvoiceService = require('../services/smartInvoiceService');
 
 // GET /api/billing/deviz/bnr-rate
 // Returneaza cursul oficial BNR pentru o data data (implicit azi sau data specificata)
@@ -355,4 +356,347 @@ router.get('/', async (req, res) => {
   }
 });
 
+// GET /api/billing/deviz/smart-invoice-config
+// Returnează starea conexiunii și datele de facturare Trade Invest
+router.get('/smart-invoice-config', (req, res) => {
+  res.json({
+    supplier: smartInvoiceService.TRADE_INVEST_SUPPLIER,
+    has_api_url: Boolean(process.env.SMART_INVOICE_API_URL),
+    has_api_key: Boolean(process.env.SMART_INVOICE_API_KEY),
+    auto_send: smartInvoiceService.isAutoSendEnabled(),
+    series: process.env.SMART_INVOICE_SERIES || 'QRP'
+  });
+});
+
+// POST /api/billing/deviz/send-to-smart-invoice
+// Trimitere manuală la cerere sau generare deviz pentru Smart Invoice
+// Conform Codului Fiscal, conversia în RON folosește cursul BNR din ziua plății (payment_date)
+router.post('/send-to-smart-invoice', async (req, res) => {
+  try {
+    const { tenant_id, month, year, exchange_rate, payment_method, period_note, payment_date } = req.body;
+    if (!tenant_id) {
+      return res.status(400).json({ error: 'Parametrul tenant_id este obligatoriu.' });
+    }
+
+    const now = new Date();
+    const targetMonth = parseInt(month, 10) || (now.getMonth() + 1);
+    const targetYear = parseInt(year, 10) || now.getFullYear();
+    const paymentDateStr = payment_date || now.toISOString().slice(0, 10);
+
+    const deviz = await calculateDevizForTenant(tenant_id, targetMonth, targetYear, exchange_rate, paymentDateStr);
+    if (!deviz) {
+      return res.status(404).json({ error: `Nu a putut fi generat devizul pentru tenantul ${tenant_id}.` });
+    }
+
+    const result = await smartInvoiceService.sendInvoiceToSmartInvoice({
+      tenantId: tenant_id,
+      devizData: deviz,
+      paymentMethod: payment_method || 'ORDIN_PLATA',
+      periodNote: period_note || '',
+      paymentDate: paymentDateStr,
+      isManual: true
+    });
+
+    res.json(result);
+  } catch (error) {
+    console.error('Error sending to smart invoice:', error);
+    res.status(500).json({ error: 'Eroare la procesarea facturii în Smart Invoice: ' + error.message });
+  }
+});
+
+// GET /api/billing/deviz/invoices
+// Returnează lista tuturor facturilor generate pentru evidența SuperAdmin
+router.get('/invoices', async (req, res) => {
+  try {
+    const result = await db.query(`
+      SELECT 
+        i.id,
+        i.tenant_id,
+        i.amount,
+        i.status,
+        i.due_date,
+        i.currency,
+        i.invoice_number,
+        i.pdf_url,
+        i.smart_invoice_status,
+        i.smart_invoice_sent_at,
+        i.smart_invoice_payload,
+        i.created_at,
+        t.name as tenant_name,
+        t.subdomain as tenant_subdomain,
+        t.vat_number as tenant_vat_number,
+        t.is_vat_payer as tenant_is_vat_payer,
+        t.country_code as tenant_country_code
+      FROM qrp_invoices i
+      LEFT JOIN qrp_tenants t ON i.tenant_id = t.id
+      ORDER BY i.created_at DESC
+    `);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching invoices for SuperAdmin:', error);
+    res.status(500).json({ error: 'Eroare la preluarea listei de facturi: ' + error.message });
+  }
+});
+
+// DELETE /api/billing/deviz/invoices/:id
+// Ștergere factură din sistemul QR Pontaj (la cererea SuperAdmin-ului)
+router.delete('/invoices/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const delRes = await db.query('DELETE FROM qrp_invoices WHERE id = $1 RETURNING id, invoice_number', [id]);
+    if (delRes.rowCount === 0) {
+      return res.status(404).json({ error: 'Factura nu a fost găsită sau a fost deja ștearsă.' });
+    }
+    const invNum = delRes.rows[0].invoice_number || `#${id}`;
+    res.json({ success: true, message: `Factura ${invNum} a fost ștearsă cu succes.` });
+  } catch (error) {
+    console.error('Error deleting invoice:', error);
+    res.status(500).json({ error: 'Eroare la ștergerea facturii: ' + error.message });
+  }
+});
+
+async function calculateDevizForTenant(tenantId, month, year, rateOverride = null, targetDateStr = null, tvaPercent = 21) {
+  const now = new Date();
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const monthStart = new Date(year, month - 1, 1, 0, 0, 0, 0);
+  const monthEnd = new Date(year, month - 1, daysInMonth, 23, 59, 59, 999);
+
+  let exchangeRate = parseFloat(rateOverride);
+  let exchangeRateDate = null;
+  let bnrSource = null;
+  if (!exchangeRate || isNaN(exchangeRate)) {
+    let dateStr = targetDateStr;
+    if (!dateStr) {
+      const isCurrentMonth = (year === now.getFullYear() && month === (now.getMonth() + 1));
+      if (isCurrentMonth) {
+        dateStr = now.toISOString().slice(0, 10);
+      } else {
+        dateStr = `${year}-${String(month).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`;
+      }
+    }
+    const bnrInfo = await bnrService.getBnrRate(dateStr, 'EUR');
+    exchangeRate = bnrInfo.rate;
+    exchangeRateDate = bnrInfo.bnr_date;
+    bnrSource = bnrInfo.is_fallback ? 'Fallback' : 'BNR Oficial (Ziua Plății)';
+  } else {
+    exchangeRateDate = targetDateStr || now.toISOString().slice(0, 10);
+    bnrSource = 'BNR Confirmat (Ziua Plății)';
+  }
+
+  const tenantRes = await db.query(`
+    SELECT id, name, subdomain, logo_url, billing_start_date,
+           COALESCE(country_code, 'RO') as country_code,
+           COALESCE(currency, 'RON') as currency,
+           COALESCE(price_per_employee, 0)::numeric as price_per_employee
+    FROM qrp_tenants 
+    WHERE id = $1
+  `, [tenantId]);
+
+  if (tenantRes.rows.length === 0) return null;
+  const tenant = tenantRes.rows[0];
+  const price = parseFloat(tenant.price_per_employee) || 0;
+  const contractStartDate = tenant.billing_start_date ? new Date(tenant.billing_start_date) : null;
+
+  const empRes = await db.query(`
+    SELECT id, first_name, last_name, job_title, created_at, is_archived, archived_at
+    FROM qrp_employees
+    WHERE tenant_id = $1
+    ORDER BY last_name ASC, first_name ASC
+  `, [tenant.id]);
+
+  const isRomania = (tenant.country_code || 'RO').toUpperCase() === 'RO';
+  const fullRateEmployees = [];
+  const halfRateEmployees = [];
+
+  for (const emp of empRes.rows) {
+    const created = new Date(emp.created_at);
+    if (created > monthEnd) continue;
+
+    if (emp.is_archived && emp.archived_at) {
+      const archived = new Date(emp.archived_at);
+      if (archived < monthStart || (contractStartDate && archived < contractStartDate)) {
+        continue;
+      }
+    }
+
+    let startDay = 1;
+    let isHiredThisMonth = false;
+    if (contractStartDate && created <= contractStartDate) {
+      startDay = 1;
+      isHiredThisMonth = false;
+    } else if (created > monthStart) {
+      startDay = created.getDate();
+      isHiredThisMonth = true;
+    }
+
+    let endDay = daysInMonth;
+    let isArchivedThisMonth = false;
+    if (emp.is_archived && emp.archived_at) {
+      const archived = new Date(emp.archived_at);
+      if (archived <= monthEnd) {
+        endDay = archived.getDate();
+        isArchivedThisMonth = true;
+      }
+    }
+
+    const isCurrentMonth = (year === now.getFullYear() && month === (now.getMonth() + 1));
+    const lastRealDay = isCurrentMonth ? Math.min(endDay, now.getDate()) : endDay;
+    const daysShown = Math.max(1, Math.min(daysInMonth, lastRealDay - startDay + 1));
+    const ratePercent = daysShown >= 15 ? 100 : 50;
+    const amountEur = daysShown >= 15 ? price : (price * 0.5);
+    const amountRon = isRomania ? parseFloat((amountEur * exchangeRate).toFixed(2)) : null;
+
+    let note = isCurrentMonth
+      ? `Luna în curs (1–${lastRealDay} din ${daysInMonth})`
+      : `Lună completă (1–${daysInMonth})`;
+    let intervalStr = `01.${month.toString().padStart(2, '0')}.${year} – ${(isCurrentMonth ? lastRealDay : daysInMonth).toString().padStart(2, '0')}.${month.toString().padStart(2, '0')}.${year}`;
+
+    if (isArchivedThisMonth) {
+      const archDate = new Date(emp.archived_at);
+      const fArch = `${archDate.getDate().toString().padStart(2, '0')}.${(archDate.getMonth() + 1).toString().padStart(2, '0')}.${archDate.getFullYear()}`;
+      note = `Arhivat pe ${fArch} (< 15 zile)`;
+      intervalStr = `01.${month.toString().padStart(2, '0')}.${year} – ${fArch}`;
+    } else if (isHiredThisMonth) {
+      const crDate = new Date(emp.created_at);
+      const fCr = `${crDate.getDate().toString().padStart(2, '0')}.${(crDate.getMonth() + 1).toString().padStart(2, '0')}.${crDate.getFullYear()}`;
+      note = `Adăugat pe ${fCr}`;
+      intervalStr = `${fCr} – ${(isCurrentMonth ? lastRealDay : daysInMonth).toString().padStart(2, '0')}.${month.toString().padStart(2, '0')}.${year}`;
+    }
+
+    const item = {
+      nr_crt: 0,
+      employee_id: emp.id,
+      name: `${emp.first_name || ''} ${emp.last_name || ''}`.trim() || `Angajat #${emp.id}`,
+      job_title: emp.job_title || 'Nespecificat',
+      interval_activ: intervalStr,
+      days_active: daysShown,
+      days_in_month: daysInMonth,
+      rate_percent: ratePercent,
+      unit_price_eur: price,
+      amount_eur: parseFloat(amountEur.toFixed(2)),
+      amount_ron: amountRon,
+      note
+    };
+
+    if (ratePercent === 100) {
+      fullRateEmployees.push(item);
+    } else {
+      halfRateEmployees.push(item);
+    }
+  }
+
+  const allDevizItems = [...halfRateEmployees, ...fullRateEmployees].map((item, idx) => ({
+    ...item,
+    nr_crt: idx + 1
+  }));
+
+  const totalEurBase = (fullRateEmployees.length * price) + (halfRateEmployees.length * (price * 0.5));
+  const totalRonBase = isRomania ? parseFloat((totalEurBase * exchangeRate).toFixed(2)) : null;
+
+  const tvaMultiplier = tvaPercent / 100;
+  const tvaEur = parseFloat((totalEurBase * tvaMultiplier).toFixed(2));
+  const tvaRon = isRomania ? parseFloat((totalRonBase * tvaMultiplier).toFixed(2)) : null;
+
+  const totalWithTvaEur = parseFloat((totalEurBase + tvaEur).toFixed(2));
+  const totalWithTvaRon = isRomania ? parseFloat((totalRonBase + tvaRon).toFixed(2)) : null;
+
+  const invoiceLines = [];
+  const monthNames = [
+    '', 'Ianuarie', 'Februarie', 'Martie', 'Aprilie', 'Mai', 'Iunie', 
+    'Iulie', 'August', 'Septembrie', 'Octombrie', 'Noiembrie', 'Decembrie'
+  ];
+  const monthName = monthNames[month] || month;
+
+  if (fullRateEmployees.length > 0) {
+    const lineBaseEur = fullRateEmployees.length * price;
+    const lineTvaEur = parseFloat((lineBaseEur * tvaMultiplier).toFixed(2));
+    const lineObj = {
+      line_number: 1,
+      description: `Abonament lunar servicii Smart QR Pontaj - ${monthName} ${year} (Angajați activi lună completă)`,
+      quantity: fullRateEmployees.length,
+      unit_measure: 'pers',
+      unit_price_eur: price,
+      base_amount_eur: parseFloat(lineBaseEur.toFixed(2)),
+      tva_percent: tvaPercent,
+      tva_amount_eur: lineTvaEur,
+      total_with_tva_eur: parseFloat((lineBaseEur + lineTvaEur).toFixed(2))
+    };
+    if (isRomania) {
+      const lineBaseRon = parseFloat((lineBaseEur * exchangeRate).toFixed(2));
+      const lineTvaRon = parseFloat((lineBaseRon * tvaMultiplier).toFixed(2));
+      lineObj.unit_price_ron = parseFloat((price * exchangeRate).toFixed(4));
+      lineObj.base_amount_ron = lineBaseRon;
+      lineObj.tva_amount_ron = lineTvaRon;
+      lineObj.total_with_tva_ron = parseFloat((lineBaseRon + lineTvaRon).toFixed(2));
+    }
+    invoiceLines.push(lineObj);
+  }
+
+  if (halfRateEmployees.length > 0) {
+    const halfPrice = price * 0.5;
+    const lineBaseEur = halfRateEmployees.length * halfPrice;
+    const lineTvaEur = parseFloat((lineBaseEur * tvaMultiplier).toFixed(2));
+    const lineObj = {
+      line_number: invoiceLines.length + 1,
+      description: `Abonament lunar servicii Smart QR Pontaj - ${monthName} ${year} (Angajați cotă redusă < 15 zile)`,
+      quantity: halfRateEmployees.length,
+      unit_measure: 'pers',
+      unit_price_eur: parseFloat(halfPrice.toFixed(2)),
+      base_amount_eur: parseFloat(lineBaseEur.toFixed(2)),
+      tva_percent: tvaPercent,
+      tva_amount_eur: lineTvaEur,
+      total_with_tva_eur: parseFloat((lineBaseEur + lineTvaEur).toFixed(2))
+    };
+    if (isRomania) {
+      const lineBaseRon = parseFloat((lineBaseEur * exchangeRate).toFixed(2));
+      const lineTvaRon = parseFloat((lineBaseRon * tvaMultiplier).toFixed(2));
+      lineObj.unit_price_ron = parseFloat((halfPrice * exchangeRate).toFixed(4));
+      lineObj.base_amount_ron = lineBaseRon;
+      lineObj.tva_amount_ron = lineTvaRon;
+      lineObj.total_with_tva_ron = parseFloat((lineBaseRon + lineTvaRon).toFixed(2));
+    }
+    invoiceLines.push(lineObj);
+  }
+
+  return {
+    supplier: smartInvoiceService.TRADE_INVEST_SUPPLIER,
+    client: {
+      tenant_id: tenant.id,
+      name: tenant.name,
+      subdomain: tenant.subdomain,
+      country_code: tenant.country_code || 'RO',
+      is_romania: isRomania,
+      contract_reference: 'Contract SaaS Nr. 9 din 09.09.2026',
+      billing_start_date: tenant.billing_start_date
+    },
+    billing_period: {
+      month,
+      month_name: monthName,
+      year,
+      days_in_month: daysInMonth
+    },
+    payment_date: targetDateStr || now.toISOString().slice(0, 10),
+    currency: 'EUR',
+    billing_currency: isRomania ? 'RON' : (tenant.currency || 'EUR'),
+    exchange_rate: isRomania ? exchangeRate : null,
+    exchange_rate_date: isRomania ? exchangeRateDate : null,
+    bnr_source: isRomania ? bnrSource : null,
+    tva_percent: tvaPercent,
+    totals: {
+      active_employees_count: allDevizItems.length,
+      full_rate_count: fullRateEmployees.length,
+      half_rate_count: halfRateEmployees.length,
+      base_total_eur: parseFloat(totalEurBase.toFixed(2)),
+      base_total_ron: totalRonBase,
+      tva_total_eur: tvaEur,
+      tva_total_ron: tvaRon,
+      grand_total_with_tva_eur: totalWithTvaEur,
+      grand_total_with_tva_ron: totalWithTvaRon
+    },
+    invoice_lines: invoiceLines,
+    deviz_nominal: allDevizItems
+  };
+}
+
 module.exports = router;
+

@@ -73,10 +73,25 @@ export default function TrafficAnalyticsView() {
     return () => clearInterval(interval);
   }, [fetchData]);
 
+  const getPeriodLabel = (p) => {
+    switch (p) {
+      case 'today': return 'Azi';
+      case '24h': return '24 Ore';
+      case '7d': return '7 Zile';
+      case '30d': return '30 Zile';
+      default: return 'Perioadă';
+    }
+  };
+  const periodLabel = getPeriodLabel(period);
+
+  const currentVisitors = data.uniqueVisitors ?? data.todayVisitors ?? 0;
+  const currentPageviews = data.totalPageviews ?? data.todayPageviews ?? 0;
+  const prevVisitors = data.prevPeriodVisitors ?? data.yesterdayVisitors ?? 0;
+
   // Formatare procent diferență
-  const diffPercent = data.yesterdayVisitors > 0 
-    ? Math.round(((data.todayVisitors - data.yesterdayVisitors) / data.yesterdayVisitors) * 100)
-    : (data.todayVisitors > 0 ? 100 : 0);
+  const diffPercent = prevVisitors > 0 
+    ? Math.round(((currentVisitors - prevVisitors) / prevVisitors) * 100)
+    : (currentVisitors > 0 ? 100 : 0);
 
   // Helper culori surse
   const getSourceBadge = (source) => {
@@ -163,8 +178,8 @@ export default function TrafficAnalyticsView() {
         {/* Vizitatori Unici */}
         <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs relative overflow-hidden">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-              Vizitatori Unici (Azi)
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 whitespace-nowrap shrink-0">
+              Vizitatori Unici ({periodLabel})
             </span>
             <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
               <Users size={16} />
@@ -172,26 +187,26 @@ export default function TrafficAnalyticsView() {
           </div>
           <div className="mt-3 flex items-baseline gap-2">
             <span className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-              {data.todayVisitors}
+              {currentVisitors}
             </span>
             <span className={`text-xs font-bold px-2 py-0.5 rounded-full whitespace-nowrap shrink-0 ${
               diffPercent >= 0 
                 ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300' 
                 : 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300'
             }`}>
-              {diffPercent >= 0 ? `+${diffPercent}%` : `${diffPercent}%`} vs ieri
+              {diffPercent >= 0 ? `+${diffPercent}%` : `${diffPercent}%`} {data.comparisonLabel || 'vs anterior'}
             </span>
           </div>
           <span className="text-[11px] text-slate-400 mt-1 block">
-            {data.yesterdayVisitors} vizitatori înregistrați ieri
+            {prevVisitors} {data.comparisonSubtext || 'înregistrați în perioada anterioară'}
           </span>
         </div>
 
         {/* Afișări de Pagină */}
         <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs relative overflow-hidden">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-              Afișări Totale (Azi)
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 whitespace-nowrap shrink-0">
+              Afișări Totale ({periodLabel})
             </span>
             <div className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
               <Eye size={16} />
@@ -199,22 +214,22 @@ export default function TrafficAnalyticsView() {
           </div>
           <div className="mt-3 flex items-baseline gap-2">
             <span className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-              {data.todayPageviews}
+              {currentPageviews}
             </span>
             <span className="text-xs font-bold text-slate-500 whitespace-nowrap shrink-0">
               vizualizări
             </span>
           </div>
           <span className="text-[11px] text-slate-400 mt-1 block">
-            Media de {data.todayVisitors > 0 ? (data.todayPageviews / data.todayVisitors).toFixed(1) : '1'} pagini / vizită
+            Media de {currentVisitors > 0 ? (currentPageviews / currentVisitors).toFixed(1) : '1'} pagini / vizită
           </span>
         </div>
 
         {/* Formulare Deschise */}
         <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs relative overflow-hidden">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-              Interes Demo &amp; Tarife
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 whitespace-nowrap shrink-0">
+              Interes Demo &amp; Tarife ({periodLabel})
             </span>
             <div className="w-8 h-8 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
               <TrendingUp size={16} />
@@ -236,8 +251,8 @@ export default function TrafficAnalyticsView() {
         {/* Lead-uri Convertite */}
         <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs relative overflow-hidden">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-              Lead-uri Înregistrate
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 whitespace-nowrap shrink-0">
+              Lead-uri Înregistrate ({periodLabel})
             </span>
             <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
               <CheckCircle2 size={16} />
@@ -254,7 +269,7 @@ export default function TrafficAnalyticsView() {
           <span className="text-[11px] text-slate-400 mt-1 block">
             Rată conversie:{' '}
             <strong className="text-emerald-600">
-              {data.todayVisitors > 0 ? ((data.funnel?.demosSubmitted / data.todayVisitors) * 100).toFixed(1) : 0}%
+              {currentVisitors > 0 ? (((data.funnel?.demosSubmitted || 0) / currentVisitors) * 100).toFixed(1) : 0}%
             </strong>
           </span>
         </div>
@@ -327,12 +342,12 @@ export default function TrafficAnalyticsView() {
           </div>
 
           <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-xs p-4 rounded-2xl border border-blue-100 dark:border-slate-700 shadow-2xs">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
-              Vizitatori pe Site ({period === 'today' ? 'Azi' : period})
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block whitespace-nowrap shrink-0">
+              Vizitatori pe Site ({periodLabel})
             </span>
             <div className="flex items-baseline gap-2 mt-1">
               <span className="text-2xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-400">
-                {data.todayVisitors || 0}
+                {currentVisitors}
               </span>
               <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full whitespace-nowrap shrink-0 border border-emerald-200 dark:border-emerald-800">
                 100% Mobile
@@ -424,12 +439,12 @@ export default function TrafficAnalyticsView() {
           </div>
 
           <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xs p-4 rounded-2xl border border-amber-100 dark:border-slate-700 shadow-2xs">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
-              Afișări Pagini ({period === 'today' ? 'Azi' : period})
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block whitespace-nowrap shrink-0">
+              Afișări Pagini ({periodLabel})
             </span>
             <div className="flex items-baseline gap-2 mt-1">
               <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
-                {data.todayPageviews || 0}
+                {currentPageviews}
               </span>
               <span className="text-[10px] font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded-full whitespace-nowrap shrink-0 border border-blue-200 dark:border-blue-800">
                 Pagină QR Pontaj
@@ -477,7 +492,7 @@ export default function TrafficAnalyticsView() {
       <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs">
         <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-4 flex items-center gap-2">
           <Layers size={16} className="text-blue-600" />
-          Pâlnia de Conversie a Vizitatorilor ({period === 'today' ? 'Astăzi' : period})
+          Pâlnia de Conversie a Vizitatorilor ({periodLabel})
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -541,7 +556,7 @@ export default function TrafficAnalyticsView() {
             <div className="space-y-3">
               {data.sources.map((s, idx) => {
                 const badge = getSourceBadge(s.source);
-                const total = data.todayVisitors || 1;
+                const total = currentVisitors || 1;
                 const pct = Math.min(100, Math.round((parseInt(s.visitors, 10) / total) * 100));
 
                 return (

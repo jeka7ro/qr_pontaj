@@ -91,9 +91,10 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
       const res = await fetch(`${baseUrl}/api/company/lookup?cui=${digitsOnly}`);
       const data = await res.json();
       if (data.success && data.found && data.company) {
+        const formattedCui = data.company.isVatPayer ? `RO${data.company.cui}` : String(data.company.cui);
         setFormData(prev => ({ 
           ...prev, 
-          cui: String(data.company.cui),
+          cui: formattedCui,
           nume_locatie: prev.nume_locatie && !prev.nume_locatie.startsWith('Companie') ? prev.nume_locatie : data.company.name,
           billing_address: data.company.address || ''
         }));
@@ -935,7 +936,6 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {[
-                  { id: 'billing', label: 'Facturare / Plăți Online' },
                   { id: 'leaves', label: 'Zile Libere (CO/CM)' },
                   { id: 'export_saga', label: 'Export Conta (SAGA)' },
                   { id: 'geofence', label: 'Geofence Avansat pe Hartă' },

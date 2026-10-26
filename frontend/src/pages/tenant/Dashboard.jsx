@@ -5,7 +5,7 @@ import {
   CalendarDays, FileSpreadsheet, Globe, Map, BookOpenCheck, Calculator, 
   CalendarClock, ScanFace, MessageSquare, Wrench, Table, ChevronDown,
   Bell, LogIn, Briefcase, Clock, User, PanelLeftClose, PanelLeftOpen, ChevronRight, Settings,
-  Activity, AlertCircle, RefreshCw, ExternalLink
+  Activity, AlertCircle, RefreshCw, ExternalLink, PowerOff
 } from 'lucide-react';
 import TenantSettingsModal from '../../components/TenantSettingsModal';
 
@@ -258,7 +258,37 @@ export default function TenantDashboard() {
     );
   }
 
+  if (tenantInfo?.is_suspended) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center p-4">
+        <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-xl max-w-md w-full text-center border border-slate-200 dark:border-slate-700 space-y-4">
+          <div className="w-14 h-14 rounded-full bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto">
+            <PowerOff size={28} />
+          </div>
+          <h2 className="text-xl font-black text-slate-900 dark:text-white">
+            Acces Companie Suspendat
+          </h2>
+          <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed">
+            Contul companiei <strong className="text-slate-900 dark:text-white">{tenantInfo.tenant.name}</strong> a fost temporar suspendat de către administratorul platformei.
+          </p>
+          <div className="p-3.5 bg-slate-50 dark:bg-slate-700/40 rounded-xl text-xs text-slate-500 dark:text-slate-400 space-y-1 text-left">
+            <div>&bull; Pontajul angajaților la Kiosk și accesul la rapoarte sunt oprite.</div>
+            <div>&bull; Pentru asistență sau reactivare, contactează echipa de suport:</div>
+            <div className="font-bold text-slate-800 dark:text-slate-200 pt-1">contact@pontaj.app</div>
+          </div>
+          <button 
+            onClick={handleLogout}
+            className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold h-11 rounded-full transition-colors text-xs whitespace-nowrap shrink-0 cursor-pointer shadow-sm"
+          >
+            {t('backToLogin')}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const { tenant, site } = tenantInfo;
+  const isOnlineTenant = Boolean(tenant?.is_online_registration || tenant?.terms_accepted_at);
   
   // Utilizăm culoarea temei dacă este definită, altfel folosim blue-600 standard
   const themeColor = tenant.theme_color || '#2563EB';
@@ -301,31 +331,25 @@ export default function TenantDashboard() {
           {sidebarCollapsed ? (
             /* Collapsed State: Logo 100% centrat, fără nicio tăiere */
             <div className="flex items-center justify-center w-full relative">
-              {tenant.logo_url ? (
+              {tenant.logo_url && !tenant.logo_url.includes('default') && !tenant.logo_url.includes('smartqr') && !tenant.logo_url.includes('1792931780859') ? (
                 <div 
                   onClick={toggleSidebarCollapsed}
-                  className="h-10 w-10 shrink-0 bg-slate-900 dark:bg-slate-950 rounded-xl flex items-center justify-center p-1.5 shadow-sm border border-slate-800 dark:border-slate-800 cursor-pointer hover:ring-2 hover:ring-primary-500 transition-all overflow-hidden" 
+                  className="h-10 w-10 shrink-0 bg-white dark:bg-slate-800 rounded-xl flex items-center justify-center p-1 shadow-xs border border-slate-200 dark:border-slate-700 cursor-pointer hover:ring-2 hover:ring-primary-500 transition-all overflow-hidden" 
                   title={`${tenant.name} — Apasă pentru a extinde meniul`}
                 >
                   <img 
                     src={tenant.logo_url} 
                     alt={tenant.name} 
-                    className="max-h-full max-w-full object-contain drop-shadow-sm" 
-                    onError={(e) => {
-                      if (!e.currentTarget.src.includes('/logo_default_tenant.png')) {
-                        e.currentTarget.src = '/logo_default_tenant.png';
-                      }
-                    }}
+                    className="max-h-full max-w-full object-contain" 
                   />
                 </div>
               ) : (
                 <div 
                   onClick={toggleSidebarCollapsed}
-                  className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold shrink-0 text-xs cursor-pointer hover:ring-2 hover:ring-primary-500 transition-all shadow-sm"
-                  style={{ backgroundColor: themeColor }}
+                  className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/25 shrink-0 cursor-pointer hover:ring-2 hover:ring-primary-500 transition-all"
                   title={`${tenant.name} — Apasă pentru a extinde meniul`}
                 >
-                  {tenant.name ? tenant.name.substring(0, 2).toUpperCase() : 'QR'}
+                  <QrCode size={22} />
                 </div>
               )}
               {/* Buton discret plutitor pe marginea sidebar-ului */}
@@ -341,42 +365,24 @@ export default function TenantDashboard() {
             /* Expanded State: Logo complet + Nume stânga, Butoane acțiuni dreapta */
             <>
               <div className="flex items-center gap-3 overflow-hidden min-w-0">
-                {tenant.logo_url ? (
-                  <div className="h-10 w-10 shrink-0 bg-slate-900 dark:bg-slate-950 rounded-xl flex items-center justify-center p-1.5 shadow-sm border border-slate-800 dark:border-slate-800 overflow-hidden" title={tenant.name}>
+                {tenant.logo_url && !tenant.logo_url.includes('default') && !tenant.logo_url.includes('smartqr') && !tenant.logo_url.includes('1792931780859') ? (
+                  <div className="h-10 w-10 shrink-0 bg-white dark:bg-slate-800 rounded-xl flex items-center justify-center p-1 shadow-xs border border-slate-200 dark:border-slate-700 overflow-hidden" title={tenant.name}>
                     <img 
                       src={tenant.logo_url} 
                       alt={tenant.name} 
-                      className="max-h-full max-w-full object-contain drop-shadow-sm" 
-                      onError={(e) => {
-                        if (!e.currentTarget.src.includes('/logo_default_tenant.png')) {
-                          e.currentTarget.src = '/logo_default_tenant.png';
-                        }
-                      }}
+                      className="max-h-full max-w-full object-contain" 
                     />
                   </div>
                 ) : (
                   <div 
-                    className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold shrink-0 text-xs shadow-sm"
-                    style={{ backgroundColor: themeColor }}
+                    className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/25 shrink-0"
                     title={tenant.name}
                   >
-                    {tenant.name ? tenant.name.substring(0, 2).toUpperCase() : 'QR'}
+                    <QrCode size={22} />
                   </div>
                 )}
                 <div className="flex flex-col min-w-0 overflow-hidden">
                   <span className="font-bold text-slate-800 dark:text-white truncate text-sm" title={tenant.name}>{tenant.name}</span>
-                  {tenant.subdomain && (
-                    <a 
-                      href={`https://${tenant.subdomain}.qr.pontaj.app`} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 font-medium whitespace-nowrap shrink-0 group"
-                      title={`Deschide portalul dedicat ${tenant.subdomain}.qr.pontaj.app`}
-                    >
-                      <span className="truncate">{tenant.subdomain}.qr.pontaj.app</span>
-                      <ExternalLink size={10} className="shrink-0 opacity-70 group-hover:opacity-100" />
-                    </a>
-                  )}
                 </div>
               </div>
 
@@ -606,7 +612,7 @@ export default function TenantDashboard() {
             </Link>
           )}
 
-          {tenant.modules?.billing && (
+          {isOnlineTenant && tenant.modules?.billing && (
             <Link 
               to="/admin/billing"
               onClick={() => setSidebarOpen(false)}
@@ -750,18 +756,6 @@ export default function TenantDashboard() {
         {/* Desktop Header Bar with Language Selector */}
         <header className="hidden md:flex h-16 bg-white dark:bg-slate-800 border-b border-slate-200/80 dark:border-slate-700/80 items-center justify-between px-6 shrink-0 z-10 transition-colors">
           <div className="flex items-center gap-3">
-            {tenant?.subdomain && (
-              <a 
-                href={`https://${tenant.subdomain}.qr.pontaj.app`} 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-900/60 text-blue-700 dark:text-blue-300 text-xs font-semibold transition-all whitespace-nowrap shrink-0 shadow-2xs group"
-                title={`Deschide portalul dedicat https://${tenant.subdomain}.qr.pontaj.app`}
-              >
-                <span>{tenant.subdomain}.qr.pontaj.app</span>
-                <ExternalLink size={12} className="shrink-0 opacity-70 group-hover:opacity-100" />
-              </a>
-            )}
           </div>
 
           <div className="flex items-center gap-3">
@@ -797,20 +791,7 @@ export default function TenantDashboard() {
             <button className="p-2 -ml-2 text-slate-500 dark:text-slate-400 shrink-0" onClick={() => setSidebarOpen(true)}>
               <Menu size={24} />
             </button>
-            <div className="flex flex-col min-w-0">
-              <span className="font-bold text-slate-800 dark:text-white truncate max-w-[140px] text-xs">{tenant.name}</span>
-              {tenant?.subdomain && (
-                <a 
-                  href={`https://${tenant.subdomain}.qr.pontaj.app`} 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="text-[10px] text-blue-600 dark:text-blue-400 truncate max-w-[140px] font-medium whitespace-nowrap shrink-0 flex items-center gap-0.5"
-                >
-                  <span className="truncate">{tenant.subdomain}.qr.pontaj.app</span>
-                  <ExternalLink size={9} className="shrink-0" />
-                </a>
-              )}
-            </div>
+            <span className="font-bold text-slate-800 dark:text-white truncate max-w-[200px] text-sm">{tenant.name}</span>
           </div>
           <div className="flex items-center gap-2">
             <LanguageToggle countryCode={tenant?.country_code} variant="compact" />
@@ -840,6 +821,27 @@ export default function TenantDashboard() {
 
         {/* Content Area */}
         <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-900 transition-colors">
+          {isOnlineTenant && tenantInfo?.is_demo_expired && (
+            <div className="mb-6 p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300 flex items-center justify-center shrink-0">
+                  <AlertCircle size={20} />
+                </div>
+                <div>
+                  <div className="font-bold text-sm">Perioada de testare gratuită (15 Zile) a expirat</div>
+                  <div className="text-xs text-amber-700 dark:text-amber-300">
+                    Pontajele angajaților au fost oprite temporar. Activează un abonament pentru a continua utilizarea completă a platformei.
+                  </div>
+                </div>
+              </div>
+              <Link
+                to="/admin/billing"
+                className="px-5 py-2.5 rounded-full bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-xs transition-all whitespace-nowrap shrink-0 text-center"
+              >
+                Activează Abonamentul Acum &rarr;
+              </Link>
+            </div>
+          )}
           <Routes>
             <Route path="/" element={<Navigate to="dashboard" replace />} />
             
@@ -954,12 +956,16 @@ export default function TenantDashboard() {
             } />
 
             <Route path="billing" element={
-              tenant.modules?.billing ? (
-                <div className="w-full">
-                  <BillingModule tenant={tenant} themeColor={themeColor} />
-                </div>
+              isOnlineTenant ? (
+                tenant.modules?.billing ? (
+                  <div className="w-full">
+                    <BillingModule tenant={tenant} themeColor={themeColor} />
+                  </div>
+                ) : (
+                  <UpsellLock title="Abonament & Facturi" description="Descarcă facturile și gestionează abonamentul firmei." themeColor={themeColor} />
+                )
               ) : (
-                <UpsellLock title="Abonament & Facturi" description="Descarcă facturile și gestionează abonamentul firmei." themeColor={themeColor} />
+                <Navigate to="/admin/dashboard" replace />
               )
             } />
 

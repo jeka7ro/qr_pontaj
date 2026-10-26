@@ -531,15 +531,15 @@ Condiții pentru clienți:
 • Echipamente: tableta și/sau suportul digital nu sunt oferite de noi și sunt în responsabilitatea clientului (soluție 100% software în cloud).
 
 Puteți testa direct exportul SAGA și platforma aici:
-https://pontaj.app
+https://qr.pontaj.app/contabil
 
 Dacă doriți activarea unui cont de partener contabil, ne puteți răspunde direct la acest email sau ne puteți contacta telefonic la ${senderPhone}.
 
 Cu respect,
-${senderName || 'Echipa Pontaj.app'}
+${senderName || 'Echipa QR Pontaj'}
 Email: ${senderEmail}
 Telefon / WhatsApp: ${senderPhone}
-Web: https://pontaj.app`;
+Web: https://qr.pontaj.app`;
     return { subject, body, aiHook: hook };
   }
 
@@ -549,7 +549,7 @@ Web: https://pontaj.app`;
 
 Vă contactez scurt în legătură cu gestionarea prezenței și evidența orelor de muncă pentru echipa ${companyName}.
 
-Pentru a simplifica evidența orelor de muncă și a elimina timpul consumat lunar cu centralizarea manuală a foilor de prezență, vă propunem o soluție simplă prin Pontaj.app:
+Pentru a simplifica evidența orelor de muncă și a elimina timpul consumat lunar cu centralizarea manuală a foilor de prezență, vă propunem o soluție simplă prin QR Pontaj:
 
 • Terminal Kiosk pe tabletă la intrare: salariații scanează codul QR dinamic în sub o secundă, fără aparate biometrice costisitoare (soluție cloud, folosiți orice tabletă existentă; tableta și/sau suportul digital nu sunt oferite de noi și sunt în responsabilitatea clientului);
 • Foaie de prezență digitală automată: înregistrează automat orele exacte de intrare și ieșire, minut cu minut, fără erori;
@@ -564,22 +564,22 @@ Condiții comerciale & Grilă de tarife (în funcție de mărimea echipei):
 • Echipamente: tableta și/sau suportul digital nu sunt oferite de noi și sunt în responsabilitatea clientului (soluție 100% software în cloud).
 
 Puteți testa direct platforma sau activa un cont demonstrativ accesând:
-https://pontaj.app
+https://qr.pontaj.app/ro
 
 Dacă doriți o scurtă prezentare sau asistență la configurare, ne puteți răspunde direct la acest email sau ne puteți contacta telefonic la ${senderPhone}.
 
 Cu respect,
-${senderName || 'Echipa Pontaj.app'}
+${senderName || 'Echipa QR Pontaj'}
 Email: ${senderEmail}
 Telefon / WhatsApp: ${senderPhone}
-Web: https://pontaj.app`;
+Web: https://qr.pontaj.app`;
 
   if (pitchFocus === 'itm_compliance') {
     subject = `Pontaj digital QR`;
     hook = 'Evidență exactă a orelor fără foi pe hârtie și fără calcule manuale.';
     body = `Bună ziua,
 
-Pentru a simplifica evidența orelor de muncă și a scăpa definitiv de condicile pe hârtie, vă propunem Pontaj.app pentru echipa ${companyName}:
+Pentru a simplifica evidența orelor de muncă și a scăpa definitiv de condicile pe hârtie, vă propunem QR Pontaj pentru echipa ${companyName}:
 • Pontaj securizat pe tabletă sau smartphone cu cod QR dinamic și minut exact;
 • Rapoarte clare generate instant pentru prezența zilnică;
 • Export automat 1-Click în SAGA Salarii și Excel pentru contabilitate.
@@ -593,21 +593,21 @@ Condiții & Grilă de tarife:
 • Echipamente: tableta și/sau suportul digital nu sunt oferite de noi și sunt în responsabilitatea clientului (soluție 100% software în cloud).
 
 Puteți începe testul gratuit direct aici:
-https://pontaj.app
+https://qr.pontaj.app/ro
 
 Pentru detalii suplimentare sau asistență, răspundeți direct la acest email sau ne puteți contacta telefonic la ${senderPhone}.
 
 Cu respect,
-${senderName || 'Echipa Pontaj.app'}
+${senderName || 'Echipa QR Pontaj'}
 Email: ${senderEmail}
 Telefon / WhatsApp: ${senderPhone}
-Web: https://pontaj.app`;
+Web: https://qr.pontaj.app`;
   } else if (pitchFocus === 'kiosk_tableta') {
     subject = `Pontaj digital QR`;
     hook = 'Transformați orice tabletă într-un terminal inteligent de pontaj cu QR dinamic.';
     body = `Bună ziua,
 
-Vă propunem transformarea oricărei tablete obișnuite într-un terminal inteligent de pontaj la intrarea în ${companyName}, prin Kiosk Pontaj.app:
+Vă propunem transformarea oricărei tablete obișnuite într-un terminal inteligent de pontaj la intrarea în ${companyName}, prin Kiosk QR Pontaj:
 • Angajații scanează codul de pe telefon sau ecran în 2 secunde;
 • Prezența și orele exacte sunt transmise în timp real în panoul de management;
 • Generare automată a foilor de prezență și export direct în SAGA Salarii / Excel la sfârșit de lună.
@@ -621,15 +621,15 @@ Condiții & Grilă de tarife:
 • Echipamente: tableta și/sau suportul digital nu sunt oferite de noi și sunt în responsabilitatea clientului (soluție 100% software în cloud).
 
 Activați contul demonstrativ pe loc:
-https://pontaj.app
+https://qr.pontaj.app/ro
 
 Dacă aveți întrebări, ne puteți contacta direct la ${senderPhone} sau puteți răspunde la acest email.
 
 Cu respect,
-${senderName || 'Echipa Pontaj.app'}
+${senderName || 'Echipa QR Pontaj'}
 Email: ${senderEmail}
 Telefon / WhatsApp: ${senderPhone}
-Web: https://pontaj.app`;
+Web: https://qr.pontaj.app`;
   }
 
   return { subject, body, aiHook: hook };
@@ -662,7 +662,7 @@ async function generateClaudePitch({ companyName, industry, city, website, notes
     },
     ro: {
       langName: 'Română',
-      brand: 'Pontaj.app (https://pontaj.app)',
+      brand: 'QR Pontaj (https://qr.pontaj.app)',
       context: 'Piața din România. Focus pe pontaj rapid prin QR dinamic și kiosk pe tabletă, eliminarea foilor pe hârtie și export direct SAGA Salarii / Excel.'
     }
   };
@@ -777,7 +777,7 @@ async function generateGeminiPitch({ companyName, industry, city, website, notes
     },
     ro: {
       langName: 'Română',
-      brand: 'Pontaj.app (https://pontaj.app)',
+      brand: 'QR Pontaj (https://qr.pontaj.app)',
       context: 'Piața din România. Focus pe pontaj rapid prin QR dinamic și kiosk pe tabletă, eliminarea foilor pe hârtie și export direct SAGA Salarii / Excel.'
     }
   };

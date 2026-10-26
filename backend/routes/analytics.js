@@ -127,16 +127,30 @@ router.get('/overview', requireSuperAdmin, async (req, res) => {
     const period = req.query.period || '7d'; // 'today', '24h', '7d', '30d'
 
     let intervalFilter = "created_at >= NOW() - INTERVAL '7 days'";
+    let prevIntervalFilter = "created_at >= NOW() - INTERVAL '14 days' AND created_at < NOW() - INTERVAL '7 days'";
+    let comparisonLabel = 'vs 7z anterioare';
+    let comparisonSubtext = 'înregistrați în cele 7 zile anterioare';
+
     if (period === 'today') {
       intervalFilter = "created_at >= CURRENT_DATE";
+      prevIntervalFilter = "created_at >= CURRENT_DATE - INTERVAL '1 day' AND created_at < CURRENT_DATE";
+      comparisonLabel = 'vs ieri';
+      comparisonSubtext = 'înregistrați ieri';
     } else if (period === '24h') {
       intervalFilter = "created_at >= NOW() - INTERVAL '24 hours'";
+      prevIntervalFilter = "created_at >= NOW() - INTERVAL '48 hours' AND created_at < NOW() - INTERVAL '24 hours'";
+      comparisonLabel = 'vs 24h anterioare';
+      comparisonSubtext = 'înregistrați în intervalul 24h-48h';
     } else if (period === '30d') {
       intervalFilter = "created_at >= NOW() - INTERVAL '30 days'";
+      prevIntervalFilter = "created_at >= NOW() - INTERVAL '60 days' AND created_at < NOW() - INTERVAL '30 days'";
+      comparisonLabel = 'vs 30z anterioare';
+      comparisonSubtext = 'înregistrați în cele 30 zile anterioare';
     }
 
     // Excludem traficul de test local
     const baseFilter = `${intervalFilter} AND ip_address NOT IN ('::1') AND (referrer IS NULL OR referrer NOT LIKE '%localhost%')`;
+    const prevBaseFilter = `${prevIntervalFilter} AND ip_address NOT IN ('::1') AND (referrer IS NULL OR referrer NOT LIKE '%localhost%')`;
 
     // 1. Vizitatori activi în timp real (ultimele 15 minute)
     const liveNowRes = await pool.query(`
@@ -147,7 +161,26 @@ router.get('/overview', requireSuperAdmin, async (req, res) => {
     `);
     const liveNow = parseInt(liveNowRes.rows[0]?.count || 0, 10);
 
-    // 2. Vizitatori unici azi vs ieri
+    // 2. Vizitatori unici și afișări pentru perioada selectată
+    const periodRes = await pool.query(`
+      SELECT 
+        COUNT(DISTINCT COALESCE(visitor_id, session_id)) as unique_visitors,
+        COUNT(*) as total_pageviews
+      FROM site_analytics 
+      WHERE ${baseFilter}
+    `);
+    const uniqueVisitors = parseInt(periodRes.rows[0]?.unique_visitors || 0, 10);
+    const totalPageviews = parseInt(periodRes.rows[0]?.total_pageviews || 0, 10);
+
+    // Vizitatori din perioada anterioară pentru calculul trendului (+% / -%)
+    const prevPeriodRes = await pool.query(`
+      SELECT COUNT(DISTINCT COALESCE(visitor_id, session_id)) as count 
+      FROM site_analytics 
+      WHERE ${prevBaseFilter}
+    `);
+    const prevPeriodVisitors = parseInt(prevPeriodRes.rows[0]?.count || 0, 10);
+
+    // Păstrăm și datele specifice zilei de azi/ieri pentru compatibilitate
     const todayRes = await pool.query(`
       SELECT 
         COUNT(DISTINCT COALESCE(visitor_id, session_id)) as unique_visitors,
@@ -157,18 +190,10 @@ router.get('/overview', requireSuperAdmin, async (req, res) => {
         AND ip_address NOT IN ('::1')
         AND (referrer IS NULL OR referrer NOT LIKE '%localhost%')
     `);
-    const todayVisitors = parseInt(todayRes.rows[0]?.unique_visitors || 0, 10);
-    const todayPageviews = parseInt(todayRes.rows[0]?.total_pageviews || 0, 10);
+    const exactTodayVisitors = parseInt(todayRes.rows[0]?.unique_visitors || 0, 10);
+    const exactTodayPageviews = parseInt(todayRes.rows[0]?.total_pageviews || 0, 10);
 
-    const yesterdayRes = await pool.query(`
-      SELECT COUNT(DISTINCT COALESCE(visitor_id, session_id)) as count 
-      FROM site_analytics 
-      WHERE created_at >= CURRENT_DATE - INTERVAL '1 day' AND created_at < CURRENT_DATE
-        AND ip_address NOT IN ('::1')
-    `);
-    const yesterdayVisitors = parseInt(yesterdayRes.rows[0]?.count || 0, 10);
-
-    // 3. Surse de trafic (Reclame TikTok, Meta Ads, Google, Direct etc.)
+    // 3. Surse de trafic (Reclame TikTok, Meta Ads, Google, Direct etc.) pentru perioada selectată
     const sourcesRes = await pool.query(`
       SELECT 
         COALESCE(NULLIF(utm_source, ''), 'direct') as source,
@@ -181,7 +206,7 @@ router.get('/overview', requireSuperAdmin, async (req, res) => {
       LIMIT 10
     `);
 
-    // 4. Dispozitive (Mobile vs Desktop vs Tablet)
+    // 4. Dispozitive (Mobile vs Desktop vs Tablet) pentru perioada selectată
     const devicesRes = await pool.query(`
       SELECT 
         COALESCE(NULLIF(device_type, ''), 'mobile') as device,
@@ -192,20 +217,20 @@ router.get('/overview', requireSuperAdmin, async (req, res) => {
       ORDER BY visitors DESC
     `);
 
-    // 5. Top Pagini accesate
+    // 5. Top Pagini accesate pentru perioada selectată
     const pagesRes = await pool.query(`
       SELECT 
         page_path,
         COUNT(*) as views,
         COUNT(DISTINCT session_id) as unique_visitors
       FROM site_analytics
-      WHERE ${intervalFilter} AND event_type = 'page_view'
+      WHERE ${baseFilter} AND event_type = 'page_view'
       GROUP BY page_path
       ORDER BY views DESC
       LIMIT 10
     `);
 
-    // 6. Pâlnia de Conversie (Funnel)
+    // 6. Pâlnia de Conversie (Funnel) pentru perioada selectată
     const funnelRes = await pool.query(`
       SELECT 
         COUNT(DISTINCT CASE WHEN event_type = 'page_view' THEN session_id END) as total_visitors,
@@ -214,7 +239,7 @@ router.get('/overview', requireSuperAdmin, async (req, res) => {
         COUNT(DISTINCT CASE WHEN event_type = 'cui_search' THEN session_id END) as cui_searched,
         COUNT(DISTINCT CASE WHEN event_type = 'demo_submitted' THEN session_id END) as demos_submitted
       FROM site_analytics
-      WHERE ${intervalFilter}
+      WHERE ${baseFilter}
     `);
     const funnel = funnelRes.rows[0] || {
       total_visitors: 0,
@@ -224,19 +249,21 @@ router.get('/overview', requireSuperAdmin, async (req, res) => {
       demos_submitted: 0
     };
 
-    // 7. Grafic zilnic (pentru perioada selectată)
+    // 7. Grafic zilnic
+    const chartDays = period === '30d' ? 30 : 14;
     const chartDailyRes = await pool.query(`
       SELECT 
         TO_CHAR(created_at, 'YYYY-MM-DD') as date_label,
         COUNT(DISTINCT session_id) as visitors,
         COUNT(*) as pageviews
       FROM site_analytics
-      WHERE created_at >= NOW() - INTERVAL '14 days'
+      WHERE created_at >= NOW() - INTERVAL '${chartDays} days'
+        AND ip_address NOT IN ('::1')
       GROUP BY date_label
       ORDER BY date_label ASC
     `);
 
-    // 8. Lista recentă de vizitatori în timp real (ultimii 20)
+    // 8. Lista recentă de vizitatori în timp real (ultimii 25)
     const recentRes = await pool.query(`
       SELECT 
         id,
@@ -252,6 +279,7 @@ router.get('/overview', requireSuperAdmin, async (req, res) => {
         city,
         created_at
       FROM site_analytics
+      WHERE ${baseFilter}
       ORDER BY created_at DESC
       LIMIT 25
     `);
@@ -259,10 +287,18 @@ router.get('/overview', requireSuperAdmin, async (req, res) => {
     res.json({
       success: true,
       data: {
+        period,
         liveNow,
-        todayVisitors,
-        todayPageviews,
-        yesterdayVisitors,
+        uniqueVisitors,
+        totalPageviews,
+        todayVisitors: uniqueVisitors,
+        todayPageviews: totalPageviews,
+        yesterdayVisitors: prevPeriodVisitors,
+        prevPeriodVisitors,
+        exactTodayVisitors,
+        exactTodayPageviews,
+        comparisonLabel,
+        comparisonSubtext,
         sources: sourcesRes.rows,
         devices: devicesRes.rows,
         topPages: pagesRes.rows,
