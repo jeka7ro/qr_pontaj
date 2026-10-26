@@ -217,6 +217,10 @@ export default function SelfServiceSubscribeModal({ isOpen, onClose, initialTena
       setError(m.errEmail);
       return;
     }
+    if ((countryCode === 'RO' || isRo) && !vatNumber.trim()) {
+      setError('Vă rugăm să introduceți Codul Fiscal (CUI) sau CNP-ul pentru emiterea facturii fiscale conform reglementărilor ANAF.');
+      return;
+    }
 
     try {
       setLoading(true);
@@ -424,17 +428,18 @@ export default function SelfServiceSubscribeModal({ isOpen, onClose, initialTena
             <div>
               <div className="h-5 flex items-center justify-between mb-1.5">
                 <label className="text-xs font-semibold text-slate-700 truncate">
-                  {m.vatLabel}
+                  {isRo ? 'Cod Fiscal (CUI) sau CNP *' : m.vatLabel}
                 </label>
                 <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                  B2B
+                  {isRo ? 'Obligatoriu factură' : 'B2B'}
                 </span>
               </div>
               <div className="flex items-center h-11 px-3.5 rounded-2xl border border-slate-300 bg-white shadow-2xs focus-within:ring-2 focus-within:ring-blue-600 focus-within:border-blue-600 transition-all">
                 <ShieldCheck size={16} className="text-slate-400 mr-2.5 shrink-0" />
                 <input
                   type="text"
-                  placeholder={m.vatPlaceholder}
+                  required={isRo}
+                  placeholder={isRo ? "ex: RO42322117 sau CNP 13 cifre..." : m.vatPlaceholder}
                   value={vatNumber}
                   onChange={(e) => setVatNumber(e.target.value.toUpperCase())}
                   className="w-full text-sm font-medium text-slate-900 placeholder-slate-400 bg-transparent outline-none"

@@ -1451,10 +1451,13 @@ export default function LandingRomania() {
                         />
                       </div>
 
-                      {/* CNP Titular */}
+                      {/* CNP Titular (Opțional la Demo) */}
                       <div>
                         <label className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1 flex items-center justify-between">
-                          <span>CNP Titular (13 cifre)</span>
+                          <span className="flex items-center gap-1.5">
+                            <span>CNP Titular (13 cifre)</span>
+                            <span className="text-[10.5px] font-bold text-slate-400 normal-case">(opțional la demo)</span>
+                          </span>
                           {subForm.cnp && (
                             <span className="text-[10px] font-bold whitespace-nowrap shrink-0">
                               {subForm.cnp.length === 13 ? (
@@ -1475,11 +1478,11 @@ export default function LandingRomania() {
                             const digits = e.target.value.replace(/\D/g, '').slice(0, 13);
                             setSubForm(prev => ({ ...prev, cnp: digits }));
                           }}
-                          placeholder="Ex: 1900101123456 (13 cifre)..."
+                          placeholder="Opțional: Ex: 1900101123456 (13 cifre)..."
                           className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-xs font-semibold text-slate-900 bg-white"
                         />
                         <p className="text-[10px] text-slate-400 mt-1 pl-1">
-                          Necesar pentru emiterea facturii fiscale conform reglementărilor ANAF / e-Factura B2C.
+                          Opțional la crearea contului demo. Va fi solicitat separat doar la trecerea pe abonament plătit pentru emiterea facturii fiscale conform reglementărilor ANAF / e-Factura B2C.
                         </p>
                       </div>
 
