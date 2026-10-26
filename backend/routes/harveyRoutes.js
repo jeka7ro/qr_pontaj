@@ -166,7 +166,7 @@ router.post('/search', checkAdmin, async (req, res) => {
   }
 });
 
-// POST /api/admin/harvey/leads/bulk-send — Trimitere în lot pentru lead-urile selectate
+// POST /api/admin/harvey/leads/bulk-send — Trimitere sau retrimitere în lot pentru lead-urile selectate
 router.post('/leads/bulk-send', checkAdmin, async (req, res) => {
   try {
     const { leadIds } = req.body;
@@ -174,20 +174,29 @@ router.post('/leads/bulk-send', checkAdmin, async (req, res) => {
       return res.status(400).json({ success: false, message: 'Nu a fost selectat niciun lead' });
     }
 
-    const results = { sent: 0, failed: 0, errors: [] };
+    const results = { sent: 0, resent: 0, failed: 0, errors: [] };
     for (const id of leadIds) {
       try {
-        await harveyService.sendLeadEmail(id);
-        results.sent++;
+        const updated = await harveyService.sendLeadEmail(id);
+        if (updated.wasResent) {
+          results.resent++;
+        } else {
+          results.sent++;
+        }
       } catch (err) {
         results.failed++;
         results.errors.push(`Lead #${id}: ${err.message}`);
       }
     }
 
+    const parts = [];
+    if (results.sent > 0) parts.push(`${results.sent} trimise`);
+    if (results.resent > 0) parts.push(`${results.resent} retrimise`);
+    const summaryStr = parts.join(', ') || '0 emailuri';
+
     res.json({
       success: true,
-      message: `Trimise cu succes: ${results.sent}. Eșuate/Fără email: ${results.failed}.`,
+      message: `Finalizat cu succes: ${summaryStr}.${results.failed > 0 ? ` Eșuate: ${results.failed}.` : ''}`,
       results
     });
   } catch (err) {

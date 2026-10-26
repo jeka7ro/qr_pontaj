@@ -2180,8 +2180,9 @@ const harveyService = {
       throw new Error(`Adresa de email specificată nu este validă: "${lead.email}"`);
     }
 
-    if (lead.status === 'sent') {
-      throw new Error('Emailul a fost deja trimis către acest lead');
+    const wasResent = lead.status === 'sent';
+    if (wasResent) {
+      console.log(`[HarveyService] Retrimitere email solicitată pentru lead #${leadId} (${lead.company_name}) către ${validEmails.join(', ')}`);
     }
 
     const settingsRes = await db.query('SELECT * FROM sales_settings LIMIT 1');
@@ -2219,7 +2220,7 @@ const harveyService = {
       RETURNING *;
     `, [leadId]);
 
-    return { ...updated.rows[0], sendDetails: sendResult };
+    return { ...updated.rows[0], sendDetails: sendResult, wasResent };
   },
 
   // Trimitere email de test pentru previzualizare către administrator

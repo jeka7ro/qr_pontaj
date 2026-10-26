@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Mail, Send, Sparkles, RefreshCw, CheckCircle2, AlertCircle, ExternalLink, Globe, Phone, MapPin, Building2, Save, Languages } from 'lucide-react';
+import { X, Mail, Send, Sparkles, RefreshCw, CheckCircle2, AlertCircle, ExternalLink, Globe, Phone, MapPin, Building2, Save, Languages, RotateCcw } from 'lucide-react';
 import { getApiUrl, getAuthHeaders } from '../../utils/apiUrl';
 
 // Steaguri vectoriale SVG compacte, clare, fără caractere emoji
@@ -553,11 +553,13 @@ export default function HarveyReviewEmailModal({ isOpen, onClose, lead, onUpdate
             <button
               type="button"
               onClick={handleSendEmail}
-              disabled={sending || lead.status === 'sent'}
-              className="px-6 h-10 rounded-full bg-primary-600 hover:bg-primary-700 text-white text-sm font-bold shadow-sm transition-all flex items-center gap-2 whitespace-nowrap shrink-0 disabled:opacity-50"
+              disabled={sending}
+              className={`px-6 h-10 rounded-full text-white text-sm font-bold shadow-sm transition-all flex items-center gap-2 whitespace-nowrap shrink-0 disabled:opacity-50 cursor-pointer ${
+                lead.status === 'sent' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-primary-600 hover:bg-primary-700'
+              }`}
             >
-              <Send size={15} className="shrink-0" />
-              <span>{sending ? 'Se trimite prin Brevo...' : lead.status === 'sent' ? 'Trimis Anterior' : 'Aprobă & Trimite Acum'}</span>
+              {lead.status === 'sent' ? <RotateCcw size={15} className="shrink-0" /> : <Send size={15} className="shrink-0" />}
+              <span>{sending ? 'Se expediază prin Brevo...' : lead.status === 'sent' ? 'Retrimite Email Acum' : 'Aprobă & Trimite Acum'}</span>
             </button>
           </div>
         </div>

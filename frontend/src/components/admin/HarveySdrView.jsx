@@ -29,6 +29,7 @@ import {
   ShieldCheck,
   Tag,
   MousePointerClick,
+  RotateCcw,
   X
 } from 'lucide-react';
 import HarveySearchModal, { 
@@ -379,6 +380,19 @@ export default function HarveySdrView({ onConvertToTenant }) {
   };
 
   // Acțiuni în lot (Bulk Actions) cu confirmare in-app
+  const selectedLeadsList = useMemo(() => {
+    return leads.filter((l) => selectedLeadIds.includes(l.id));
+  }, [leads, selectedLeadIds]);
+
+  const bulkSendType = useMemo(() => {
+    if (selectedLeadsList.length === 0) return 'send';
+    const allSent = selectedLeadsList.every((l) => l.status === 'sent');
+    if (allSent) return 'resend';
+    const hasSent = selectedLeadsList.some((l) => l.status === 'sent');
+    if (hasSent) return 'mixed';
+    return 'send';
+  }, [selectedLeadsList]);
+
   const handleInitiateBulkSend = () => {
     if (selectedLeadIds.length === 0) return;
     setIsBulkSendConfirmOpen(true);
@@ -658,8 +672,14 @@ export default function HarveySdrView({ onConvertToTenant }) {
               disabled={bulkActionLoading}
               className="px-3.5 h-8 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 disabled:opacity-50 cursor-pointer shadow-xs"
             >
-              <Send size={12} />
-              <span>Trimite ({selectedLeadIds.length})</span>
+              {bulkSendType === 'resend' ? <RotateCcw size={12} className="shrink-0" /> : <Send size={12} className="shrink-0" />}
+              <span>
+                {bulkSendType === 'resend'
+                  ? `Retrimite (${selectedLeadIds.length})`
+                  : bulkSendType === 'mixed'
+                  ? `Trimite / Retrimite (${selectedLeadIds.length})`
+                  : `Trimite (${selectedLeadIds.length})`}
+              </span>
             </button>
 
             <button
@@ -1217,14 +1237,22 @@ export default function HarveySdrView({ onConvertToTenant }) {
                             <Eye size={14} />
                           </button>
 
-                          {/* Trimite Direct dacă e în așteptare — cu confirmare in-app */}
-                          {lead.status === 'pending_review' && (
+                          {/* Trimite sau Retrimite Direct — cu confirmare in-app */}
+                          {lead.status === 'pending_review' ? (
                             <button
                               onClick={() => handleInitiateSend(lead)}
                               className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-emerald-50 hover:text-emerald-600 text-slate-500 dark:text-slate-400 flex items-center justify-center transition-colors shrink-0 cursor-pointer"
                               title="Aprobă și trimite acum (cu confirmare in-app)"
                             >
                               <Send size={13} />
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleInitiateSend(lead)}
+                              className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-blue-50 hover:text-blue-600 text-slate-500 dark:text-slate-400 flex items-center justify-center transition-colors shrink-0 cursor-pointer"
+                              title="Retrimite email către acest lead (cu confirmare in-app)"
+                            >
+                              <RotateCcw size={13} />
                             </button>
                           )}
 
@@ -1384,134 +1412,165 @@ export default function HarveySdrView({ onConvertToTenant }) {
         />
       )}
 
-      {/* Modal In-App de Confirmare Trimitere Email Individual */}
-      {leadToSendConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 p-6 space-y-5">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-100 dark:border-emerald-800/40">
-                  <Send size={18} />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                    Confirmare Trimitere Email
-                  </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Verificare manuală înainte de expediere Brevo
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => !isSendingConfirm && setLeadToSendConfirm(null)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                disabled={isSendingConfirm}
-              >
-                <X size={18} />
-              </button>
-            </div>
+      {/* Modal In-App de Confirmare Trimitere / Retrimitere Email Individual */}
+      {leadToSendConfirm && (() => {
+        const recipientList = getLeadEmails(leadToSendConfirm.email);
+        const isMultiple = recipientList.length > 1;
+        const isResend = leadToSendConfirm.status === 'sent' || !!leadToSendConfirm.email_sent_at;
 
-            {(() => {
-              const recipientList = getLeadEmails(leadToSendConfirm.email);
-              const isMultiple = recipientList.length > 1;
-
-              return (
-                <>
-                  <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-100 dark:border-slate-800/80 space-y-2.5 text-xs">
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-500 dark:text-slate-400">Companie:</span>
-                      <span className="font-semibold text-slate-900 dark:text-white truncate max-w-[210px]">
-                        {leadToSendConfirm.company_name}
-                      </span>
-                    </div>
-                    <div className="flex items-start justify-between gap-2">
-                      <span className="text-slate-500 dark:text-slate-400 whitespace-nowrap shrink-0">
-                        {isMultiple ? `Destinatari (${recipientList.length}):` : 'Destinatar:'}
-                      </span>
-                      <div className="flex flex-col items-end gap-1 max-w-[230px]">
-                        {recipientList.length > 0 ? (
-                          recipientList.map((em, idx) => (
-                            <span key={idx} className="font-semibold text-emerald-600 dark:text-emerald-400 truncate max-w-full">
-                              {em}
-                            </span>
-                          ))
-                        ) : (
-                          <span className="font-semibold text-slate-400">
-                            {leadToSendConfirm.email}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-500 dark:text-slate-400">Subiect:</span>
-                      <span className="font-medium text-slate-800 dark:text-slate-200 truncate max-w-[210px]">
-                        {leadToSendConfirm.draft_subject || 'Pontaj digital QR'}
-                      </span>
-                    </div>
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-150">
+            <div className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 p-6 space-y-5">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 border ${
+                    isResend 
+                      ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-800/40' 
+                      : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800/40'
+                  }`}>
+                    {isResend ? <RotateCcw size={18} /> : <Send size={18} />}
                   </div>
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                      {isResend ? 'Confirmare Retrimitere Email' : 'Confirmare Trimitere Email'}
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      {isResend ? 'Reexpediere manuală prin Brevo' : 'Verificare manuală înainte de expediere Brevo'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => !isSendingConfirm && setLeadToSendConfirm(null)}
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                  disabled={isSendingConfirm}
+                >
+                  <X size={18} />
+                </button>
+              </div>
 
-                  <div className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                    {isMultiple ? (
-                      <>
-                        Ești sigur că vrei să expediezi acest email către <strong>{leadToSendConfirm.company_name}</strong>? Mesajul va fi livrat garantat către <strong>toate cele {recipientList.length} adrese</strong> de contact ({recipientList.join(', ')}).
-                      </>
+              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-100 dark:border-slate-800/80 space-y-2.5 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500 dark:text-slate-400">Companie:</span>
+                  <span className="font-semibold text-slate-900 dark:text-white truncate max-w-[210px]">
+                    {leadToSendConfirm.company_name}
+                  </span>
+                </div>
+                {leadToSendConfirm.email_sent_at && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500 dark:text-slate-400">Trimis anterior:</span>
+                    <span className="font-semibold text-slate-700 dark:text-slate-300">
+                      {new Date(leadToSendConfirm.email_sent_at).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                )}
+                <div className="flex items-start justify-between gap-2">
+                  <span className="text-slate-500 dark:text-slate-400 whitespace-nowrap shrink-0">
+                    {isMultiple ? `Destinatari (${recipientList.length}):` : 'Destinatar:'}
+                  </span>
+                  <div className="flex flex-col items-end gap-1 max-w-[230px]">
+                    {recipientList.length > 0 ? (
+                      recipientList.map((em, idx) => (
+                        <span key={idx} className="font-semibold text-emerald-600 dark:text-emerald-400 truncate max-w-full">
+                          {em}
+                        </span>
+                      ))
                     ) : (
-                      <>
-                        Ești sigur că vrei să expediezi acest email către <strong>{leadToSendConfirm.company_name}</strong>? Mesajul va fi livrat direct pe adresa de contact salvată.
-                      </>
+                      <span className="font-semibold text-slate-400">
+                        {leadToSendConfirm.email}
+                      </span>
                     )}
                   </div>
-                </>
-              );
-            })()}
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500 dark:text-slate-400">Subiect:</span>
+                  <span className="font-medium text-slate-800 dark:text-slate-200 truncate max-w-[210px]">
+                    {leadToSendConfirm.draft_subject || 'Pontaj digital QR'}
+                  </span>
+                </div>
+              </div>
 
-            <div className="flex items-center justify-end gap-2.5 pt-2">
-              <button
-                type="button"
-                onClick={() => setLeadToSendConfirm(null)}
-                disabled={isSendingConfirm}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-full transition-colors whitespace-nowrap shrink-0 cursor-pointer disabled:opacity-50"
-              >
-                Anulează
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmSendDirect}
-                disabled={isSendingConfirm}
-                className="px-5 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-full shadow-sm transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer disabled:opacity-50"
-              >
-                {isSendingConfirm ? (
-                  <>
-                    <RefreshCw size={13} className="animate-spin" />
-                    <span>Se trimite...</span>
-                  </>
+              <div className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                {isResend ? (
+                  isMultiple ? (
+                    <>
+                      Acest lead a fost contactat anterior. Ești sigur că vrei să <strong>retrimiți</strong> acest email către <strong>{leadToSendConfirm.company_name}</strong>? Mesajul va fi reexpediat către <strong>toate cele {recipientList.length} adrese</strong> ({recipientList.join(', ')}).
+                    </>
+                  ) : (
+                    <>
+                      Acest lead a fost contactat anterior. Ești sigur că vrei să <strong>retrimiți</strong> acest email către <strong>{leadToSendConfirm.company_name}</strong>? Mesajul va fi reexpediat pe adresa de contact salvată.
+                    </>
+                  )
                 ) : (
-                  <>
-                    <Send size={13} />
-                    <span>Confirmă &amp; Trimite</span>
-                  </>
+                  isMultiple ? (
+                    <>
+                      Ești sigur că vrei să expediezi acest email către <strong>{leadToSendConfirm.company_name}</strong>? Mesajul va fi livrat garantat către <strong>toate cele {recipientList.length} adrese</strong> de contact ({recipientList.join(', ')}).
+                    </>
+                  ) : (
+                    <>
+                      Ești sigur că vrei să expediezi acest email către <strong>{leadToSendConfirm.company_name}</strong>? Mesajul va fi livrat direct pe adresa de contact salvată.
+                    </>
+                  )
                 )}
-              </button>
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setLeadToSendConfirm(null)}
+                  disabled={isSendingConfirm}
+                  className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-full transition-colors whitespace-nowrap shrink-0 cursor-pointer disabled:opacity-50"
+                >
+                  Anulează
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmSendDirect}
+                  disabled={isSendingConfirm}
+                  className={`px-5 py-2 text-xs font-semibold text-white rounded-full shadow-sm transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer disabled:opacity-50 ${
+                    isResend ? 'bg-blue-600 hover:bg-blue-700' : 'bg-emerald-600 hover:bg-emerald-700'
+                  }`}
+                >
+                  {isSendingConfirm ? (
+                    <>
+                      <RefreshCw size={13} className="animate-spin" />
+                      <span>{isResend ? 'Se retrimite...' : 'Se trimite...'}</span>
+                    </>
+                  ) : (
+                    <>
+                      {isResend ? <RotateCcw size={13} /> : <Send size={13} />}
+                      <span>{isResend ? 'Retrimite Email' : 'Confirmă & Trimite'}</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
-      {/* Modal In-App de Confirmare Trimitere în Lot (Bulk Send) */}
+      {/* Modal In-App de Confirmare Trimitere / Retrimitere în Lot (Bulk Send) */}
       {isBulkSendConfirmOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-150">
           <div className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 p-6 space-y-5">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 border border-blue-100 dark:border-blue-800/40">
-                  <Send size={18} />
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 border ${
+                  bulkSendType === 'resend'
+                    ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-800/40'
+                    : 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border-indigo-100 dark:border-indigo-800/40'
+                }`}>
+                  {bulkSendType === 'resend' ? <RotateCcw size={18} /> : <Send size={18} />}
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                    Confirmare Trimitere în Lot
+                    {bulkSendType === 'resend'
+                      ? 'Confirmare Retrimitere în Lot'
+                      : bulkSendType === 'mixed'
+                      ? 'Confirmare Trimitere / Retrimitere în Lot'
+                      : 'Confirmare Trimitere în Lot'}
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Trimitere multiplă prin Brevo
+                    {bulkSendType === 'resend' ? 'Reexpediere în lot prin Brevo' : 'Trimitere multiplă prin Brevo'}
                   </p>
                 </div>
               </div>
@@ -1525,11 +1584,27 @@ export default function HarveySdrView({ onConvertToTenant }) {
 
             <div className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed space-y-2.5">
               <p>
-                Ești pe cale să transmiți email-uri către <strong>{selectedLeadIds.length} companii selectate</strong>.
+                {bulkSendType === 'resend' ? (
+                  <>
+                    Ești pe cale să <strong>retrimiți</strong> email-uri către <strong>{selectedLeadIds.length} companii selectate</strong> (care au mai fost contactate anterior).
+                  </>
+                ) : bulkSendType === 'mixed' ? (
+                  <>
+                    Ești pe cale să expediezi / reexpediezi email-uri către <strong>{selectedLeadIds.length} companii selectate</strong>.
+                  </>
+                ) : (
+                  <>
+                    Ești pe cale să transmiți email-uri către <strong>{selectedLeadIds.length} companii selectate</strong>.
+                  </>
+                )}
               </p>
               <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 rounded-xl text-amber-800 dark:text-amber-300 flex items-start gap-2">
                 <AlertCircle size={15} className="shrink-0 mt-0.5" />
-                <span>Fiecare companie va primi draftul personalizat generat de AI. Asigură-te că adresele sunt verificate.</span>
+                <span>
+                  {bulkSendType === 'resend'
+                    ? 'Fiecare companie va primi din nou mesajul personalizat pe toate adresele sale de contact salvate.'
+                    : 'Fiecare companie va primi draftul personalizat generat de AI. Asigură-te că adresele sunt verificate.'}
+                </span>
               </div>
             </div>
 
@@ -1546,8 +1621,12 @@ export default function HarveySdrView({ onConvertToTenant }) {
                 onClick={handleConfirmBulkSend}
                 className="px-5 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-full shadow-sm transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer"
               >
-                <Send size={13} />
-                <span>Confirmă Trimiterea ({selectedLeadIds.length})</span>
+                {bulkSendType === 'resend' ? <RotateCcw size={13} className="shrink-0" /> : <Send size={13} className="shrink-0" />}
+                <span>
+                  {bulkSendType === 'resend'
+                    ? `Confirmă Retrimiterea (${selectedLeadIds.length})`
+                    : `Confirmă Trimiterea (${selectedLeadIds.length})`}
+                </span>
               </button>
             </div>
           </div>
