@@ -25,7 +25,8 @@ import {
   Check,
   Plus,
   Loader2,
-  QrCode
+  QrCode,
+  Users
 } from 'lucide-react';
 
 export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageContext = '' }) {
@@ -35,6 +36,142 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
   const [guideStep, setGuideStep] = useState(1);
   const [devicePlatform, setDevicePlatform] = useState('ipad'); // 'ipad' | 'android' | 'tv'
   const [copiedLink, setCopiedLink] = useState(false);
+
+  // Stare pentru modalul de Onboarding la prima încărcare
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [onboardingStep, setOnboardingStep] = useState(0);
+  const [dontShowAgain, setDontShowAgain] = useState(true);
+
+  // Verificare la prima încărcare a aplicației (dacă utilizatorul nu a văzut încă ghidul)
+  useEffect(() => {
+    try {
+      const seen = localStorage.getItem('qrp_onboarding_assistant_seen');
+      if (!seen) {
+        const timer = setTimeout(() => {
+          setShowOnboarding(true);
+        }, 650);
+        return () => clearTimeout(timer);
+      }
+    } catch (e) {
+      // Ignorăm eventualele restricții de localStorage
+    }
+  }, []);
+
+  // Cardurile explicative pentru turul pas cu pas
+  const onboardingSlides = [
+    {
+      id: 'welcome',
+      badge: 'Asistent Inteligent AI',
+      badgeColor: 'bg-blue-100 text-[#007AFF] dark:bg-blue-950/60 dark:text-blue-400',
+      title: 'Bun venit pe QR Pontaj!',
+      subtitle: 'Asistentul tău dedicat este gata să te ajute 24/7',
+      icon: Sparkles,
+      iconBg: 'bg-gradient-to-tr from-blue-600 to-indigo-600 text-white',
+      description: 'Platforma QR Pontaj include un asistent inteligent permanent în colțul din dreapta-jos. Te ghidează pas cu pas în configurarea tabletelor, adăugarea locațiilor și gestionarea prezenței.',
+      highlights: [
+        'Ghid pas cu pas oricând ai nevoie, direct din colțul ecranului',
+        'Configurare automată Kiosk pentru Apple iPad, Android sau Smart TV',
+        'Răspunsuri prompte la legislație, ITM, pontaj și rapoarte de salarizare'
+      ],
+      actionLabel: 'Începe Ghidul Pas cu Pas',
+      actionType: 'next',
+    },
+    {
+      id: 'locations',
+      badge: 'Pasul 1 din 4',
+      badgeColor: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-400',
+      title: 'Crearea Punctului de Lucru',
+      subtitle: 'Locația fizică unde se va desfășura pontajul',
+      icon: MapPin,
+      iconBg: 'bg-gradient-to-tr from-indigo-600 to-blue-500 text-white',
+      description: 'Înainte de a porni un ecran sau o tabletă, definește punctele de lucru (ex: Sediu Central, Depozit sau Șantier). Fiecare punct de lucru are o adresă și coordonate GPS pentru validarea prezenței.',
+      highlights: [
+        'Organizare pe sedii, sucursale, depozite sau puncte de lucru mobile',
+        'Validare automată a perimetrului GPS la fiecare scanare',
+        'Punctul de lucru este obligatoriu înainte de a crea primul Kiosk'
+      ],
+      actionLabel: 'Creează Punct de Lucru',
+      actionPath: '/admin/locations?action=new',
+      actionType: 'navigate',
+    },
+    {
+      id: 'kiosks',
+      badge: 'Pasul 2 din 4',
+      badgeColor: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400',
+      title: 'Adăugarea Tabletei Kiosk',
+      subtitle: 'Ecranul fix pe care angajații scanează codul QR dinamic',
+      icon: TabletSmartphone,
+      iconBg: 'bg-gradient-to-tr from-emerald-600 to-teal-500 text-white',
+      description: 'Creează un Kiosk asociat punctului de lucru și copiază linkul securizat. Îl poți deschide pe orice tabletă (iPad sau Android) ori pe un televizor sau monitor montat la intrare.',
+      highlights: [
+        'Cod QR dinamic care se regenerează la fiecare 5 secunde anti-fraudă',
+        'Nu permite folosirea de capturi de ecran sau trimiterea pozelor pe chat',
+        'Instrucțiuni incluse pentru blocare ecran (Guided Access pe iPad)'
+      ],
+      actionLabel: 'Configurează Kiosk QR',
+      actionPath: '/admin/qr?action=new',
+      actionType: 'navigate',
+    },
+    {
+      id: 'employees',
+      badge: 'Pasul 3 din 4',
+      badgeColor: 'bg-purple-100 text-purple-700 dark:bg-purple-950/60 dark:text-purple-400',
+      title: 'Înregistrare & Pontare Angajați',
+      subtitle: 'Zero aplicații de instalat pe telefoanele angajaților',
+      icon: Users,
+      iconBg: 'bg-gradient-to-tr from-purple-600 to-pink-500 text-white',
+      description: 'Adaugă lista de angajați cu CNP/ID și norma de lucru. Pentru pontaj, angajații scanează simplu codul QR de pe Kiosk cu camera nativă a telefonului lor, fără a instala nimic.',
+      highlights: [
+        'Fără aplicații greoaie descărcate din magazinele de aplicații',
+        'Pontaj instantaneu (Sosire, Plecare, Pauză) cu marcaj orar și GPS',
+        'Gestionare facilă a departamentelor, rolurilor și tipurilor de normă'
+      ],
+      actionLabel: 'Gestionează Angajați',
+      actionPath: '/admin/employees',
+      actionType: 'navigate',
+    },
+    {
+      id: 'reports',
+      badge: 'Pasul 4 din 4',
+      badgeColor: 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-400',
+      title: 'Condică de Prezență & Export Saga',
+      subtitle: 'Evidență completă conformă ITM și sincronizare contabilă',
+      icon: FileSpreadsheet,
+      iconBg: 'bg-gradient-to-tr from-amber-500 to-orange-500 text-white',
+      description: 'Platforma calculează automat orele lucrate, întârzierile și orele suplimentare. Poți descărca condica lunară în format PDF/Excel sau exporta direct fișierul compatibil Saga Soft.',
+      highlights: [
+        'Condică de prezență oficială gata pentru semnat și controale ITM',
+        'Export nativ pentru Saga Soft printr-un singur clic',
+        'Statistici în timp real privind prezența activă în companie'
+      ],
+      actionLabel: 'Vezi Condica de Pontaj',
+      actionPath: '/admin/timesheets',
+      actionType: 'navigate',
+    }
+  ];
+
+  const handleOpenOnboarding = () => {
+    setOnboardingStep(0);
+    setShowOnboarding(true);
+  };
+
+  const handleCloseOnboarding = () => {
+    if (dontShowAgain) {
+      try {
+        localStorage.setItem('qrp_onboarding_assistant_seen', 'true');
+      } catch (e) {}
+    }
+    setShowOnboarding(false);
+  };
+
+  const handleSlideAction = (slide) => {
+    if (slide.actionType === 'navigate' && slide.actionPath) {
+      handleCloseOnboarding();
+      handleNavigateTo(slide.actionPath);
+    } else if (slide.actionType === 'next') {
+      setOnboardingStep(prev => Math.min(prev + 1, onboardingSlides.length - 1));
+    }
+  };
 
   const [messages, setMessages] = useState([
     {
@@ -47,6 +184,7 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
   const messagesEndRef = useRef(null);
 
   const quickQuestions = [
+    { label: 'Ghid Rapid Platformă (Tur)', action: 'tour', icon: Sparkles },
     { label: 'Pasul 1: Creare Punct de Lucru', action: 'locations_new', icon: MapPin },
     { label: 'Pasul 2: Adăugare Kiosk Nou', action: 'qr_new', icon: TabletSmartphone },
     { label: 'Ghid Vizual (4 Pași)', action: 'guide', icon: BookOpen },
@@ -141,7 +279,9 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
 
   // Gestionare clic pe întrebări rapide / scurtături de acțiune
   const handleQuickQuestionClick = (q) => {
-    if (q.action === 'locations_new') {
+    if (q.action === 'tour') {
+      handleOpenOnboarding();
+    } else if (q.action === 'locations_new') {
       handleNavigateTo('/admin/locations?action=new');
     } else if (q.action === 'qr_new') {
       handleNavigateTo('/admin/qr?action=new');
@@ -388,10 +528,21 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
               </button>
             </div>
 
-            {/* Window Status Indicator */}
-            <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-500 dark:text-slate-400 whitespace-nowrap shrink-0">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-              <span className="hidden sm:inline">Online</span>
+            {/* Window Status Indicator & Tour Trigger */}
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={handleOpenOnboarding}
+                className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold text-slate-600 dark:text-slate-300 hover:text-[#007AFF] dark:hover:text-blue-400 bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-950/50 transition-colors whitespace-nowrap shrink-0 border border-slate-200/80 dark:border-slate-700/60 cursor-pointer"
+                title="Deschide Turul Ghidat al Platformei"
+              >
+                <Sparkles size={10} className="text-[#007AFF] shrink-0" />
+                <span>Ghid Rapid</span>
+              </button>
+              <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-500 dark:text-slate-400 whitespace-nowrap shrink-0">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                <span className="hidden sm:inline">Online</span>
+              </div>
             </div>
           </div>
 
@@ -463,6 +614,27 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
                                 </div>
 
                                 <div className="grid grid-cols-1 gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={handleOpenOnboarding}
+                                    className="w-full flex items-center justify-between p-2 rounded-xl bg-blue-50/80 hover:bg-blue-100/70 dark:bg-blue-950/40 dark:hover:bg-blue-900/50 border border-blue-200/80 hover:border-[#007AFF] dark:border-blue-800/60 transition-all text-left group cursor-pointer shadow-2xs"
+                                  >
+                                    <div className="flex items-center gap-2.5 min-w-0">
+                                      <div className="w-6 h-6 rounded-lg bg-[#007AFF] text-white flex items-center justify-center shrink-0 shadow-xs">
+                                        <Sparkles size={13} />
+                                      </div>
+                                      <div className="min-w-0">
+                                        <div className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
+                                          Ghid Rapid Platformă (Tur 4 Pași)
+                                        </div>
+                                        <div className="text-[10px] text-slate-600 dark:text-slate-400 truncate">
+                                          Locații • Kiosks • Angajați • Condică Saga
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <ChevronRight size={13} className="text-[#007AFF] group-hover:translate-x-0.5 transition-all shrink-0 ml-1" />
+                                  </button>
+
                                   <button
                                     type="button"
                                     onClick={() => handleSend('Configurare Kiosk Tabletă')}
@@ -1119,6 +1291,176 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
             </div>
           )}
 
+        </div>
+      )}
+
+      {/* MODAL ONBOARDING / GHID RAPID PLATFORMĂ LA PRIMA ACCESARE */}
+      {showOnboarding && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-950/65 backdrop-blur-md animate-in fade-in duration-200"
+          onClick={handleCloseOnboarding}
+        >
+          <div 
+            className="relative w-full max-w-xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header Modal */}
+            <div className="px-5 sm:px-6 pt-5 pb-3.5 flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/50 shrink-0">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-950/50 border border-blue-200/50 dark:border-blue-800/50 flex items-center justify-center text-[#007AFF] shadow-xs shrink-0">
+                  <Sparkles size={16} />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider truncate">
+                      Ghid Inițiere
+                    </span>
+                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap shrink-0 ${onboardingSlides[onboardingStep].badgeColor}`}>
+                      {onboardingSlides[onboardingStep].badge}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                    QR Pontaj • Ghidul tău pas cu pas
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleCloseOnboarding}
+                className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
+                title="Închide ghidul"
+              >
+                <X size={17} />
+              </button>
+            </div>
+
+            {/* Slide Content Body */}
+            {(() => {
+              const currentSlide = onboardingSlides[onboardingStep] || onboardingSlides[0];
+              const SlideIcon = currentSlide.icon;
+
+              return (
+                <div className="p-5 sm:p-6 overflow-y-auto space-y-4">
+                  {/* Titlu & Iconiță mare cu gradient */}
+                  <div className="flex items-start gap-4">
+                    <div className={`w-13 h-13 sm:w-14 sm:h-14 rounded-2xl ${currentSlide.iconBg} flex items-center justify-center shrink-0 shadow-md`}>
+                      <SlideIcon size={26} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white tracking-tight leading-snug">
+                        {currentSlide.title}
+                      </h3>
+                      <p className="text-xs sm:text-sm font-semibold text-[#007AFF] dark:text-blue-400 mt-0.5">
+                        {currentSlide.subtitle}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Paragraf explicativ */}
+                  <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                    {currentSlide.description}
+                  </p>
+
+                  {/* Card Puncte Cheie */}
+                  <div className="p-3.5 sm:p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-800 space-y-2">
+                    <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                      Puncte cheie de reținut:
+                    </div>
+                    <div className="space-y-2">
+                      {currentSlide.highlights.map((h, hIdx) => (
+                        <div key={hIdx} className="flex items-start gap-2.5 text-xs text-slate-700 dark:text-slate-300 leading-normal">
+                          <CheckCircle2 size={15} className="text-[#007AFF] shrink-0 mt-0.5" />
+                          <span>{h}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Buton acțiune directă dacă pasul permite navigare */}
+                  {currentSlide.actionPath && (
+                    <div className="pt-1 flex items-center justify-end">
+                      <button
+                        type="button"
+                        onClick={() => handleSlideAction(currentSlide)}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold text-[#007AFF] dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200/60 dark:border-blue-800/60 transition-colors whitespace-nowrap shrink-0 cursor-pointer group"
+                      >
+                        <span>{currentSlide.actionLabel}</span>
+                        <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform shrink-0" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* Subsol Modal (Checkbox Nu mai afișa + Navigare) */}
+            <div className="px-5 sm:px-6 py-4 border-t border-slate-100 dark:border-slate-800/80 bg-slate-50/80 dark:bg-slate-900/80 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
+              {/* Checkbox Opțiune */}
+              <label className="flex items-center gap-2 cursor-pointer select-none text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 order-2 sm:order-1">
+                <input
+                  type="checkbox"
+                  checked={dontShowAgain}
+                  onChange={(e) => setDontShowAgain(e.target.checked)}
+                  className="w-4 h-4 rounded text-[#007AFF] border-slate-300 dark:border-slate-700 focus:ring-0 cursor-pointer"
+                />
+                <span className="whitespace-nowrap shrink-0">Nu mai afișa data viitoare</span>
+              </label>
+
+              {/* Indicatori Puncte + Butoane Înapoi / Următorul */}
+              <div className="flex items-center gap-3 order-1 sm:order-2 w-full sm:w-auto justify-between sm:justify-end">
+                {/* Buline Progres */}
+                <div className="flex items-center gap-1.5">
+                  {onboardingSlides.map((_, dotIdx) => (
+                    <button
+                      key={dotIdx}
+                      type="button"
+                      onClick={() => setOnboardingStep(dotIdx)}
+                      className={`h-2 rounded-full transition-all cursor-pointer ${
+                        onboardingStep === dotIdx
+                          ? 'w-6 bg-[#007AFF]'
+                          : 'w-2 bg-slate-300 dark:bg-slate-700 hover:bg-slate-400'
+                      }`}
+                      title={`Mergi la pasul ${dotIdx + 1}`}
+                    />
+                  ))}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {onboardingStep > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setOnboardingStep(prev => prev - 1)}
+                      className="px-3.5 py-2 rounded-full text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                    >
+                      Înapoi
+                    </button>
+                  )}
+
+                  {onboardingStep < onboardingSlides.length - 1 ? (
+                    <button
+                      type="button"
+                      onClick={() => setOnboardingStep(prev => prev + 1)}
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold bg-[#007AFF] hover:bg-blue-600 text-white shadow-sm hover:shadow transition-all whitespace-nowrap shrink-0 cursor-pointer"
+                    >
+                      <span>Următorul</span>
+                      <ChevronRight size={14} className="shrink-0" />
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleCloseOnboarding}
+                      className="flex items-center gap-1.5 px-4.5 py-2 rounded-full text-xs font-bold bg-[#007AFF] hover:bg-blue-600 text-white shadow-md hover:shadow-lg transition-all whitespace-nowrap shrink-0 cursor-pointer"
+                    >
+                      <span>Am înțeles, să începem!</span>
+                      <Check size={14} className="shrink-0" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+          </div>
         </div>
       )}
     </>
