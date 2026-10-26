@@ -33,6 +33,7 @@ const translations = {
     whatsappAlerts: "Alerte WhatsApp",
     assets: "Gestiune Echipamente",
     companySettings: "Setări Companie",
+    visualGuide: "Ghid Vizual (4 Pași)",
 
     // UI Controls & Common
     themeToggle: "Comută Tema",
@@ -590,6 +591,7 @@ const translations = {
     whatsappAlerts: "WhatsApp Alerts",
     assets: "Equipment Management",
     companySettings: "Company Settings",
+    visualGuide: "Visual Guide (4 Steps)",
 
     // UI Controls & Common
     themeToggle: "Toggle Theme",
@@ -1147,6 +1149,7 @@ const translations = {
     whatsappAlerts: "Alertes WhatsApp",
     assets: "Gestion Matériel",
     companySettings: "Paramètres Entreprise",
+    visualGuide: "Guide Visuel (4 Étapes)",
 
     // UI Controls & Common
     themeToggle: "Basculer le thème",
@@ -1704,6 +1707,7 @@ const translations = {
     whatsappAlerts: "WhatsApp Meldingen",
     assets: "Materiaalbeheer",
     companySettings: "Bedrijfsinstellingen",
+    visualGuide: "Visuele Gids (4 Stappen)",
 
     // UI Controls & Common
     themeToggle: "Thema wisselen",

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Routes, Route, Link, Navigate } from 'react-router-dom';
 import { 
   QrCode, Users, LogOut, Menu, X, Info, MapPin, Sun, Moon, CreditCard, 
-  CalendarDays, FileSpreadsheet, Globe, Map, BookOpenCheck, Calculator, 
+  CalendarDays, FileSpreadsheet, Globe, Map, BookOpenCheck, BookOpen, Calculator, 
   CalendarClock, ScanFace, MessageSquare, Wrench, Table, ChevronDown,
   Bell, LogIn, Briefcase, Clock, User, PanelLeftClose, PanelLeftOpen, ChevronRight, Settings,
   Activity, AlertCircle, RefreshCw, ExternalLink, PowerOff
@@ -719,6 +719,23 @@ export default function TenantDashboard() {
               <Settings size={18} />
             </div>
             <span className={`${sidebarCollapsed ? 'md:hidden' : ''} flex-1 text-left truncate`}>{t('companySettings')}</span>
+          </button>
+
+          <button 
+            type="button"
+            onClick={() => { 
+              setSidebarOpen(false); 
+              window.dispatchEvent(new CustomEvent('open-visual-guide'));
+            }}
+            title={t('visualGuide') || "Ghid Vizual (4 Pași)"}
+            className={`w-full flex items-center ${sidebarCollapsed ? 'md:justify-center md:px-0 gap-3 px-4' : 'gap-3 px-4'} py-3 rounded-full transition-all font-semibold text-sm text-[#007AFF] dark:text-blue-400 bg-blue-50/70 hover:bg-blue-100/80 dark:bg-blue-950/40 dark:hover:bg-blue-900/60 border border-blue-200/60 dark:border-blue-800/40 cursor-pointer shadow-2xs whitespace-nowrap shrink-0`}
+          >
+            <div className="w-5 h-5 flex items-center justify-center shrink-0">
+              <BookOpen size={18} className="text-[#007AFF] dark:text-blue-400 shrink-0" />
+            </div>
+            <span className={`${sidebarCollapsed ? 'md:hidden' : ''} flex-1 text-left truncate whitespace-nowrap`}>
+              {t('visualGuide') || "Ghid Vizual (4 Pași)"}
+            </span>
           </button>
         </nav>
 

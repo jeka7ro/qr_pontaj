@@ -63,6 +63,30 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
     }
   }, []);
 
+  // Ascultare evenimente globale pentru deschiderea ghidului din Sidebar sau alte butoane externe
+  useEffect(() => {
+    const handleOpenVisualGuide = (e) => {
+      setIsOpen(true);
+      setActiveTab('visualGuide');
+      if (e?.detail?.step) {
+        setGuideStep(e.detail.step);
+      }
+    };
+
+    const handleOpenTour = () => {
+      handleOpenOnboarding();
+    };
+
+    window.addEventListener('open-visual-guide', handleOpenVisualGuide);
+    window.addEventListener('open-platform-tour', handleOpenTour);
+
+    return () => {
+      window.removeEventListener('open-visual-guide', handleOpenVisualGuide);
+      window.removeEventListener('open-platform-tour', handleOpenTour);
+    };
+  }, []);
+
+
   // Cardurile explicative pentru turul pas cu pas bazat EXCLUSIV pe ecranele reale ale aplicației
   const onboardingSlides = [
     {
