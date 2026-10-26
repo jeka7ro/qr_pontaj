@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { LogIn, KeyRound, User, Loader2, AlertCircle, Eye, EyeOff, Zap, ShieldCheck, Trash2, X, Lock } from 'lucide-react';
 import { updatePageFavicon } from '../../utils/favicon';
 
@@ -173,7 +173,7 @@ export default function EmployeeLogin() {
             )}
           </div>
           <h1 className="text-2xl font-bold mb-1">{tenant?.name || 'Portal Angajați'}</h1>
-          <p className="text-white/80 text-sm">Autentificare rapidă & program</p>
+          <p className="text-white/80 text-sm">Portal Angajați &bull; Pontaj cu Cod & PIN</p>
         </div>
 
         <div className="p-6 md:p-8 space-y-6">
@@ -241,6 +241,21 @@ export default function EmployeeLogin() {
                     required
                   />
                 </div>
+                {employeeCode.includes('@') && (
+                  <div className="mt-2.5 p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 flex items-start gap-2.5 text-xs text-amber-900 dark:text-amber-200 animate-in fade-in duration-150 text-left">
+                    <AlertCircle size={15} className="text-amber-600 shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="font-bold">Ai introdus o adresă de email.</p>
+                      <p className="text-[11px] text-amber-700 dark:text-amber-300 mt-0.5">Dacă ești administratorul companiei, te rugăm să folosești pagina dedicată de conectare cu email și parolă:</p>
+                      <Link 
+                        to={`/admin/login?email=${encodeURIComponent(employeeCode.trim())}`} 
+                        className="inline-flex items-center gap-1 font-bold text-blue-600 dark:text-blue-400 hover:underline mt-1.5 whitespace-nowrap shrink-0"
+                      >
+                        <span>Mergi la Autentificare Administrator &rarr;</span>
+                      </Link>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div>
@@ -321,6 +336,17 @@ export default function EmployeeLogin() {
               <span>{loading ? 'Se verifică...' : 'Intră în cont'}</span>
             </button>
           </form>
+
+          {/* Switch direct către autentificarea de Administrator */}
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-800 text-center">
+            <Link
+              to="/admin/login"
+              className="inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-full transition-all shadow-2xs whitespace-nowrap shrink-0"
+            >
+              <Lock size={13} className="shrink-0" />
+              <span className="whitespace-nowrap">Ești administrator? Conectează-te cu Email și Parolă</span>
+            </Link>
+          </div>
 
           {/* Notă GDPR & Temei Legal înainte de autentificare */}
           <div className="pt-3 border-t border-slate-100 dark:border-slate-800 text-center">

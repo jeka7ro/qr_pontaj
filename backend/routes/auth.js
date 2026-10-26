@@ -471,12 +471,40 @@ router.post('/demo-request', async (req, res) => {
       ]);
 
       if (tenantId) {
-        const tRes = await client.query('SELECT subdomain FROM qrp_tenants WHERE id = $1', [tenantId]);
-        finalSubdomain = tRes.rows[0]?.subdomain || 'smartqr';
+        const tRes = await client.query('SELECT subdomain, name FROM qrp_tenants WHERE id = $1', [tenantId]);
+        const existingSubdomain = tRes.rows[0]?.subdomain;
+        const existingName = tRes.rows[0]?.name;
+
+        // Dacă numele companiei/persoanei s-a schimbat la re-înregistrare, recalculăm subdomeniul corespunzător
+        if (finalCompanyName && finalCompanyName !== existingName) {
+          let cleanedName = finalCompanyName
+            .toLowerCase()
+            .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+            .replace(/\b(s\.?r\.?l\.?|s\.?a\.?|pfa|i\.?i\.?|srl-d)\b/gi, '')
+            .trim();
+          let baseSub = cleanedName.replace(/[^a-z0-9]/g, '');
+          if (!baseSub || baseSub.length < 3) {
+            baseSub = 'client' + Math.floor(100 + Math.random() * 900);
+          }
+          baseSub = baseSub.substring(0, 20);
+
+          let newSubdomain = baseSub;
+          let counter = 1;
+          while (true) {
+            const subRes = await client.query('SELECT id FROM qrp_tenants WHERE LOWER(subdomain) = LOWER($1) AND id != $2', [newSubdomain, tenantId]);
+            if (subRes.rows.length === 0) break;
+            newSubdomain = `${baseSub}${counter}`;
+            counter++;
+          }
+          finalSubdomain = newSubdomain;
+        } else {
+          finalSubdomain = existingSubdomain || 'smartqr';
+        }
 
         await client.query(`
           UPDATE qrp_tenants 
           SET name = COALESCE($1, name),
+              subdomain = COALESCE($17, subdomain),
               contact_name = COALESCE($2, contact_name),
               contact_phone = COALESCE($3, contact_phone),
               anaf_phone = COALESCE($4, anaf_phone),
@@ -512,7 +540,8 @@ router.post('/demo-request', async (req, res) => {
           termsVersion,
           tenantId,
           isVatPayer,
-          vatStatus
+          vatStatus,
+          finalSubdomain
         ]);
       }
     } else {

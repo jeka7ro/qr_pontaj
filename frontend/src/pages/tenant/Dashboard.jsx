@@ -102,7 +102,18 @@ export default function TenantDashboard() {
 
   const fetchInfo = async (retryCount = 0) => {
     try {
-      const token = localStorage.getItem('token');
+      let token = localStorage.getItem('token');
+      if (!token && typeof window !== 'undefined') {
+        try {
+          const urlParams = new URLSearchParams(window.location.search);
+          const qToken = urlParams.get('token');
+          if (qToken) {
+            token = qToken;
+            localStorage.setItem('token', qToken);
+            window.history.replaceState({}, document.title, window.location.pathname);
+          }
+        } catch {}
+      }
       if (!token) {
         navigate('/admin/login');
         return;

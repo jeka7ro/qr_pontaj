@@ -101,6 +101,7 @@ export default function LandingRomania() {
   const [acceptTerms, setAcceptTerms] = useState(true);
   const [acceptDpa, setAcceptDpa] = useState(true);
   const [createdSubdomain, setCreatedSubdomain] = useState('');
+  const [createdToken, setCreatedToken] = useState('');
   const [legalModalType, setLegalModalType] = useState(null); // 'terms' | 'privacy' | 'dpa'
 
   const openPlanModal = (planId = 'standard', mode = 'demo') => {
@@ -434,6 +435,9 @@ export default function LandingRomania() {
         }
         if (data.tempPassword) {
           setAssignedTempPassword(data.tempPassword);
+        }
+        if (data.token) {
+          setCreatedToken(data.token);
         }
         if (data.subdomain) {
           setCreatedSubdomain(data.subdomain);
@@ -1938,17 +1942,17 @@ export default function LandingRomania() {
                           <div className="min-w-0">
                             <span className="text-slate-400 block text-[10px] font-bold uppercase">Link Panou Companie</span>
                             <a 
-                              href={`https://${createdSubdomain}.qr.pontaj.app/admin`} 
+                              href={`https://${createdSubdomain}.qr.pontaj.app/admin/login?email=${encodeURIComponent(subForm.email)}`} 
                               target="_blank" 
                               rel="noopener noreferrer" 
                               className="font-bold text-blue-600 hover:underline block truncate text-xs"
                             >
-                              https://{createdSubdomain}.qr.pontaj.app/admin
+                              {`https://${createdSubdomain}.qr.pontaj.app/admin`}
                             </a>
                           </div>
                           <button
                             type="button"
-                            onClick={() => copyToClipboard(`https://${createdSubdomain}.qr.pontaj.app/admin`, 'link')}
+                            onClick={() => copyToClipboard(`https://${createdSubdomain}.qr.pontaj.app/admin/login?email=${encodeURIComponent(subForm.email)}`, 'link')}
                             className="p-1.5 text-slate-400 hover:text-emerald-700 bg-slate-50 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer shrink-0"
                             title="Copiază link"
                           >
@@ -1969,7 +1973,8 @@ export default function LandingRomania() {
                       onClick={() => {
                         closeSubscribeModal();
                         if (createdSubdomain) {
-                          window.location.href = `https://${createdSubdomain}.qr.pontaj.app/admin/dashboard`;
+                          const tokenParam = createdToken ? `?token=${encodeURIComponent(createdToken)}` : '';
+                          window.location.href = `https://${createdSubdomain}.qr.pontaj.app/admin/dashboard${tokenParam}`;
                         } else {
                           navigate('/admin/dashboard');
                         }
