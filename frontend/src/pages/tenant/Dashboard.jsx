@@ -41,6 +41,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { updatePageFavicon } from '../../utils/favicon';
 import LanguageToggle from '../../components/LanguageToggle';
 import { useTranslation } from '../../utils/i18n.jsx';
+import AiHelpAssistant from '../../components/AiHelpAssistant';
 
 export default function TenantDashboard() {
   const navigate = useNavigate();
@@ -1169,6 +1170,13 @@ export default function TenantDashboard() {
             tenant: { ...(prev?.tenant || {}), ...updated } 
           }));
         }}
+      />
+
+      {/* Asistent Inteligent AI Pontaj */}
+      <AiHelpAssistant
+        tenant={tenant}
+        themeColor={themeColor}
+        pageContext={location.pathname}
       />
 
     </div>

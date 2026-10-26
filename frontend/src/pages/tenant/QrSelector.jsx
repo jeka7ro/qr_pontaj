@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { TabletSmartphone, Plus, Edit2, Trash2, MapPin, Search, ChevronLeft, ChevronRight, X, AlertCircle, ExternalLink, Lock, Unlock, Monitor, Smartphone , ScanLine} from 'lucide-react';
+import { TabletSmartphone, Plus, Edit2, Trash2, MapPin, Search, ChevronLeft, ChevronRight, X, AlertCircle, ExternalLink, Lock, Unlock, Monitor, Smartphone, ScanLine, Copy, CheckCheck, Sparkles, Tv } from 'lucide-react';
 import ConfirmModal from '../../components/ConfirmModal';
 import IpadGuideModal from '../../components/IpadGuideModal';
 import { useTranslation } from '../../utils/i18n';
@@ -16,6 +16,8 @@ export default function QrSelector({ tenant, themeColor }) {
   const [editingId, setEditingId] = useState(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
   const [showIpadGuide, setShowIpadGuide] = useState(false);
+  const [copiedKioskId, setCopiedKioskId] = useState(null);
+  const [copyToast, setCopyToast] = useState(null);
 
   // Table State
   const [search, setSearch] = useState('');
@@ -150,12 +152,31 @@ export default function QrSelector({ tenant, themeColor }) {
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
+  const copyKioskLink = (kiosk) => {
+    let url = `${window.location.origin}/kiosk/${tenant.id}/${kiosk.id}`;
+    if (kiosk.qr_mode && kiosk.qr_mode !== 'DYNAMIC') {
+      url += `?mode=${kiosk.qr_mode.toLowerCase()}`;
+    }
+    navigator.clipboard.writeText(url);
+    setCopiedKioskId(kiosk.id);
+    setCopyToast(`Link-ul pentru „${kiosk.name}” a fost copiat! Deschide-l în browser-ul tabletei sau pe Smart TV.`);
+    setTimeout(() => setCopiedKioskId(null), 2500);
+    setTimeout(() => setCopyToast(null), 4500);
+  };
+
   if (loading) {
     return <div className="p-8 flex justify-center"><div className="animate-spin rounded-lg h-8 w-8 border-b-2 border-primary-600"></div></div>;
   }
 
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full space-y-6 relative">
+      {/* Toast Notificare Copiere Link */}
+      {copyToast && (
+        <div className="fixed top-6 right-6 z-50 bg-emerald-600 text-white text-xs font-bold px-5 py-3 rounded-full shadow-2xl flex items-center gap-2.5 animate-in slide-in-from-top-4 fade-in duration-200 border border-emerald-400/40">
+          <CheckCheck size={18} className="shrink-0" />
+          <span className="whitespace-nowrap shrink-0">{copyToast}</span>
+        </div>
+      )}
 
       {/* Setări Portal Angajați */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 md:p-8 shadow-sm border border-slate-200 dark:border-slate-800 mb-8">
@@ -579,32 +600,64 @@ export default function QrSelector({ tenant, themeColor }) {
       {/* Tabel Kiosk-uri */}
       {!showAddForm && (
         <>
-          {/* Banner Recomandare iPad Guided Access */}
-          <div className="mb-6 bg-gradient-to-r from-blue-50 via-indigo-50/40 to-blue-50/20 dark:from-slate-800 dark:via-slate-800/80 dark:to-slate-800/50 border border-blue-100 dark:border-blue-900/30 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
-            <div className="flex items-start gap-3.5">
-              <div className="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-blue-500/20 mt-0.5">
-                <TabletSmartphone size={22} />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h4 className="text-sm font-bold text-slate-900 dark:text-white">
-                    {t('bannerIpadTitle')}
-                  </h4>
-                  <span className="text-[10px] uppercase tracking-wider bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 px-2 py-0.5 rounded-full font-black">
-                    {t('bannerIpadBadge')}
-                  </span>
+          {/* Ghid Rapid Configurare Kiosk pe Tabletă */}
+          <div className="mb-6 bg-gradient-to-br from-blue-50 via-indigo-50/40 to-white dark:from-slate-800/90 dark:via-slate-800/60 dark:to-slate-900 border border-blue-100 dark:border-blue-900/30 rounded-2xl p-5 shadow-sm">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-blue-100/70 dark:border-slate-700/60">
+              <div className="flex items-start gap-3.5">
+                <div className="w-11 h-11 rounded-2xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-blue-500/20">
+                  <TabletSmartphone size={22} />
                 </div>
-                <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
-                  {t('bannerIpadDesc')}
-                </p>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-black text-slate-900 dark:text-white">
+                      Ghid Rapid: Cum folosești Kiosk-ul pe Tabletă sau Televizor
+                    </h3>
+                    <span className="text-[10px] uppercase tracking-wider bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 px-2.5 py-0.5 rounded-full font-black whitespace-nowrap shrink-0">
+                      3 Pași Simpli
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
+                    Ecranul de pontaj funcționează direct în browser pe orice iPad, tabletă Android sau Smart TV. Angajații scanează codul QR dinamic direct cu camera telefonului, fără să instaleze nicio aplicație!
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 self-start lg:self-center shrink-0">
+                <button
+                  onClick={() => setShowIpadGuide(true)}
+                  className="px-4 py-2 text-xs rounded-full font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5"
+                >
+                  <TabletSmartphone size={14} />
+                  <span>Ghid iPad / Android / TV</span>
+                </button>
               </div>
             </div>
-            <button
-              onClick={() => setShowIpadGuide(true)}
-              className="px-4 py-2.5 text-xs rounded-full font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-all whitespace-nowrap self-stretch sm:self-auto text-center shrink-0"
-            >
-              {t('bannerIpadBtn')}
-            </button>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 mt-4">
+              <div className="bg-white/80 dark:bg-slate-800/80 rounded-2xl p-3.5 border border-blue-50 dark:border-slate-700/50 flex items-start gap-3 shadow-xs">
+                <span className="w-6 h-6 rounded-full bg-blue-600 text-white font-black text-xs flex items-center justify-center shrink-0 shadow-sm">1</span>
+                <div className="text-xs space-y-1">
+                  <div className="font-bold text-slate-900 dark:text-white">Creează Kiosk-ul</div>
+                  <p className="text-slate-500 dark:text-slate-400">Apasă butonul „+ Adaugă Kiosk”, alege locația și opțional un cod PIN de backup.</p>
+                </div>
+              </div>
+
+              <div className="bg-white/80 dark:bg-slate-800/80 rounded-2xl p-3.5 border border-blue-50 dark:border-slate-700/50 flex items-start gap-3 shadow-xs">
+                <span className="w-6 h-6 rounded-full bg-blue-600 text-white font-black text-xs flex items-center justify-center shrink-0 shadow-sm">2</span>
+                <div className="text-xs space-y-1">
+                  <div className="font-bold text-slate-900 dark:text-white">Copiază pe Tabletă</div>
+                  <p className="text-slate-500 dark:text-slate-400">Apasă „Copiază Link Tabletă” și deschide linkul în Safari/Chrome pe tableta montată la intrare.</p>
+                </div>
+              </div>
+
+              <div className="bg-white/80 dark:bg-slate-800/80 rounded-2xl p-3.5 border border-blue-50 dark:border-slate-700/50 flex items-start gap-3 shadow-xs">
+                <span className="w-6 h-6 rounded-full bg-blue-600 text-white font-black text-xs flex items-center justify-center shrink-0 shadow-sm">3</span>
+                <div className="text-xs space-y-1">
+                  <div className="font-bold text-slate-900 dark:text-white">Blochează Ecranul</div>
+                  <p className="text-slate-500 dark:text-slate-400">Pe iPad activează Acces Ghidat; pe Android folosește Pin App; pe TV apasă tasta F11.</p>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* SEARCH BAR */}
@@ -680,19 +733,45 @@ export default function QrSelector({ tenant, themeColor }) {
                           </div>
                         </td>
                         <td className="py-3 px-4 text-right">
-                          <div className="flex justify-end gap-2">
+                          <div className="flex items-center justify-end gap-2">
+                            {/* Buton Copiază Link Tabletă */}
+                            <button
+                              type="button"
+                              onClick={() => copyKioskLink(kiosk)}
+                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-full transition-all whitespace-nowrap shrink-0 border shadow-xs ${
+                                copiedKioskId === kiosk.id
+                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800'
+                                  : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-primary-500 hover:text-primary-600'
+                              }`}
+                              title="Copiază link-ul pentru a-l deschide pe tabletă sau televizor"
+                            >
+                              {copiedKioskId === kiosk.id ? (
+                                <>
+                                  <CheckCheck size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                  <span className="whitespace-nowrap shrink-0">Link copiat!</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Copy size={14} className="text-slate-400 shrink-0" />
+                                  <span className="whitespace-nowrap shrink-0">Copiază Link Tabletă</span>
+                                </>
+                              )}
+                            </button>
+
                             {kiosk.qr_mode === 'HYBRID' ? (
                               <>
                                 <button
+                                  type="button"
                                   onClick={() => openKiosk(kiosk.id, 'kiosk')}
-                                  className="p-2 text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200 rounded-full transition-all"
+                                  className="p-2 text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200 rounded-full transition-all shrink-0"
                                   title={t('openDynamicQr')}
                                 >
                                   <TabletSmartphone size={16} />
                                 </button>
                                 <button
+                                  type="button"
                                   onClick={() => openKiosk(kiosk.id, 'scanner')}
-                                  className="p-2 text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm hover:text-emerald-600 hover:bg-emerald-50 hover:border-emerald-200 rounded-full transition-all"
+                                  className="p-2 text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm hover:text-emerald-600 hover:bg-emerald-50 hover:border-emerald-200 rounded-full transition-all shrink-0"
                                   title={t('openHardwareScanner')}
                                 >
                                   <ScanLine size={16} />
@@ -700,11 +779,13 @@ export default function QrSelector({ tenant, themeColor }) {
                               </>
                             ) : (
                               <button
+                                type="button"
                                 onClick={() => openKiosk(kiosk.id)}
-                                className="p-2 text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200 rounded-full transition-all"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-all whitespace-nowrap shrink-0 shadow-xs"
                                 title={kiosk.qr_mode === 'HARDWARE' ? t('openScanner') : t('openKioskScreen')}
                               >
-                                {kiosk.qr_mode === 'HARDWARE' ? <ScanLine size={16} /> : <ExternalLink size={16} />}
+                                {kiosk.qr_mode === 'HARDWARE' ? <ScanLine size={14} className="shrink-0" /> : <ExternalLink size={14} className="shrink-0" />}
+                                <span className="whitespace-nowrap shrink-0">Deschide</span>
                               </button>
                             )}
                             <button
