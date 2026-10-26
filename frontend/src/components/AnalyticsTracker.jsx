@@ -6,8 +6,17 @@ export default function AnalyticsTracker() {
   const location = useLocation();
 
   useEffect(() => {
-    // Ignorăm rutele interne de administrare pentru a nu polua statisticile de marketing cu acțiunile adminilor
-    if (location.pathname.startsWith('/admin') || location.pathname.startsWith('/tenant')) {
+    // Ignorăm rutele operaționale (kiosk, scanare cod QR, admin, portal angajați) pentru a contoriza doar vizitatorii reali de pe landing page
+    const p = location.pathname.toLowerCase();
+    if (
+      p.startsWith('/admin') ||
+      p.startsWith('/tenant') ||
+      p.startsWith('/kiosk') ||
+      p.startsWith('/scan') ||
+      p.startsWith('/employee') ||
+      p.startsWith('/portal') ||
+      p.startsWith('/login')
+    ) {
       return;
     }
 

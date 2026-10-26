@@ -148,16 +148,17 @@ router.get('/overview', requireSuperAdmin, async (req, res) => {
       comparisonSubtext = 'înregistrați în cele 30 zile anterioare';
     }
 
-    // Excludem traficul de test local
-    const baseFilter = `${intervalFilter} AND ip_address NOT IN ('::1') AND (referrer IS NULL OR referrer NOT LIKE '%localhost%')`;
-    const prevBaseFilter = `${prevIntervalFilter} AND ip_address NOT IN ('::1') AND (referrer IS NULL OR referrer NOT LIKE '%localhost%')`;
+    // Excludem traficul de test local și rutele operaționale (kiosk-uri, scanare QR, panouri admin)
+    const operationalExclude = `AND ip_address NOT IN ('::1', '127.0.0.1') AND (referrer IS NULL OR referrer NOT LIKE '%localhost%') AND page_path NOT LIKE '/kiosk%' AND page_path NOT LIKE '/scan%' AND page_path NOT LIKE '/admin%' AND page_path NOT LIKE '/portal%' AND page_path NOT LIKE '/employee%'`;
+    const baseFilter = `${intervalFilter} ${operationalExclude}`;
+    const prevBaseFilter = `${prevIntervalFilter} ${operationalExclude}`;
 
     // 1. Vizitatori activi în timp real (ultimele 15 minute)
     const liveNowRes = await pool.query(`
       SELECT COUNT(DISTINCT COALESCE(visitor_id, session_id)) as count 
       FROM site_analytics 
       WHERE created_at >= NOW() - INTERVAL '15 minutes'
-        AND ip_address NOT IN ('::1')
+        ${operationalExclude}
     `);
     const liveNow = parseInt(liveNowRes.rows[0]?.count || 0, 10);
 
@@ -187,8 +188,7 @@ router.get('/overview', requireSuperAdmin, async (req, res) => {
         COUNT(*) as total_pageviews
       FROM site_analytics 
       WHERE created_at >= CURRENT_DATE
-        AND ip_address NOT IN ('::1')
-        AND (referrer IS NULL OR referrer NOT LIKE '%localhost%')
+        ${operationalExclude}
     `);
     const exactTodayVisitors = parseInt(todayRes.rows[0]?.unique_visitors || 0, 10);
     const exactTodayPageviews = parseInt(todayRes.rows[0]?.total_pageviews || 0, 10);

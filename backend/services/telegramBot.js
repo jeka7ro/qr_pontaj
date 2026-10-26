@@ -31,12 +31,13 @@ const MAIN_KEYBOARD = {
  */
 async function getTrafficReport() {
   try {
+    const opFilter = `AND ip_address NOT IN ('::1', '127.0.0.1') AND (referrer IS NULL OR referrer NOT LIKE '%localhost%') AND page_path NOT LIKE '/kiosk%' AND page_path NOT LIKE '/scan%' AND page_path NOT LIKE '/admin%' AND page_path NOT LIKE '/portal%' AND page_path NOT LIKE '/employee%'`;
+
     const liveRes = await db.query(`
       SELECT COUNT(DISTINCT COALESCE(visitor_id, session_id)) as count
       FROM site_analytics
       WHERE created_at >= NOW() - INTERVAL '5 minutes'
-        AND ip_address NOT IN ('::1')
-        AND (referrer IS NULL OR referrer NOT LIKE '%localhost%');
+        ${opFilter};
     `);
     const liveNow = parseInt(liveRes.rows[0]?.count || 0, 10);
 
@@ -46,8 +47,7 @@ async function getTrafficReport() {
         COUNT(*) as total_pageviews
       FROM site_analytics
       WHERE created_at >= CURRENT_DATE
-        AND ip_address NOT IN ('::1')
-        AND (referrer IS NULL OR referrer NOT LIKE '%localhost%');
+        ${opFilter};
     `);
     const todayVisitors = parseInt(todayRes.rows[0]?.unique_visitors || 0, 10);
     const todayPageviews = parseInt(todayRes.rows[0]?.total_pageviews || 0, 10);
@@ -57,8 +57,7 @@ async function getTrafficReport() {
       FROM site_analytics
       WHERE created_at >= CURRENT_DATE - INTERVAL '1 day'
         AND created_at < CURRENT_DATE
-        AND ip_address NOT IN ('::1')
-        AND (referrer IS NULL OR referrer NOT LIKE '%localhost%');
+        ${opFilter};
     `);
     const yesterdayVisitors = parseInt(yesterdayRes.rows[0]?.count || 0, 10);
 
@@ -74,8 +73,7 @@ async function getTrafficReport() {
         COUNT(DISTINCT COALESCE(visitor_id, session_id)) as visitors
       FROM site_analytics
       WHERE created_at >= CURRENT_DATE
-        AND ip_address NOT IN ('::1')
-        AND (referrer IS NULL OR referrer NOT LIKE '%localhost%')
+        ${opFilter}
       GROUP BY source
       ORDER BY visitors DESC
       LIMIT 5;
