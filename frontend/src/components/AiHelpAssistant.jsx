@@ -28,6 +28,7 @@ import {
   QrCode,
   Users
 } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 
 export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageContext = '' }) {
   const navigate = useNavigate();
@@ -1536,38 +1537,80 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
                       </div>
                     )}
 
-                    {/* MOCKUP 2: KIOSKS */}
+                    {/* MOCKUP 2: KIOSKS - REAL TABLET DISPLAY (IPAD PRO) */}
                     {currentSlide.mockupType === 'kiosks' && (
-                      <div className="p-4 sm:p-5 bg-slate-900 text-white text-xs space-y-3">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-2.5">
-                          <div>
-                            <div className="text-xs font-bold text-white">Terminal Tabletă Kiosk</div>
-                            <div className="text-[11px] text-slate-400">Asociat la Punctul de Lucru: Sediu Central</div>
-                          </div>
-                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 w-fit">
-                            Cod Dinamic: 5 secunde
-                          </span>
-                        </div>
+                      <div className="p-3 sm:p-4 bg-slate-950 flex flex-col items-center justify-center">
+                        {/* Tableta iPad Bezel Realist */}
+                        <div className="w-full max-w-lg rounded-[2rem] border-[5px] sm:border-[6px] border-slate-700 bg-slate-900 shadow-2xl p-2.5 sm:p-3 relative overflow-hidden">
+                          {/* Camera frontală tabletă */}
+                          <div className="w-2.5 h-2.5 rounded-full bg-slate-800 mx-auto mb-2 border border-slate-700/60 shadow-inner"></div>
 
-                        <div className="p-3.5 sm:p-4 rounded-2xl bg-black/60 border border-white/15 flex flex-col sm:flex-row items-center justify-between gap-4">
-                          <div className="space-y-1.5 text-center sm:text-left min-w-0">
-                            <div className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-                              08:45:12
+                          {/* Ecranul Kiosk din interiorul tabletei */}
+                          <div className="rounded-[1.2rem] bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-3 sm:p-4 text-white border border-white/10 relative overflow-hidden flex flex-col justify-between gap-3">
+                            {/* Header Kiosk Bar */}
+                            <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                              <div className="flex items-center gap-2">
+                                <div className="w-6 h-6 rounded-lg bg-white/10 p-0.5 border border-white/20 flex items-center justify-center shrink-0">
+                                  <img src={brandLogoUrl} alt="Logo" className="w-full h-full object-contain rounded-md" />
+                                </div>
+                                <span className="font-bold text-xs tracking-tight text-white truncate">
+                                  {tenant?.name || 'QR Pontaj'} • Terminal Kiosk
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold shrink-0">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                                <span className="whitespace-nowrap">Kiosk Activ</span>
+                              </div>
                             </div>
-                            <div className="text-xs font-semibold text-cyan-400 uppercase tracking-wider">
-                              Tabletă Intrare Recepție
-                            </div>
-                            <p className="text-[11px] text-slate-400 max-w-xs">
-                              Angajatul apropie camera telefonului pentru scanare instantanee. Zero aplicații de instalat.
-                            </p>
-                          </div>
 
-                          <div className="relative w-24 h-24 sm:w-28 sm:h-28 bg-white rounded-2xl p-2 shrink-0 shadow-lg flex items-center justify-center">
-                            <QrCode size={80} className="text-slate-900" />
-                            <div 
-                              className="absolute left-2 right-2 h-[2px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent rounded-full shadow-[0_0_8px_2px_rgba(56,189,248,0.95)] z-20 pointer-events-none"
-                              style={{ animation: 'smoothQrLaser 2s ease-in-out infinite' }}
-                            />
+                            {/* Corp Kiosk: Ceas Mare stânga + QR Code dreapta */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 items-center gap-3 py-1">
+                              {/* Stânga: Ceas digital și instrucțiune */}
+                              <div className="space-y-1.5 text-center sm:text-left">
+                                <div className="text-[10px] font-bold uppercase tracking-wider text-cyan-400">
+                                  Sediu Central • Intrare Recepție
+                                </div>
+                                <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 shadow-inner">
+                                  <div className="text-2xl sm:text-3xl font-black text-white tracking-tight font-sans drop-shadow-[0_0_15px_rgba(255,255,255,0.25)]">
+                                    08:45:12
+                                  </div>
+                                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
+                                    Luni, 26 Octombrie
+                                  </div>
+                                </div>
+                                <p className="text-[11px] text-slate-300 leading-snug">
+                                  Deschide camera telefonului și apropie ecranul pentru pontaj instant.
+                                </p>
+                              </div>
+
+                              {/* Dreapta: Card QR Alb complet vizibil cu logo badge și laser */}
+                              <div className="flex flex-col items-center justify-center">
+                                <div className="relative p-2.5 rounded-2xl bg-white shadow-2xl flex items-center justify-center overflow-hidden border border-slate-200">
+                                  <QRCodeSVG 
+                                    value="https://pontaj.app/scan" 
+                                    size={100} 
+                                    level="H"
+                                    fgColor="#0f172a"
+                                    className="rounded"
+                                  />
+                                  {/* Laser optic animat */}
+                                  <div 
+                                    className="absolute left-2 right-2 h-[2px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent rounded-full shadow-[0_0_8px_2px_rgba(56,189,248,0.95)] z-20 pointer-events-none"
+                                    style={{ animation: 'smoothQrLaser 2s ease-in-out infinite' }}
+                                  />
+                                </div>
+                                <div className="flex items-center gap-1.5 mt-1.5 text-[10px] font-semibold text-slate-400">
+                                  <ShieldCheck size={12} className="text-emerald-400 shrink-0" />
+                                  <span className="whitespace-nowrap">Cod dinamic • Anti-fraudă la 5s</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Footer Kiosk Bar: Compatibilitate tablete */}
+                            <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[10px] text-slate-400">
+                              <span className="truncate">Mod Tabletă Fixă pe perete</span>
+                              <span className="text-cyan-300 font-semibold truncate">iPad Guided Access & Android</span>
+                            </div>
                           </div>
                         </div>
                       </div>
