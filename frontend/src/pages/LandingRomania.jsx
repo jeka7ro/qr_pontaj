@@ -13,6 +13,7 @@ import {
   Check,
   Search,
   ArrowRight,
+  ArrowLeft,
   AlertCircle,
   Sparkles,
   RefreshCw,
@@ -89,10 +90,61 @@ export default function LandingRomania() {
       ...prev,
       employeesCount: String(planData.defaultSeats)
     }));
+    try {
+      window.history.pushState({ modalOpen: true }, '');
+    } catch (e) {
+      // ignore
+    }
     setIsSubscribeModalOpen(true);
     setSubSubmitted(false);
     trackEvent('open_demo_modal', { planId, mode });
   };
+
+  const closeSubscribeModal = () => {
+    if (window.history.state?.modalOpen) {
+      window.history.back();
+    } else {
+      setIsSubscribeModalOpen(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!isSubscribeModalOpen) return;
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') closeSubscribeModal();
+    };
+    const handlePopState = () => {
+      setIsSubscribeModalOpen(false);
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [isSubscribeModalOpen]);
+
+  useEffect(() => {
+    if (!legalModalType) return;
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') setLegalModalType(null);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [legalModalType]);
 
   const [subForm, setSubForm] = useState({
     contactName: '',
@@ -1245,31 +1297,61 @@ export default function LandingRomania() {
 
       {/* MODAL SOLICITARE DEMO 15 ZILE / ABONAMENT CU CĂUTARE AUTOMATĂ CUI ANAF */}
       {isSubscribeModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
-          <div className="relative w-full max-w-lg bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[95vh] sm:max-h-[90vh]">
-            {/* Header Modal */}
-            <div className="flex items-center justify-between px-5 sm:px-6 py-3.5 sm:py-4 border-b border-slate-100 bg-slate-50/70 shrink-0">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-                  <Sparkles size={16} />
+        <div 
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/75 backdrop-blur-xs animate-fade-in"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeSubscribeModal();
+          }}
+        >
+          <div 
+            className="relative w-full max-w-lg bg-white rounded-t-[28px] sm:rounded-2xl shadow-2xl border-t sm:border border-slate-200 flex flex-col h-[90dvh] sm:h-auto sm:max-h-[88dvh] overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header Modal - Sticky & Permanent pe Mobil & Desktop */}
+            <div className="sticky top-0 z-30 bg-white/98 backdrop-blur-md px-4 sm:px-6 pt-2.5 sm:pt-4 pb-3 sm:pb-3.5 border-b border-slate-100 shrink-0 shadow-2xs">
+              {/* Drag Handle iOS Sheet vizibil pe mobil */}
+              <div className="w-12 h-1.5 bg-slate-300 rounded-full mx-auto -mt-0.5 mb-2.5 sm:hidden" />
+
+              <div className="flex items-center justify-between gap-2">
+                {/* Buton Înapoi dedicat vizibil pe mobil */}
+                <button
+                  type="button"
+                  onClick={closeSubscribeModal}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 rounded-full transition-colors whitespace-nowrap shrink-0 cursor-pointer sm:hidden"
+                  aria-label="Înapoi la site"
+                >
+                  <ArrowLeft size={15} />
+                  <span>Înapoi</span>
+                </button>
+
+                <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                    <Sparkles size={16} />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-xs sm:text-base font-black text-slate-900 leading-tight truncate">
+                      {modalMode === 'demo' ? 'Înregistrare Cont Demo' : 'Abonament Pontaj.app'}
+                    </h3>
+                    <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium truncate">
+                      15 zile test gratuit complet &bull; Fără card bancar
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-sm sm:text-base font-black text-slate-900 leading-tight">
-                    {modalMode === 'demo' ? 'Activează Cont Demo Gratuit' : 'Abonament Pontaj.app'}
-                  </h3>
-                  <p className="text-[11px] text-slate-500 font-medium">15 zile test gratuit complet &bull; Fără card bancar</p>
-                </div>
+
+                {/* Buton X Închide */}
+                <button
+                  type="button"
+                  onClick={closeSubscribeModal}
+                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-600 hover:text-slate-900 flex items-center justify-center transition-colors shrink-0 cursor-pointer shadow-2xs"
+                  title="Închide fereastra"
+                  aria-label="Închide fereastra"
+                >
+                  <X size={18} />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setIsSubscribeModalOpen(false)}
-                className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors shrink-0 cursor-pointer"
-              >
-                <X size={18} />
-              </button>
             </div>
 
-            <div className="p-5 sm:p-6 overflow-y-auto space-y-4">
+            <div className="flex-1 min-h-0 p-4 sm:p-6 overflow-y-auto space-y-4 overscroll-contain pb-12 sm:pb-6">
               {!subSubmitted ? (
                 <form onSubmit={handleFormSubmit} className="space-y-4">
                   {/* Badge Pachet Selectat */}
@@ -1739,6 +1821,16 @@ export default function LandingRomania() {
                     )}
                   </button>
 
+                  {/* Buton Înapoi secundar la baza formularului */}
+                  <button
+                    type="button"
+                    onClick={closeSubscribeModal}
+                    className="w-full h-10 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 text-xs font-bold rounded-full transition-colors flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap shrink-0 mt-1"
+                  >
+                    <ArrowLeft size={15} />
+                    <span>Înapoi la prezentare (Închide)</span>
+                  </button>
+
                   <p className="text-[10px] text-slate-400 text-center leading-tight">
                     * Fără card bancar. Aplicație cloud compatibilă cu orice tabletă, ecran Smart TV sau telefon mobil.
                   </p>
@@ -1846,7 +1938,7 @@ export default function LandingRomania() {
                     <button
                       type="button"
                       onClick={() => {
-                        setIsSubscribeModalOpen(false);
+                        closeSubscribeModal();
                         if (createdSubdomain) {
                           window.location.href = `https://${createdSubdomain}.qr.pontaj.app/admin/dashboard`;
                         } else {
@@ -1861,12 +1953,19 @@ export default function LandingRomania() {
                     <button
                       type="button"
                       onClick={() => {
-                        setIsSubscribeModalOpen(false);
+                        closeSubscribeModal();
                         navigate(`/admin/login?email=${encodeURIComponent(subForm.email)}`);
                       }}
-                      className="w-full h-9 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-full transition-all flex items-center justify-center cursor-pointer whitespace-nowrap shrink-0"
+                      className="w-full h-9 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 text-xs font-bold rounded-full transition-all flex items-center justify-center cursor-pointer whitespace-nowrap shrink-0"
                     >
                       <span>Pagina de Autentificare</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={closeSubscribeModal}
+                      className="w-full h-8 text-slate-500 hover:text-slate-800 text-xs font-medium rounded-full transition-colors flex items-center justify-center cursor-pointer whitespace-nowrap shrink-0"
+                    >
+                      <span>Închide Fereastra</span>
                     </button>
                   </div>
                 </div>
@@ -1883,11 +1982,11 @@ export default function LandingRomania() {
           onClick={() => setLegalModalType(null)}
         >
           <div 
-            className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[88vh]"
+            className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[88dvh]"
             onClick={e => e.stopPropagation()}
           >
             {/* Header Modal */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/70">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/70 shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100">
                   <ShieldCheck size={18} />
@@ -1915,7 +2014,7 @@ export default function LandingRomania() {
             </div>
 
             {/* Corp Modal Scrollabil */}
-            <div className="p-6 overflow-y-auto text-xs text-slate-600 space-y-4 leading-relaxed">
+            <div className="flex-1 min-h-0 p-6 overflow-y-auto text-xs text-slate-600 space-y-4 leading-relaxed overscroll-contain">
               {legalModalType === 'dpa' && (
                 <>
                   <div className="p-3.5 bg-blue-50/80 border border-blue-200 rounded-2xl text-blue-950 space-y-1">
