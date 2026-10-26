@@ -1332,20 +1332,46 @@ export default function LandingRomania() {
                           </span>
                         )}
                       </label>
-                      <div className="relative">
+                      <div className="relative flex items-center">
                         <input
                           type="text"
                           required={!isPersonalAccount}
                           value={subForm.cui}
                           onChange={handleCuiChange}
-                          placeholder="Ex: 42322117 (introdu CUI-ul firmei)..."
-                          className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-xs font-semibold"
+                          onBlur={() => {
+                            const digitsOnly = (subForm.cui || '').replace(/\D/g, '');
+                            if (digitsOnly.length >= 6 && digitsOnly.length <= 10 && !companyVerified) {
+                              handleAutoCuiSearch(digitsOnly);
+                            }
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              const digitsOnly = (subForm.cui || '').replace(/\D/g, '');
+                              if (digitsOnly.length >= 6) {
+                                handleAutoCuiSearch(digitsOnly);
+                              }
+                            }
+                          }}
+                          placeholder="Ex: 42322117 sau RO42322117..."
+                          className="w-full pl-4 pr-24 h-10 text-sm rounded-full border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-xs font-semibold"
                         />
-                        {companyVerified && (
-                          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-600">
-                            <CheckCircle2 size={16} />
-                          </div>
-                        )}
+                        <button
+                          type="button"
+                          disabled={cuiLoading}
+                          onClick={() => {
+                            const digitsOnly = (subForm.cui || '').replace(/\D/g, '');
+                            if (digitsOnly.length >= 6) {
+                              handleAutoCuiSearch(digitsOnly);
+                            } else {
+                              setCuiError('Introdu minim 6 cifre pentru căutare CUI.');
+                            }
+                          }}
+                          className="absolute right-1.5 top-1/2 -translate-y-1/2 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-full transition-all flex items-center gap-1 cursor-pointer whitespace-nowrap shrink-0 shadow-xs"
+                        >
+                          {cuiLoading ? <RefreshCw size={11} className="animate-spin" /> : <Search size={11} />}
+                          <span>Caută</span>
+                        </button>
                       </div>
 
                       {/* Notificare CUI Eronat / Negăsit în ANAF */}
@@ -1356,40 +1382,16 @@ export default function LandingRomania() {
                         </div>
                       )}
 
-                      {/* Card Verde Companie Verificată din ANAF */}
+                      {/* Badge Verde Confirmare ANAF */}
                       {companyVerified && (
-                        <div className="mt-2 p-3.5 bg-emerald-50/90 border border-emerald-200 rounded-2xl text-xs space-y-2 text-left animate-fade-in shadow-xs">
-                          <div className="flex items-center justify-between gap-2 border-b border-emerald-200/60 pb-2">
-                            <div className="flex items-center gap-1.5 font-black text-emerald-950 min-w-0">
-                              <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
-                              <span className="truncate">{companyVerified.name}</span>
-                            </div>
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 whitespace-nowrap shrink-0 border border-emerald-200">
-                              {companyVerified.isVatPayer ? 'Plătitor TVA' : 'Neplătitor TVA'}
-                            </span>
+                        <div className="mt-2 p-2.5 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs flex items-center justify-between gap-2 animate-fade-in shadow-2xs">
+                          <div className="flex items-center gap-1.5 font-bold text-emerald-950 truncate">
+                            <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+                            <span className="truncate">Date completate automat din ANAF</span>
                           </div>
-
-                          <div className="grid grid-cols-2 gap-2 text-[11px]">
-                            <div>
-                              <span className="text-slate-400 block text-[9.5px] font-bold uppercase">CUI Oficial</span>
-                              <span className="font-bold text-slate-800 whitespace-nowrap">
-                                {companyVerified.isVatPayer ? `RO ${companyVerified.cui}` : companyVerified.cui}
-                              </span>
-                            </div>
-                            <div>
-                              <span className="text-slate-400 block text-[9.5px] font-bold uppercase">Reg. Comerțului</span>
-                              <span className="font-bold text-slate-800 truncate block">
-                                {companyVerified.regCom || 'Nespecificat'}
-                              </span>
-                            </div>
-                          </div>
-
-                          {companyVerified.address && (
-                            <div className="pt-1.5 border-t border-emerald-200/60 flex items-start gap-1.5 text-[11px] text-slate-700">
-                              <MapPin size={13} className="text-emerald-600 shrink-0 mt-0.5" />
-                              <span className="font-medium leading-tight block text-slate-800">{companyVerified.address}</span>
-                            </div>
-                          )}
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 whitespace-nowrap shrink-0 border border-emerald-200">
+                            {companyVerified.isVatPayer ? 'Plătitor TVA' : 'Neplătitor TVA'}
+                          </span>
                         </div>
                       )}
                     </div>
@@ -1400,20 +1402,47 @@ export default function LandingRomania() {
                     </div>
                   )}
 
-                  {/* Nume Companie / Echipă (Dacă nu este deja verificat automat prin ANAF) */}
-                  {!companyVerified && (
+                  {/* Nume Companie / Echipă — ÎNTOTDEAUNA VIZIBIL ȘI COMPLETAT AUTOMAT */}
+                  <div>
+                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1 flex items-center justify-between">
+                      <span>{isPersonalAccount ? 'Numele Tău sau al Echipei *' : 'Nume Companie *'}</span>
+                      {companyVerified && (
+                        <span className="text-[10px] text-emerald-700 font-bold flex items-center gap-1">
+                          <Check size={11} /> extras din ANAF
+                        </span>
+                      )}
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={subForm.companyName}
+                      onChange={(e) => setSubForm(prev => ({ ...prev, companyName: e.target.value }))}
+                      placeholder={isPersonalAccount ? "Ex: Echipa Andrei sau Nume Prenume..." : "Numele firmei..."}
+                      className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-xs font-semibold text-slate-900 bg-white"
+                    />
+                  </div>
+
+                  {/* Sediu Social / Adresă Firmă — ÎNTOTDEAUNA VIZIBIL ȘI COMPLETAT AUTOMAT */}
+                  {!isPersonalAccount && (
                     <div>
-                      <label className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1 block">
-                        {isPersonalAccount ? 'Numele Tău sau al Echipei *' : 'Nume Companie *'}
+                      <label className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1 flex items-center justify-between">
+                        <span>Sediu Social / Adresă Firmă</span>
+                        {companyVerified?.address && (
+                          <span className="text-[10px] text-emerald-700 font-bold flex items-center gap-1">
+                            <Check size={11} /> extras din ANAF
+                          </span>
+                        )}
                       </label>
-                      <input
-                        type="text"
-                        required
-                        value={subForm.companyName}
-                        onChange={(e) => setSubForm(prev => ({ ...prev, companyName: e.target.value }))}
-                        placeholder={isPersonalAccount ? "Ex: Echipa Andrei sau Nume Prenume..." : "Numele firmei..."}
-                        className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-xs"
-                      />
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={subForm.address}
+                          onChange={(e) => setSubForm(prev => ({ ...prev, address: e.target.value }))}
+                          placeholder="Adresă sediu social..."
+                          className="w-full pl-9 pr-4 h-10 text-sm rounded-full border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-xs text-slate-800 bg-white"
+                        />
+                        <MapPin size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                      </div>
                     </div>
                   )}
 
