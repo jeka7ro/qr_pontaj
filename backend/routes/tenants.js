@@ -178,7 +178,9 @@ router.get('/public-branding', async (req, res) => {
     }
 
     let logoUrl = tenant.logo_url;
-    if (logoUrl && logoUrl.includes('/webp-express/webp-images/') && logoUrl.endsWith('.webp')) {
+    if (tenant.subdomain === 'unda' || (logoUrl && logoUrl.includes('unda'))) {
+      logoUrl = 'https://qr.pontaj.app/logos/unda.png';
+    } else if (logoUrl && logoUrl.includes('/webp-express/webp-images/') && logoUrl.endsWith('.webp')) {
       logoUrl = logoUrl.replace('/webp-express/webp-images/', '/').replace(/\.webp$/, '');
     }
 

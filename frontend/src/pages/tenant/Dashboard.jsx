@@ -319,6 +319,21 @@ export default function TenantDashboard() {
     };
   };
 
+  const getTenantLogoSrc = (t) => {
+    if (!t) return null;
+    const sub = t.subdomain?.toLowerCase();
+    const url = t.logo_url;
+    if (sub === 'unda' || (url && url.includes('unda'))) {
+      return '/logos/unda.png';
+    }
+    if (sub === 'rollmaster' || (url && url.includes('roll-master'))) {
+      return '/logos/rollmaster.png';
+    }
+    return url;
+  };
+
+  const tenantLogoSrc = getTenantLogoSrc(tenant);
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-800/50 flex">
       {/* Mobile sidebar overlay */}
@@ -332,16 +347,21 @@ export default function TenantDashboard() {
           {sidebarCollapsed ? (
             /* Collapsed State: Logo 100% centrat, fără nicio tăiere */
             <div className="flex items-center justify-center w-full relative">
-              {tenant.logo_url && !tenant.logo_url.includes('default') && !tenant.logo_url.includes('smartqr') && !tenant.logo_url.includes('1792931780859') ? (
+              {tenantLogoSrc && !tenantLogoSrc.includes('default') && !tenantLogoSrc.includes('smartqr') && !tenantLogoSrc.includes('1792931780859') ? (
                 <div 
                   onClick={toggleSidebarCollapsed}
                   className="relative h-10 w-10 shrink-0 bg-white dark:bg-slate-800 rounded-xl flex items-center justify-center p-1 shadow-xs border border-slate-200 dark:border-slate-700 cursor-pointer hover:ring-2 hover:ring-primary-500 transition-all overflow-hidden" 
                   title={`${tenant.name} — Apasă pentru a extinde meniul`}
                 >
                   <img 
-                    src={tenant.logo_url} 
+                    src={tenantLogoSrc} 
                     alt={tenant.name} 
-                    className="max-h-full max-w-full object-contain" 
+                    className="max-h-full max-w-full object-contain"
+                    onError={(e) => {
+                      if (tenant.subdomain === 'unda' || tenant.name?.toLowerCase().includes('unda')) {
+                        e.currentTarget.src = '/logos/unda.png';
+                      }
+                    }} 
                   />
                 </div>
               ) : (
@@ -371,12 +391,17 @@ export default function TenantDashboard() {
             /* Expanded State: Logo complet + Nume stânga, Butoane acțiuni dreapta */
             <>
               <div className="flex items-center gap-3 overflow-hidden min-w-0">
-                {tenant.logo_url && !tenant.logo_url.includes('default') && !tenant.logo_url.includes('smartqr') && !tenant.logo_url.includes('1792931780859') ? (
+                {tenantLogoSrc && !tenantLogoSrc.includes('default') && !tenantLogoSrc.includes('smartqr') && !tenantLogoSrc.includes('1792931780859') ? (
                   <div className="relative h-10 w-10 shrink-0 bg-white dark:bg-slate-800 rounded-xl flex items-center justify-center p-1 shadow-xs border border-slate-200 dark:border-slate-700 overflow-hidden" title={tenant.name}>
                     <img 
-                      src={tenant.logo_url} 
+                      src={tenantLogoSrc} 
                       alt={tenant.name} 
-                      className="max-h-full max-w-full object-contain" 
+                      className="max-h-full max-w-full object-contain"
+                      onError={(e) => {
+                        if (tenant.subdomain === 'unda' || tenant.name?.toLowerCase().includes('unda')) {
+                          e.currentTarget.src = '/logos/unda.png';
+                        }
+                      }} 
                     />
                   </div>
                 ) : (

@@ -35,6 +35,9 @@ router.get('/info', async (req, res) => {
     }
 
     const tenant = tenantResult.rows[0];
+    if (tenant.subdomain === 'unda' || (tenant.logo_url && tenant.logo_url.includes('unda'))) {
+      tenant.logo_url = 'https://qr.pontaj.app/logos/unda.png';
+    }
     const isOnline = Boolean(tenant.is_online_registration || tenant.terms_accepted_at);
     tenant.is_online_registration = isOnline;
 
