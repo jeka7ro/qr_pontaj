@@ -24,7 +24,8 @@ import {
   Copy, 
   Check,
   Plus,
-  Loader2
+  Loader2,
+  QrCode
 } from 'lucide-react';
 
 export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageContext = '' }) {
@@ -214,6 +215,30 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
 
   return (
     <>
+      {/* Keyframe styles pentru animația fluidă a laserului QR */}
+      <style>{`
+        @keyframes smoothQrLaser {
+          0% {
+            top: 14%;
+            opacity: 0.2;
+          }
+          18% {
+            opacity: 1;
+          }
+          50% {
+            top: 78%;
+            opacity: 1;
+          }
+          82% {
+            opacity: 1;
+          }
+          100% {
+            top: 14%;
+            opacity: 0.2;
+          }
+        }
+      `}</style>
+
       {/* macOS Style Floating Launcher Pill */}
       <div className="fixed bottom-6 right-6 z-40">
         {!isOpen && (
@@ -222,8 +247,14 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
             className="flex items-center gap-2.5 px-4 py-2.5 rounded-full bg-slate-900 hover:bg-slate-800 text-white shadow-[0_12px_32px_-4px_rgba(0,0,0,0.45)] hover:shadow-[0_16px_36px_-4px_rgba(0,122,255,0.35)] border border-slate-700/80 hover:border-[#007AFF]/60 ring-1 ring-white/15 transition-all duration-200 hover:scale-105 active:scale-95 whitespace-nowrap shrink-0 group cursor-pointer"
             title="Deschide Asistentul AI QR Pontaj"
           >
-            <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-[#007AFF] to-blue-400 text-white flex items-center justify-center shrink-0 shadow-sm group-hover:rotate-12 transition-transform">
-              <Sparkles size={15} />
+            {/* Logo QR Pontaj Oficial cu Animație Laser Smooth */}
+            <div className="relative w-7 h-7 rounded-full bg-gradient-to-tr from-[#007AFF] to-blue-500 text-white flex items-center justify-center shrink-0 shadow-sm overflow-hidden group-hover:scale-110 transition-transform">
+              <div className="absolute inset-0 bg-white/15 rounded-full animate-pulse pointer-events-none" />
+              <QrCode size={15} className="relative z-10 text-white drop-shadow-xs" />
+              <div 
+                className="absolute left-1 right-1 h-[2px] bg-gradient-to-r from-transparent via-cyan-200 to-transparent rounded-full shadow-[0_0_6px_1.5px_rgba(56,189,248,0.95)] z-20 pointer-events-none"
+                style={{ animation: 'smoothQrLaser 2.2s ease-in-out infinite' }}
+              />
             </div>
             <div className="flex items-center gap-1.5 whitespace-nowrap shrink-0">
               <span className="font-bold text-xs sm:text-sm tracking-tight text-white whitespace-nowrap shrink-0">
@@ -338,8 +369,12 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
                       className={`flex items-start gap-2.5 ${isUser ? 'justify-end' : 'justify-start'}`}
                     >
                       {!isUser && (
-                        <div className="w-7 h-7 rounded-full bg-[#007AFF] text-white flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
-                          <Bot size={14} />
+                        <div className="relative w-7 h-7 rounded-full bg-gradient-to-tr from-[#007AFF] to-blue-500 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-xs overflow-hidden">
+                          <QrCode size={13} className="relative z-10 text-white" />
+                          <div 
+                            className="absolute left-1 right-1 h-[1.5px] bg-gradient-to-r from-transparent via-cyan-200 to-transparent rounded-full shadow-[0_0_5px_1px_rgba(56,189,248,0.9)] z-20 pointer-events-none"
+                            style={{ animation: 'smoothQrLaser 2.2s ease-in-out infinite' }}
+                          />
                         </div>
                       )}
 
@@ -575,8 +610,12 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
 
                 {loading && (
                   <div className="flex items-start gap-2.5 justify-start">
-                    <div className="w-7 h-7 rounded-full bg-[#007AFF] text-white flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
-                      <Bot size={14} />
+                    <div className="relative w-7 h-7 rounded-full bg-gradient-to-tr from-[#007AFF] to-blue-500 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-xs overflow-hidden">
+                      <QrCode size={13} className="relative z-10 text-white" />
+                      <div 
+                        className="absolute left-1 right-1 h-[1.5px] bg-gradient-to-r from-transparent via-cyan-200 to-transparent rounded-full shadow-[0_0_5px_1px_rgba(56,189,248,0.9)] z-20 pointer-events-none"
+                        style={{ animation: 'smoothQrLaser 2.2s ease-in-out infinite' }}
+                      />
                     </div>
                     <div className="bg-white/90 dark:bg-slate-800/90 rounded-2xl rounded-bl-sm px-4 py-3 border border-slate-200/70 dark:border-white/10 shadow-xs flex items-center gap-1.5">
                       <div className="w-2 h-2 rounded-full bg-[#007AFF] animate-bounce"></div>
