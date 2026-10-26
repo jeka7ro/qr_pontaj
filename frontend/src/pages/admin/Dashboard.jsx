@@ -150,8 +150,13 @@ export default function AdminDashboard() {
           {sidebarOpen ? (
             <>
               <Link to="/admin/dashboard" className="flex items-center gap-2.5 overflow-hidden group">
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/25 shrink-0">
-                  <QrCode size={18} />
+                <div className="relative w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/25 shrink-0 overflow-hidden">
+                  <div className="animate-qr-breathe">
+                    <QrCode size={18} />
+                  </div>
+                  <div 
+                    className="absolute left-1 right-1 h-[2px] bg-gradient-to-r from-transparent via-cyan-300 to-transparent rounded-full shadow-[0_0_8px_2px_rgba(56,189,248,0.95)] z-20 pointer-events-none animate-qr-laser"
+                  />
                 </div>
                 <div className="flex flex-col">
                   <span className="font-black text-base text-slate-900 dark:text-white tracking-tight leading-none">
@@ -172,8 +177,13 @@ export default function AdminDashboard() {
             </>
           ) : (
             <div className="flex flex-col items-center">
-              <Link to="/admin/dashboard" className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/25 shrink-0" title="Pontaj.app">
-                <QrCode size={20} />
+              <Link to="/admin/dashboard" className="relative w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/25 shrink-0 overflow-hidden" title="Pontaj.app">
+                <div className="animate-qr-breathe">
+                  <QrCode size={20} />
+                </div>
+                <div 
+                  className="absolute left-1 right-1 h-[2px] bg-gradient-to-r from-transparent via-cyan-300 to-transparent rounded-full shadow-[0_0_8px_2px_rgba(56,189,248,0.95)] z-20 pointer-events-none animate-qr-laser"
+                />
               </Link>
             </div>
           )}
@@ -231,8 +241,13 @@ export default function AdminDashboard() {
               <Menu size={22} />
             </button>
             <Link to="/admin/dashboard" className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-xs shrink-0">
-                <QrCode size={16} />
+              <div className="relative w-7 h-7 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-xs shrink-0 overflow-hidden">
+                <div className="animate-qr-breathe">
+                  <QrCode size={16} />
+                </div>
+                <div 
+                  className="absolute left-0.5 right-0.5 h-[1.5px] bg-gradient-to-r from-transparent via-cyan-300 to-transparent rounded-full shadow-[0_0_6px_1.5px_rgba(56,189,248,0.95)] z-20 pointer-events-none animate-qr-laser"
+                />
               </div>
               <span className="font-black text-base text-slate-900 dark:text-white tracking-tight">
                 Pontaj<span className="text-blue-600">.app</span>
