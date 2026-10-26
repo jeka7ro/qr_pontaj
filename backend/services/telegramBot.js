@@ -337,7 +337,7 @@ async function getRevenueReport() {
  */
 async function searchCompany(queryTerm) {
   if (!queryTerm || queryTerm.trim().length < 2) {
-    return `<b>[CAUTARE]</b> Te rog sa introduci un termen de cel putin 2 caractere.\nExemplu: <code>/cauta Unda</code> sau <code>/cauta 42322117</code>`;
+    return `<b>[CAUTARE]</b> Te rog sa introduci un termen de cel putin 2 caractere.\nExemplu: <code>/cauta Unda</code> sau <code>/cauta RO1234567</code>`;
   }
 
   const cleanTerm = `%${queryTerm.trim()}%`;

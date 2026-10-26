@@ -406,7 +406,7 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
                     name="cui"
                     value={formData.cui}
                     onChange={(e) => handleCuiChange(e.target.value)}
-                    placeholder="ex: 45691500 sau RO45691500"
+                    placeholder="ex: RO1234567 sau 1234567"
                     className="flex-1 px-4 h-10 text-sm rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white outline-none transition-all font-bold"
                   />
                   <button
@@ -828,7 +828,7 @@ export default function CreateTenantModal({ onClose, onTenantCreated, editTenant
                       value={formData.nume_admin}
                       onChange={handleChange}
                       className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 dark:border-slate-700 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-white dark:border-slate-700 outline-none transition-all shadow-sm" 
-                      placeholder="Ex: Eugeniu Cazmal" 
+                      placeholder="Ex: Ion Popescu" 
                     />
                   </div>
                   <div>

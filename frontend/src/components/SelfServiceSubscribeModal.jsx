@@ -143,9 +143,9 @@ const MODAL_I18N = {
     emailLabel: "Email Administrator (Facturare) *",
     emailPlaceholder: "admin@companie.ro",
     adminNameLabel: "Nume Administrator / Semnatar",
-    adminNamePlaceholder: "ex: Eugeniu Cazmal",
+    adminNamePlaceholder: "ex: Ion Popescu",
     vatLabel: "Cod Fiscal / CUI (cu sau fără RO)",
-    vatPlaceholder: "ex: RO 42322117",
+    vatPlaceholder: "ex: RO1234567",
     addressLabel: "Adresă Sediu Social / Facturare",
     addressPlaceholder: "ex: București, Str...",
     subdomainLabel: "Adresă Portal Kiosk Dedicat",
@@ -439,7 +439,7 @@ export default function SelfServiceSubscribeModal({ isOpen, onClose, initialTena
                 <input
                   type="text"
                   required={isRo}
-                  placeholder={isRo ? "ex: RO42322117 sau CNP 13 cifre..." : m.vatPlaceholder}
+                  placeholder={isRo ? "ex: RO1234567 sau CNP 13 cifre..." : m.vatPlaceholder}
                   value={vatNumber}
                   onChange={(e) => setVatNumber(e.target.value.toUpperCase())}
                   className="w-full text-sm font-medium text-slate-900 placeholder-slate-400 bg-transparent outline-none"

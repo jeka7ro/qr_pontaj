@@ -1595,7 +1595,7 @@ export default function LandingRomania() {
                                 }
                               }
                             }}
-                            placeholder="Ex: 42322117 sau RO42322117..."
+                            placeholder="Ex: RO1234567 sau 1234567..."
                             className="w-full pl-4 pr-24 h-10 text-sm rounded-full border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-xs font-semibold"
                           />
                           <button
