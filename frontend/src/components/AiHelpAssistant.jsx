@@ -256,14 +256,9 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
                 style={{ animation: 'smoothQrLaser 2.2s ease-in-out infinite' }}
               />
             </div>
-            <div className="flex items-center gap-1.5 whitespace-nowrap shrink-0">
-              <span className="font-bold text-xs sm:text-sm tracking-tight text-white whitespace-nowrap shrink-0">
-                Asistent AI QR Pontaj
-              </span>
-              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-extrabold bg-[#007AFF] text-white tracking-wider whitespace-nowrap shrink-0 shadow-2xs">
-                AI
-              </span>
-            </div>
+            <span className="font-bold text-xs sm:text-sm tracking-tight text-white whitespace-nowrap shrink-0 pr-1">
+              Asistent AI QR Pontaj
+            </span>
           </button>
         )}
       </div>
