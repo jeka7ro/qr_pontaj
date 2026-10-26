@@ -37,6 +37,8 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
   const [guideStep, setGuideStep] = useState(1);
   const [devicePlatform, setDevicePlatform] = useState('ipad'); // 'ipad' | 'android' | 'tv'
   const [copiedLink, setCopiedLink] = useState(false);
+  const chatWindowRef = useRef(null);
+  const launcherRef = useRef(null);
 
   // Logo-ul oficial QR Pontaj sau cel personalizat al companiei
   const brandLogoUrl = (tenant?.logo_url && !tenant.logo_url.includes('default') && !tenant.logo_url.includes('smartqr') && !tenant.logo_url.includes('1792931780859'))
@@ -85,6 +87,40 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
       window.removeEventListener('open-platform-tour', handleOpenTour);
     };
   }, []);
+
+  // Închidere automată a ferestrei de chat la accesarea oricărei pagini pe site (schimbare de rută)
+  useEffect(() => {
+    setIsOpen(false);
+  }, [pageContext]);
+
+  // Închidere la click în afara ferestrei de chat sau la tasta Escape
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleClickOutside = (event) => {
+      if (
+        chatWindowRef.current && 
+        !chatWindowRef.current.contains(event.target) &&
+        (!launcherRef.current || !launcherRef.current.contains(event.target))
+      ) {
+        setIsOpen(false);
+      }
+    };
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen]);
 
 
   // Cardurile explicative pentru turul pas cu pas bazat EXCLUSIV pe ecranele reale ale aplicației
@@ -479,6 +515,7 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
             />
 
             <button
+              ref={launcherRef}
               onClick={() => setIsOpen(true)}
               className="relative flex items-center gap-3 pl-2 pr-4 py-2 rounded-full bg-slate-900 hover:bg-slate-800 text-white shadow-[0_14px_36px_-4px_rgba(0,0,0,0.5)] hover:shadow-[0_16px_40px_-4px_rgba(0,122,255,0.45)] border border-slate-700/80 hover:border-[#007AFF]/70 ring-1 ring-white/15 transition-all duration-200 hover:scale-105 active:scale-95 whitespace-nowrap shrink-0 group cursor-pointer"
               style={{ animation: 'attentionWiggle 6.5s ease-in-out infinite' }}
@@ -509,7 +546,10 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
 
       {/* macOS Window Card */}
       {isOpen && (
-        <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 w-[calc(100vw-2rem)] sm:w-[415px] h-[525px] max-h-[82vh] backdrop-blur-3xl bg-white/95 dark:bg-slate-900/95 rounded-2xl shadow-[0_20px_50px_-10px_rgba(0,0,0,0.32)] border border-slate-200/80 dark:border-white/10 flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 fade-in duration-200">
+        <div 
+          ref={chatWindowRef}
+          className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 w-[calc(100vw-2rem)] sm:w-[415px] h-[525px] max-h-[82vh] backdrop-blur-3xl bg-white/95 dark:bg-slate-900/95 rounded-2xl shadow-[0_20px_50px_-10px_rgba(0,0,0,0.32)] border border-slate-200/80 dark:border-white/10 flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 fade-in duration-200"
+        >
           
           {/* macOS Title Bar with Traffic Lights */}
           <div className="px-3.5 py-2.5 bg-slate-100/80 dark:bg-slate-800/70 border-b border-slate-200/70 dark:border-slate-800 flex items-center justify-between select-none shrink-0">
