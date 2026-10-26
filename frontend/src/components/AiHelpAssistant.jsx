@@ -63,7 +63,7 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
     }
   }, []);
 
-  // Cardurile explicative pentru turul pas cu pas
+  // Cardurile explicative pentru turul pas cu pas bazat EXCLUSIV pe ecranele reale ale aplicației
   const onboardingSlides = [
     {
       id: 'welcome',
@@ -73,8 +73,8 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
       subtitle: 'Configurarea completă a firmei în 4 pași simpli',
       isLogo: true,
       description: 'Platforma QR Pontaj include un asistent inteligent permanent în colțul din dreapta-jos. Urmează cei 4 pași de mai jos pentru a configura rapid sediul, tableta Kiosk și lista de angajați:',
-      windowTitle: 'Prezentare Generală • Fluxul în 4 Pași',
-      mockupType: 'welcome',
+      windowTitle: 'Panou Principal • Prezențe Live & Monitorizare',
+      screenshot: '/screenshot_dashboard.png',
       guideSteps: [
         { num: '1', title: 'Punct de Lucru', desc: 'Definești sediul firmei cu adresă și coordonate GPS' },
         { num: '2', title: 'Terminal Kiosk', desc: 'Generezi ecranul cu QR dinamic pe tabletă sau monitor' },
@@ -82,7 +82,7 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
         { num: '4', title: 'Condică ITM & SAGA', desc: 'Exporti condica lunară sau fișierul XML compatibil Saga Soft' }
       ],
       actionLabel: 'Începe cu Pasul 1: Punct de Lucru',
-      actionPath: '/admin/locations?action=new',
+      actionPath: '/admin/locations',
       actionType: 'next',
     },
     {
@@ -94,15 +94,15 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
       icon: MapPin,
       iconBg: 'bg-gradient-to-tr from-indigo-600 to-blue-500 text-white',
       description: 'Înainte de a porni o tabletă Kiosk, definește sediul sau punctul de lucru (ex: Sediu Central, Depozit, Șantier). Fiecare locație are coordonate GPS pentru a preveni pontajul fraudulos din afara clădirii.',
-      windowTitle: 'Puncte de Lucru > Formular Sediu Nou',
-      mockupType: 'locations',
+      windowTitle: 'Puncte de Lucru • Adrese & Rază GPS',
+      screenshot: '/screenshot_locations.png',
       guideSteps: [
         { num: '1', title: 'Deschide Puncte de Lucru', desc: 'Mergi în meniul din stânga la secțiunea „Puncte de Lucru”.' },
         { num: '2', title: 'Apasă butonul de adăugare', desc: 'Fă clic pe butonul albastru „+ Adaugă Punct de Lucru”.' },
         { num: '3', title: 'Completează și salvează', desc: 'Scrie denumirea sediului și adresa fizică (GPS-ul se calibrează automat).' }
       ],
-      actionLabel: 'Creează Punct de Lucru Acum',
-      actionPath: '/admin/locations?action=new',
+      actionLabel: 'Deschide Puncte de Lucru',
+      actionPath: '/admin/locations',
       actionType: 'navigate',
     },
     {
@@ -114,15 +114,15 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
       icon: TabletSmartphone,
       iconBg: 'bg-gradient-to-tr from-emerald-600 to-teal-500 text-white',
       description: 'Kioskul este ecranul montat pe perete la intrarea în sediu. Afișează un cod QR dinamic care se regenerează la fiecare 5 secunde, împiedicând pozele trimise colegilor pe chat.',
-      windowTitle: 'Kiosk-uri QR > Configurare Terminal Tabletă',
-      mockupType: 'kiosks',
+      windowTitle: 'Tablete Kiosk • Configurare Terminal & Securitate',
+      screenshot: '/screenshot_qr.png',
       guideSteps: [
         { num: '1', title: 'Accesează Kiosk-uri QR', desc: 'Mergi la secțiunea „Kiosk-uri QR” și apasă pe „+ Kiosk Nou”.' },
         { num: '2', title: 'Asociază locația', desc: 'Selectează Punctul de Lucru creat la Pasul 1 și numește Kioskul.' },
         { num: '3', title: 'Deschide pe tabletă', desc: 'Copiază linkul securizat și deschide-l pe iPad, tabletă Android sau Smart TV.' }
       ],
-      actionLabel: 'Configurează Kiosk QR Acum',
-      actionPath: '/admin/qr?action=new',
+      actionLabel: 'Deschide Tablete Kiosk',
+      actionPath: '/admin/qr',
       actionType: 'navigate',
     },
     {
@@ -134,14 +134,14 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
       icon: Users,
       iconBg: 'bg-gradient-to-tr from-purple-600 to-pink-500 text-white',
       description: 'Angajații nu au nevoie de conturi complicate sau de instalarea vreunei aplicații. Ei folosesc direct camera foto standard a telefonului personal pentru a scana codul de pe tabletă.',
-      windowTitle: 'Modul HR > Înregistrare Personal & Scanare',
-      mockupType: 'employees',
+      windowTitle: 'Modul HR • Gestiune Salariați & Drepturi',
+      screenshot: '/screenshot_employees.png',
       guideSteps: [
         { num: '1', title: 'Adaugă salariații', desc: 'În „Modul HR (Angajați)” introduci Numele, CNP-ul și norma (8h/zi).' },
         { num: '2', title: 'Scanare cu camera', desc: 'Angajatul deschide camera nativă a telefonului și scanează QR-ul de pe tabletă.' },
         { num: '3', title: 'Confirmare într-o secundă', desc: 'Apasă „Sosire” sau „Plecare”. Ora și perimetrul GPS se înregistrează instant.' }
       ],
-      actionLabel: 'Gestionează Echipa Angajați',
+      actionLabel: 'Deschide Echipa Angajați',
       actionPath: '/admin/employees',
       actionType: 'navigate',
     },
@@ -154,14 +154,14 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
       icon: FileSpreadsheet,
       iconBg: 'bg-gradient-to-tr from-amber-500 to-orange-500 text-white',
       description: 'Platforma centralizează automat fiecare pontaj, calculând orele lucrate, întârzierile și orele suplimentare. Ai acces la condica oficială conformă Art. 119 Codul Muncii și la exportul direct pentru Saga Soft.',
-      windowTitle: 'Rapoarte Pontaj > Condică ITM & Export SAGA',
-      mockupType: 'reports',
+      windowTitle: 'Condică de Pontaj • Raport ITM & Export SAGA',
+      screenshot: '/screenshot_timesheets.png',
       guideSteps: [
         { num: '1', title: 'Consultă prezențele live', desc: 'În „Rapoarte Pontaj” vezi prezența în timp real și situația fiecărui angajat.' },
         { num: '2', title: 'Descarcă Condica ITM', desc: 'Generezi condica lunară oficială în format PDF gata de semnat.' },
         { num: '3', title: 'Export pentru Saga', desc: 'Apeși pe butonul „Export SAGA (XML)” pentru sincronizarea automată cu contabilitatea.' }
       ],
-      actionLabel: 'Vezi Condica de Pontaj Acum',
+      actionLabel: 'Deschide Condica de Pontaj',
       actionPath: '/admin/timesheets',
       actionType: 'navigate',
     }
@@ -963,41 +963,29 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
                     Un ecran Kiosk <strong>nu poate funcționa fără o locație asociată</strong>. Fiecare tabletă montată pe perete trebuie să știe la ce sediu înregistrează pontajele.
                   </p>
 
-                  {/* Mockup Ecran Vizual: Puncte de Lucru */}
+                  {/* Screenshot Real: Puncte de Lucru */}
                   <div className="rounded-2xl border border-slate-300/80 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden shadow-xs">
-                    {/* Mockup Window Title */}
                     <div className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between text-[11px] text-slate-500 font-medium">
                       <div className="flex items-center gap-1.5">
                         <span className="w-2 h-2 rounded-full bg-red-400"></span>
                         <span className="w-2 h-2 rounded-full bg-amber-400"></span>
                         <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-                        <span className="ml-1 font-semibold text-slate-700 dark:text-slate-300">Ecran: Puncte de Lucru (/admin/locations)</span>
+                        <span className="ml-1 font-semibold text-slate-700 dark:text-slate-300">Puncte de Lucru (/admin/locations)</span>
                       </div>
                       <span className="text-[10px] font-bold text-[#007AFF]">Pasul 1</span>
                     </div>
 
-                    {/* Mockup Content */}
-                    <div className="p-3.5 space-y-2.5 bg-slate-50/50 dark:bg-slate-900/50">
-                      <div className="flex items-center justify-between gap-2 p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-                        <div>
-                          <div className="text-[11px] font-bold text-slate-800 dark:text-slate-200">Gestiune Locații</div>
-                          <div className="text-[10px] text-slate-400">Sediul Central, Puncte de Lucru</div>
-                        </div>
-                        <div className="px-3 py-1 rounded-full text-[10px] font-black bg-[#007AFF] text-white shadow-xs animate-pulse whitespace-nowrap shrink-0">
-                          + Adaugă Punct de Lucru
-                        </div>
-                      </div>
-
-                      <div className="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 space-y-1.5 text-[11px]">
-                        <div>
-                          <span className="text-slate-400 font-semibold">Nume Locație:</span>
-                          <span className="ml-1.5 font-bold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-md">Sediul Central</span>
-                        </div>
-                        <div>
-                          <span className="text-slate-400 font-semibold">Adresă Sediu:</span>
-                          <span className="ml-1.5 font-medium text-slate-700 dark:text-slate-300">Str. Principală Nr. 10</span>
-                        </div>
-                      </div>
+                    <div 
+                      className="relative group cursor-pointer overflow-hidden bg-slate-950 flex items-center justify-center p-1"
+                      onClick={() => handleNavigateTo('/admin/locations')}
+                      title="Deschide Puncte de Lucru"
+                    >
+                      <img 
+                        src="/screenshot_locations.png" 
+                        alt="Puncte de Lucru" 
+                        className="w-full h-auto max-h-48 object-contain rounded-xl group-hover:scale-[1.01] transition-transform duration-200"
+                        loading="lazy"
+                      />
                     </div>
                   </div>
 
@@ -1042,33 +1030,29 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
                     Accesați pagina <strong>Tablete Kiosk</strong>, apăsați pe <strong>+ Adaugă Kiosk</strong>, introduceți denumirea și selectați locația creată la Pasul 1.
                   </p>
 
-                  {/* Mockup Ecran Vizual: Formular Kiosk */}
+                  {/* Screenshot Real: Tablete Kiosk */}
                   <div className="rounded-2xl border border-slate-300/80 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden shadow-xs">
                     <div className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between text-[11px] text-slate-500 font-medium">
                       <div className="flex items-center gap-1.5">
                         <span className="w-2 h-2 rounded-full bg-red-400"></span>
                         <span className="w-2 h-2 rounded-full bg-amber-400"></span>
                         <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-                        <span className="ml-1 font-semibold text-slate-700 dark:text-slate-300">Formular: Adăugare Kiosk Nou</span>
+                        <span className="ml-1 font-semibold text-slate-700 dark:text-slate-300">Tablete Kiosk (/admin/qr)</span>
                       </div>
                       <span className="text-[10px] font-bold text-indigo-600">Pasul 2</span>
                     </div>
 
-                    <div className="p-3.5 space-y-2 bg-slate-50/50 dark:bg-slate-900/50 text-[11px]">
-                      <div className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-                        <div className="text-[10px] font-bold text-slate-400 uppercase">Nume Kiosk (Ex: Recepție)</div>
-                        <div className="font-bold text-slate-800 dark:text-slate-200 mt-0.5">Tableta Intrare Principală</div>
-                      </div>
-
-                      <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-300 dark:border-blue-800">
-                        <div className="text-[10px] font-bold text-blue-700 dark:text-blue-300 uppercase">Punct de Lucru (Asociat din Pasul 1)</div>
-                        <div className="font-extrabold text-blue-900 dark:text-blue-100 mt-0.5">✓ Sediul Central (Str. Principală 10)</div>
-                      </div>
-
-                      <div className="flex items-center justify-between p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-                        <span className="text-slate-700 dark:text-slate-300 font-medium">Permite Pontaj cu PIN (opțional)</span>
-                        <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-100 text-emerald-800">ACTIVAT</span>
-                      </div>
+                    <div 
+                      className="relative group cursor-pointer overflow-hidden bg-slate-950 flex items-center justify-center p-1"
+                      onClick={() => handleNavigateTo('/admin/qr')}
+                      title="Deschide Tablete Kiosk"
+                    >
+                      <img 
+                        src="/screenshot_qr.png" 
+                        alt="Tablete Kiosk" 
+                        className="w-full h-auto max-h-48 object-contain rounded-xl group-hover:scale-[1.01] transition-transform duration-200"
+                        loading="lazy"
+                      />
                     </div>
                   </div>
 
@@ -1122,34 +1106,25 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
                     Fiecare Kiosk are un link securizat unic. Apăsați butonul <strong>Copiază Link Tabletă</strong> din tabel și deschideți-l în Safari (iPad), Chrome (Android) sau Smart TV.
                   </p>
 
-                  {/* Mockup Ecran Vizual: Copiere Link */}
+                  {/* Screenshot Real: Terminal Kiosk */}
                   <div className="rounded-2xl border border-slate-300/80 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden shadow-xs">
                     <div className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between text-[11px] text-slate-500 font-medium">
                       <div className="flex items-center gap-1.5">
                         <span className="w-2 h-2 rounded-full bg-red-400"></span>
                         <span className="w-2 h-2 rounded-full bg-amber-400"></span>
                         <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-                        <span className="ml-1 font-semibold text-slate-700 dark:text-slate-300">Tabel Kiosk-uri Active</span>
+                        <span className="ml-1 font-semibold text-slate-700 dark:text-slate-300">Terminal Kiosk Full Screen</span>
                       </div>
                       <span className="text-[10px] font-bold text-emerald-600">Pasul 3</span>
                     </div>
 
-                    <div className="p-3.5 space-y-2 bg-slate-50/50 dark:bg-slate-900/50">
-                      <div className="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-2">
-                        <div>
-                          <div className="text-xs font-bold text-slate-800 dark:text-slate-200">Tableta Intrare Principală</div>
-                          <div className="text-[10px] text-slate-400">Sediul Central &bull; Cod QR Activ</div>
-                        </div>
-                        <div className="px-3 py-1.5 rounded-full text-[10px] font-black bg-blue-600 text-white shadow-sm flex items-center gap-1 whitespace-nowrap shrink-0 animate-bounce">
-                          <Copy size={11} className="shrink-0" />
-                          <span>Copiază Link Tabletă</span>
-                        </div>
-                      </div>
-
-                      <div className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-[10.5px] text-slate-500 flex items-center gap-1.5">
-                        <ExternalLink size={12} className="text-[#007AFF] shrink-0" />
-                        <span className="truncate">https://{tenant?.subdomain || 'firma'}.qr.pontaj.app/kiosk/...</span>
-                      </div>
+                    <div className="relative overflow-hidden bg-slate-950 flex items-center justify-center p-1">
+                      <img 
+                        src="/screenshot_kiosk_display.png" 
+                        alt="Terminal Kiosk" 
+                        className="w-full h-auto max-h-48 object-contain rounded-xl"
+                        loading="lazy"
+                      />
                     </div>
                   </div>
 
@@ -1414,310 +1389,25 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
                       </div>
                     </div>
 
-                    {/* MOCKUP 0: WELCOME OVERVIEW */}
-                    {currentSlide.mockupType === 'welcome' && (
-                      <div className="p-4 sm:p-5 bg-gradient-to-br from-slate-900 via-slate-900 to-blue-950 text-white space-y-3.5">
-                        <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
-                          <div className="flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-                            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-300">Fluxul de Inițiere în 4 Pași Rapizi</span>
-                          </div>
-                          <span className="text-[10px] text-cyan-300 font-semibold">Timp estimat: sub 3 minute</span>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                          <div 
-                            onClick={() => setOnboardingStep(1)} 
-                            className="p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-indigo-400 transition-all cursor-pointer group"
-                          >
-                            <div className="flex items-center gap-2 font-bold text-indigo-300 group-hover:text-white">
-                              <span className="w-5 h-5 rounded-full bg-indigo-500/30 text-indigo-300 flex items-center justify-center text-[11px] font-bold">1</span>
-                              <span>Punct de Lucru</span>
-                            </div>
-                            <p className="text-[11px] text-slate-400 mt-1">Sediul fizic și geolocația GPS obligatorii înainte de Kiosk.</p>
-                          </div>
-
-                          <div 
-                            onClick={() => setOnboardingStep(2)} 
-                            className="p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-emerald-400 transition-all cursor-pointer group"
-                          >
-                            <div className="flex items-center gap-2 font-bold text-emerald-300 group-hover:text-white">
-                              <span className="w-5 h-5 rounded-full bg-emerald-500/30 text-emerald-300 flex items-center justify-center text-[11px] font-bold">2</span>
-                              <span>Terminal Kiosk</span>
-                            </div>
-                            <p className="text-[11px] text-slate-400 mt-1">Ecranul cu cod QR dinamic pe tabletă sau televizor.</p>
-                          </div>
-
-                          <div 
-                            onClick={() => setOnboardingStep(3)} 
-                            className="p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-purple-400 transition-all cursor-pointer group"
-                          >
-                            <div className="flex items-center gap-2 font-bold text-purple-300 group-hover:text-white">
-                              <span className="w-5 h-5 rounded-full bg-purple-500/30 text-purple-300 flex items-center justify-center text-[11px] font-bold">3</span>
-                              <span>Angajați & Pontaj</span>
-                            </div>
-                            <p className="text-[11px] text-slate-400 mt-1">Scanare instantanee cu camera telefonului, fără aplicații.</p>
-                          </div>
-
-                          <div 
-                            onClick={() => setOnboardingStep(4)} 
-                            className="p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-amber-400 transition-all cursor-pointer group"
-                          >
-                            <div className="flex items-center gap-2 font-bold text-amber-300 group-hover:text-white">
-                              <span className="w-5 h-5 rounded-full bg-amber-500/30 text-amber-300 flex items-center justify-center text-[11px] font-bold">4</span>
-                              <span>Condică ITM & SAGA</span>
-                            </div>
-                            <p className="text-[11px] text-slate-400 mt-1">Calcul automat ore lucrate, export Saga XML și PDF oficial.</p>
-                          </div>
-                        </div>
+                    {/* ECRAN REAL DIN APLICAȚIE (SCREENSHOT AUTENTIC 100%) */}
+                    <div 
+                      className="relative group cursor-pointer overflow-hidden bg-slate-950 flex items-center justify-center p-2 rounded-b-2xl border-t border-slate-200/40 dark:border-slate-800/60"
+                      onClick={() => handleSlideAction(currentSlide)}
+                      title="Apasă pentru a deschide ecranul în aplicație"
+                    >
+                      <img 
+                        src={currentSlide.screenshot} 
+                        alt={currentSlide.windowTitle} 
+                        className="w-full h-auto max-h-64 sm:max-h-72 object-contain rounded-xl group-hover:scale-[1.01] transition-transform duration-200"
+                        loading="eager"
+                      />
+                      <div className="absolute inset-0 bg-slate-950/20 group-hover:bg-slate-950/45 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100 rounded-xl">
+                        <span className="px-4 py-2 rounded-full text-xs font-bold bg-[#007AFF] text-white shadow-xl flex items-center gap-1.5 whitespace-nowrap shrink-0">
+                          <span>Deschide Ecranul Real în Aplicație</span>
+                          <ArrowRight size={13} className="shrink-0" />
+                        </span>
                       </div>
-                    )}
-
-                    {/* MOCKUP 1: LOCATIONS */}
-                    {currentSlide.mockupType === 'locations' && (
-                      <div className="p-4 sm:p-5 bg-slate-50 dark:bg-slate-900/90 text-xs space-y-3">
-                        <div className="p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 shadow-sm space-y-3">
-                          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-2">
-                            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                              Formular Adăugare Sediu / Locație
-                            </span>
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
-                              Pasul 1 Obligatoriu
-                            </span>
-                          </div>
-
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div>
-                              <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase mb-1">
-                                1. Denumire Punct de Lucru:
-                              </label>
-                              <div className="px-3 py-2 rounded-xl bg-blue-50/60 dark:bg-slate-900 border border-[#007AFF]/60 font-semibold text-slate-800 dark:text-white text-xs flex items-center gap-2">
-                                <MapPin size={13} className="text-[#007AFF] shrink-0" />
-                                <span>Sediu Central (Birou / Depozit)</span>
-                              </div>
-                            </div>
-
-                            <div>
-                              <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase mb-1">
-                                2. Adresă Fizică (Autocompletare):
-                              </label>
-                              <div className="px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs truncate">
-                                B-dul Unirii nr. 10, București
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1 border-t border-slate-100 dark:border-slate-700/60">
-                            <div className="flex items-center gap-1.5 text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">
-                              <CheckCircle2 size={13} className="shrink-0" />
-                              <span>Geofence GPS: Rază 150m activă automat</span>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => handleSlideAction(currentSlide)}
-                              className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold text-white bg-[#007AFF] hover:bg-blue-600 transition-colors whitespace-nowrap shrink-0 shadow-xs cursor-pointer"
-                            >
-                              <Plus size={13} className="shrink-0" />
-                              <span>Salvează Punctul de Lucru</span>
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Exemplu sediu activ în listă */}
-                        <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/70 dark:bg-slate-800/70 border border-slate-200/60 dark:border-slate-700 text-[11px]">
-                          <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                            <span className="font-bold text-slate-800 dark:text-slate-200">Sediu Central</span>
-                            <span className="text-slate-400">• B-dul Unirii nr. 10</span>
-                          </div>
-                          <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full">
-                            Gata de asociat Kiosk
-                          </span>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* MOCKUP 2: KIOSKS - REAL TABLET DISPLAY (IPAD PRO) */}
-                    {currentSlide.mockupType === 'kiosks' && (
-                      <div className="p-3 sm:p-4 bg-slate-950 flex flex-col items-center justify-center">
-                        {/* Tableta iPad Bezel Realist */}
-                        <div className="w-full max-w-lg rounded-[2rem] border-[5px] sm:border-[6px] border-slate-700 bg-slate-900 shadow-2xl p-2.5 sm:p-3 relative overflow-hidden">
-                          {/* Camera frontală tabletă */}
-                          <div className="w-2.5 h-2.5 rounded-full bg-slate-800 mx-auto mb-2 border border-slate-700/60 shadow-inner"></div>
-
-                          {/* Ecranul Kiosk din interiorul tabletei */}
-                          <div className="rounded-[1.2rem] bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-3 sm:p-4 text-white border border-white/10 relative overflow-hidden flex flex-col justify-between gap-3">
-                            {/* Header Kiosk Bar */}
-                            <div className="flex items-center justify-between border-b border-white/10 pb-2">
-                              <div className="flex items-center gap-2">
-                                <div className="w-6 h-6 rounded-lg bg-white/10 p-0.5 border border-white/20 flex items-center justify-center shrink-0">
-                                  <img src={brandLogoUrl} alt="Logo" className="w-full h-full object-contain rounded-md" />
-                                </div>
-                                <span className="font-bold text-xs tracking-tight text-white truncate">
-                                  {tenant?.name || 'QR Pontaj'} • Terminal Kiosk
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold shrink-0">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                                <span className="whitespace-nowrap">Kiosk Activ</span>
-                              </div>
-                            </div>
-
-                            {/* Corp Kiosk: Ceas Mare stânga + QR Code dreapta */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 items-center gap-3 py-1">
-                              {/* Stânga: Ceas digital și instrucțiune */}
-                              <div className="space-y-1.5 text-center sm:text-left">
-                                <div className="text-[10px] font-bold uppercase tracking-wider text-cyan-400">
-                                  Sediu Central • Intrare Recepție
-                                </div>
-                                <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 shadow-inner">
-                                  <div className="text-2xl sm:text-3xl font-black text-white tracking-tight font-sans drop-shadow-[0_0_15px_rgba(255,255,255,0.25)]">
-                                    08:45:12
-                                  </div>
-                                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
-                                    Luni, 26 Octombrie
-                                  </div>
-                                </div>
-                                <p className="text-[11px] text-slate-300 leading-snug">
-                                  Deschide camera telefonului și apropie ecranul pentru pontaj instant.
-                                </p>
-                              </div>
-
-                              {/* Dreapta: Card QR Alb complet vizibil cu logo badge și laser */}
-                              <div className="flex flex-col items-center justify-center">
-                                <div className="relative p-2.5 rounded-2xl bg-white shadow-2xl flex items-center justify-center overflow-hidden border border-slate-200">
-                                  <QRCodeSVG 
-                                    value="https://pontaj.app/scan" 
-                                    size={100} 
-                                    level="H"
-                                    fgColor="#0f172a"
-                                    className="rounded"
-                                  />
-                                  {/* Laser optic animat */}
-                                  <div 
-                                    className="absolute left-2 right-2 h-[2px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent rounded-full shadow-[0_0_8px_2px_rgba(56,189,248,0.95)] z-20 pointer-events-none"
-                                    style={{ animation: 'smoothQrLaser 2s ease-in-out infinite' }}
-                                  />
-                                </div>
-                                <div className="flex items-center gap-1.5 mt-1.5 text-[10px] font-semibold text-slate-400">
-                                  <ShieldCheck size={12} className="text-emerald-400 shrink-0" />
-                                  <span className="whitespace-nowrap">Cod dinamic • Anti-fraudă la 5s</span>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Footer Kiosk Bar: Compatibilitate tablete */}
-                            <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[10px] text-slate-400">
-                              <span className="truncate">Mod Tabletă Fixă pe perete</span>
-                              <span className="text-cyan-300 font-semibold truncate">iPad Guided Access & Android</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* MOCKUP 3: EMPLOYEES */}
-                    {currentSlide.mockupType === 'employees' && (
-                      <div className="p-4 sm:p-5 bg-slate-50 dark:bg-slate-900/90 text-xs space-y-3">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          {/* Stânga: Admin HR */}
-                          <div className="p-3 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm space-y-2">
-                            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-1.5">
-                              <span className="font-bold text-slate-800 dark:text-slate-200 text-xs">Echipa Angajați</span>
-                              <span className="text-[10px] font-bold text-purple-600 bg-purple-50 dark:bg-purple-950/40 px-2 py-0.5 rounded-full">
-                                Salariați Activi
-                              </span>
-                            </div>
-                            <div className="space-y-1.5 text-[11px]">
-                              <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50 dark:bg-slate-900/50">
-                                <div>
-                                  <div className="font-bold text-slate-800 dark:text-slate-200">Alexandru Popescu</div>
-                                  <div className="text-[10px] text-slate-400">Normă 8h • Operator</div>
-                                </div>
-                                <span className="text-[10px] font-bold text-emerald-600">Gata de pontaj</span>
-                              </div>
-                              <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50 dark:bg-slate-900/50">
-                                <div>
-                                  <div className="font-bold text-slate-800 dark:text-slate-200">Elena Ionescu</div>
-                                  <div className="text-[10px] text-slate-400">Normă 8h • Asistent</div>
-                                </div>
-                                <span className="text-[10px] font-bold text-emerald-600">Gata de pontaj</span>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Dreapta: Telefonul Angajatului */}
-                          <div className="p-3 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white shadow-sm space-y-2 flex flex-col justify-between">
-                            <div className="flex items-center justify-between border-b border-white/20 pb-1.5">
-                              <span className="font-bold text-xs">Telefonul Angajatului</span>
-                              <span className="text-[10px] font-bold bg-white/20 px-2 py-0.5 rounded-full">Cameră Foto</span>
-                            </div>
-                            <div className="space-y-2 py-1">
-                              <div className="text-[11px] text-blue-100">
-                                Bună dimineața, Alexandru! Sediu Central (GPS Validat)
-                              </div>
-                              <button
-                                type="button"
-                                className="w-full py-2 rounded-full font-bold bg-emerald-500 text-white shadow-md text-xs flex items-center justify-center gap-1.5 pointer-events-none"
-                              >
-                                <CheckCircle2 size={13} />
-                                <span>Înregistrează Sosire (08:30)</span>
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* MOCKUP 4: REPORTS */}
-                    {currentSlide.mockupType === 'reports' && (
-                      <div className="p-4 sm:p-5 bg-slate-50 dark:bg-slate-900/90 text-xs space-y-3">
-                        <div className="p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm space-y-2.5">
-                          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-2">
-                            <span className="font-bold text-slate-800 dark:text-slate-200 text-xs">
-                              Condică Centralizată • Evidență Live
-                            </span>
-                            <span className="text-[10px] font-bold text-amber-700 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-full">
-                              Conform ITM Art. 119
-                            </span>
-                          </div>
-
-                          <div className="space-y-1.5 text-[11px]">
-                            <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50 dark:bg-slate-900/50">
-                              <span className="font-bold text-slate-800 dark:text-slate-200">Alexandru Popescu</span>
-                              <span className="text-slate-500">08:30 – 17:00</span>
-                              <span className="font-bold text-blue-600">8.5 ore (+0.5h supl.)</span>
-                              <span className="text-[10px] text-emerald-600 font-semibold">GPS OK</span>
-                            </div>
-                            <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50 dark:bg-slate-900/50">
-                              <span className="font-bold text-slate-800 dark:text-slate-200">Elena Ionescu</span>
-                              <span className="text-slate-500">09:00 – 17:00</span>
-                              <span className="font-bold text-blue-600">8.0 ore (Normă)</span>
-                              <span className="text-[10px] text-emerald-600 font-semibold">GPS OK</span>
-                            </div>
-                          </div>
-
-                          <div className="flex flex-col sm:flex-row items-center justify-end gap-2 pt-1 border-t border-slate-100 dark:border-slate-700">
-                            <button
-                              type="button"
-                              onClick={() => handleSlideAction(currentSlide)}
-                              className="w-full sm:w-auto px-3.5 py-1.5 rounded-full text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-colors whitespace-nowrap shrink-0 flex items-center justify-center gap-1.5 cursor-pointer"
-                            >
-                              <FileSpreadsheet size={13} />
-                              <span>Export SAGA Soft (XML)</span>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleSlideAction(currentSlide)}
-                              className="w-full sm:w-auto px-3.5 py-1.5 rounded-full text-xs font-bold text-white bg-[#007AFF] hover:bg-blue-600 transition-colors whitespace-nowrap shrink-0 flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
-                            >
-                              <ArrowRight size={13} />
-                              <span>Descarcă Condică ITM (PDF)</span>
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
+                    </div>
                   </div>
 
                   {/* GHID PAS CU PAS (3 PAȘI EXPLICAȚI SIMPLU) */}

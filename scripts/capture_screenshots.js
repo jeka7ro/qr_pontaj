@@ -53,32 +53,62 @@ async function capture() {
   await page.screenshot({ path: path.join(__dirname, '../screenshot_live_table.png') });
   console.log('Saved screenshot_live_table.png');
 
-  // 2. Employees Module (HR)
+  // 2. Locations Module
+  try {
+    await page.goto('http://localhost:5188/admin/locations', { waitUntil: 'networkidle2' });
+    await page.evaluate(() => localStorage.setItem('qrp_gdpr_acknowledged', 'true'));
+    await new Promise(r => setTimeout(r, 2000));
+    await page.screenshot({ path: path.join(__dirname, '../screenshot_locations.png') });
+    await page.screenshot({ path: path.join(__dirname, '../frontend/public/screenshot_locations.png') });
+    console.log('Saved screenshot_locations.png');
+  } catch (e) {
+    console.log('Locations capture error:', e.message);
+  }
+
+  // 3. QR / Kiosks Admin Module
+  try {
+    await page.goto('http://localhost:5188/admin/qr', { waitUntil: 'networkidle2' });
+    await page.evaluate(() => localStorage.setItem('qrp_gdpr_acknowledged', 'true'));
+    await new Promise(r => setTimeout(r, 2000));
+    await page.screenshot({ path: path.join(__dirname, '../screenshot_qr.png') });
+    await page.screenshot({ path: path.join(__dirname, '../frontend/public/screenshot_qr.png') });
+    console.log('Saved screenshot_qr.png');
+  } catch (e) {
+    console.log('QR capture error:', e.message);
+  }
+
+  // 4. Employees Module (HR)
   await page.goto('http://localhost:5188/admin/employees', { waitUntil: 'networkidle2' });
   await page.evaluate(() => localStorage.setItem('qrp_gdpr_acknowledged', 'true'));
   await new Promise(r => setTimeout(r, 2500));
   await page.screenshot({ path: path.join(__dirname, '../screenshot_employees.png') });
+  await page.screenshot({ path: path.join(__dirname, '../frontend/public/screenshot_employees.png') });
   console.log('Saved screenshot_employees.png');
 
-  // 3. Timesheet Report
+  // 5. Timesheet Report
   await page.goto('http://localhost:5188/admin/timesheets', { waitUntil: 'networkidle2' });
   await page.evaluate(() => localStorage.setItem('qrp_gdpr_acknowledged', 'true'));
   await new Promise(r => setTimeout(r, 2500));
   await page.screenshot({ path: path.join(__dirname, '../screenshot_timesheets.png') });
+  await page.screenshot({ path: path.join(__dirname, '../frontend/public/screenshot_timesheets.png') });
   console.log('Saved screenshot_timesheets.png');
 
-  // 4. Kiosk Display (Tablet screen)
+  // 6. Kiosk Display (Tablet screen)
   try {
     await page.goto('http://localhost:5188/kiosk/4/3', { waitUntil: 'networkidle2' });
     await new Promise(r => setTimeout(r, 2500));
     await page.screenshot({ path: path.join(__dirname, '../screenshot_kiosk_display.png') });
+    await page.screenshot({ path: path.join(__dirname, '../frontend/public/screenshot_kiosk_display.png') });
     console.log('Saved screenshot_kiosk_display.png');
   } catch (e) {
     console.log('Kiosk display error:', e.message);
   }
 
+  // Also copy dashboard and live table to frontend/public
+  await page.screenshot({ path: path.join(__dirname, '../frontend/public/screenshot_dashboard.png') });
+
   await browser.close();
-  console.log('All screenshots captured successfully!');
+  console.log('All authentic application screenshots captured successfully!');
 }
 
 capture().catch(err => {
