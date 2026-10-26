@@ -45,7 +45,7 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
   // Stare pentru modalul de Onboarding la prima încărcare
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [onboardingStep, setOnboardingStep] = useState(0);
-  const [dontShowAgain, setDontShowAgain] = useState(true);
+  const [dontShowAgain, setDontShowAgain] = useState(false);
 
   // Verificare la prima încărcare a aplicației (dacă utilizatorul nu a văzut încă ghidul)
   useEffect(() => {
@@ -167,6 +167,7 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
 
   const handleOpenOnboarding = () => {
     setOnboardingStep(0);
+    setDontShowAgain(false);
     setShowOnboarding(true);
   };
 
