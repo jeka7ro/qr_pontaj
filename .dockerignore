@@ -1,0 +1,11 @@
+# Ignore large video and presentation files from Docker/Railpack snapshot
+Promo_TikTok_Meta_Pontaj_App.mp4
+*.pdf
+*.xlsx
+*.csv
+promo
+assets
+backend/uploads
+backend/backups
+.DS_Store
+*.log
