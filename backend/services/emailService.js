@@ -53,10 +53,58 @@ function ensurePublicUrl(url, subdomain = null) {
 }
 
 /**
+ * Extrage și sanitizează toate adresele de email valide dintr-un string sau array
+ * Suportă delimitatori multipli: punct și virgulă (;), virgulă (,), slash (/), bară (|), spații, newline
+ */
+function parseRecipients(to) {
+  if (!to) return [];
+
+  const rawList = [];
+  if (Array.isArray(to)) {
+    to.forEach(item => {
+      if (typeof item === 'string') {
+        rawList.push(item);
+      } else if (item && typeof item === 'object' && item.email) {
+        rawList.push(item.email);
+      }
+    });
+  } else if (typeof to === 'string') {
+    rawList.push(to);
+  } else if (to && typeof to === 'object' && to.email) {
+    rawList.push(to.email);
+  }
+
+  // Regex email conform standardelor
+  const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
+  const seen = new Set();
+  const validEmails = [];
+
+  for (const item of rawList) {
+    if (!item) continue;
+    const parts = String(item).split(/[;,\/\|\n\r\s]+/);
+    for (let part of parts) {
+      part = part.trim().replace(/^<|>$/g, '').replace(/^['"]|['"]$/g, '').toLowerCase();
+      if (part && emailRegex.test(part) && !seen.has(part)) {
+        seen.add(part);
+        validEmails.push(part);
+      }
+    }
+  }
+
+  return validEmails;
+}
+
+/**
  * Trimitere email generic prin Brevo
+ * Dacă sunt specificate mai multe adrese (ex: separate prin punct și virgulă sau array),
+ * trimite către TOATE adresele de email valide.
  */
 async function sendEmail({ to, subject, html, text, senderName }) {
-  const recipients = Array.isArray(to) ? to : [{ email: to }];
+  const recipients = parseRecipients(to);
+
+  if (!recipients || recipients.length === 0) {
+    throw new Error('Nu a fost specificată nicio adresă de email validă.');
+  }
 
   // REGULĂ STRICTĂ: Nu trimitem NICIODATĂ emailuri reale către adrese mock, test sau demo
   const isMockAddress = (addr) => {
@@ -75,12 +123,6 @@ async function sendEmail({ to, subject, html, text, senderName }) {
     );
   };
 
-  const isMock = recipients.some(r => isMockAddress(typeof r === 'string' ? r : r.email));
-  if (isMock) {
-    console.log(`[EmailService] Adresă mock/test detectată (${JSON.stringify(recipients)}). Emailul NU este trimis către Brevo.`);
-    return { success: true, messageId: 'mock-suppressed-' + Date.now() };
-  }
-
   const apiKey = process.env.BREVO_API_KEY;
   const senderEmail = process.env.BREVO_SENDER_EMAIL || 'contact@pontaj.app';
   const name = senderName || process.env.BREVO_SENDER_NAME || 'Pontaj.app';
@@ -90,41 +132,65 @@ async function sendEmail({ to, subject, html, text, senderName }) {
     throw new Error('Serviciul de email nu este configurat corespunzator.');
   }
 
-  const payload = {
-    sender: {
-      name: name,
-      email: senderEmail
-    },
-    to: recipients,
-    subject: subject,
-    htmlContent: html,
-    textContent: text || subject
-  };
+  const results = [];
+  const errors = [];
 
-  try {
-    const response = await fetch(BREVO_API_URL, {
-      method: 'POST',
-      headers: {
-        'accept': 'application/json',
-        'api-key': apiKey,
-        'content-type': 'application/json'
-      },
-      body: JSON.stringify(payload)
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.error('[EmailService] Brevo API Error:', data);
-      throw new Error(data.message || 'Eroare la trimiterea emailului prin Brevo.');
+  // Expediem către fiecare adresă extrasă individual pentru livrare sigură și tracking independent
+  for (const singleEmail of recipients) {
+    if (isMockAddress(singleEmail)) {
+      console.log(`[EmailService] Adresă mock/test detectată (${singleEmail}). Emailul NU este trimis către Brevo.`);
+      results.push({ email: singleEmail, success: true, messageId: 'mock-suppressed-' + Date.now() });
+      continue;
     }
 
-    console.log(`[EmailService] Email trimis cu succes catre ${typeof to === 'string' ? to : JSON.stringify(to)}! MessageId: ${data.messageId}`);
-    return { success: true, messageId: data.messageId };
-  } catch (error) {
-    console.error('[EmailService] Eroare la trimitere:', error);
-    throw error;
+    const payload = {
+      sender: {
+        name: name,
+        email: senderEmail
+      },
+      to: [{ email: singleEmail }],
+      subject: subject,
+      htmlContent: html,
+      textContent: text || subject
+    };
+
+    try {
+      const response = await fetch(BREVO_API_URL, {
+        method: 'POST',
+        headers: {
+          'accept': 'application/json',
+          'api-key': apiKey,
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error(`[EmailService] Brevo API Error pentru ${singleEmail}:`, data);
+        errors.push(`${singleEmail}: ${data.message || 'Eroare Brevo'}`);
+      } else {
+        console.log(`[EmailService] Email trimis cu succes catre ${singleEmail}! MessageId: ${data.messageId}`);
+        results.push({ email: singleEmail, success: true, messageId: data.messageId });
+      }
+    } catch (sendErr) {
+      console.error(`[EmailService] Eroare la trimitere catre ${singleEmail}:`, sendErr);
+      errors.push(`${singleEmail}: ${sendErr.message}`);
+    }
   }
+
+  if (results.length === 0 && errors.length > 0) {
+    throw new Error(`Eroare Brevo: ${errors.join(' | ')}`);
+  }
+
+  return {
+    success: true,
+    messageId: results.map(r => r.messageId).join(','),
+    recipients: results.map(r => r.email),
+    errors: errors.length > 0 ? errors : undefined,
+    count: results.length
+  };
 }
 
 /**
@@ -795,6 +861,7 @@ async function sendLeadNotificationToAdmin({
 
 module.exports = {
   sendEmail,
+  parseRecipients,
   sendWelcomeEmail,
   sendPasswordResetEmail,
   sendPasswordChangedEmail,

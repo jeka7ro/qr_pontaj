@@ -63,6 +63,22 @@ const renderCountryFlag = (c) => {
   return <Globe size={12} className="text-slate-400" />;
 };
 
+// Helper extragere adrese email multiple (separate prin ; , / sau spatii)
+const getLeadEmails = (emailStr) => {
+  if (!emailStr) return [];
+  const parts = String(emailStr).split(/[;,\/\|\n\r\s]+/);
+  const seen = new Set();
+  const list = [];
+  for (let p of parts) {
+    p = p.trim().replace(/^<|>$/g, '').replace(/^['"]|['"]$/g, '').toLowerCase();
+    if (p && p.includes('@') && !seen.has(p)) {
+      seen.add(p);
+      list.push(p);
+    }
+  }
+  return list;
+};
+
 export default function HarveySdrView({ onConvertToTenant }) {
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -263,8 +279,16 @@ export default function HarveySdrView({ onConvertToTenant }) {
     let clicked = 0;
     let bounced = 0;
     for (const lead of leads) {
-      const em = lead.email ? lead.email.toLowerCase().trim() : '';
-      const t = tracking.byEmail ? tracking.byEmail[em] : null;
+      const emailList = getLeadEmails(lead.email);
+      let t = null;
+      if (tracking.byEmail) {
+        for (const em of emailList) {
+          if (tracking.byEmail[em]) {
+            t = tracking.byEmail[em];
+            break;
+          }
+        }
+      }
       if (t?.clicks > 0) clicked++;
       if (t?.opens > 0) opened++;
       if (t?.bounces > 0) bounced++;
@@ -275,8 +299,16 @@ export default function HarveySdrView({ onConvertToTenant }) {
   // Filtrare lead-uri
   const filteredLeads = useMemo(() => {
     return leads.filter((lead) => {
-      const em = lead.email ? lead.email.toLowerCase().trim() : '';
-      const emailTracking = tracking.byEmail ? tracking.byEmail[em] : null;
+      const emailList = getLeadEmails(lead.email);
+      let emailTracking = null;
+      if (tracking.byEmail) {
+        for (const em of emailList) {
+          if (tracking.byEmail[em]) {
+            emailTracking = tracking.byEmail[em];
+            break;
+          }
+        }
+      }
 
       const matchesStatus =
         statusFilter === 'all'
@@ -456,7 +488,8 @@ export default function HarveySdrView({ onConvertToTenant }) {
   };
 
   const handleInitiateSend = (lead) => {
-    if (!lead.email) {
+    const emailList = getLeadEmails(lead.email);
+    if (emailList.length === 0) {
       setSelectedLeadForReview(lead);
       showToast('Adăugați o adresă de email validă înainte de trimitere.', 'error');
       return;
@@ -477,7 +510,7 @@ export default function HarveySdrView({ onConvertToTenant }) {
       if (!res.ok || !data.success) {
         throw new Error(data.message || 'Trimiterea a eșuat.');
       }
-      showToast(`Email trimis cu succes către ${leadToSendConfirm.company_name}!`);
+      showToast(data.message || `Email trimis cu succes către ${leadToSendConfirm.company_name}!`);
       setLeadToSendConfirm(null);
       fetchLeadsAndStats();
     } catch (err) {
@@ -1016,20 +1049,40 @@ export default function HarveySdrView({ onConvertToTenant }) {
 
                       {/* Contact */}
                       <td className="py-3 px-4">
-                        <div className="flex flex-col text-xs">
-                          {lead.email ? (
-                            <span className="font-semibold text-slate-700 dark:text-slate-300 truncate max-w-[200px]">
-                              {lead.email}
-                            </span>
-                          ) : (
-                            <span className="text-amber-600 dark:text-amber-400 font-medium whitespace-nowrap shrink-0">
-                              Email negăsit
-                            </span>
-                          )}
+                        <div className="flex flex-col text-xs gap-1">
+                          {(() => {
+                            const emailList = getLeadEmails(lead.email);
+                            if (emailList.length === 0) {
+                              return (
+                                <span className="text-amber-600 dark:text-amber-400 font-medium whitespace-nowrap shrink-0">
+                                  Email negăsit
+                                </span>
+                              );
+                            }
+                            if (emailList.length === 1) {
+                              return (
+                                <span className="font-semibold text-slate-700 dark:text-slate-300 truncate max-w-[210px]" title={emailList[0]}>
+                                  {emailList[0]}
+                                </span>
+                              );
+                            }
+                            return (
+                              <div className="flex flex-col gap-0.5" title={emailList.join(', ')}>
+                                {emailList.map((em, idx) => (
+                                  <span key={idx} className="font-semibold text-slate-700 dark:text-slate-300 text-[11px] truncate max-w-[210px]">
+                                    {em}
+                                  </span>
+                                ))}
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap shrink-0">
+                                  Trimitere la ambele ({emailList.length})
+                                </span>
+                              </div>
+                            );
+                          })()}
                           {lead.phone && (
-                            <span className="text-slate-400 flex items-center gap-1 mt-0.5">
-                              <Phone size={10} />
-                              <span>{lead.phone}</span>
+                            <span className="text-slate-400 flex items-center gap-1 mt-0.5" title={lead.phone}>
+                              <Phone size={10} className="shrink-0" />
+                              <span className="truncate max-w-[210px]">{lead.phone}</span>
                             </span>
                           )}
                         </div>
@@ -1045,8 +1098,16 @@ export default function HarveySdrView({ onConvertToTenant }) {
                       {/* Status */}
                       <td className="py-3 px-4 text-center">
                         {(() => {
-                          const em = lead.email ? lead.email.toLowerCase().trim() : '';
-                          const emailTracking = tracking.byEmail ? tracking.byEmail[em] : null;
+                          const emailList = getLeadEmails(lead.email);
+                          let emailTracking = null;
+                          if (tracking.byEmail) {
+                            for (const em of emailList) {
+                              if (tracking.byEmail[em]) {
+                                emailTracking = tracking.byEmail[em];
+                                break;
+                              }
+                            }
+                          }
 
                           if (lead.status === 'converted') {
                             return (
@@ -1350,30 +1411,59 @@ export default function HarveySdrView({ onConvertToTenant }) {
               </button>
             </div>
 
-            <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-100 dark:border-slate-800/80 space-y-2 text-xs">
-              <div className="flex items-center justify-between">
-                <span className="text-slate-500 dark:text-slate-400">Companie:</span>
-                <span className="font-semibold text-slate-900 dark:text-white truncate max-w-[210px]">
-                  {leadToSendConfirm.company_name}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-slate-500 dark:text-slate-400">Destinatar:</span>
-                <span className="font-semibold text-emerald-600 dark:text-emerald-400 truncate max-w-[210px]">
-                  {leadToSendConfirm.email}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-slate-500 dark:text-slate-400">Subiect:</span>
-                <span className="font-medium text-slate-800 dark:text-slate-200 truncate max-w-[210px]">
-                  {leadToSendConfirm.draft_subject || 'Pontaj digital QR'}
-                </span>
-              </div>
-            </div>
+            {(() => {
+              const recipientList = getLeadEmails(leadToSendConfirm.email);
+              const isMultiple = recipientList.length > 1;
 
-            <div className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-              Ești sigur că vrei să expediezi acest email către <strong>{leadToSendConfirm.company_name}</strong>? Mesajul va fi livrat direct pe adresa de contact salvată.
-            </div>
+              return (
+                <>
+                  <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-100 dark:border-slate-800/80 space-y-2.5 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-500 dark:text-slate-400">Companie:</span>
+                      <span className="font-semibold text-slate-900 dark:text-white truncate max-w-[210px]">
+                        {leadToSendConfirm.company_name}
+                      </span>
+                    </div>
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="text-slate-500 dark:text-slate-400 whitespace-nowrap shrink-0">
+                        {isMultiple ? `Destinatari (${recipientList.length}):` : 'Destinatar:'}
+                      </span>
+                      <div className="flex flex-col items-end gap-1 max-w-[230px]">
+                        {recipientList.length > 0 ? (
+                          recipientList.map((em, idx) => (
+                            <span key={idx} className="font-semibold text-emerald-600 dark:text-emerald-400 truncate max-w-full">
+                              {em}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="font-semibold text-slate-400">
+                            {leadToSendConfirm.email}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-500 dark:text-slate-400">Subiect:</span>
+                      <span className="font-medium text-slate-800 dark:text-slate-200 truncate max-w-[210px]">
+                        {leadToSendConfirm.draft_subject || 'Pontaj digital QR'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                    {isMultiple ? (
+                      <>
+                        Ești sigur că vrei să expediezi acest email către <strong>{leadToSendConfirm.company_name}</strong>? Mesajul va fi livrat garantat către <strong>toate cele {recipientList.length} adrese</strong> de contact ({recipientList.join(', ')}).
+                      </>
+                    ) : (
+                      <>
+                        Ești sigur că vrei să expediezi acest email către <strong>{leadToSendConfirm.company_name}</strong>? Mesajul va fi livrat direct pe adresa de contact salvată.
+                      </>
+                    )}
+                  </div>
+                </>
+              );
+            })()}
 
             <div className="flex items-center justify-end gap-2.5 pt-2">
               <button

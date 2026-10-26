@@ -337,7 +337,13 @@ router.post('/leads/:id/send', checkAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const updated = await harveyService.sendLeadEmail(id);
-    res.json({ success: true, message: 'Emailul a fost trimis cu succes prin Brevo!', lead: updated });
+    const count = updated.sendDetails?.count || 1;
+    const recipientsList = updated.sendDetails?.recipients || [];
+    const message = count > 1
+      ? `Email expediat cu succes către toate cele ${count} adrese (${recipientsList.join(', ')})!`
+      : `Emailul a fost trimis cu succes prin Brevo${recipientsList[0] ? ` către ${recipientsList[0]}` : ''}!`;
+
+    res.json({ success: true, message, lead: updated });
   } catch (err) {
     console.error('Eroare trimitere email lead:', err);
     res.status(500).json({ success: false, message: err.message });

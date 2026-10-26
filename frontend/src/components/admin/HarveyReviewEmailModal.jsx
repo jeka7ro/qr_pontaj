@@ -370,13 +370,37 @@ export default function HarveyReviewEmailModal({ isOpen, onClose, lead, onUpdate
               <span className="font-bold text-slate-500 dark:text-slate-400 block mb-1">DATE DE CONTACT</span>
               <div className="flex items-center gap-2 mt-1">
                 <input
-                  type="email"
+                  type="text"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="contact@companie.be"
+                  placeholder="contact@companie.ro (sau multiple separate prin ;)"
                   className="w-full px-3 h-8 text-xs rounded-full border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-900 text-slate-800 dark:text-white outline-none"
                 />
               </div>
+              {(() => {
+                const parsedList = (email || '')
+                  .split(/[;,\/\|\n\r\s]+/)
+                  .map((s) => s.trim().replace(/^<|>$/g, '').toLowerCase())
+                  .filter((s) => s && s.includes('@'));
+                if (parsedList.length > 1) {
+                  return (
+                    <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                      <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap shrink-0">
+                        Trimitere la ambele ({parsedList.length}):
+                      </span>
+                      {parsedList.map((addr, idx) => (
+                        <span
+                          key={idx}
+                          className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 whitespace-nowrap shrink-0"
+                        >
+                          {addr}
+                        </span>
+                      ))}
+                    </div>
+                  );
+                }
+                return null;
+              })()}
               {lead.website && (
                 <a
                   href={lead.website.startsWith('http') ? lead.website : `https://${lead.website}`}

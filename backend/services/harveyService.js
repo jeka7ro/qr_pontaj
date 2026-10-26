@@ -2175,6 +2175,11 @@ const harveyService = {
       throw new Error('Acest lead nu are o adresă de email validă salvată');
     }
 
+    const validEmails = emailService.parseRecipients(lead.email);
+    if (validEmails.length === 0) {
+      throw new Error(`Adresa de email specificată nu este validă: "${lead.email}"`);
+    }
+
     if (lead.status === 'sent') {
       throw new Error('Emailul a fost deja trimis către acest lead');
     }
@@ -2196,9 +2201,9 @@ const harveyService = {
     // Generăm HTML stilizat la nivelul landing page-ului
     const { subject, html } = this.formatLeadEmailHtml(lead, false);
 
-    // Trimitere efectivă prin Brevo
-    await emailService.sendEmail({
-      to: lead.email,
+    // Trimitere efectivă prin Brevo către toate adresele valide (inclusiv multiple)
+    const sendResult = await emailService.sendEmail({
+      to: validEmails,
       subject: subject,
       html: html,
       text: lead.draft_body,
@@ -2214,7 +2219,7 @@ const harveyService = {
       RETURNING *;
     `, [leadId]);
 
-    return updated.rows[0];
+    return { ...updated.rows[0], sendDetails: sendResult };
   },
 
   // Trimitere email de test pentru previzualizare către administrator
@@ -2227,12 +2232,13 @@ const harveyService = {
     const settings = settingsRes.rows[0] || { sender_name: 'QR Pontaj', sender_email: 'contact@pontaj.app' };
 
     const recipient = targetEmail || process.env.ADMIN_NOTIFICATION_EMAIL || 'jeka7ro@gmail.com';
+    const validRecipients = emailService.parseRecipients(recipient);
 
     // Generăm HTML stilizat cu marcaj de test
     const { subject, html } = this.formatLeadEmailHtml(lead, true);
 
-    await emailService.sendEmail({
-      to: recipient,
+    const sendResult = await emailService.sendEmail({
+      to: validRecipients.length > 0 ? validRecipients : recipient,
       subject: subject,
       html: html,
       text: lead.draft_body,
@@ -2240,7 +2246,7 @@ const harveyService = {
       senderEmail: settings.sender_email || 'contact@pontaj.app'
     });
 
-    return { success: true, recipient };
+    return { success: true, recipient: validRecipients.join(', ') || recipient, sendResult };
   },
 
   // Import în lot lead-uri din CSV / Excel / text
