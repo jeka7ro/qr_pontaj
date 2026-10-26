@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useSearchParams, useLocation } from 'react-router-dom';
 import { TabletSmartphone, Plus, Edit2, Trash2, MapPin, Search, ChevronLeft, ChevronRight, X, AlertCircle, ExternalLink, Lock, Unlock, Monitor, Smartphone, ScanLine, Copy, CheckCheck, Sparkles, Tv } from 'lucide-react';
 import ConfirmModal from '../../components/ConfirmModal';
 import IpadGuideModal from '../../components/IpadGuideModal';
@@ -6,6 +7,8 @@ import { useTranslation } from '../../utils/i18n';
 
 export default function QrSelector({ tenant, themeColor }) {
   const { t } = useTranslation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
   const [kiosks, setKiosks] = useState([]);
   const [locations, setLocations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -41,13 +44,16 @@ export default function QrSelector({ tenant, themeColor }) {
   }, [tenant.id]);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('action') === 'new' || params.get('new') === 'true') {
+    if (searchParams.get('action') === 'new' || searchParams.get('new') === 'true') {
       setShowAddForm(true);
       setEditingId(null);
       setFormData({ name: '', location_id: '', kiosk_pin: '', kiosk_show_photo: true, kiosk_orientation: 'horizontal' });
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('action');
+      newParams.delete('new');
+      setSearchParams(newParams, { replace: true });
     }
-  }, []);
+  }, [searchParams, location.search]);
 
   const savePortalSettings = async () => {
     setSavingPortal(true);

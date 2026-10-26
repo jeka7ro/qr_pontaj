@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useSearchParams, useLocation } from 'react-router-dom';
 import { Plus, Edit2, Trash2, MapPin, Search, ChevronLeft, ChevronRight, X, AlertCircle } from 'lucide-react';
 import Autocomplete from 'react-google-autocomplete';
 import { useTranslation } from '../utils/i18n.jsx';
 
 export default function LocationsList({ tenant, themeColor }) {
   const { t } = useTranslation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
   const [locations, setLocations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -28,13 +31,16 @@ export default function LocationsList({ tenant, themeColor }) {
   }, [tenant.id]);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('action') === 'new' || params.get('new') === 'true') {
+    if (searchParams.get('action') === 'new' || searchParams.get('new') === 'true') {
       setShowAddForm(true);
       setEditingId(null);
       setFormData({ name: '', address: '', qr_mode: 'DYNAMIC' });
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('action');
+      newParams.delete('new');
+      setSearchParams(newParams, { replace: true });
     }
-  }, []);
+  }, [searchParams, location.search]);
 
   const fetchLocations = async () => {
     try {

@@ -35,13 +35,6 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
   const [devicePlatform, setDevicePlatform] = useState('ipad'); // 'ipad' | 'android' | 'tv'
   const [copiedLink, setCopiedLink] = useState(false);
 
-  // Stare pentru formularul rapid inline de creare Punct de Lucru direct din chat
-  const [inlineLocationFormOpen, setInlineLocationFormOpen] = useState(false);
-  const [inlineLocName, setInlineLocName] = useState('');
-  const [inlineLocAddress, setInlineLocAddress] = useState('');
-  const [isSavingLocation, setIsSavingLocation] = useState(false);
-  const [inlineLocError, setInlineLocError] = useState(null);
-
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
@@ -53,11 +46,12 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
   const messagesEndRef = useRef(null);
 
   const quickQuestions = [
-    { label: 'Du-mă la Puncte de Lucru (+ Formular)', action: 'locations_new', icon: MapPin },
-    { label: 'Creează Punct de Lucru Direct', action: 'inline_loc', icon: Plus },
-    { label: 'Cum conectez un Kiosk pe tabletă?', icon: TabletSmartphone },
-    { label: 'Adaugă Tableta Kiosk (+ Formular)', action: 'qr_new', icon: TabletSmartphone },
-    { label: 'Ghid iPad Acces Ghidat', icon: ShieldCheck },
+    { label: 'Pasul 1: Creare Punct de Lucru', action: 'locations_new', icon: MapPin },
+    { label: 'Pasul 2: Adăugare Kiosk Nou', action: 'qr_new', icon: TabletSmartphone },
+    { label: 'Ghid Vizual (4 Pași)', action: 'guide', icon: BookOpen },
+    { label: 'Cum conectez un Kiosk?', icon: TabletSmartphone },
+    { label: 'Configurare iPad Guided Access', action: 'ipad_guide', icon: ShieldCheck },
+    { label: 'Cum se pontează un angajat?', icon: Smartphone },
   ];
 
   const scrollToBottom = () => {
@@ -150,76 +144,12 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
       handleNavigateTo('/admin/locations?action=new');
     } else if (q.action === 'qr_new') {
       handleNavigateTo('/admin/qr?action=new');
-    } else if (q.action === 'inline_loc') {
-      setInlineLocationFormOpen(true);
-      setMessages(prev => [
-        ...prev,
-        {
-          role: 'user',
-          text: 'Vreau să creez un Punct de Lucru acum.'
-        },
-        {
-          role: 'assistant',
-          text: 'Sigur! Introduceți numele punctului de lucru și adresa (opțional) în formularul rapid de mai jos, apoi apăsați Salvează:',
-          actionType: 'show_inline_create'
-        }
-      ]);
+    } else if (q.action === 'guide') {
+      setActiveTab('visualGuide');
+    } else if (q.action === 'ipad_guide') {
+      handleSend('Cum configurez Guided Access pe iPad pentru modul Kiosk?');
     } else {
       handleSend(q.label);
-    }
-  };
-
-  // Creare directă Punct de Lucru din interiorul asistentului AI (fără părăsirea paginii)
-  const handleQuickCreateLocation = async () => {
-    if (!inlineLocName.trim()) {
-      setInlineLocError('Numele punctului de lucru este obligatoriu.');
-      return;
-    }
-    if (!tenant?.id) {
-      setInlineLocError('Nu s-a putut identifica compania (tenant id lipsă).');
-      return;
-    }
-
-    setIsSavingLocation(true);
-    setInlineLocError(null);
-
-    try {
-      const apiUrl = import.meta.env.VITE_API_URL || `${window.location.protocol}//${window.location.hostname}:5001`;
-      const res = await fetch(`${apiUrl}/api/tenants/${tenant.id}/locations`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: inlineLocName.trim(),
-          address: inlineLocAddress.trim(),
-          qr_mode: 'DYNAMIC'
-        })
-      });
-
-      if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(errData.error || 'Nu s-a putut salva locația.');
-      }
-
-      const savedLoc = await res.json();
-      const createdName = savedLoc.name || inlineLocName.trim();
-
-      setInlineLocName('');
-      setInlineLocAddress('');
-      setInlineLocationFormOpen(false);
-
-      setMessages(prev => [
-        ...prev,
-        {
-          role: 'assistant',
-          text: `Punctul de lucru **"${createdName}"** a fost creat cu succes în baza de date!\n\nAcum că ai cel puțin o locație activă, Kiosk-ul poate fi adăugat. Vrei să te duc la pagina Tablete Kiosk pentru a-l asocia și salva?`,
-          actionType: 'location_created',
-          createdLocationName: createdName
-        }
-      ]);
-    } catch (err) {
-      setInlineLocError(err.message || 'Eroare la salvarea punctului de lucru.');
-    } finally {
-      setIsSavingLocation(false);
     }
   };
 
@@ -448,7 +378,7 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
                               </div>
                             )}
 
-                            {/* Card Proactiv de Acțiuni Directe (Navigare & Creare Inline) */}
+                            {/* Card Proactiv de Acțiuni Directe — Pași Succesivi */}
                             {showInteractiveCard && (
                               <div className="mt-3 pt-3 border-t border-slate-200/70 dark:border-slate-700/70 space-y-2.5">
                                 <div className="p-3.5 rounded-2xl bg-gradient-to-br from-blue-50/90 to-indigo-50/60 dark:from-blue-950/40 dark:to-indigo-950/30 border border-blue-200 dark:border-blue-800/60 shadow-xs space-y-2.5">
@@ -456,7 +386,7 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
                                     <div className="flex items-center gap-1.5">
                                       <Sparkles size={14} className="text-[#007AFF] shrink-0" />
                                       <span className="text-xs font-bold text-slate-900 dark:text-white whitespace-nowrap shrink-0">
-                                        Acțiuni Directe Recomandate
+                                        Pași Succesivi de Configurare
                                       </span>
                                     </div>
                                     <button
@@ -470,11 +400,22 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
                                   </div>
 
                                   <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-normal">
-                                    Vrei să te ajut să creezi un Punct de Lucru chiar acum? Alege acțiunea:
+                                    Apasă pe butonul pasului dorit pentru a deschide direct fereastra de creare:
                                   </p>
 
-                                  {/* Butoanele de acțiune directă */}
-                                  <div className="flex flex-col gap-1.5">
+                                  {/* Pasul 1: Creare Punct de Lucru */}
+                                  <div className="p-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 space-y-2 shadow-xs">
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-100 text-[#007AFF] dark:bg-blue-900/60 dark:text-blue-300 whitespace-nowrap shrink-0">
+                                        Pasul 1 (Obligatoriu)
+                                      </span>
+                                      <span className="text-xs font-bold text-slate-900 dark:text-white whitespace-nowrap shrink-0">
+                                        Punct de Lucru
+                                      </span>
+                                    </div>
+                                    <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-normal">
+                                      Fără un sediu salvat în sistem, Kiosk-ul nu poate fi creat.
+                                    </p>
                                     <button
                                       type="button"
                                       onClick={() => handleNavigateTo('/admin/locations?action=new')}
@@ -482,116 +423,47 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
                                     >
                                       <div className="flex items-center gap-2">
                                         <MapPin size={13} className="shrink-0" />
-                                        <span className="whitespace-nowrap shrink-0">1. Du-mă la Puncte de Lucru (+ Deschide Formular)</span>
+                                        <span className="whitespace-nowrap shrink-0">Deschide Fereastra Creare Punct de Lucru</span>
                                       </div>
                                       <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform shrink-0" />
                                     </button>
+                                  </div>
 
-                                    <button
-                                      type="button"
-                                      onClick={() => setInlineLocationFormOpen(prev => !prev)}
-                                      className="w-full flex items-center justify-between px-3.5 py-2 rounded-full text-xs font-bold bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-300 dark:border-slate-700 hover:border-[#007AFF] hover:text-[#007AFF] transition-colors whitespace-nowrap shrink-0 shadow-2xs cursor-pointer"
-                                    >
-                                      <div className="flex items-center gap-2">
-                                        <Plus size={13} className="text-[#007AFF] shrink-0" />
-                                        <span className="whitespace-nowrap shrink-0">2. Creează Punct de Lucru Direct Aici în Chat</span>
-                                      </div>
-                                      <span className="text-[10px] text-slate-400 whitespace-nowrap shrink-0 font-normal">
-                                        {inlineLocationFormOpen ? 'Închide ▲' : 'Deschide ▼'}
+                                  {/* Pasul 2: Adăugare Tabletă Kiosk */}
+                                  <div className="p-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 space-y-2 shadow-xs">
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300 whitespace-nowrap shrink-0">
+                                        Pasul 2
                                       </span>
-                                    </button>
-
+                                      <span className="text-xs font-bold text-slate-900 dark:text-white whitespace-nowrap shrink-0">
+                                        Tabletă Kiosk
+                                      </span>
+                                    </div>
+                                    <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-normal">
+                                      După salvarea sediului, adaugă tableta și asociaz-o locației.
+                                    </p>
                                     <button
                                       type="button"
                                       onClick={() => handleNavigateTo('/admin/qr?action=new')}
-                                      className="w-full flex items-center justify-between px-3.5 py-2 rounded-full text-xs font-bold bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:border-[#007AFF] hover:text-[#007AFF] transition-colors whitespace-nowrap shrink-0 shadow-2xs cursor-pointer"
+                                      className="w-full flex items-center justify-between px-3.5 py-2 rounded-full text-xs font-bold bg-white dark:bg-slate-900 text-slate-800 dark:text-white border border-slate-300 dark:border-slate-600 hover:border-[#007AFF] hover:text-[#007AFF] transition-colors whitespace-nowrap shrink-0 shadow-2xs cursor-pointer group"
                                     >
                                       <div className="flex items-center gap-2">
                                         <TabletSmartphone size={13} className="text-indigo-600 shrink-0" />
-                                        <span className="whitespace-nowrap shrink-0">3. Mergi la Tablete Kiosk (+ Adaugă Kiosk)</span>
+                                        <span className="whitespace-nowrap shrink-0">Deschide Fereastra Creare Kiosk</span>
                                       </div>
-                                      <ArrowRight size={13} className="shrink-0" />
+                                      <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform shrink-0" />
                                     </button>
                                   </div>
 
-                                  {/* Formular Inline în Chat pentru Creare Rapidă Locație */}
-                                  {inlineLocationFormOpen && (
-                                    <div className="mt-2 p-3 bg-white dark:bg-slate-900 rounded-2xl border border-blue-200 dark:border-blue-900/60 space-y-2 shadow-xs">
-                                      <div className="flex items-center justify-between">
-                                        <span className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                                          <MapPin size={12} className="text-[#007AFF]" />
-                                          Creare Rapidă Punct de Lucru
-                                        </span>
-                                        <button 
-                                          type="button" 
-                                          onClick={() => setInlineLocationFormOpen(false)}
-                                          className="text-slate-400 hover:text-slate-600 cursor-pointer"
-                                        >
-                                          <X size={12} />
-                                        </button>
-                                      </div>
-
-                                      <div className="space-y-1.5">
-                                        <div>
-                                          <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider block mb-0.5">
-                                            Nume Punct de Lucru *
-                                          </label>
-                                          <input
-                                            type="text"
-                                            value={inlineLocName}
-                                            onChange={(e) => setInlineLocName(e.target.value)}
-                                            placeholder="ex: Sediul Central, Depozit, Magazin..."
-                                            className="w-full px-3 py-1.5 rounded-full text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-[#007AFF]"
-                                          />
-                                        </div>
-
-                                        <div>
-                                          <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider block mb-0.5">
-                                            Adresă (opțional)
-                                          </label>
-                                          <input
-                                            type="text"
-                                            value={inlineLocAddress}
-                                            onChange={(e) => setInlineLocAddress(e.target.value)}
-                                            placeholder="ex: Str. Victoriei nr. 12, București"
-                                            className="w-full px-3 py-1.5 rounded-full text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-[#007AFF]"
-                                          />
-                                        </div>
-
-                                        {inlineLocError && (
-                                          <p className="text-[11px] text-rose-500 font-medium">{inlineLocError}</p>
-                                        )}
-
-                                        <div className="flex items-center justify-end gap-2 pt-1">
-                                          <button
-                                            type="button"
-                                            onClick={() => setInlineLocationFormOpen(false)}
-                                            className="px-3 py-1 rounded-full text-xs text-slate-500 hover:text-slate-700 whitespace-nowrap shrink-0 cursor-pointer"
-                                          >
-                                            Anulează
-                                          </button>
-                                          <button
-                                            type="button"
-                                            onClick={handleQuickCreateLocation}
-                                            disabled={isSavingLocation || !inlineLocName.trim()}
-                                            className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold bg-[#007AFF] text-white hover:bg-blue-600 transition-colors whitespace-nowrap shrink-0 shadow-xs disabled:opacity-50 cursor-pointer"
-                                          >
-                                            {isSavingLocation ? (
-                                              <>
-                                                <Loader2 size={12} className="animate-spin shrink-0" />
-                                                <span>Se salvează...</span>
-                                              </>
-                                            ) : (
-                                              <>
-                                                <Check size={12} className="shrink-0" />
-                                                <span>Salvează Punctul de Lucru</span>
-                                              </>
-                                            )}
-                                          </button>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  )}
+                                  <div className="pt-0.5 text-center">
+                                    <button
+                                      type="button"
+                                      onClick={() => setActiveTab('visualGuide')}
+                                      className="text-[11px] font-semibold text-[#007AFF] hover:underline cursor-pointer whitespace-nowrap shrink-0"
+                                    >
+                                      Ghid complet ecrane & blocare Guided Access →
+                                    </button>
+                                  </div>
                                 </div>
                               </div>
                             )}
