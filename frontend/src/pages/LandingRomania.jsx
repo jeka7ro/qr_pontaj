@@ -95,6 +95,7 @@ export default function LandingRomania() {
   const [companyVerified, setCompanyVerified] = useState(null);
   const [isPersonalAccount, setIsPersonalAccount] = useState(false);
   const [formSubmitError, setFormSubmitError] = useState('');
+  const [formSubmitLoginUrl, setFormSubmitLoginUrl] = useState(null);
   const [isSubmittingForm, setIsSubmittingForm] = useState(false);
   const [subSubmitted, setSubSubmitted] = useState(false);
   const [assignedTempPassword, setAssignedTempPassword] = useState(null);
@@ -110,6 +111,7 @@ export default function LandingRomania() {
     setCuiError(null);
     setCompanyVerified(null);
     setFormSubmitError('');
+    setFormSubmitLoginUrl(null);
     let planData = {
       id: 'standard',
       name: 'Standard (1 – 50 salariați)',
@@ -451,6 +453,7 @@ export default function LandingRomania() {
       } else {
         const errorMsg = data.error || data.message || 'Nu s-a putut activa contul. Verifică datele introduse sau încearcă din nou.';
         setFormSubmitError(errorMsg);
+        setFormSubmitLoginUrl(data.loginUrl || null);
       }
     } catch (err) {
       console.warn('Eroare apel demo-request API:', err);
@@ -1830,9 +1833,20 @@ export default function LandingRomania() {
 
                   {/* Eroare Salvare Formular */}
                   {formSubmitError && (
-                    <div className="p-3 bg-rose-50 border border-rose-200 rounded-2xl text-xs text-rose-900 flex items-start gap-2 animate-fade-in shadow-2xs">
-                      <AlertCircle size={15} className="text-rose-600 shrink-0 mt-0.5" />
-                      <span className="leading-snug font-medium">{formSubmitError}</span>
+                    <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl text-xs text-rose-900 flex flex-col gap-2 animate-fade-in shadow-2xs">
+                      <div className="flex items-start gap-2">
+                        <AlertCircle size={15} className="text-rose-600 shrink-0 mt-0.5" />
+                        <span className="leading-snug font-medium">{formSubmitError}</span>
+                      </div>
+                      {formSubmitLoginUrl && (
+                        <a
+                          href={formSubmitLoginUrl}
+                          className="inline-flex items-center justify-center gap-1.5 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-full font-bold text-xs shadow-xs transition-colors whitespace-nowrap shrink-0 self-start"
+                        >
+                          <Lock size={12} className="shrink-0" />
+                          <span>Conectează-te în contul existent &rarr;</span>
+                        </a>
+                      )}
                     </div>
                   )}
 

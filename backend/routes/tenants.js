@@ -247,7 +247,18 @@ router.get('/', async (req, res) => {
           ORDER BY u.id ASC LIMIT 1
         )) as contact_email,
         COALESCE((SELECT count(*)::int FROM qrp_employees e WHERE e.tenant_id = t.id AND (e.is_archived = false OR e.is_archived IS NULL)), 0) as active_employees_count,
-        COALESCE((SELECT count(*)::int FROM qrp_employees e WHERE e.tenant_id = t.id), 0) as total_employees_count
+        COALESCE((SELECT count(*)::int FROM qrp_employees e WHERE e.tenant_id = t.id), 0) as total_employees_count,
+        COALESCE((
+          SELECT true 
+          FROM qrp_tenants t2 
+          WHERE t2.id != t.id 
+            AND (
+              (t.terms_accepted_ip IS NOT NULL AND t.terms_accepted_ip NOT IN ('127.0.0.1', '::1', 'localhost') AND t2.terms_accepted_ip = t.terms_accepted_ip)
+              OR (t.vat_number IS NOT NULL AND LENGTH(REGEXP_REPLACE(t.vat_number, '[^0-9]', '', 'g')) >= 4 AND REGEXP_REPLACE(t2.vat_number, '[^0-9]', '', 'g') = REGEXP_REPLACE(t.vat_number, '[^0-9]', '', 'g'))
+              OR (t.contact_phone IS NOT NULL AND LENGTH(REGEXP_REPLACE(t.contact_phone, '[^0-9]', '', 'g')) >= 9 AND RIGHT(REGEXP_REPLACE(t2.contact_phone, '[^0-9]', '', 'g'), 9) = RIGHT(REGEXP_REPLACE(t.contact_phone, '[^0-9]', '', 'g'), 9))
+            )
+          LIMIT 1
+        ), false) as is_suspect_duplicate
       FROM qrp_tenants t
       LEFT JOIN qrp_sites s ON s.tenant_id = t.id
       ORDER BY t.created_at DESC

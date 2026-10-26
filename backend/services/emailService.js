@@ -668,13 +668,16 @@ async function sendLeadNotificationToAdmin({
   clientIp,
   dpaAccepted,
   initialPassword,
-  loginUrl
+  loginUrl,
+  isSuspectDuplicate,
+  duplicateReason
 }) {
   const adminRecipient = process.env.ADMIN_NOTIFICATION_EMAIL || process.env.BREVO_SENDER_EMAIL || 'jeka7ro@gmail.com';
   const cleanPhone = phone ? String(phone).replace(/[^0-9+]/g, '') : '';
   const waPhone = cleanPhone.startsWith('0') ? '4' + cleanPhone : cleanPhone.replace('+', '');
   const priceDisplay = planPrice ? `${planPrice} €` : '5.00 €';
-  const subject = `[Lead Nou ${mode === 'subscribe' ? 'ABONAMENT' : 'DEMO'}] ${companyName || 'Companie'} (${employeesCount || 10} ang. • ${priceDisplay}) — ${contactName || 'Persoană'} (${phone || 'Fără tel'})`;
+  const dupPrefix = isSuspectDuplicate ? '[SUSPECT DUPLICAT] ' : '';
+  const subject = `${dupPrefix}[Lead Nou ${mode === 'subscribe' ? 'ABONAMENT' : 'DEMO'}] ${companyName || 'Companie'} (${employeesCount || 10} ang. • ${priceDisplay}) — ${contactName || 'Persoană'} (${phone || 'Fără tel'})`;
   const baseDomain = process.env.BASE_DOMAIN || 'qr.pontaj.app';
   const superadminUrl = `https://${baseDomain}/admin/dashboard`;
   const tenantUrl = loginUrl || (subdomain ? `https://${subdomain}.${baseDomain}/admin/login` : `https://qr.pontaj.app/login`);
@@ -720,6 +723,15 @@ async function sendLeadNotificationToAdmin({
           <!-- Detalii Lead -->
           <tr>
             <td style="padding: 32px 28px;">
+              ${isSuspectDuplicate ? `
+              <div style="background-color: #fef2f2; border: 2px solid #ef4444; border-radius: 12px; padding: 14px 18px; margin-bottom: 24px;">
+                <div style="font-size: 13px; font-weight: 800; color: #991b1b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">
+                  ALERTA FRAUDA / DUPLICAT DEMO
+                </div>
+                <div style="font-size: 12px; color: #b91c1c; font-weight: 600; line-height: 1.5;">
+                  ${duplicateReason || 'Același IP, CUI sau număr de telefon a fost detectat pe conturi anterioare.'}
+                </div>
+              </div>` : ''}
               <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 14px; margin-bottom: 24px;">
                 <tr>
                   <td style="padding: 20px;">

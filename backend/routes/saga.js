@@ -60,7 +60,15 @@ router.get('/export', async (req, res) => {
       ORDER BY full_name, t.created_at ASC
     `;
 
-    const result = await db.query(query, [month, year, id]);
+    // Verificăm dacă tenantul se află în mod Demo
+    const tenantRes = await db.query('SELECT name, is_demo, subscription_status FROM qrp_tenants WHERE id = $1', [id]);
+    const tData = tenantRes.rows[0];
+    const isDemo = Boolean(
+      tData?.is_demo === true || 
+      tData?.subscription_status === 'DEMO' || 
+      tData?.subscription_status === 'PENDING_SUBSCRIPTION' ||
+      tData?.subscription_status !== 'ACTIVE'
+    );
 
     // Format 1: CENTRALIZATOR LUNAR SALARII SAGA & EXCEL
     if (exportType === 'summary' || exportType === 'centralizator') {
@@ -80,6 +88,9 @@ router.get('/export', async (req, res) => {
 
       // Header SAGA Centralizator Salarii
       let csv = '\uFEFF'; // UTF-8 BOM pentru deschidere directă corectă în Excel fără caractere stricate
+      if (isDemo) {
+        csv += `# CONT DEMONSTRATIV PONTAJ.APP — PĂSTRAT EXCLUSIV PENTRU TESTARE • NECONFORM PENTRU AUDIT ITM SAU SALARII OFICIALE\n`;
+      }
       csv += ['Marca', 'CNP', 'Nume_Salariat', 'Functie', 'Zile_Lucrate', 'Ore_Normale', 'Ore_Noapte', 'Ore_Weekend', 'Ore_Suplimentare', 'Total_Ore'].join(sep) + '\n';
 
       for (const empId of Object.keys(byEmp)) {
@@ -143,6 +154,9 @@ router.get('/export', async (req, res) => {
     // Format 2 (Implicit): EVENIMENTE BRUTE PONTAJ ELECTRONIC SAGA C (Ceasuri / Dispozitive Pontaj)
     // Format compatibil cu SAGA C -> Diverse -> Import pontaj din fisiere
     let csv = '\uFEFF'; // UTF-8 BOM
+    if (isDemo) {
+      csv += `# CONT DEMONSTRATIV PONTAJ.APP — PĂSTRAT EXCLUSIV PENTRU TESTARE • NECONFORM PENTRU AUDIT ITM SAU SALARII OFICIALE\n`;
+    }
     csv += ['Marca', 'CNP', 'Nume_Salariat', 'Data', 'Ora', 'Sens', 'Tip'].join(sep) + '\n';
 
     result.rows.forEach(row => {

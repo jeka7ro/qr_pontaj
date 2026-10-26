@@ -449,6 +449,134 @@ router.post('/demo-request', async (req, res) => {
     const saltRounds = 10;
     const passwordHash = await bcrypt.hash(finalPassword, saltRounds);
 
+    // =========================================================================
+    // ANTIFRAUDĂ & PROTECȚIE DEMO MULTIPLU (Regulile CUI unic, Email unic, Telefon unic)
+    // =========================================================================
+    if (isDemo) {
+      // 1. Regula EMAIL UNIC: Nu permitem crearea unui nou demo pe o adresă existentă
+      const emailTenantCheck = await client.query(`
+        SELECT u.id, u.email, u.tenant_id, t.name as tenant_name, t.subdomain, t.demo_expires_at, t.subscription_status 
+        FROM qrp_users u 
+        LEFT JOIN qrp_tenants t ON u.tenant_id = t.id 
+        WHERE LOWER(u.email) = LOWER($1) 
+        LIMIT 1
+      `, [cleanEmail]);
+
+      if (emailTenantCheck.rows.length > 0) {
+        const eu = emailTenantCheck.rows[0];
+        const baseDom = process.env.BASE_DOMAIN || 'qr.pontaj.app';
+        const targetHost = eu.subdomain ? `https://${eu.subdomain}.${baseDom}` : `https://${baseDom}`;
+        const loginUrl = `${targetHost}/admin/login?email=${encodeURIComponent(cleanEmail)}`;
+        const isExpired = eu.demo_expires_at && new Date(eu.demo_expires_at) < new Date();
+
+        if (isExpired) {
+          return res.status(409).json({
+            error: `Adresa de email ${cleanEmail} a beneficiat deja de perioada demo gratuită de 15 zile (expirată la ${new Date(eu.demo_expires_at).toLocaleDateString('ro-RO')}). Pentru a continua accesul în contul companiei ${eu.tenant_name || ''}, te rugăm să te conectezi și să activezi un abonament.`,
+            loginUrl,
+            alreadyHasDemo: true
+          });
+        } else {
+          return res.status(409).json({
+            error: `Ai deja un cont demo activ asociat adresei de email ${cleanEmail}${eu.demo_expires_at ? ` (valabil până la ${new Date(eu.demo_expires_at).toLocaleDateString('ro-RO')})` : ''}. Te rugăm să te conectezi în contul existent.`,
+            loginUrl,
+            alreadyHasDemo: true
+          });
+        }
+      }
+
+      // 2. Regula TELEFON UNIC: Fiecare număr beneficiază de o singură perioadă demo
+      const digitsOnlyPhone = cleanPhone.replace(/\D/g, '');
+      if (digitsOnlyPhone.length >= 9) {
+        const phoneLast9 = digitsOnlyPhone.slice(-9);
+        const phoneCheck = await client.query(`
+          SELECT t.id, t.name, t.subdomain, t.contact_email, t.contact_phone, t.demo_expires_at 
+          FROM qrp_tenants t 
+          WHERE RIGHT(REGEXP_REPLACE(COALESCE(t.contact_phone, ''), '[^0-9]', '', 'g'), 9) = $1 
+             OR RIGHT(REGEXP_REPLACE(COALESCE(t.anaf_phone, ''), '[^0-9]', '', 'g'), 9) = $1 
+          LIMIT 1
+        `, [phoneLast9]);
+
+        if (phoneCheck.rows.length > 0) {
+          const pt = phoneCheck.rows[0];
+          if (pt.contact_email && pt.contact_email.toLowerCase() !== cleanEmail.toLowerCase()) {
+            return res.status(409).json({
+              error: `Numărul de telefon introdus (${cleanPhone}) a fost deja utilizat pentru activarea unei perioade demonstrative de 15 zile (compania ${pt.name}). Fiecare număr beneficiază de o singură perioadă demo gratuită. Pentru asistență sau activare abonament, te rugăm să contactezi suportul Pontaj.app.`
+            });
+          }
+        }
+      }
+
+      // 3. Regula CUI UNIC (1 singur demo per companie)
+      if (!isPhysical && cleanCui) {
+        const digitsOnlyCui = cleanCui.replace(/\D/g, '');
+        if (digitsOnlyCui.length >= 4) {
+          const cuiCheck = await client.query(`
+            SELECT id, name, subdomain, contact_email, demo_expires_at, subscription_status 
+            FROM qrp_tenants 
+            WHERE REGEXP_REPLACE(COALESCE(vat_number, ''), '[^0-9]', '', 'g') = $1 
+            LIMIT 1
+          `, [digitsOnlyCui]);
+
+          if (cuiCheck.rows.length > 0) {
+            const ct = cuiCheck.rows[0];
+            const isSameEmail = ct.contact_email && ct.contact_email.toLowerCase() === cleanEmail.toLowerCase();
+            const isExpired = ct.demo_expires_at && new Date(ct.demo_expires_at) < new Date();
+            const baseDom = process.env.BASE_DOMAIN || 'qr.pontaj.app';
+            const targetHost = ct.subdomain ? `https://${ct.subdomain}.${baseDom}` : `https://${baseDom}`;
+            const loginUrl = `${targetHost}/admin/login?email=${encodeURIComponent(cleanEmail)}`;
+
+            if (isSameEmail) {
+              if (isExpired) {
+                return res.status(409).json({
+                  error: `Compania ${ct.name} (CUI: ${cleanCui}) a beneficiat deja de perioada demo gratuită de 15 zile (expirată la ${new Date(ct.demo_expires_at).toLocaleDateString('ro-RO')}). Pentru a continua accesul, te rugăm să te conectezi și să activezi un abonament.`,
+                  loginUrl,
+                  alreadyHasDemo: true
+                });
+              } else {
+                return res.status(409).json({
+                  error: `Compania ${ct.name} are deja un cont demo activ până la data de ${new Date(ct.demo_expires_at).toLocaleDateString('ro-RO')}. Te rugăm să te conectezi în contul existent.`,
+                  loginUrl,
+                  alreadyHasDemo: true
+                });
+              }
+            } else {
+              // Altă persoană / alt email încearcă să creeze demo pentru aceeași firmă
+              let maskedEmail = 'administratorul existent';
+              if (ct.contact_email && ct.contact_email.includes('@')) {
+                const [uP, dP] = ct.contact_email.split('@');
+                const maskedU = uP.length > 2 ? uP[0] + '***' + uP[uP.length - 1] : uP[0] + '***';
+                maskedEmail = `${maskedU}@${dP}`;
+              }
+
+              return res.status(409).json({
+                error: `Compania ${ct.name} (CUI: ${cleanCui}) figurează deja înregistrată în platformă cu adresa de contact ${maskedEmail}. Fiecare companie are un singur spațiu de lucru dedicat. Te rugăm să contactezi administratorul existent al firmei pentru a primi acces sau suportul Pontaj.app.`
+              });
+            }
+          }
+        }
+      }
+    }
+
+    // Regula 4: Detecție IP suspect de duplicat
+    let isSuspectDuplicate = false;
+    let duplicateReason = null;
+    if (clientIp && !['127.0.0.1', '::1', 'localhost'].includes(clientIp)) {
+      const ipMatches = await client.query(`
+        SELECT id, name, created_at, contact_email 
+        FROM qrp_tenants 
+        WHERE terms_accepted_ip = $1 
+        LIMIT 3
+      `, [clientIp]);
+      if (ipMatches.rows.length > 0) {
+        isSuspectDuplicate = true;
+        duplicateReason = `Același IP (${clientIp}) detectat anterior la: ${ipMatches.rows.map(r => r.name).join(', ')}`;
+      }
+    }
+
+    const finalNotesWithDup = isSuspectDuplicate 
+      ? (finalNotes ? `${finalNotes} • [SUSPECT DUPLICAT: ${duplicateReason}]` : `[SUSPECT DUPLICAT: ${duplicateReason}]`)
+      : finalNotes;
+
     await client.query('BEGIN');
 
     // 1. Verificăm dacă userul există deja
@@ -612,7 +740,7 @@ router.post('/demo-request', async (req, res) => {
         cleanPhone || null,
         cleanAnafPhone || null,
         cleanEmail,
-        finalNotes || null,
+        finalNotesWithDup || null,
         subStatus,
         seats,
         pricePerEmployee,
@@ -742,7 +870,9 @@ router.post('/demo-request', async (req, res) => {
       clientIp: clientIp,
       dpaAccepted: true,
       initialPassword: finalPassword,
-      loginUrl: loginUrl
+      loginUrl: loginUrl,
+      isSuspectDuplicate,
+      duplicateReason
     }).catch(adminMailErr => console.warn('[DemoRequest] Notificare SuperAdmin error:', adminMailErr.message));
 
     // Generăm token JWT pentru autentificare instantă în panoul tenant

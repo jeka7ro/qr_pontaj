@@ -788,6 +788,11 @@ const EmployeeProfile = ({ tenant, themeColor, employeeId, onClose }) => {
               <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-4">
                 {t('qrScannedByTabletNote')}
               </p>
+              {tenant?.is_demo && (
+                <div className="mt-3 px-3 py-1 rounded-full bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 text-[10px] font-bold tracking-wider uppercase border border-amber-200 dark:border-amber-800 whitespace-nowrap shrink-0">
+                  Cont Demonstrativ &bull; Neconform ITM
+                </div>
+              )}
             </div>
 
             {/* Action buttons */}

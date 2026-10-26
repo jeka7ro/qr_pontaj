@@ -791,6 +791,14 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
     );
   };
 
+  // Helper pentru determinarea statutului Demo al companiei
+  const isDemoTenant = Boolean(
+    tenant?.is_demo === true || 
+    tenant?.subscription_status === 'DEMO' || 
+    tenant?.subscription_status === 'PENDING_SUBSCRIPTION' ||
+    (!tenant?.subscription_status && !tenant?.has_active_subscription)
+  );
+
   // 1. Export Excel Centralizator (Total per Angajat)
   const handleExportSummary = ({ search } = {}) => {
     const list = getFilteredEmployeeSummaries(search);
@@ -845,7 +853,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Total Angajați");
-    const fileName = `Pontaj_Total_Angajati_${startDate}_${endDate}.xlsx`;
+    const fileName = `${isDemoTenant ? 'DEMO_' : ''}Pontaj_Total_Angajati_${startDate}_${endDate}.xlsx`;
     XLSX.writeFile(wb, fileName);
   };
 
@@ -884,7 +892,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Detaliat pe Zile");
-    const fileName = `Pontaj_Detaliat_Zile_${startDate}_${endDate}.xlsx`;
+    const fileName = `${isDemoTenant ? 'DEMO_' : ''}Pontaj_Detaliat_Zile_${startDate}_${endDate}.xlsx`;
     XLSX.writeFile(wb, fileName);
   };
 
@@ -961,7 +969,7 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
     XLSX.utils.book_append_sheet(wb, wsSummary, "Total Angajați");
     XLSX.utils.book_append_sheet(wb, wsDetailed, "Detaliat pe Zile");
 
-    const fileName = `Pontaj_Complet_${startDate}_${endDate}.xlsx`;
+    const fileName = `${isDemoTenant ? 'DEMO_' : ''}Pontaj_Complet_${startDate}_${endDate}.xlsx`;
     XLSX.writeFile(wb, fileName);
   };
 
@@ -986,8 +994,10 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
       "Ora Începere Program (Intrare)": row.first_in ? new Date(row.first_in.timestamp).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '-',
       "Ora Sfârșit Program (Ieșire)": row.last_out ? new Date(row.last_out.timestamp).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '-',
       "Total Ore Lucrate": row.total_time_str,
-      "Temei Legal": "Art. 119 Legea 53/2003",
-      "Certificare": "Pontaj Electronic Certificat QR Pontaj",
+      "Temei Legal": isDemoTenant ? "DEMO (Fără Valoare Legală)" : "Art. 119 Legea 53/2003",
+      "Certificare": isDemoTenant 
+        ? "CONT DEMONSTRATIV — NECONFORM PENTRU CONTROL ITM (NECESITĂ ABONAMENT ACTIV)" 
+        : "Pontaj Electronic Certificat QR Pontaj",
       "Semnătură Salariat": ""
     }));
 
@@ -1001,14 +1011,14 @@ export default function TimesheetReport({ tenant, themeColor, employeeId = null 
       { wch: 28 },
       { wch: 28 },
       { wch: 18 },
-      { wch: 22 },
-      { wch: 36 },
+      { wch: 24 },
+      { wch: 45 },
       { wch: 20 }
     ];
 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Condica ITM Art.119");
-    const fileName = `Condica_Prezenta_ITM_Art119_${startDate}_${endDate}.xlsx`;
+    const fileName = `${isDemoTenant ? 'DEMO_' : ''}Condica_Prezenta_ITM_Art119_${startDate}_${endDate}.xlsx`;
     XLSX.writeFile(wb, fileName);
   };
 
