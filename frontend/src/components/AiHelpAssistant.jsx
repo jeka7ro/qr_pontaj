@@ -514,31 +514,24 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
               </button>
             </div>
 
-            {/* Window Mode Switcher (macOS Segmented Control) */}
-            <div className="flex items-center bg-slate-200/70 dark:bg-slate-700/60 p-0.5 rounded-full border border-slate-300/40 dark:border-slate-600/40 shrink-0">
+            {/* Window Title or Back to Chat */}
+            {activeTab === 'chat' ? (
+              <div className="flex items-center gap-1.5 shrink-0">
+                <Bot size={13} className="text-[#007AFF] shrink-0" />
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-100 whitespace-nowrap shrink-0">
+                  Asistent AI
+                </span>
+              </div>
+            ) : (
               <button
+                type="button"
                 onClick={() => setActiveTab('chat')}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all whitespace-nowrap shrink-0 cursor-pointer ${
-                  activeTab === 'chat'
-                    ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
+                className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors whitespace-nowrap shrink-0 cursor-pointer shadow-2xs"
               >
-                <Bot size={12} className="text-[#007AFF] shrink-0" />
-                <span className="whitespace-nowrap shrink-0">Chat AI</span>
+                <ChevronLeft size={13} className="shrink-0 text-[#007AFF]" />
+                <span className="whitespace-nowrap shrink-0">Înapoi la Chat AI</span>
               </button>
-              <button
-                onClick={() => setActiveTab('visualGuide')}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all whitespace-nowrap shrink-0 cursor-pointer ${
-                  activeTab === 'visualGuide'
-                    ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
-              >
-                <BookOpen size={12} className="text-[#007AFF] shrink-0" />
-                <span className="whitespace-nowrap shrink-0">Ghid Vizual (4 Pași)</span>
-              </button>
-            </div>
+            )}
 
             {/* Window Status Indicator & Tour Trigger */}
             <div className="flex items-center gap-2 shrink-0">
