@@ -72,13 +72,16 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
       subtitle: 'Asistentul tău dedicat este gata să te ajute 24/7',
       isLogo: true,
       description: 'Platforma QR Pontaj include un asistent inteligent permanent în colțul din dreapta-jos. Te ghidează pas cu pas în configurarea tabletelor, adăugarea locațiilor și gestionarea prezenței.',
+      screenshot: '/screenshot_dashboard.png',
+      screenshotTitle: 'Panou Principal • Prezențe Live & Monitorizare',
       highlights: [
         'Ghid pas cu pas oricând ai nevoie, direct din colțul ecranului',
         'Configurare automată Kiosk pentru Apple iPad, Android sau Smart TV',
         'Răspunsuri prompte la legislație, ITM, pontaj și rapoarte de salarizare'
       ],
-      actionLabel: 'Începe Ghidul Pas cu Pas',
-      actionType: 'next',
+      actionLabel: 'Deschide Panoul Principal',
+      actionPath: '/admin/dashboard',
+      actionType: 'navigate',
     },
     {
       id: 'locations',
@@ -89,6 +92,8 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
       icon: MapPin,
       iconBg: 'bg-gradient-to-tr from-indigo-600 to-blue-500 text-white',
       description: 'Înainte de a porni un ecran sau o tabletă, definește punctele de lucru (ex: Sediu Central, Depozit sau Șantier). Fiecare punct de lucru are o adresă și coordonate GPS pentru validarea prezenței.',
+      screenshot: '/ro_dash_overview.png',
+      screenshotTitle: 'Puncte de Lucru • Adrese & Rază GPS',
       highlights: [
         'Organizare pe sedii, sucursale, depozite sau puncte de lucru mobile',
         'Validare automată a perimetrului GPS la fiecare scanare',
@@ -107,6 +112,8 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
       icon: TabletSmartphone,
       iconBg: 'bg-gradient-to-tr from-emerald-600 to-teal-500 text-white',
       description: 'Creează un Kiosk asociat punctului de lucru și copiază linkul securizat. Îl poți deschide pe orice tabletă (iPad sau Android) ori pe un televizor sau monitor montat la intrare.',
+      screenshot: '/screenshot_kiosk_display.png',
+      screenshotTitle: 'Terminal Kiosk • Cod QR Dinamic & Standby',
       highlights: [
         'Cod QR dinamic care se regenerează la fiecare 5 secunde anti-fraudă',
         'Nu permite folosirea de capturi de ecran sau trimiterea pozelor pe chat',
@@ -125,6 +132,8 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
       icon: Users,
       iconBg: 'bg-gradient-to-tr from-purple-600 to-pink-500 text-white',
       description: 'Adaugă lista de angajați cu CNP/ID și norma de lucru. Pentru pontaj, angajații scanează simplu codul QR de pe Kiosk cu camera nativă a telefonului lor, fără a instala nimic.',
+      screenshot: '/screenshot_employees.png',
+      screenshotTitle: 'Gestiune Angajați • Drepturi Acces & Scanare',
       highlights: [
         'Fără aplicații greoaie descărcate din magazinele de aplicații',
         'Pontaj instantaneu (Sosire, Plecare, Pauză) cu marcaj orar și GPS',
@@ -143,6 +152,8 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
       icon: FileSpreadsheet,
       iconBg: 'bg-gradient-to-tr from-amber-500 to-orange-500 text-white',
       description: 'Platforma calculează automat orele lucrate, întârzierile și orele suplimentare. Poți descărca condica lunară în format PDF/Excel sau exporta direct fișierul compatibil Saga Soft.',
+      screenshot: '/screenshot_timesheets.png',
+      screenshotTitle: 'Condică de Pontaj • Grafice, ITM & Export SAGA',
       highlights: [
         'Condică de prezență oficială gata pentru semnat și controale ITM',
         'Export nativ pentru Saga Soft printr-un singur clic',
@@ -1303,7 +1314,7 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
           onClick={handleCloseOnboarding}
         >
           <div 
-            className="relative w-full max-w-xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]"
+            className="relative w-full max-w-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header Modal */}
@@ -1383,6 +1394,71 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
                     {currentSlide.description}
                   </p>
 
+                  {/* SCREENSHOT / PREVIZUALIZARE VIZUALĂ ECRAN */}
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-900 overflow-hidden shadow-xs">
+                    {/* macOS Window Header Bar */}
+                    <div className="px-3.5 py-1.5 bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between text-[11px] text-slate-500 select-none">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="w-2.5 h-2.5 rounded-full bg-[#FF5F56] shrink-0"></span>
+                        <span className="w-2.5 h-2.5 rounded-full bg-[#FFBD2E] shrink-0"></span>
+                        <span className="w-2.5 h-2.5 rounded-full bg-[#27C93F] shrink-0"></span>
+                        <span className="ml-2 font-bold text-slate-700 dark:text-slate-200 truncate">
+                          {currentSlide.screenshotTitle}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1 text-[10px] text-slate-500 font-medium shrink-0 ml-2">
+                        <span className="truncate">{currentSlide.actionPath}</span>
+                      </div>
+                    </div>
+
+                    {/* Screenshot Image or Interactive Location Mockup */}
+                    {currentSlide.screenshot ? (
+                      <div 
+                        className="relative group cursor-pointer overflow-hidden bg-slate-950" 
+                        onClick={() => handleSlideAction(currentSlide)}
+                        title="Apasă pentru a deschide acest ecran"
+                      >
+                        <img 
+                          src={currentSlide.screenshot} 
+                          alt={currentSlide.screenshotTitle} 
+                          className="w-full h-40 sm:h-52 object-cover object-top group-hover:scale-[1.01] transition-transform duration-300"
+                        />
+                        <div className="absolute inset-0 bg-slate-950/20 group-hover:bg-slate-950/40 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                          <span className="px-4 py-2 rounded-full text-xs font-bold bg-[#007AFF] text-white shadow-lg flex items-center gap-1.5 whitespace-nowrap shrink-0">
+                            <span>Deschide Ecranul</span>
+                            <ArrowRight size={13} className="shrink-0" />
+                          </span>
+                        </div>
+                      </div>
+                    ) : currentSlide.isLocationMockup ? (
+                      <div className="p-3.5 space-y-2.5 bg-slate-50 dark:bg-slate-900/90 text-xs">
+                        <div className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-2xs">
+                          <div>
+                            <div className="font-bold text-slate-800 dark:text-slate-100 text-xs">Gestiune Puncte de Lucru</div>
+                            <div className="text-[10px] text-slate-400">Sediu Central, Filiale, Depozite, Șantiere</div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleSlideAction(currentSlide)}
+                            className="px-3 py-1.5 rounded-full text-[10px] font-bold bg-[#007AFF] text-white shadow-xs whitespace-nowrap shrink-0 hover:bg-blue-600 transition-colors cursor-pointer"
+                          >
+                            + Adaugă Punct de Lucru
+                          </button>
+                        </div>
+                        <div className="p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 space-y-1.5 text-[11px]">
+                          <div className="flex items-center justify-between">
+                            <span className="text-slate-400 font-semibold">Exemplu Sediu:</span>
+                            <span className="font-bold text-slate-800 dark:text-slate-200 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full">Sediul Central (Activ)</span>
+                          </div>
+                          <div className="flex items-center justify-between text-slate-500">
+                            <span>Validare Geografică:</span>
+                            <span className="font-medium text-emerald-600">Rază GPS 150m activă</span>
+                          </div>
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+
                   {/* Card Puncte Cheie */}
                   <div className="p-3.5 sm:p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-800 space-y-2">
                     <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
@@ -1398,17 +1474,55 @@ export default function AiHelpAssistant({ tenant, themeColor = '#007AFF', pageCo
                     </div>
                   </div>
 
-                  {/* Buton acțiune directă dacă pasul permite navigare */}
+                  {/* CASETA CU LINKUL DIRECT ȘI ACȚIUNE DE NAVIGARE */}
                   {currentSlide.actionPath && (
-                    <div className="pt-1 flex items-center justify-end">
-                      <button
-                        type="button"
-                        onClick={() => handleSlideAction(currentSlide)}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold text-[#007AFF] dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200/60 dark:border-blue-800/60 transition-colors whitespace-nowrap shrink-0 cursor-pointer group"
-                      >
-                        <span>{currentSlide.actionLabel}</span>
-                        <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform shrink-0" />
-                      </button>
+                    <div className="p-3.5 rounded-2xl bg-blue-50/90 dark:bg-blue-950/50 border border-blue-200/90 dark:border-blue-800/70 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs shadow-xs">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/60 text-[#007AFF] flex items-center justify-center shrink-0">
+                          <ExternalLink size={15} />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                            Link Direct Pagina:
+                          </div>
+                          <a 
+                            href={currentSlide.actionPath}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handleSlideAction(currentSlide);
+                            }}
+                            className="font-bold text-[#007AFF] hover:underline dark:text-blue-300 truncate block cursor-pointer"
+                          >
+                            {typeof window !== 'undefined' ? window.location.origin : ''}{currentSlide.actionPath}
+                          </a>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 w-full sm:w-auto shrink-0 justify-end">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const fullUrl = `${window.location.origin}${currentSlide.actionPath}`;
+                            navigator.clipboard.writeText(fullUrl);
+                            setCopiedLink(true);
+                            setTimeout(() => setCopiedLink(false), 2000);
+                          }}
+                          className="px-3.5 py-1.5 rounded-full text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700/80 transition-colors flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer shadow-2xs"
+                          title="Copiază linkul direct"
+                        >
+                          {copiedLink ? <Check size={12} className="text-emerald-500 shrink-0" /> : <Copy size={12} className="shrink-0" />}
+                          <span className="whitespace-nowrap shrink-0">{copiedLink ? 'Copiat!' : 'Copiază link'}</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleSlideAction(currentSlide)}
+                          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold text-white bg-[#007AFF] hover:bg-blue-600 shadow-sm hover:shadow transition-all whitespace-nowrap shrink-0 cursor-pointer"
+                        >
+                          <span className="whitespace-nowrap shrink-0">{currentSlide.actionLabel}</span>
+                          <ArrowRight size={13} className="shrink-0" />
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
