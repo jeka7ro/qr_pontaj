@@ -28,7 +28,65 @@ router.post('/assistant', async (req, res) => {
       });
     }
 
-    // 2. Construim contextul de sistem pentru QR Pontaj
+    // 2. Fast-path instantaneu (<15ms) pentru întrebările rapide prestabilite din interfață
+    const pTrim = prompt.trim().toLowerCase();
+    if (
+      pTrim.includes('cum pun ecranul pe tablet') || 
+      pTrim.includes('cum pun ecranul pe tv') || 
+      pTrim.includes('cum blochez pe tableta') ||
+      pTrim.includes('kiosk pe tableta')
+    ) {
+      const instantAnswer = `Pentru a afișa ecranul de pontaj pe tabletă sau televizor:
+
+1. **Creați sau alegeți Kiosk-ul**:
+   - Mergeți în meniul **Tablete Kiosk** din panoul de administrare și apăsați **+ Adaugă Kiosk**.
+   - Introduceți un nume sugestiv (ex: Recepție, Intrare) și asociați punctul de lucru.
+
+2. **Copiați Linkul Kiosk**:
+   - În lista de Kiosk-uri, apăsați pe butonul **Copiază Link Tabletă**.
+
+3. **Deschideți pe tabletă / Smart TV**:
+   - Deschideți browser-ul de pe dispozitiv (Safari pe iPad, Chrome pe tablete Android sau browser-ul din Smart TV).
+   - Introduceți linkul copiat și accesați-l. Ecranul de pontaj QR dinamic va porni automat.
+
+4. **Blocați pe ecranul de pontaj (Kiosk Mode)**:
+   - **Pe iPad (Recomandat)**: Din Configurări -> Accesibilitate -> activați **Acces Ghidat**. Deschideți linkul în Safari și apăsați de 3 ori pe butonul fizic Power -> Start. Tableta rămâne blocată exclusiv pe pontaj.
+   - **Pe Android**: Activați opțiunea **Fixare aplicație (Pin App)** din Setări de Securitate.
+   - **Pe Smart TV / PC**: Apăsați tasta **F11** sau butonul de Full Screen din browser.`;
+
+      return res.json({ answer: instantAnswer });
+    }
+
+    if (pTrim.includes('cum se ponteaz') || pTrim.includes('cum se scaneaz')) {
+      const instantAnswer = `Procedura de pontaj pentru salariați (fără aplicație instalată):
+
+1. **Deschiderea camerei foto**:
+   - Angajatul deschide camera foto standard a telefonului său mobil (iPhone sau Android).
+   - Nu este necesară instalarea niciunei aplicații din App Store sau Google Play.
+
+2. **Scanarea codului QR dinamic**:
+   - Îndreaptă camera către codul QR afișat pe tableta Kiosk. Codul se regenerează la fiecare 5 secunde împotriva fraudelor.
+
+3. **Confirmarea pontajului**:
+   - Pe telefon apare notificarea web securizată; angajatul apasă pe ea, alege **Venire** sau **Plecare** și confirmă. Pontajul este înregistrat instantaneu cu timestamp și verificare GPS.`;
+
+      return res.json({ answer: instantAnswer });
+    }
+
+    if (pTrim.includes('pontaj cu pin') || pTrim.includes('fara telefon') || pTrim.includes('fara baterie')) {
+      const instantAnswer = `Pontajul de rezervă cu cod PIN pe tabletă:
+
+1. **Activarea opțiunii**:
+   - La crearea sau editarea Kiosk-ului, asigurați-vă că este bifată opțiunea **Permite Pontaj cu PIN**.
+
+2. **Utilizarea de către angajat**:
+   - Pe ecranul tabletei Kiosk apăsați pe butonul **Pontaj cu PIN**.
+   - Angajatul își introduce codul PIN alocat din panoul de administrare pentru validarea prezenței.`;
+
+      return res.json({ answer: instantAnswer });
+    }
+
+    // 3. Construim contextul de sistem pentru QR Pontaj
     const systemInstructionText = `Ești Asistentul Oficial QR Pontaj (asistent de suport tehnic și operațional). Răspunzi exclusiv în limba română, amabil, extrem de clar, structurat cu pași simpli (1, 2, 3) și formatat în markdown curat.
 
 DESPRE QR PONTAJ:
@@ -39,25 +97,6 @@ DESPRE QR PONTAJ:
 - Există și mod de backup 'Pontaj cu PIN' direct pe tabletă pentru angajații fără telefon sau cu bateria descărcată.
 - Generare condică de prezență lunară (PDF, Excel) și fișiere compatibile cu Saga Software (import direct în salarii).
 
-CUM SE REZOLVĂ CELE MAI FRECVENTE SITUAȚII:
-1. "Cum creez un Kiosk și cum îl folosesc pe tabletă?":
-   - Pasul 1: Mergi în meniul 'Kiosk-uri & Tablete' și apasă '+ Adaugă Kiosk'. Completează numele (ex: Recepție) și asociază locația.
-   - Pasul 2: În tabelul de Kiosk-uri, apasă pe butonul 'Copiază Link Tabletă' (sau folosește linkul generat).
-   - Pasul 3: Deschide acest link în browser-ul de pe tableta montată pe perete la intrare (Safari pe iPad, Chrome pe Android sau browser pe Smart TV).
-   - Pasul 4: Blochează ecranul pe aplicație:
-     * Pe iPad: Folosește 'Acces Ghidat' (Guided Access) din Configurări -> Accesibilitate -> Acces Ghidat. Deschide link-ul în Safari și apasă de 3 ori pe butonul de pornire (Power) -> Start. Astfel tableta rămâne blocată doar pe ecranul de pontaj și nimeni nu poate umbla în poze sau alte aplicații.
-     * Pe Android: Activează 'Fixare aplicație' (Pin App) din Setări de Securitate.
-     * Pe Smart TV / PC: Apasă tasta F11 pentru Full Screen.
-2. "Cum se pontează angajații?":
-   - Angajatul deschide camera telefonului (iPhone sau Android).
-   - Îndreaptă camera către codul QR de pe tabletă.
-   - Pe ecranul telefonului apare o notificare web; apasă pe ea, alege 'Venire' sau 'Plecare' și confirmă. Gata, pontajul este salvat instant în baza de date!
-3. "Ce fac dacă un angajat nu are telefon sau nu are baterie?":
-   - La crearea sau editarea Kiosk-ului, bifează/setează un PIN de Kiosk (sau angajatul are PIN propriu).
-   - Pe ecranul tabletei există butonul 'Pontaj cu PIN', unde angajatul își poate introduce codul manual.
-4. "Cum export pontajul pentru contabilitate / Saga?":
-   - Din meniul 'Rapoarte' sau 'Saga', selectează luna dorită și descarcă raportul de pontaj sau fișierul de import pentru Saga.
-
 REGULI STRICTE DE RĂSPUNS:
 - REGULĂ ABSOLUTĂ: ESTE STRICT INTERZISĂ FOLOSIREA DE CARACTERE EMOJI (fără fețe, fără emoticoane, fără simboluri grafice emoji sub nicio formă).
 - Folosește exclusiv text curat și litere în limba română.
@@ -65,12 +104,11 @@ REGULI STRICTE DE RĂSPUNS:
 - Nu folosi fonturi robotizate monospace.
 - Fii amabil, profesionist și orientat spre soluții practice.`;
 
-    // 3. Formatăm istoricul pentru API-ul Google Gemini v1beta
+    // 4. Formatăm istoricul pentru API-ul Google Gemini v1beta
     const contents = [];
 
-    // Adăugăm mesajele anterioare din istoric dacă există
     if (Array.isArray(history) && history.length > 0) {
-      for (const msg of history.slice(-6)) { // păstrăm ultimele 6 mesaje pentru context optim
+      for (const msg of history.slice(-6)) {
         contents.push({
           role: msg.role === 'user' ? 'user' : 'model',
           parts: [{ text: String(msg.text || msg.content || '') }]
@@ -78,7 +116,6 @@ REGULI STRICTE DE RĂSPUNS:
       }
     }
 
-    // Adăugăm întrebarea curentă a utilizatorului
     let userMessageWithContext = prompt.trim();
     if (pageContext) {
       userMessageWithContext = `[Context pagină: ${pageContext}]\n${userMessageWithContext}`;
@@ -89,8 +126,9 @@ REGULI STRICTE DE RĂSPUNS:
       parts: [{ text: userMessageWithContext }]
     });
 
-    // 4. Apelăm modelul gemini-3.5-flash-lite
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`;
+    // 5. Apelăm prioritar modelul Google Gemini 3.8 Flash, cu fallback rapid la Gemini 3 Flash Preview
+    const modelsToTry = ['gemini-3.8-flash', 'gemini-3-flash-preview'];
+    let candidateText = null;
 
     const requestPayload = {
       systemInstruction: {
@@ -98,32 +136,53 @@ REGULI STRICTE DE RĂSPUNS:
       },
       contents: contents,
       generationConfig: {
-        temperature: 0.3,
-        maxOutputTokens: 800,
+        temperature: 0.2,
+        maxOutputTokens: 700,
       }
     };
 
-    const geminiRes = await fetch(geminiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(requestPayload)
-    });
+    for (const modelName of modelsToTry) {
+      try {
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 3500);
 
-    if (!geminiRes.ok) {
-      const errText = await geminiRes.text();
-      console.error('[AI Assistant] Gemini API error:', geminiRes.status, errText);
-      return res.status(200).json({
-        answer: 'Serviciul de asistență AI întâmpină o problemă temporară de conexiune. Te rugăm să consulți butonul Ghid iPad / Tabletă din pagina de Kiosk-uri sau să reîncerci în câteva momente.'
-      });
+        const geminiRes = await fetch(geminiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestPayload),
+          signal: controller.signal
+        });
+        clearTimeout(timeout);
+
+        if (geminiRes.ok) {
+          const geminiData = await geminiRes.json();
+          const text = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (text && text.trim()) {
+            candidateText = text;
+            console.log(`[AI Assistant] Răspuns generat cu succes via ${modelName}`);
+            break;
+          }
+        } else {
+          console.warn(`[AI Assistant] Modelul ${modelName} a returnat HTTP ${geminiRes.status}. Se încearcă modelul de rezervă...`);
+        }
+      } catch (callErr) {
+        console.warn(`[AI Assistant] Modelul ${modelName} indisponibil sau timeout (${callErr.message}). Se încearcă modelul de rezervă...`);
+      }
     }
 
-    const geminiData = await geminiRes.json();
-    const candidateText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
-
     if (!candidateText) {
-      return res.status(200).json({
-        answer: 'Nu am putut genera un răspuns detaliat. Te rugăm să reformulezi întrebarea.'
-      });
+      // Fallback inteligent instant pe baza ghidului oficial QR Pontaj dacă rețeaua Google este indisponibilă
+      const p = prompt.toLowerCase();
+      if (p.includes('tableta') || p.includes('tv') || p.includes('kiosk') || p.includes('ecran')) {
+        candidateText = `Pentru a afișa ecranul de pontaj pe tabletă sau televizor:\n\n1. **Creați Kiosk-ul**: Mergeți în meniul **Tablete Kiosk** și apăsați **+ Adaugă Kiosk**.\n2. **Copiați Linkul**: În tabelul de Kiosk-uri, apăsați pe butonul **Copiază Link Tabletă**.\n3. **Deschideți pe tabletă**: Introduceți linkul în Safari (pe iPad), Chrome (pe Android) sau browser-ul din Smart TV.\n4. **Blocați pe ecranul de pontaj (Kiosk Mode)**:\n   - **Pe iPad**: Din Configurări -> Accesibilitate -> activați **Acces Ghidat**. Deschideți linkul în Safari și apăsați de 3 ori pe butonul Power -> Start.\n   - **Pe Android**: Activați **Fixare aplicație (Pin App)** din Securitate.\n   - **Pe Smart TV / PC**: Apăsați tasta F11 sau butonul Full Screen.`;
+      } else if (p.includes('ponteaz') || p.includes('scan') || p.includes('camera')) {
+        candidateText = `Procedura de pontaj pentru salariați:\n\n1. Angajatul deschide camera foto a telefonului personal (fără a instala nicio aplicație suplimentară).\n2. Îndreaptă camera către codul QR dinamic afișat pe tabletă.\n3. Pe ecranul telefonului apare notificarea web securizată; apasă pe ea, selectează **Venire** sau **Plecare** și confirmă. Pontajul este salvat instant.`;
+      } else if (p.includes('pin') || p.includes('fara telefon') || p.includes('baterie')) {
+        candidateText = `Pontajul de rezervă cu cod PIN:\n\n1. Din pagina de editare a Kiosk-ului, asigurați-vă că este activată opțiunea de pontaj cu PIN.\n2. Pe ecranul tabletei Kiosk există butonul **Pontaj cu PIN**.\n3. Angajatul fără telefon sau cu bateria descărcată își introduce codul PIN propriu pentru înregistrare.`;
+      } else {
+        candidateText = 'Nu am putut genera un răspuns în acest moment din cauza indisponibilității temporare a serverelor AI. Vă rugăm să consultați ghidul din pagina Tablete Kiosk sau să reformulați întrebarea.';
+      }
     }
 
     // Curățare forțată de caractere emoji (inclusiv diverse blocuri unicode emoji)
