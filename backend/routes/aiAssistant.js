@@ -66,7 +66,34 @@ După ce aveți cel puțin un Punct de Lucru salvat:
 Pentru ca angajații să nu poată ieși din ecranul de pontaj:
 - **Pe iPad (Recomandat)**: Din **Configurări -> Accesibilitate -> Acces Ghidat**, activați opțiunea. Deschideți linkul în Safari și apăsați de 3 ori consecutiv pe butonul fizic Power -> apăsați **Start** în colțul din dreapta-sus. Tableta va rămâne blocată exclusiv pe pontaj.
 - **Pe Android**: Din **Configurări -> Securitate**, activați **Fixare aplicație (Pin App)**. Deschideți Chrome cu linkul și fixați ecranul.
-- **Pe Smart TV / PC**: Apăsați tasta **F11** sau butonul de Full Screen din browser.`;
+- **Pe Smart TV / PC**: Apăsați tasta **F11** sau butonul de Full Screen din browser.
+
+---
+**Vrei să te ajut să creezi un Punct de Lucru chiar acum?**
+Sau vrei să te duc direct pe pagina Puncte de Lucru cu formularul deschis? Alege una dintre acțiunile de mai jos:`;
+
+      return res.json({ answer: instantAnswer });
+    }
+
+    if (
+      pTrim.includes('punct de lucru') || 
+      pTrim.includes('puncte de lucru') || 
+      pTrim.includes('creez punct') || 
+      pTrim.includes('creaza punct') || 
+      pTrim.includes('adauga punct') ||
+      pTrim.includes('du-ma la puncte') ||
+      pTrim.includes('du ma la puncte') ||
+      pTrim.includes('ajuta-ma sa creez') ||
+      pTrim.includes('vreau sa creez un punct')
+    ) {
+      const instantAnswer = `Pentru a începe configurarea pontajului pe tablete, primul pas obligatoriu este **crearea unui Punct de Lucru**:
+
+Fiecare punct de lucru reprezintă sediul fizic (ex: *Sediul Central*, *Depozit*, *Magazin*, *Șantier*) la care vor fi alocate tabletele Kiosk.
+
+**Vrei să te duc la pagina Puncte de Lucru și să deschid direct formularul?**
+Sau vrei să creăm punctul de lucru chiar acum, direct de aici din asistent?
+
+Alege acțiunea dorită din butoanele interactive de mai jos:`;
 
       return res.json({ answer: instantAnswer });
     }

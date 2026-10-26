@@ -40,6 +40,15 @@ export default function QrSelector({ tenant, themeColor }) {
     fetchData();
   }, [tenant.id]);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('action') === 'new' || params.get('new') === 'true') {
+      setShowAddForm(true);
+      setEditingId(null);
+      setFormData({ name: '', location_id: '', kiosk_pin: '', kiosk_show_photo: true, kiosk_orientation: 'horizontal' });
+    }
+  }, []);
+
   const savePortalSettings = async () => {
     setSavingPortal(true);
     setPortalMsg(null);

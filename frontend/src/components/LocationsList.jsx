@@ -27,6 +27,15 @@ export default function LocationsList({ tenant, themeColor }) {
     fetchLocations();
   }, [tenant.id]);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('action') === 'new' || params.get('new') === 'true') {
+      setShowAddForm(true);
+      setEditingId(null);
+      setFormData({ name: '', address: '', qr_mode: 'DYNAMIC' });
+    }
+  }, []);
+
   const fetchLocations = async () => {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL || (window.location.protocol + '//' + window.location.hostname + ':5001')}/api/tenants/${tenant.id}/locations`);
