@@ -2380,7 +2380,8 @@ const harveyService = {
             firstClickAt: null,
             lastClickAt: null,
             bounces: 0,
-            bounceType: null
+            bounceType: null,
+            bounceReason: null
           };
         }
         const record = byEmail[em];
@@ -2400,6 +2401,7 @@ const harveyService = {
         if (e.event === 'hardBounces' || e.event === 'softBounces') {
           record.bounces++;
           record.bounceType = e.event === 'hardBounces' ? 'hard' : 'soft';
+          if (e.reason) record.bounceReason = e.reason;
         }
       }
 

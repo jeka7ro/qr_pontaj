@@ -1101,16 +1101,19 @@ export default function HarveySdrView({ onConvertToTenant }) {
                           }
 
                           if (emailTracking?.bounces > 0) {
+                            const reasonTooltip = emailTracking.bounceReason 
+                              ? `Motiv respingere: ${emailTracking.bounceReason}` 
+                              : (emailTracking.bounceType === 'hard' ? 'Adresă de email inexistentă pe server' : 'Email respins de serverul destinatar');
                             return (
                               <div className="flex flex-col items-center gap-0.5">
                                 <span 
-                                  className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300 border border-rose-200 dark:border-rose-800 whitespace-nowrap shrink-0"
-                                  title="Adresa de email este inexistentă sau a respins mesajul (Bounce)"
+                                  className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300 border border-rose-200 dark:border-rose-800 whitespace-nowrap shrink-0 cursor-help"
+                                  title={reasonTooltip}
                                 >
                                   <AlertCircle size={12} className="shrink-0" />
                                   <span>Email Bounced</span>
                                 </span>
-                                <span className="text-[10px] text-rose-500 font-medium whitespace-nowrap shrink-0">
+                                <span className="text-[10px] text-rose-500 font-medium whitespace-nowrap shrink-0 cursor-help" title={reasonTooltip}>
                                   {emailTracking.bounceType === 'hard' ? 'Inexistent' : 'Respins'}
                                 </span>
                               </div>
