@@ -740,9 +740,13 @@ export default function BillingCalculator() {
         <div>
           <div className="font-semibold text-slate-900 dark:text-white flex items-center gap-2">
             <span>{row.tenant_name || 'Client'}</span>
-            {row.tenant_vat_number && (
+            {row.tenant_vat_number ? (
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 whitespace-nowrap shrink-0">
-                {row.tenant_vat_number}
+                {row.tenant_vat_number.replace(/\D/g, '').length === 13 ? `CNP: ${row.tenant_vat_number}` : row.tenant_vat_number}
+              </span>
+            ) : (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 whitespace-nowrap shrink-0">
+                Persoană Fizică
               </span>
             )}
           </div>
@@ -1615,10 +1619,38 @@ export default function BillingCalculator() {
                         <span className="text-slate-500 dark:text-slate-400">Companie / Tenant:</span>
                         <span className="font-black text-slate-950 dark:text-white text-sm">{smartInvoiceTenant.name}</span>
                       </div>
-                      {smartInvoiceTenant.vat_number && (
-                        <div className="flex justify-between items-center">
-                          <span className="text-slate-500 dark:text-slate-400">Cod Fiscal (CUI):</span>
-                          <span className="font-bold text-slate-900 dark:text-white">{smartInvoiceTenant.vat_number}</span>
+                      {(() => {
+                        const rawVat = (smartInvoiceTenant.vat_number || '').trim();
+                        const isCnp = rawVat.replace(/\D/g, '').length === 13;
+                        if (isCnp) {
+                          return (
+                            <div className="flex justify-between items-center">
+                              <span className="text-slate-500 dark:text-slate-400">CNP (Persoană Fizică):</span>
+                              <span className="font-bold text-slate-900 dark:text-white">{rawVat}</span>
+                            </div>
+                          );
+                        } else if (rawVat) {
+                          return (
+                            <div className="flex justify-between items-center">
+                              <span className="text-slate-500 dark:text-slate-400">Cod Fiscal (CUI):</span>
+                              <span className="font-bold text-slate-900 dark:text-white">{rawVat}</span>
+                            </div>
+                          );
+                        } else {
+                          return (
+                            <div className="flex justify-between items-center">
+                              <span className="text-slate-500 dark:text-slate-400">Tip Beneficiar:</span>
+                              <span className="font-bold text-slate-700 dark:text-slate-300">Persoană Fizică (fără CUI)</span>
+                            </div>
+                          );
+                        }
+                      })()}
+                      {smartInvoiceTenant.billing_address && (
+                        <div className="flex justify-between items-start gap-2">
+                          <span className="text-slate-500 dark:text-slate-400 shrink-0">Adresă Facturare:</span>
+                          <span className="font-semibold text-slate-800 dark:text-slate-200 text-right text-xs truncate max-w-[240px]" title={smartInvoiceTenant.billing_address}>
+                            {smartInvoiceTenant.billing_address}
+                          </span>
                         </div>
                       )}
                       <div className="flex justify-between items-center">
@@ -1726,8 +1758,14 @@ export default function BillingCalculator() {
                   <div className="font-bold text-slate-900 dark:text-white text-sm">
                     {previewInvoice.tenant_name || previewInvoice.smart_invoice_payload?.client?.name}
                   </div>
-                  <div className="text-slate-600 dark:text-slate-300">
-                    CUI: <strong>{previewInvoice.tenant_vat_number || previewInvoice.smart_invoice_payload?.client?.cui || '-'}</strong>
+                  <div className="text-slate-600 dark:text-slate-300 text-xs">
+                    {(() => {
+                      const v = (previewInvoice.tenant_vat_number || previewInvoice.smart_invoice_payload?.client?.cui || '').trim();
+                      const digits = v.replace(/\D/g, '');
+                      if (digits.length === 13) return <>CNP: <strong>{v}</strong> (Persoană Fizică)</>;
+                      if (v && v !== '-') return <>CUI: <strong>{v}</strong></>;
+                      return <span className="text-slate-500">Persoană Fizică (fără CUI)</span>;
+                    })()}
                   </div>
                   <div className="text-slate-500 dark:text-slate-400 text-[11px] truncate">
                     {previewInvoice.smart_invoice_payload?.client?.address || 'România'}

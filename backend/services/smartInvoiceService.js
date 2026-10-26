@@ -32,6 +32,10 @@ function isAutoSendEnabled() {
 function formatClientVatNumber(vatNumber, isVatPayer) {
   if (!vatNumber) return '';
   const cleanVat = vatNumber.toString().trim().replace(/^RO/i, '').trim();
+  // Dacă are 13 cifre (CNP Persoană Fizică), NU se adaugă NICIODATĂ prefixul "RO"!
+  if (cleanVat.length === 13 && /^\d{13}$/.test(cleanVat)) {
+    return cleanVat;
+  }
   return isVatPayer ? `RO${cleanVat}` : cleanVat;
 }
 
@@ -53,6 +57,11 @@ function buildSmartInvoicePayload({
   const isRo = (tenant.country_code || 'RO').toUpperCase() === 'RO';
   const currency = isRo ? 'RON' : (tenant.currency || 'EUR');
   const formattedCui = formatClientVatNumber(tenant.vat_number, tenant.is_vat_payer);
+  const cleanDigits = (tenant.vat_number || '').toString().replace(/\D/g, '');
+  const isCnp = cleanDigits.length === 13;
+  const isPhysical = isCnp || (!tenant.vat_number && tenant.is_vat_payer === false);
+  const clientType = isPhysical ? 'PF' : 'PJ';
+  const defaultAddress = isPhysical ? 'Adresă de domiciliu conform act identitate' : 'Sediu social conform ONRC';
   const effectivePaymentDate = paymentDate || issueDate;
   const rateDateNote = exchangeRateDate || effectivePaymentDate;
 
@@ -102,7 +111,8 @@ function buildSmartInvoicePayload({
     series: process.env.SMART_INVOICE_SERIES || 'QRP',
     clientName: tenant.name,
     clientCUI: formattedCui,
-    clientAddress: tenant.billing_address || 'Sediu social',
+    clientType: clientType,
+    clientAddress: tenant.billing_address || defaultAddress,
     clientCountry: isRo ? 'RO' : (tenant.country_code || 'BE'),
     clientEmail: tenant.contact_email,
     issueDate: effectivePaymentDate,
@@ -123,8 +133,9 @@ function buildSmartInvoicePayload({
       name: tenant.name,
       cui: formattedCui,
       raw_cui: tenant.vat_number,
+      client_type: clientType,
       is_vat_payer: Boolean(tenant.is_vat_payer),
-      address: tenant.billing_address || 'Sediu social conform ONRC',
+      address: tenant.billing_address || defaultAddress,
       country_code: tenant.country_code || 'RO',
       email: tenant.contact_email,
       subdomain: tenant.subdomain

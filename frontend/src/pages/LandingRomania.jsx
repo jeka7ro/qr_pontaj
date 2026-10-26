@@ -102,6 +102,7 @@ export default function LandingRomania() {
     phone: '',
     anafPhone: '',
     cui: '',
+    cnp: '',
     address: '',
     city: '',
     county: '',
@@ -338,11 +339,13 @@ export default function LandingRomania() {
           email: subForm.email,
           password: subForm.password,
           companyName: isPersonalAccount
-            ? (subForm.companyName || subForm.contactName || 'Cont Personal')
+            ? (subForm.companyName || subForm.contactName || 'Persoană Fizică')
             : (companyVerified?.name || subForm.companyName),
           phone: subForm.phone,
           anafPhone: subForm.anafPhone || companyVerified?.phone || '',
-          cui: isPersonalAccount ? '' : subForm.cui,
+          cui: isPersonalAccount ? (subForm.cnp || '') : subForm.cui,
+          cnp: isPersonalAccount ? subForm.cnp : '',
+          isPersonalAccount: Boolean(isPersonalAccount),
           address: subForm.address || companyVerified?.address || '',
           city: subForm.city || companyVerified?.city || '',
           county: subForm.county || companyVerified?.county || '',
@@ -1317,198 +1320,321 @@ export default function LandingRomania() {
                           : 'text-slate-600 hover:text-slate-900'
                       }`}
                     >
-                      Persoană Fizică / Echipă
+                      Persoană Fizică (B2C / CNP)
                     </button>
                   </div>
 
-                  {/* CUI ANAF Input (Doar dacă nu e persoană fizică) */}
-                  {!isPersonalAccount ? (
-                    <div>
-                      <label className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1 flex items-center justify-between">
-                        <span>Cod Fiscal (CUI / CIF) *</span>
-                        {cuiLoading && (
-                          <span className="text-[10.5px] text-blue-600 font-bold flex items-center gap-1 whitespace-nowrap shrink-0">
-                            <RefreshCw size={11} className="animate-spin" /> Verificare ANAF...
-                          </span>
-                        )}
-                      </label>
-                      <div className="relative flex items-center">
+                  {/* FLUX PERSOANĂ FIZICĂ (B2C) */}
+                  {isPersonalAccount ? (
+                    <>
+                      <div className="p-3 bg-blue-50/70 border border-blue-200 rounded-2xl text-xs text-blue-900 leading-snug">
+                        <strong className="block font-bold mb-0.5">Mod Persoană Fizică activat</strong>
+                        Contul și facturile fiscale vor fi emise direct pe numele tău de persoană fizică.
+                      </div>
+
+                      {/* Nume & Prenume Titular */}
+                      <div>
+                        <label className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1 flex items-center justify-between">
+                          <span>Nume &amp; Prenume Titular *</span>
+                          <span className="text-[10px] text-blue-600 font-semibold lowercase">beneficiar</span>
+                        </label>
                         <input
                           type="text"
-                          required={!isPersonalAccount}
-                          value={subForm.cui}
-                          onChange={handleCuiChange}
-                          onBlur={() => {
-                            const digitsOnly = (subForm.cui || '').replace(/\D/g, '');
-                            if (digitsOnly.length >= 6 && digitsOnly.length <= 10 && !companyVerified) {
-                              handleAutoCuiSearch(digitsOnly);
-                            }
+                          required
+                          value={subForm.contactName}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setSubForm(prev => ({ ...prev, contactName: val, companyName: val }));
                           }}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              e.preventDefault();
+                          placeholder="Ex: Popescu Ion..."
+                          className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-xs font-semibold text-slate-900 bg-white"
+                        />
+                      </div>
+
+                      {/* CNP Titular */}
+                      <div>
+                        <label className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1 flex items-center justify-between">
+                          <span>CNP Titular (13 cifre)</span>
+                          {subForm.cnp && (
+                            <span className="text-[10px] font-bold whitespace-nowrap shrink-0">
+                              {subForm.cnp.length === 13 ? (
+                                <span className="text-emerald-700 flex items-center gap-1">
+                                  <CheckCircle2 size={11} /> CNP valid (13 cifre)
+                                </span>
+                              ) : (
+                                <span className="text-amber-600">{subForm.cnp.length}/13 cifre</span>
+                              )}
+                            </span>
+                          )}
+                        </label>
+                        <input
+                          type="text"
+                          maxLength={13}
+                          value={subForm.cnp || ''}
+                          onChange={(e) => {
+                            const digits = e.target.value.replace(/\D/g, '').slice(0, 13);
+                            setSubForm(prev => ({ ...prev, cnp: digits }));
+                          }}
+                          placeholder="Ex: 1900101123456 (13 cifre)..."
+                          className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-xs font-semibold text-slate-900 bg-white"
+                        />
+                        <p className="text-[10px] text-slate-400 mt-1 pl-1">
+                          Necesar pentru emiterea facturii fiscale conform reglementărilor ANAF / e-Factura B2C.
+                        </p>
+                      </div>
+
+                      {/* Adresă Domiciliu / Facturare */}
+                      <div>
+                        <label className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1 flex items-center justify-between">
+                          <span>Adresă Domiciliu / Facturare *</span>
+                          <span className="text-[10px] text-blue-600 font-semibold lowercase">pentru factură</span>
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            required
+                            value={subForm.address}
+                            onChange={(e) => setSubForm(prev => ({ ...prev, address: e.target.value }))}
+                            placeholder="Strada, Număr, Bloc/Scară/Ap, Localitate, Județ..."
+                            className="w-full pl-9 pr-4 h-10 text-sm rounded-full border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-xs text-slate-800 bg-white"
+                          />
+                          <MapPin size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                        </div>
+                      </div>
+
+                      {/* Număr Persoane în Echipă */}
+                      <div>
+                        <label className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1 flex items-center justify-between">
+                          <span>Număr Persoane în Echipă *</span>
+                          <span className="text-[11px] text-blue-600 font-semibold lowercase">pentru pontaj</span>
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            min="1"
+                            max="10000"
+                            required
+                            value={subForm.employeesCount}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setSubForm(prev => ({ ...prev, employeesCount: val }));
+                              const count = parseInt(val, 10);
+                              if (!isNaN(count)) {
+                                if (count >= 150) {
+                                  setSelectedPlan({ id: 'enterprise', name: 'Corporate (150+ salariați)', price: 'Negociabil', defaultSeats: 160 });
+                                } else if (count > 50) {
+                                  setSelectedPlan({ id: 'pro', name: 'Echipe Mari (51+ salariați)', price: '4.00 €', defaultSeats: 65 });
+                                } else {
+                                  setSelectedPlan({ id: 'standard', name: 'Standard (1 – 50 salariați)', price: '5.00 €', defaultSeats: 15 });
+                                }
+                              }
+                            }}
+                            placeholder="Ex: 5, 10, 20..."
+                            className="w-full pl-9 pr-4 h-10 text-sm rounded-full border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-xs font-black text-slate-900"
+                          />
+                          <Users size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                        </div>
+                      </div>
+
+                      {/* Telefon Mobil Titular */}
+                      <div>
+                        <label className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1 block whitespace-nowrap">
+                          Telefon Mobil *
+                        </label>
+                        <input
+                          type="tel"
+                          required
+                          value={subForm.phone}
+                          onChange={(e) => setSubForm(prev => ({ ...prev, phone: e.target.value }))}
+                          placeholder="07xxxxxxxx..."
+                          className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-xs"
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    /* FLUX PERSOANĂ JURIDICĂ (B2B) */
+                    <>
+                      {/* CUI ANAF Input */}
+                      <div>
+                        <label className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1 flex items-center justify-between">
+                          <span>Cod Fiscal (CUI / CIF) *</span>
+                          {cuiLoading && (
+                            <span className="text-[10.5px] text-blue-600 font-bold flex items-center gap-1 whitespace-nowrap shrink-0">
+                              <RefreshCw size={11} className="animate-spin" /> Verificare ANAF...
+                            </span>
+                          )}
+                        </label>
+                        <div className="relative flex items-center">
+                          <input
+                            type="text"
+                            required
+                            value={subForm.cui}
+                            onChange={handleCuiChange}
+                            onBlur={() => {
+                              const digitsOnly = (subForm.cui || '').replace(/\D/g, '');
+                              if (digitsOnly.length >= 6 && digitsOnly.length <= 10 && !companyVerified) {
+                                handleAutoCuiSearch(digitsOnly);
+                              }
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                const digitsOnly = (subForm.cui || '').replace(/\D/g, '');
+                                if (digitsOnly.length >= 6) {
+                                  handleAutoCuiSearch(digitsOnly);
+                                }
+                              }
+                            }}
+                            placeholder="Ex: 42322117 sau RO42322117..."
+                            className="w-full pl-4 pr-24 h-10 text-sm rounded-full border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-xs font-semibold"
+                          />
+                          <button
+                            type="button"
+                            disabled={cuiLoading}
+                            onClick={() => {
                               const digitsOnly = (subForm.cui || '').replace(/\D/g, '');
                               if (digitsOnly.length >= 6) {
                                 handleAutoCuiSearch(digitsOnly);
+                              } else {
+                                setCuiError('Introdu minim 6 cifre pentru căutare CUI.');
                               }
-                            }
-                          }}
-                          placeholder="Ex: 42322117 sau RO42322117..."
-                          className="w-full pl-4 pr-24 h-10 text-sm rounded-full border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-xs font-semibold"
-                        />
-                        <button
-                          type="button"
-                          disabled={cuiLoading}
-                          onClick={() => {
-                            const digitsOnly = (subForm.cui || '').replace(/\D/g, '');
-                            if (digitsOnly.length >= 6) {
-                              handleAutoCuiSearch(digitsOnly);
-                            } else {
-                              setCuiError('Introdu minim 6 cifre pentru căutare CUI.');
-                            }
-                          }}
-                          className="absolute right-1.5 top-1/2 -translate-y-1/2 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-full transition-all flex items-center gap-1 cursor-pointer whitespace-nowrap shrink-0 shadow-xs"
-                        >
-                          {cuiLoading ? <RefreshCw size={11} className="animate-spin" /> : <Search size={11} />}
-                          <span>Caută</span>
-                        </button>
+                            }}
+                            className="absolute right-1.5 top-1/2 -translate-y-1/2 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-full transition-all flex items-center gap-1 cursor-pointer whitespace-nowrap shrink-0 shadow-xs"
+                          >
+                            {cuiLoading ? <RefreshCw size={11} className="animate-spin" /> : <Search size={11} />}
+                            <span>Caută</span>
+                          </button>
+                        </div>
+
+                        {/* Notificare CUI Eronat / Negăsit în ANAF */}
+                        {cuiError && (
+                          <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-900 flex items-start gap-2 animate-fade-in shadow-2xs">
+                            <AlertCircle size={15} className="text-amber-600 shrink-0 mt-0.5" />
+                            <span className="leading-snug">{cuiError}</span>
+                          </div>
+                        )}
+
+                        {/* Badge Verde Confirmare ANAF */}
+                        {companyVerified && (
+                          <div className="mt-2 p-2.5 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs flex items-center justify-between gap-2 animate-fade-in shadow-2xs">
+                            <div className="flex items-center gap-1.5 font-bold text-emerald-950 truncate">
+                              <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+                              <span className="truncate">Date completate automat din ANAF</span>
+                            </div>
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 whitespace-nowrap shrink-0 border border-emerald-200">
+                              {companyVerified.isVatPayer ? 'Plătitor TVA' : 'Neplătitor TVA'}
+                            </span>
+                          </div>
+                        )}
                       </div>
 
-                      {/* Notificare CUI Eronat / Negăsit în ANAF */}
-                      {cuiError && (
-                        <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-900 flex items-start gap-2 animate-fade-in shadow-2xs">
-                          <AlertCircle size={15} className="text-amber-600 shrink-0 mt-0.5" />
-                          <span className="leading-snug">{cuiError}</span>
-                        </div>
-                      )}
-
-                      {/* Badge Verde Confirmare ANAF */}
-                      {companyVerified && (
-                        <div className="mt-2 p-2.5 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs flex items-center justify-between gap-2 animate-fade-in shadow-2xs">
-                          <div className="flex items-center gap-1.5 font-bold text-emerald-950 truncate">
-                            <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
-                            <span className="truncate">Date completate automat din ANAF</span>
-                          </div>
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 whitespace-nowrap shrink-0 border border-emerald-200">
-                            {companyVerified.isVatPayer ? 'Plătitor TVA' : 'Neplătitor TVA'}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="p-3 bg-blue-50/70 border border-blue-200 rounded-2xl text-xs text-blue-900 leading-snug">
-                      <strong className="block font-bold mb-0.5">Mod Persoană Fizică / Echipă activat</strong>
-                      Nu este necesar CUI. Poți testa platforma pentru echipa ta sau activitatea ta independentă.
-                    </div>
-                  )}
-
-                  {/* Nume Companie / Echipă — ÎNTOTDEAUNA VIZIBIL ȘI COMPLETAT AUTOMAT */}
-                  <div>
-                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1 flex items-center justify-between">
-                      <span>{isPersonalAccount ? 'Numele Tău sau al Echipei *' : 'Nume Companie *'}</span>
-                      {companyVerified && (
-                        <span className="text-[10px] text-emerald-700 font-bold flex items-center gap-1">
-                          <Check size={11} /> extras din ANAF
-                        </span>
-                      )}
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={subForm.companyName}
-                      onChange={(e) => setSubForm(prev => ({ ...prev, companyName: e.target.value }))}
-                      placeholder={isPersonalAccount ? "Ex: Echipa Andrei sau Nume Prenume..." : "Numele firmei..."}
-                      className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-xs font-semibold text-slate-900 bg-white"
-                    />
-                  </div>
-
-                  {/* Sediu Social / Adresă Firmă — ÎNTOTDEAUNA VIZIBIL ȘI COMPLETAT AUTOMAT */}
-                  {!isPersonalAccount && (
-                    <div>
-                      <label className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1 flex items-center justify-between">
-                        <span>Sediu Social / Adresă Firmă</span>
-                        {companyVerified?.address && (
-                          <span className="text-[10px] text-emerald-700 font-bold flex items-center gap-1">
-                            <Check size={11} /> extras din ANAF
-                          </span>
-                        )}
-                      </label>
-                      <div className="relative">
+                      {/* Nume Companie — ÎNTOTDEAUNA VIZIBIL ȘI COMPLETAT AUTOMAT */}
+                      <div>
+                        <label className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1 flex items-center justify-between">
+                          <span>Nume Companie *</span>
+                          {companyVerified && (
+                            <span className="text-[10px] text-emerald-700 font-bold flex items-center gap-1">
+                              <Check size={11} /> extras din ANAF
+                            </span>
+                          )}
+                        </label>
                         <input
                           type="text"
-                          value={subForm.address}
-                          onChange={(e) => setSubForm(prev => ({ ...prev, address: e.target.value }))}
-                          placeholder="Adresă sediu social..."
-                          className="w-full pl-9 pr-4 h-10 text-sm rounded-full border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-xs text-slate-800 bg-white"
+                          required
+                          value={subForm.companyName}
+                          onChange={(e) => setSubForm(prev => ({ ...prev, companyName: e.target.value }))}
+                          placeholder="Numele firmei..."
+                          className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-xs font-semibold text-slate-900 bg-white"
                         />
-                        <MapPin size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                       </div>
-                    </div>
+
+                      {/* Sediu Social / Adresă Firmă — ÎNTOTDEAUNA VIZIBIL ȘI COMPLETAT AUTOMAT */}
+                      <div>
+                        <label className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1 flex items-center justify-between">
+                          <span>Sediu Social / Adresă Firmă</span>
+                          {companyVerified?.address && (
+                            <span className="text-[10px] text-emerald-700 font-bold flex items-center gap-1">
+                              <Check size={11} /> extras din ANAF
+                            </span>
+                          )}
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            value={subForm.address}
+                            onChange={(e) => setSubForm(prev => ({ ...prev, address: e.target.value }))}
+                            placeholder="Adresă sediu social..."
+                            className="w-full pl-9 pr-4 h-10 text-sm rounded-full border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-xs text-slate-800 bg-white"
+                          />
+                          <MapPin size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                        </div>
+                      </div>
+
+                      {/* Număr Estimativ Salariați */}
+                      <div>
+                        <label className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1 flex items-center justify-between">
+                          <span>Număr Salariați în Firmă *</span>
+                          <span className="text-[11px] text-blue-600 font-semibold lowercase">pentru pontaj</span>
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            min="1"
+                            max="10000"
+                            required
+                            value={subForm.employeesCount}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setSubForm(prev => ({ ...prev, employeesCount: val }));
+                              const count = parseInt(val, 10);
+                              if (!isNaN(count)) {
+                                if (count >= 150) {
+                                  setSelectedPlan({ id: 'enterprise', name: 'Corporate (150+ salariați)', price: 'Negociabil', defaultSeats: 160 });
+                                } else if (count > 50) {
+                                  setSelectedPlan({ id: 'pro', name: 'Echipe Mari (51+ salariați)', price: '4.00 €', defaultSeats: 65 });
+                                } else {
+                                  setSelectedPlan({ id: 'standard', name: 'Standard (1 – 50 salariați)', price: '5.00 €', defaultSeats: 15 });
+                                }
+                              }
+                            }}
+                            placeholder="Ex: 15, 30, 60..."
+                            className="w-full pl-9 pr-4 h-10 text-sm rounded-full border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-xs font-black text-slate-900"
+                          />
+                          <Users size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                        </div>
+                      </div>
+
+                      {/* Nume Contact & Telefon — Vertical pe Mobil, Grid pe Desktop */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1 block whitespace-nowrap">
+                            Nume Contact *
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={subForm.contactName}
+                            onChange={(e) => setSubForm(prev => ({ ...prev, contactName: e.target.value }))}
+                            placeholder="Numele dvs...."
+                            className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-xs"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1 block whitespace-nowrap">
+                            Telefon Mobil *
+                          </label>
+                          <input
+                            type="tel"
+                            required
+                            value={subForm.phone}
+                            onChange={(e) => setSubForm(prev => ({ ...prev, phone: e.target.value }))}
+                            placeholder="07xxxxxxxx..."
+                            className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-xs"
+                          />
+                        </div>
+                      </div>
+                    </>
                   )}
-
-                  {/* Număr Estimativ Salariați */}
-                  <div>
-                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1 flex items-center justify-between">
-                      <span>{isPersonalAccount ? 'Număr Persoane în Echipă *' : 'Număr Salariați în Firmă *'}</span>
-                      <span className="text-[11px] text-blue-600 font-semibold lowercase">pentru pontaj</span>
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        min="1"
-                        max="10000"
-                        required
-                        value={subForm.employeesCount}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setSubForm(prev => ({ ...prev, employeesCount: val }));
-                          const count = parseInt(val, 10);
-                          if (!isNaN(count)) {
-                            if (count >= 150) {
-                              setSelectedPlan({ id: 'enterprise', name: 'Corporate (150+ salariați)', price: 'Negociabil', defaultSeats: 160 });
-                            } else if (count > 50) {
-                              setSelectedPlan({ id: 'pro', name: 'Echipe Mari (51+ salariați)', price: '4.00 €', defaultSeats: 65 });
-                            } else {
-                              setSelectedPlan({ id: 'standard', name: 'Standard (1 – 50 salariați)', price: '5.00 €', defaultSeats: 15 });
-                            }
-                          }
-                        }}
-                        placeholder="Ex: 15, 30, 60..."
-                        className="w-full pl-9 pr-4 h-10 text-sm rounded-full border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-xs font-black text-slate-900"
-                      />
-                      <Users size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                    </div>
-                  </div>
-
-                  {/* Nume Contact & Telefon — Vertical pe Mobil, Grid pe Desktop */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1 block whitespace-nowrap">
-                        Nume Contact *
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={subForm.contactName}
-                        onChange={(e) => setSubForm(prev => ({ ...prev, contactName: e.target.value }))}
-                        placeholder="Numele dvs...."
-                        className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-xs"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1 block whitespace-nowrap">
-                        Telefon Mobil *
-                      </label>
-                      <input
-                        type="tel"
-                        required
-                        value={subForm.phone}
-                        onChange={(e) => setSubForm(prev => ({ ...prev, phone: e.target.value }))}
-                        placeholder="07xxxxxxxx..."
-                        className="w-full px-4 h-10 text-sm rounded-full border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-xs"
-                      />
-                    </div>
-                  </div>
 
                   {/* Email Oficial (Username de conectare) */}
                   <div>

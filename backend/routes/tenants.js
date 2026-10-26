@@ -301,7 +301,13 @@ router.get('/billing-summary', async (req, res) => {
         t.billing_start_date,
         COALESCE(t.country_code, 'RO') as country_code,
         COALESCE(t.currency, 'RON') as currency,
-        COALESCE(t.price_per_employee, 0)::numeric as price_per_employee
+        COALESCE(t.price_per_employee, 0)::numeric as price_per_employee,
+        t.vat_number,
+        t.is_vat_payer,
+        t.billing_address,
+        t.contact_name,
+        t.contact_email,
+        t.is_online_registration
       FROM qrp_tenants t
       WHERE t.billing_per_employee = true
       ORDER BY t.name ASC
@@ -428,6 +434,12 @@ router.get('/billing-summary', async (req, res) => {
         favicon_url: tenant.favicon_url,
         theme_color: tenant.theme_color,
         price_per_employee: price,
+        vat_number: tenant.vat_number,
+        is_vat_payer: Boolean(tenant.is_vat_payer),
+        billing_address: tenant.billing_address,
+        contact_name: tenant.contact_name,
+        contact_email: tenant.contact_email,
+        is_online_registration: tenant.is_online_registration,
         total_employees: empResult.rows.length,
         active_employees: fullRateEmployees.length + halfRateEmployees.length,
         full_rate_count: fullRateEmployees.length,
@@ -949,11 +961,18 @@ router.put('/:id', async (req, res) => {
 
     let isVatPayer = null;
     if (finalVat) {
-      const anafData = await lookupAnafCompany(finalVat);
-      if (anafData) {
-        if (!finalAddress) finalAddress = anafData.address;
-        isVatPayer = Boolean(anafData.isVatPayer);
-        finalVat = isVatPayer ? `RO${anafData.cui}` : anafData.cui;
+      const cleanDigits = finalVat.replace(/\D/g, '');
+      if (cleanDigits.length === 13) {
+        // Persoană Fizică (CNP) - fără interogare firmă ANAF și fără prefix "RO"
+        isVatPayer = false;
+        finalVat = cleanDigits;
+      } else {
+        const anafData = await lookupAnafCompany(finalVat);
+        if (anafData) {
+          if (!finalAddress) finalAddress = anafData.address;
+          isVatPayer = Boolean(anafData.isVatPayer);
+          finalVat = isVatPayer ? `RO${anafData.cui}` : anafData.cui;
+        }
       }
     }
 

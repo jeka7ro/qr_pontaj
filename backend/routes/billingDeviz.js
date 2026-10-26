@@ -79,7 +79,8 @@ router.get('/', async (req, res) => {
         billing_start_date,
         COALESCE(country_code, 'RO') as country_code,
         COALESCE(currency, 'RON') as currency,
-        COALESCE(price_per_employee, 0)::numeric as price_per_employee
+        COALESCE(price_per_employee, 0)::numeric as price_per_employee,
+        vat_number, is_vat_payer, billing_address, contact_name, contact_email
       FROM qrp_tenants 
       WHERE billing_per_employee = true
     `;
@@ -298,6 +299,11 @@ router.get('/', async (req, res) => {
           tenant_id: tenant.id,
           name: tenant.name,
           subdomain: tenant.subdomain,
+          vat_number: tenant.vat_number,
+          is_vat_payer: Boolean(tenant.is_vat_payer),
+          billing_address: tenant.billing_address,
+          contact_name: tenant.contact_name,
+          contact_email: tenant.contact_email,
           country_code: tenant.country_code || 'RO',
           is_romania: isRomania,
           contract_reference: 'Contract SaaS Nr. 9 din 09.09.2026',
@@ -487,7 +493,8 @@ async function calculateDevizForTenant(tenantId, month, year, rateOverride = nul
     SELECT id, name, subdomain, logo_url, billing_start_date,
            COALESCE(country_code, 'RO') as country_code,
            COALESCE(currency, 'RON') as currency,
-           COALESCE(price_per_employee, 0)::numeric as price_per_employee
+           COALESCE(price_per_employee, 0)::numeric as price_per_employee,
+           vat_number, is_vat_payer, billing_address, contact_name, contact_email
     FROM qrp_tenants 
     WHERE id = $1
   `, [tenantId]);
@@ -664,6 +671,11 @@ async function calculateDevizForTenant(tenantId, month, year, rateOverride = nul
       tenant_id: tenant.id,
       name: tenant.name,
       subdomain: tenant.subdomain,
+      vat_number: tenant.vat_number,
+      is_vat_payer: Boolean(tenant.is_vat_payer),
+      billing_address: tenant.billing_address,
+      contact_name: tenant.contact_name,
+      contact_email: tenant.contact_email,
       country_code: tenant.country_code || 'RO',
       is_romania: isRomania,
       contract_reference: 'Contract SaaS Nr. 9 din 09.09.2026',

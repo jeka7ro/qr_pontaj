@@ -365,6 +365,8 @@ router.post('/demo-request', async (req, res) => {
       phone, 
       anafPhone,
       cui, 
+      cnp,
+      isPersonalAccount,
       employeesCount, 
       planName,
       planPrice,
@@ -382,6 +384,8 @@ router.post('/demo-request', async (req, res) => {
     const cleanEmail = email.trim().toLowerCase();
     const cleanPhone = (phone || '').trim(); // TELEFON DE BAZĂ (introdus de client)
     const cleanCui = (cui || '').trim();
+    const cleanCnp = (cnp || '').toString().trim().replace(/\D/g, '');
+    const isPhysical = Boolean(isPersonalAccount) || cleanCnp.length === 13;
 
     // Preluăm datele electronice de conectare pentru pista de audit GDPR (DPA Art. 28)
     const rawIp = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || req.ip || '127.0.0.1';
@@ -389,18 +393,41 @@ router.post('/demo-request', async (req, res) => {
     const userAgent = req.headers['user-agent'] || 'Unknown';
     const termsVersion = 'v2026.1-DPA-ART28';
 
-    // Preluăm automat adresa oficială și denumirea completă din ANAF
     let anafData = null;
-    if (cleanCui) {
-      anafData = await lookupAnafCompany(cleanCui);
+    let isVatPayer = false;
+    let finalVatNumber = null;
+    let vatStatus = 'PENDING';
+
+    if (isPhysical) {
+      // PERSOANĂ FIZICĂ (B2C) — CNP de 13 cifre sau cont personal
+      // IMPORTANT: CNP-ul NU are niciodată prefixul "RO"!
+      const cnpDigits = cleanCnp.length === 13 ? cleanCnp : (cleanCui.replace(/\D/g, '').length === 13 ? cleanCui.replace(/\D/g, '') : (cleanCnp || null));
+      finalVatNumber = cnpDigits;
+      isVatPayer = false;
+      vatStatus = finalVatNumber ? 'CNP' : 'PERSOANA_FIZICA';
+    } else {
+      // PERSOANĂ JURIDICĂ (B2B) — CUI ANAF
+      if (cleanCui) {
+        anafData = await lookupAnafCompany(cleanCui);
+      }
+      isVatPayer = Boolean(anafData?.isVatPayer);
+      const pureCui = cleanCui ? cleanCui.replace(/^RO/i, '').trim() : null;
+      finalVatNumber = pureCui ? (isVatPayer ? `RO${pureCui}` : pureCui) : null;
+      vatStatus = isVatPayer ? 'VALID' : (cleanCui ? 'NEPLATITOR' : 'PENDING');
     }
-    const isVatPayer = Boolean(anafData?.isVatPayer);
-    const finalVatNumber = cleanCui ? (isVatPayer ? `RO${cleanCui}` : cleanCui) : null;
 
     const cleanAnafPhone = (anafPhone || anafData?.phone || '').trim(); // TELEFON OPȚIONAL (din registrul fiscal ANAF)
-    const finalCompanyName = anafData?.name || (companyName || '').trim() || `Companie ${contactName || cleanEmail.split('@')[0]}`;
+    const finalCompanyName = isPhysical 
+      ? ((contactName || companyName || '').trim() || `Cont Personal ${cleanEmail.split('@')[0]}`)
+      : (anafData?.name || (companyName || '').trim() || `Companie ${contactName || cleanEmail.split('@')[0]}`);
+    
     const cleanAddress = anafData?.address || address || (city ? `${city}, ${county || ''}` : '') || null;
     const finalPhone = cleanPhone; // Numărul de contact de bază este cel introdus de client
+
+    const accountNote = isPhysical
+      ? `Persoană Fizică (B2C)${finalVatNumber ? ` • CNP: ${finalVatNumber}` : ' • Fără CNP'}`
+      : `Persoană Juridică (B2B)${cleanCui ? ` • CUI: ${cleanCui}` : ''}`;
+    const finalNotes = notes ? `${accountNote} • ${notes}` : accountNote;
     
     // Calculăm numărul de angajați și tariful per salariat corespunzător volumului
     const parsedSeats = parseInt(employeesCount, 10);
@@ -465,7 +492,9 @@ router.post('/demo-request', async (req, res) => {
               terms_accepted_by = $12,
               terms_version = $13,
               dpa_accepted_at = NOW(),
-              dpa_version = $13
+              dpa_version = $13,
+              is_vat_payer = $15,
+              vat_status = $16
           WHERE id = $14
         `, [
           finalCompanyName,
@@ -473,15 +502,17 @@ router.post('/demo-request', async (req, res) => {
           cleanPhone || null,
           cleanAnafPhone || null,
           cleanEmail,
-          cleanCui,
+          finalVatNumber,
           cleanAddress,
-          notes,
+          finalNotes,
           seats,
           pricePerEmployee,
           clientIp,
           contactName || cleanEmail,
           termsVersion,
-          tenantId
+          tenantId,
+          isVatPayer,
+          vatStatus
         ]);
       }
     } else {
@@ -552,7 +583,7 @@ router.post('/demo-request', async (req, res) => {
         cleanPhone || null,
         cleanAnafPhone || null,
         cleanEmail,
-        notes || null,
+        finalNotes || null,
         subStatus,
         seats,
         pricePerEmployee,
@@ -571,7 +602,7 @@ router.post('/demo-request', async (req, res) => {
         contactName || cleanEmail,
         termsVersion,
         isVatPayer,
-        isVatPayer ? 'VALID' : (cleanCui ? 'NEPLATITOR' : 'PENDING')
+        vatStatus
       ]);
       tenantId = tenantInsertRes.rows[0].id;
 
