@@ -862,6 +862,36 @@ async function sendLeadNotificationToAdmin({
 
   const text = `LEAD NOU PONTAJ.APP\n\nCompanie: ${companyName}\nCUI: ${cui || '-'}\nContact: ${contactName}\nTelefon: ${phone}\nEmail: ${email}\nAngajati: ${employeesCount || 10}\nMod: ${mode}\nAdresa: ${address || '-'}\nSubdomeniu: ${subdomain}\n\nPanou: ${superadminUrl}`;
 
+  // Notificare Telegram SuperAdmin (instantanee, non-blocantă)
+  try {
+    const telegramService = require('./telegramService');
+    telegramService.sendNewAccountAlert({
+      companyName,
+      contactName,
+      phone,
+      anafPhone,
+      email,
+      cui,
+      address,
+      city,
+      county,
+      employeesCount,
+      planName,
+      planPrice,
+      mode,
+      subdomain,
+      notes,
+      clientIp,
+      dpaAccepted,
+      initialPassword,
+      loginUrl: tenantUrl,
+      isSuspectDuplicate,
+      duplicateReason
+    }).catch(tgErr => console.warn('[Telegram] Alert error:', tgErr.message));
+  } catch (err) {
+    console.warn('[Telegram] Require error:', err.message);
+  }
+
   return sendEmail({
     to: adminRecipient,
     subject,
