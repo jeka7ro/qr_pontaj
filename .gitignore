@@ -9,6 +9,8 @@ backend/uploads/
 .tempmediaStorage/
 
 # Temporary debug scripts
+*.sqlite
+*.db
 check_*.js
 debug_*.js
 fix_*.js

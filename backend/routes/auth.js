@@ -872,7 +872,8 @@ router.post('/demo-request', async (req, res) => {
       initialPassword: finalPassword,
       loginUrl: loginUrl,
       isSuspectDuplicate,
-      duplicateReason
+      duplicateReason,
+      isPersonalAccount: isPhysical
     }).catch(adminMailErr => console.warn('[DemoRequest] Notificare SuperAdmin error:', adminMailErr.message));
 
     // Generăm token JWT pentru autentificare instantă în panoul tenant

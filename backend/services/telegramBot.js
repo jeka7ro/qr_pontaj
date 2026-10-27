@@ -469,10 +469,6 @@ async function startTelegramBotListener() {
   shouldStop = false;
   console.log('[TelegramBot] Listener pornit cu succes pentru Chat ID:', authorizedChatId);
 
-  // Trimitem meniul principal la pornire pentru a afișa butoanele
-  sendTelegramMessage(getHelpMessage(), { reply_markup: MAIN_KEYBOARD })
-    .catch(e => console.warn('[TelegramBot] Eroare trimitere mesaj initial:', e.message));
-
   while (!shouldStop) {
     try {
       const url = `https://api.telegram.org/bot${botToken}/getUpdates?offset=${lastUpdateId + 1}&timeout=20`;

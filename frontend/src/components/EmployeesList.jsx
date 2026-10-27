@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, UserPlus, Search, Edit2, Edit, KeyRound, Trash2, Loader2, ScanLine, Plus, Check, X, ChevronLeft, ChevronRight, MapPin, QrCode, Printer, Smartphone, Copy, Calendar, AlertTriangle, Square, CheckSquare, MinusSquare, Briefcase, Archive, RotateCcw, UserCheck, Download, FileSpreadsheet, FileText, MessageSquare } from 'lucide-react';
+import { Users, UserPlus, Search, Edit2, Edit, KeyRound, Trash2, Loader2, ScanLine, Plus, Check, X, ChevronLeft, ChevronRight, MapPin, QrCode, Printer, Smartphone, Copy, Calendar, AlertTriangle, Square, CheckSquare, MinusSquare, Briefcase, Archive, RotateCcw, UserCheck, Download, FileSpreadsheet, FileText, MessageSquare, Upload, FileCheck, Info } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { QRCodeSVG } from 'qrcode.react';
 import { extractTextFromImageOrPdf, cropFaceFromIdCard } from '../lib/pdfOcr';
@@ -65,6 +65,9 @@ export default function EmployeesList({ tenant, themeColor }) {
     setShowAddModal(true);
     setSaveError(null);
     setOcrError(null);
+    setOcrSuccess(null);
+    setNeedsAddressDoc(false);
+    setScannedDocBadge(null);
     setLimitReached(false);
   };
 
@@ -81,6 +84,9 @@ export default function EmployeesList({ tenant, themeColor }) {
   
   const [ocrLoading, setOcrLoading] = useState(false);
   const [ocrError, setOcrError] = useState(null);
+  const [ocrSuccess, setOcrSuccess] = useState(null);
+  const [needsAddressDoc, setNeedsAddressDoc] = useState(false);
+  const [scannedDocBadge, setScannedDocBadge] = useState(null);
   const [saveError, setSaveError] = useState(null);
 
   const [search, setSearch] = useState('');
@@ -373,11 +379,13 @@ export default function EmployeesList({ tenant, themeColor }) {
 
     setOcrLoading(true);
     setOcrError(null);
+    setOcrSuccess(null);
     try {
       // 1. OCR Extract
       const { text, imageBlob } = await extractTextFromImageOrPdf(file, (stage) => console.log(stage));
       
-      setIdCardBlob(imageBlob);
+      // Preserve ID card image if already set and this is a residence cert supplement
+      setIdCardBlob(prev => prev || imageBlob);
 
       // 2. Parse text with Regex
       const parsedData = parseIdCardText(text);
@@ -401,13 +409,32 @@ export default function EmployeesList({ tenant, themeColor }) {
         };
       });
 
-      // In a real app we'd also crop face and upload the blob to S3 here.
+      // Try face crop (if avatar not already cropped or if this is the primary doc)
       try {
         const faceBlob = await cropFaceFromIdCard(imageBlob);
-        setAvatarBlob(faceBlob);
-        setAvatarUrl(URL.createObjectURL(faceBlob));
+        setAvatarBlob(prev => prev && parsedData.document_type === 'residence_certificate' ? prev : faceBlob);
+        setAvatarUrl(prev => prev && parsedData.document_type === 'residence_certificate' ? prev : URL.createObjectURL(faceBlob));
       } catch (e) {
         console.error('Face crop failed:', e);
+      }
+
+      // Set user feedback based on document type
+      if (parsedData.document_type === 'residence_certificate') {
+        setScannedDocBadge('residence_cert');
+        setNeedsAddressDoc(false);
+        setOcrSuccess('Adeverință de domiciliu (RO CEI Reader) scanată cu succes! Adresa a fost completată automat.');
+      } else if (parsedData.needs_residence_certificate) {
+        setScannedDocBadge('new_id');
+        setNeedsAddressDoc(true);
+        setOcrSuccess('Cartea Electronică de Identitate (buletin nou) scanată! Noul buletin nu are adresa tipărită. Încarcă și Adeverința de domiciliu pentru adresă.');
+      } else if (parsedData.document_type === 'id_card_old') {
+        setScannedDocBadge('old_id');
+        setNeedsAddressDoc(false);
+        setOcrSuccess('Buletin clasic (C.I.) scanat cu succes! Toate datele și adresa au fost extrase.');
+      } else {
+        setScannedDocBadge('document');
+        setNeedsAddressDoc(false);
+        setOcrSuccess('Document scanat cu succes!');
       }
 
     } catch (err) {
@@ -451,6 +478,9 @@ export default function EmployeesList({ tenant, themeColor }) {
         setAvatarUrl(null);
         setIdCardBlob(null);
         setSaveError(null);
+        setOcrSuccess(null);
+        setNeedsAddressDoc(false);
+        setScannedDocBadge(null);
         fetchEmployees();
       } else {
         const error = await res.json();
@@ -1367,6 +1397,9 @@ export default function EmployeesList({ tenant, themeColor }) {
                 setAvatarBlob(null);
                 setAvatarUrl(null);
                 setIdCardBlob(null);
+                setOcrSuccess(null);
+                setNeedsAddressDoc(false);
+                setScannedDocBadge(null);
               }} className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:text-slate-300 dark:hover:text-slate-300 p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700">
                 <X size={20} />
               </button>
@@ -1412,7 +1445,7 @@ export default function EmployeesList({ tenant, themeColor }) {
                 </div>
               )}
               {/* OCR Box */}
-              <div className="relative border-2 border-dashed border-slate-200 dark:border-slate-700 dark:border-slate-700 rounded-2xl p-8 text-center hover:border-primary-500 transition-colors group cursor-pointer bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-800/50 mb-6">
+              <div className="relative border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-6 text-center hover:border-primary-500 dark:hover:border-primary-400 transition-colors group cursor-pointer bg-slate-50/80 dark:bg-slate-800/40 mb-5">
                 <input
                   type="file"
                   accept="image/*,application/pdf"
@@ -1422,20 +1455,92 @@ export default function EmployeesList({ tenant, themeColor }) {
                 />
                 <div className="flex flex-col items-center">
                   {ocrLoading ? (
-                    <Loader2 className="w-10 h-10 text-primary-500 animate-spin mb-3" />
+                    <Loader2 className="w-9 h-9 text-primary-500 animate-spin mb-2.5" />
                   ) : (
-                    <ScanLine className="w-10 h-10 text-slate-400 group-hover:text-primary-500 mb-3 transition-colors" />
+                    <ScanLine className="w-9 h-9 text-slate-400 group-hover:text-primary-500 mb-2.5 transition-colors" />
                   )}
-                  <h4 className="font-bold text-slate-800 dark:text-white dark:text-white mb-1">
+                  <h4 className="font-bold text-slate-800 dark:text-white text-sm mb-1">
                     {ocrLoading ? L.ocrBusy : L.ocrIdle}
                   </h4>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto mb-2">
                     {L.ocrHint}
                   </p>
+                  <div className="flex flex-wrap items-center justify-center gap-1.5 mt-1">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-200/70 dark:bg-slate-700 text-slate-700 dark:text-slate-300 whitespace-nowrap shrink-0">
+                      C.I. Clasic
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 whitespace-nowrap shrink-0">
+                      CEI Nou Electronic
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 whitespace-nowrap shrink-0">
+                      Adeverință Domiciliu / RO CEI
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              {ocrError && <div className="mb-4 text-sm text-red-600 font-bold text-center bg-red-50 p-2 rounded">{ocrError}</div>}
+              {/* OCR Error Notification */}
+              {ocrError && (
+                <div className="mb-4 p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-300 text-xs font-semibold flex items-center gap-2.5">
+                  <AlertTriangle size={16} className="shrink-0 text-rose-600" />
+                  <span className="flex-1">{ocrError}</span>
+                  <button 
+                    type="button" 
+                    onClick={() => setOcrError(null)}
+                    className="p-1 rounded-full hover:bg-rose-100 dark:hover:bg-rose-900/40 text-rose-500 shrink-0 cursor-pointer"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              )}
+
+              {/* OCR Success Notification */}
+              {ocrSuccess && (
+                <div className="mb-4 p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs font-semibold flex items-start gap-2.5">
+                  <FileCheck size={16} className="shrink-0 text-emerald-600 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="font-bold">{ocrSuccess}</p>
+                    {scannedDocBadge && (
+                      <span className="inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-200/70 dark:bg-emerald-800/50 text-emerald-900 dark:text-emerald-200 whitespace-nowrap shrink-0">
+                        {scannedDocBadge}
+                      </span>
+                    )}
+                  </div>
+                  <button 
+                    type="button" 
+                    onClick={() => setOcrSuccess(null)}
+                    className="p-1 rounded-full hover:bg-emerald-100 dark:hover:bg-emerald-900/40 text-emerald-600 shrink-0 cursor-pointer"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              )}
+
+              {/* CEI Notice: Address missing in CEI, upload Adeverinta */}
+              {needsAddressDoc && (
+                <div className="mb-4 p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-start gap-2.5">
+                    <Info size={16} className="shrink-0 text-amber-600 mt-0.5" />
+                    <div>
+                      <span className="font-bold block">Cartea Electronică (CEI) nu conține adresa fizică imprimată.</span>
+                      <span className="text-amber-700 dark:text-amber-400 text-[11px] block mt-0.5">
+                        Pentru completarea automată a domiciliului, încarcă Adeverința de domiciliu (RO CEI Reader) sau completează câmpul manual.
+                      </span>
+                    </div>
+                  </div>
+                  <label className="h-8 px-3 rounded-full bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer shadow-xs transition-colors">
+                    <Upload size={13} />
+                    <span>Încarcă Adeverință</span>
+                    <input
+                      type="file"
+                      accept="image/*,application/pdf"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                      disabled={ocrLoading}
+                    />
+                  </label>
+                </div>
+              )}
               
               {avatarUrl && (
                 <div className="mb-6 flex flex-col items-center">

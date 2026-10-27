@@ -281,6 +281,54 @@ export default function HarveySearchModal({ isOpen, onClose, onSearchComplete })
     fetchSettings();
   }, [isOpen]);
 
+  const [detectingGps, setDetectingGps] = useState(false);
+
+  const handleDetectGps = () => {
+    if (!navigator.geolocation) {
+      setError('Browserul nu suportă geolocalizare GPS.');
+      return;
+    }
+    setDetectingGps(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const lat = pos.coords.latitude;
+        const lon = pos.coords.longitude;
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.flyTo([lat, lon], 14, { duration: 1 });
+          setMapCenter({ lat, lon });
+        }
+        let detectedCity = 'București';
+        let detectedCountry = 'RO';
+        try {
+          const revRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`, {
+            headers: { 'Accept': 'application/json' }
+          });
+          if (revRes.ok) {
+            const revData = await revRes.json();
+            const addr = revData.address || {};
+            const cName = addr.city || addr.town || addr.municipality || addr.village || addr.county;
+            if (cName) detectedCity = cName.replace('Municipiul ', '').replace('Județul ', '').trim();
+            if (addr.country_code) detectedCountry = addr.country_code.toUpperCase();
+          }
+        } catch (e) {
+          let minDist = Infinity;
+          for (const [cName, cCoord] of Object.entries(CITY_COORDS)) {
+            const d = Math.hypot(cCoord.lat - lat, cCoord.lon - lon);
+            if (d < minDist) { minDist = d; detectedCity = cName.charAt(0).toUpperCase() + cName.slice(1); }
+          }
+        }
+        setSelectedCountry(detectedCountry);
+        setSelectedCities([detectedCity]);
+        setDetectingGps(false);
+      },
+      (err) => {
+        setDetectingGps(false);
+        setError('Nu s-a putut obține locația GPS din browser (permisiune refuzată sau semnal indisponibil).');
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
   const handleSaveGoogleKey = async () => {
     if (!googlePlacesApiKey.trim()) return;
     setSavingGoogleKey(true);
@@ -733,20 +781,16 @@ export default function HarveySearchModal({ isOpen, onClose, onSearchComplete })
         {/* Header Compact */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-full bg-primary-50 dark:bg-primary-950/50 text-primary-600 dark:text-primary-400 flex items-center justify-center shrink-0">
-              <Sparkles size={16} />
+            <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+              <MapPin size={16} />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-sm font-bold text-slate-800 dark:text-white leading-tight truncate">
-                  Căutare Companii Reale pe Hartă
+                  Modul Prospectare Google Maps
                 </h3>
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap shrink-0 ${
-                  hasGooglePlacesKey 
-                    ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800' 
-                    : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
-                }`}>
-                  {hasGooglePlacesKey ? 'Google Places Activ' : 'OpenStreetMap'}
+                <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full whitespace-nowrap shrink-0 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                  {hasGooglePlacesKey ? 'Google Places API Activ' : 'Google Maps Directory Activ'}
                 </span>
                 <button
                   type="button"
@@ -755,11 +799,11 @@ export default function HarveySearchModal({ isOpen, onClose, onSearchComplete })
                   title="Configurează cheia Google Places API"
                 >
                   <Key size={11} />
-                  <span>{hasGooglePlacesKey ? 'Cheie API' : '+ Cheie Google'}</span>
+                  <span>{hasGooglePlacesKey ? 'Cheie API' : '+ Cheie Google Places'}</span>
                 </button>
               </div>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                Alege țara, orașele și nișa pentru a extrage lead-uri
+                Scanare de maximă acuratețe cu telefoane oficiale, WhatsApp 1-Click și emailuri verificate
               </p>
             </div>
           </div>
@@ -879,13 +923,24 @@ export default function HarveySearchModal({ isOpen, onClose, onSearchComplete })
                     <MapPin size={13} className="text-primary-600 shrink-0" />
                     <span>2. Orașe ({COUNTRY_NAMES[selectedCountry] || customCountry || 'Țară'})</span>
                   </label>
-                  <button
-                    type="button"
-                    onClick={selectAllCities}
-                    className="text-[11px] font-bold text-primary-600 dark:text-primary-400 hover:underline cursor-pointer whitespace-nowrap shrink-0"
-                  >
-                    {isAllCitiesSelected ? 'Doar Capitala' : 'Selectează Toate'}
-                  </button>
+                  <div className="flex items-center gap-2.5">
+                    <button
+                      type="button"
+                      onClick={handleDetectGps}
+                      className="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-1"
+                      title="Detectează automat poziția ta GPS și orașul curent"
+                    >
+                      <Navigation size={11} className={detectingGps ? 'animate-spin' : ''} />
+                      <span>{detectingGps ? 'Se detectează GPS...' : 'Locația Mea (GPS)'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={selectAllCities}
+                      className="text-[11px] font-bold text-primary-600 dark:text-primary-400 hover:underline cursor-pointer whitespace-nowrap shrink-0"
+                    >
+                      {isAllCitiesSelected ? 'Doar Capitala' : 'Selectează Toate'}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="relative flex items-center">

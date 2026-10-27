@@ -105,22 +105,32 @@ export async function cropFaceFromIdCard(imageBlob) {
                 const w = img.naturalWidth
                 const h = img.naturalHeight
 
-                // Romanian ID card face region
-                // Start higher (11%) to not cut the head, stop higher (68%) to avoid the bottom stamp
-                // Shift horizontal right slightly to center the face properly (4% to 32%)
-                const x1 = Math.round(w * 0.04)
-                const y1 = Math.round(h * 0.11)
-                const x2 = Math.round(w * 0.32)
-                const y2 = Math.round(h * 0.68)
+                // Detect portrait (Adeverință de domiciliu A4 / RO CEI Reader) vs landscape (C.I. Card)
+                let x1, y1, x2, y2;
+                if (w < h) {
+                    // Document portret (ex: Adeverință de domiciliu PDF/Scanare)
+                    // Poza se află la mijloc-stânga sub secțiunea 'Document foto'
+                    x1 = Math.round(w * 0.06);
+                    y1 = Math.round(h * 0.40);
+                    x2 = Math.round(w * 0.42);
+                    y2 = Math.round(h * 0.74);
+                } else {
+                    // Document peisaj (Buletin Clasic sau Buletin Nou CEI)
+                    // Poza se află în cadranul stâng
+                    x1 = Math.round(w * 0.03);
+                    y1 = Math.round(h * 0.12);
+                    x2 = Math.round(w * 0.34);
+                    y2 = Math.round(h * 0.78);
+                }
 
-                const cropW = x2 - x1
-                const cropH = y2 - y1
+                const cropW = x2 - x1;
+                const cropH = y2 - y1;
 
-                const canvas = document.createElement('canvas')
-                canvas.width = cropW
-                canvas.height = cropH
-                const ctx = canvas.getContext('2d')
-                ctx.drawImage(img, x1, y1, cropW, cropH, 0, 0, cropW, cropH)
+                const canvas = document.createElement('canvas');
+                canvas.width = cropW;
+                canvas.height = cropH;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, x1, y1, cropW, cropH, 0, 0, cropW, cropH);
 
                 canvas.toBlob(blob => {
                     if (blob) {

@@ -44,8 +44,10 @@ import BillingCalculator from './BillingCalculator';
 import LanguageToggle from '../../components/LanguageToggle';
 import { resolveFaviconUrl } from '../../utils/favicon';
 import HarveySdrView from '../../components/admin/HarveySdrView';
+import GoogleMapsRadarView from '../../components/admin/GoogleMapsRadarView';
 import MarketingAdsKit from '../../components/admin/MarketingAdsKit';
 import TrafficAnalyticsView from '../../components/admin/TrafficAnalyticsView';
+import { BUILD_INFO } from '../../buildInfo';
 
 export default function AdminDashboard() {
   const location = useLocation();
@@ -119,6 +121,7 @@ export default function AdminDashboard() {
   const navItems = [
     { name: 'Tenanți', path: '/admin/dashboard', icon: Building2 },
     { name: 'Harvey AI (SDR)', path: '/admin/harvey', icon: Sparkles },
+    { name: 'Google Maps Radar', path: '/admin/maps-radar', icon: MapPin },
     { name: 'Trafic & Lead-uri', path: '/admin/traffic', icon: TrendingUp },
     { name: 'Portal Contabili', path: '/contabil', icon: FileCheck, targetBlank: true },
     { name: 'Kit Reclame Meta', path: '/admin/marketing', icon: Megaphone },
@@ -145,7 +148,7 @@ export default function AdminDashboard() {
       )}
 
       {/* Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-50 transform ${sidebarOpen ? 'translate-x-0 w-60 shadow-2xl' : '-translate-x-full w-60'} md:translate-x-0 md:static ${sidebarOpen ? 'md:w-56' : 'md:w-20'} md:shadow-none bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 transition-all duration-300 flex flex-col shrink-0 overflow-hidden`}>
+      <div className={`fixed inset-y-0 left-0 z-50 transform ${sidebarOpen ? 'translate-x-0 w-60 shadow-2xl' : '-translate-x-full w-60'} md:translate-x-0 md:sticky md:top-0 md:h-screen md:self-start ${sidebarOpen ? 'md:w-56' : 'md:w-20'} md:shadow-none bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 transition-all duration-300 flex flex-col shrink-0 overflow-hidden`}>
         <div className={`h-16 flex items-center ${sidebarOpen ? 'justify-between px-5' : 'justify-center px-2'} border-b border-slate-200 dark:border-slate-700 shrink-0`}>
           {sidebarOpen ? (
             <>
@@ -189,7 +192,7 @@ export default function AdminDashboard() {
           )}
         </div>
         
-        <nav className="flex-1 p-3 space-y-1.5 overflow-y-auto overflow-x-hidden">
+        <nav className="flex-1 min-h-0 p-3 space-y-1 overflow-y-auto overflow-x-hidden">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
@@ -203,29 +206,56 @@ export default function AdminDashboard() {
                   if (window.innerWidth < 1024) setSidebarOpen(false);
                 }}
                 title={!sidebarOpen ? item.name : undefined}
-                className={`flex items-center ${sidebarOpen ? 'space-x-3 px-3.5' : 'justify-center px-0'} h-11 rounded-xl transition-all ${
+                className={`flex items-center ${sidebarOpen ? 'space-x-3 px-3.5' : 'justify-center px-0'} h-10 rounded-xl transition-all ${
                   isActive 
                     ? 'bg-primary-50 dark:bg-primary-950/50 text-primary-600 dark:text-primary-400 font-bold' 
                     : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:text-white font-medium'
                 }`}
               >
-                <Icon size={20} className={isActive ? 'text-primary-600 dark:text-primary-400 shrink-0' : 'text-slate-400 shrink-0'} />
+                <Icon size={19} className={isActive ? 'text-primary-600 dark:text-primary-400 shrink-0' : 'text-slate-400 shrink-0'} />
                 {sidebarOpen && <span className="truncate text-sm">{item.name}</span>}
               </Link>
             );
           })}
         </nav>
 
-        <div className="p-3 border-t border-slate-200 dark:border-slate-700 shrink-0">
+        <div className="p-3 border-t border-slate-200 dark:border-slate-700 shrink-0 space-y-2">
           <Link 
             to="/admin/login" 
             onClick={handleLogout} 
             title={!sidebarOpen ? "Deconectare" : undefined}
-            className={`flex items-center ${sidebarOpen ? 'space-x-3 px-3.5' : 'justify-center px-0'} h-11 rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors font-medium text-sm`}
+            className={`flex items-center ${sidebarOpen ? 'space-x-3 px-3.5' : 'justify-center px-0'} h-10 rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors font-medium text-sm`}
           >
-            <LogOut size={20} className="shrink-0" />
+            <LogOut size={19} className="shrink-0" />
             {sidebarOpen && <span className="truncate">Deconectare</span>}
           </Link>
+
+          {/* Informații Build & Versiune — vizibil strict în panoul SuperAdmin */}
+          {sidebarOpen ? (
+            <div className="px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700/80 select-none">
+              <div className="flex items-center justify-between gap-1 text-[11px] font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap shrink-0">
+                <span className="flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0 shadow-xs" />
+                  <span className="font-bold text-slate-800 dark:text-slate-200">Build #{BUILD_INFO.buildNumber}</span>
+                </span>
+                <span className="px-1.5 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700 text-[10px] text-slate-600 dark:text-slate-300 font-bold shrink-0 whitespace-nowrap">
+                  {BUILD_INFO.commitHash || 'main'}
+                </span>
+              </div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 truncate whitespace-nowrap font-medium" title={BUILD_INFO.buildDate}>
+                Data: {BUILD_INFO.buildDate}
+              </div>
+            </div>
+          ) : (
+            <div 
+              className="flex flex-col items-center justify-center py-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-default select-none"
+              title={`Build #${BUILD_INFO.buildNumber} (${BUILD_INFO.commitHash}) • Data: ${BUILD_INFO.buildDate}`}
+            >
+              <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap shrink-0">
+                #{BUILD_INFO.buildNumber}
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -300,6 +330,7 @@ export default function AdminDashboard() {
             <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
             <Route path="/dashboard" element={<TenantsList defaultTab="tenants" />} />
             <Route path="/harvey" element={<TenantsList defaultTab="harvey" />} />
+            <Route path="/maps-radar" element={<TenantsList defaultTab="radar" />} />
             <Route path="/traffic" element={<TrafficAnalyticsView />} />
             <Route path="/analytics" element={<TrafficAnalyticsView />} />
             <Route path="/marketing" element={<MarketingAdsKit />} />
@@ -1215,6 +1246,14 @@ function TenantsList({ defaultTab = 'tenants' }) {
       {/* Selector Tab: doar când suntem în lista de Tenanți */}
       {activeTab === 'harvey' ? (
         <HarveySdrView 
+          onConvertToTenant={(lead) => {
+            setInitialLeadForCreate(lead);
+            setSelectedTenantForEdit(null);
+            setIsModalOpen(true);
+          }}
+        />
+      ) : activeTab === 'radar' ? (
+        <GoogleMapsRadarView 
           onConvertToTenant={(lead) => {
             setInitialLeadForCreate(lead);
             setSelectedTenantForEdit(null);

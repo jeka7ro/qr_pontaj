@@ -670,7 +670,8 @@ async function sendLeadNotificationToAdmin({
   initialPassword,
   loginUrl,
   isSuspectDuplicate,
-  duplicateReason
+  duplicateReason,
+  isPersonalAccount
 }) {
   const adminRecipient = process.env.ADMIN_NOTIFICATION_EMAIL || process.env.BREVO_SENDER_EMAIL || 'jeka7ro@gmail.com';
   const cleanPhone = phone ? String(phone).replace(/[^0-9+]/g, '') : '';
@@ -886,7 +887,8 @@ async function sendLeadNotificationToAdmin({
       initialPassword,
       loginUrl: tenantUrl,
       isSuspectDuplicate,
-      duplicateReason
+      duplicateReason,
+      isPersonalAccount
     }).catch(tgErr => console.warn('[Telegram] Alert error:', tgErr.message));
   } catch (err) {
     console.warn('[Telegram] Require error:', err.message);

@@ -3,12 +3,53 @@ const router = express.Router();
 const db = require('../db');
 const harveyService = require('../services/harveyService');
 const { lookupAnafCompany, lookupAnafBatch } = require('../services/anafService');
+const { getFirmeApiUsage, lookupFirmeApiBatch, discoverCompaniesByCaenOrQuery, enrichCompaniesContactDetails } = require('../services/firmeApiService');
 
 // Middleware simplu de verificare superadmin (similar cu celelalte rute admin)
 const checkAdmin = (req, res, next) => {
   // Lasăm request-ul să continue dacă vine din dashboard-ul securizat
   next();
 };
+
+// GET /api/admin/harvey/my-location — Geolocalizare IP în caz că browserul blochează permisiunea GPS
+router.get('/my-location', checkAdmin, async (req, res) => {
+  try {
+    const fetchRes = await fetch('https://ipwho.is/');
+    if (fetchRes.ok) {
+      const data = await fetchRes.json();
+      if (data && data.success && data.latitude && data.longitude) {
+        let city = data.city || 'București';
+        if (city.toLowerCase() === 'bucharest') city = 'București';
+        return res.json({
+          success: true,
+          city,
+          country: data.country_code || 'RO',
+          lat: Number(data.latitude),
+          lon: Number(data.longitude),
+          source: 'ip'
+        });
+      }
+    }
+    return res.json({
+      success: true,
+      city: 'București',
+      country: 'RO',
+      lat: 44.4323,
+      lon: 26.1063,
+      source: 'default'
+    });
+  } catch (err) {
+    console.warn('Eroare my-location IP:', err.message);
+    return res.json({
+      success: true,
+      city: 'București',
+      country: 'RO',
+      lat: 44.4323,
+      lon: 26.1063,
+      source: 'fallback'
+    });
+  }
+});
 
 // GET /api/admin/harvey/settings
 router.get('/settings', checkAdmin, async (req, res) => {
@@ -69,10 +110,23 @@ router.get('/tracking', checkAdmin, async (req, res) => {
 // GET /api/admin/harvey/leads
 router.get('/leads', checkAdmin, async (req, res) => {
   try {
-    const { status, search, country, city, industry } = req.query;
+    const { status, search, country, city, industry, source } = req.query;
     let query = 'SELECT * FROM sales_leads';
-    const conditions = ["email IS NOT NULL AND email != ''"];
+    const conditions = ["((email IS NOT NULL AND email != '') OR (phone IS NOT NULL AND phone != '') OR source IN ('anaf', 'firmeapi'))"];
     const params = [];
+
+    if (source && source !== 'all') {
+      if (source === 'google_maps') {
+        conditions.push("(source = 'google_maps' OR source = 'google_places')");
+      } else if (source === 'firmeapi') {
+        conditions.push("source = 'firmeapi'");
+      } else if (source === 'anaf') {
+        conditions.push("(source ILIKE '%anaf%' OR notes ILIKE '%anaf%')");
+      } else {
+        params.push(source);
+        conditions.push(`source = $${params.length}`);
+      }
+    }
 
     if (status && status !== 'all') {
       params.push(status);
@@ -129,16 +183,16 @@ router.post('/search', checkAdmin, async (req, res) => {
       googlePlacesApiKey
     });
 
-    const isGoogle = leads.some(l => l.source === 'google_places');
+    const isGoogle = leads.some(l => l.source === 'google_places' || l.source === 'google_maps');
     let message = isGoogle 
-      ? `Au fost identificate și salvate ${leads.length} companii noi prin Google Places API.`
+      ? `Au fost identificate și salvate ${leads.length} companii noi prin Google Maps Directory & Web Enrichment.`
       : `Au fost identificate și salvate ${leads.length} companii noi cu date verificate.`;
     let responseLeads = leads;
 
     if (leads.length === 0) {
       const requestedLimit = parseInt(limit, 10) || 20;
       const targetCities = Array.isArray(cities) && cities.length > 0 ? cities : (city ? [city] : []);
-      let query = "SELECT * FROM sales_leads WHERE email IS NOT NULL AND email != '' AND country = $1";
+      let query = "SELECT * FROM sales_leads WHERE (email IS NOT NULL AND email != '' OR phone IS NOT NULL AND phone != '') AND country = $1";
       const params = [(country || 'RO').toUpperCase()];
 
       if (targetCities.length > 0) {
@@ -292,7 +346,7 @@ router.post('/leads', checkAdmin, async (req, res) => {
 router.put('/leads/:id', checkAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const { draftSubject, draftBody, notes, status, email, phone, contactPerson, language } = req.body;
+    const { draftSubject, draftBody, notes, status, email, phone, contactPerson, language, companyName, address, city, cui } = req.body;
 
     const updated = await db.query(`
       UPDATE sales_leads
@@ -304,10 +358,14 @@ router.put('/leads/:id', checkAdmin, async (req, res) => {
           phone = COALESCE($6, phone),
           contact_person = COALESCE($7, contact_person),
           language = COALESCE($8, language),
+          company_name = COALESCE($9, company_name),
+          address = COALESCE($10, address),
+          city = COALESCE($11, city),
+          cui = COALESCE($12, cui),
           updated_at = NOW()
-      WHERE id = $9
+      WHERE id = $13
       RETURNING *;
-    `, [draftSubject, draftBody, notes, status, email, phone, contactPerson, language, id]);
+    `, [draftSubject, draftBody, notes, status, email, phone, contactPerson, language, companyName, address, city, cui, id]);
 
     res.json({ success: true, lead: updated.rows[0] });
   } catch (err) {
@@ -419,15 +477,42 @@ router.post('/import', checkAdmin, async (req, res) => {
   }
 });
 
-// POST /api/admin/harvey/anaf-batch — Căutare în lot CUI-uri oficiale ANAF v9
+// POST /api/admin/harvey/anaf-batch — Căutare în lot CUI-uri oficiale ANAF v9 sau după CAEN / Domeniu + Oraș
 router.post('/anaf-batch', checkAdmin, async (req, res) => {
   try {
-    const { cuis } = req.body;
-    if (!Array.isArray(cuis) || cuis.length === 0) {
-      return res.status(400).json({ success: false, message: 'Furnizați o listă de CUI-uri (array).' });
+    const { cuis, caen, query, city = 'București', limit = 10 } = req.body;
+
+    let found = [];
+    let notFound = [];
+
+    const isCaenOrQuerySearch = Boolean(
+      caen ||
+      query ||
+      (Array.isArray(cuis) && cuis.length === 1 && (/^\d{4}$/.test(String(cuis[0]).trim()) || !/^\d+$/.test(String(cuis[0]).trim())))
+    );
+
+    if (isCaenOrQuerySearch) {
+      const searchVal = caen || query || (Array.isArray(cuis) ? cuis[0] : '');
+      const discovered = await discoverCompaniesByCaenOrQuery({
+        caen: /^\d{4}$/.test(String(searchVal).trim()) ? String(searchVal).trim() : undefined,
+        query: String(searchVal).trim(),
+        city,
+        limit
+      });
+      found = discovered.found || [];
+      notFound = discovered.notFound || [];
+    } else {
+      if (!Array.isArray(cuis) || cuis.length === 0) {
+        return res.status(400).json({ success: false, message: 'Furnizați un cod CAEN, domeniu sau o listă de CUI-uri.' });
+      }
+      const resBatch = await lookupAnafBatch(cuis);
+      found = resBatch.found || [];
+      notFound = resBatch.notFound || [];
+      if (found.length > 0) {
+        await enrichCompaniesContactDetails(found, city);
+      }
     }
 
-    const { found, notFound } = await lookupAnafBatch(cuis);
     const settings = await harveyService.getSettings();
     const contactEmail = settings.sender_email || 'contact@pontaj.app';
     const contactPhone = settings.sender_phone || '+40 757 77 77 12';
@@ -466,12 +551,49 @@ router.post('/anaf-batch', checkAdmin, async (req, res) => {
       };
     });
 
+    // Salvăm automat companiile găsite pentru a fi disponibile imediat în Harvey SDR
+    let autoSavedCount = 0;
+    for (const c of enriched) {
+      if (!c.name) continue;
+      const checkRes = await db.query(
+        'SELECT id FROM sales_leads WHERE (cui IS NOT NULL AND cui != \'\' AND cui != \'Verificat Web\' AND cui = $1) OR LOWER(company_name) = LOWER($2)',
+        [c.cui || '', c.name]
+      );
+      if (checkRes.rows.length === 0) {
+        await db.query(
+          `INSERT INTO sales_leads (
+            company_name, city, country, phone, email, website, cui, address, industry,
+            notes, draft_subject, draft_body, status, source, created_at, updated_at
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW(), NOW())`,
+          [
+            c.name,
+            c.city || c.county || city || 'România',
+            'RO',
+            c.phone || '',
+            c.email || '',
+            c.website || '',
+            c.cui && c.cui !== 'Verificat Web' ? c.cui : '',
+            c.address || '',
+            c.nicheCategory || 'General B2B',
+            `Importat oficial ANAF v9 (CAEN: ${c.caen || 'N/A'} - ${c.caenDescription || ''})`,
+            c.pitchSubject || `Pontaj digital QR`,
+            c.pitchBody || '',
+            'pending_review',
+            'anaf'
+          ]
+        );
+        autoSavedCount++;
+      }
+    }
+
     res.json({
       success: true,
       foundCount: enriched.length,
+      savedCount: autoSavedCount,
       notFoundCount: notFound.length,
       found: enriched,
-      notFound
+      notFound,
+      message: `Au fost extrase și salvate automat ${autoSavedCount} companii noi în Harvey SDR!`
     });
   } catch (err) {
     console.error('Eroare anaf-batch:', err);
@@ -500,22 +622,24 @@ router.post('/anaf-save', checkAdmin, async (req, res) => {
       if (checkRes.rows.length === 0) {
         await db.query(
           `INSERT INTO sales_leads (
-            company_name, city, country, phone, email, cui, address,
-            notes, pitch_subject, pitch_body, status, lead_source, created_at, updated_at
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW())`,
+            company_name, city, country, phone, email, website, cui, address, industry,
+            notes, draft_subject, draft_body, status, source, created_at, updated_at
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW(), NOW())`,
           [
             c.name,
             c.city || c.county || 'România',
             'RO',
             c.phone || '',
             c.email || '',
+            c.website || '',
             c.cui || '',
             c.address || '',
+            c.nicheCategory || 'General B2B',
             `Importat oficial ANAF v9 (CAEN: ${c.caen || 'N/A'} - ${c.caenDescription || ''})`,
-            c.pitchSubject || `Soluție pontaj QR pentru ${c.name}`,
+            c.pitchSubject || `Pontaj digital QR`,
             c.pitchBody || '',
             'pending_review',
-            'ANAF Official Registry'
+            'anaf'
           ]
         );
         inserted++;
@@ -529,6 +653,191 @@ router.post('/anaf-save', checkAdmin, async (req, res) => {
     });
   } catch (err) {
     console.error('Eroare anaf-save:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// GET /api/admin/harvey/firmeapi-usage
+router.get('/firmeapi-usage', checkAdmin, async (req, res) => {
+  try {
+    const usage = await getFirmeApiUsage();
+    res.json({ success: true, usage });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// POST /api/admin/harvey/firmeapi-batch
+router.post('/firmeapi-batch', checkAdmin, async (req, res) => {
+  try {
+    const { cuis, caen, query, city = 'București', limit = 10 } = req.body;
+
+    let found = [];
+    let notFound = [];
+    let usage = null;
+
+    const isCaenOrQuerySearch = Boolean(
+      caen ||
+      query ||
+      (Array.isArray(cuis) && cuis.length === 1 && (/^\d{4}$/.test(String(cuis[0]).trim()) || !/^\d+$/.test(String(cuis[0]).trim())))
+    );
+
+    if (isCaenOrQuerySearch) {
+      const searchVal = caen || query || (Array.isArray(cuis) ? cuis[0] : '');
+      const discovered = await discoverCompaniesByCaenOrQuery({
+        caen: /^\d{4}$/.test(String(searchVal).trim()) ? String(searchVal).trim() : undefined,
+        query: String(searchVal).trim(),
+        city,
+        limit
+      });
+      found = discovered.found || [];
+      notFound = discovered.notFound || [];
+      usage = discovered.usage;
+    } else {
+      if (!Array.isArray(cuis) || cuis.length === 0) {
+        return res.status(400).json({ success: false, message: 'Furnizați un cod CAEN, domeniu sau o listă de CUI-uri.' });
+      }
+      const resBatch = await lookupFirmeApiBatch(cuis, { city, limit });
+      found = resBatch.found || [];
+      notFound = resBatch.notFound || [];
+      usage = resBatch.usage;
+    }
+
+    const settings = await harveyService.getSettings();
+    const contactEmail = settings.sender_email || 'contact@pontaj.app';
+    const contactPhone = settings.sender_phone || '+40 757 77 77 12';
+    const contactName = settings.sender_name || 'Echipa QR Pontaj';
+
+    const enriched = found.map(company => {
+      const name = company.name;
+      const compCity = company.city || city || 'România';
+      let nicheCategory = company.nicheCategory || 'General B2B';
+      let pitchSubject = 'Pontaj digital QR';
+      let pitchBody = `Bună ziua,\n\nAm remarcat compania ${name} din ${compCity}. În contextul cerințelor Codului Muncii (Art. 119) privind evidența orelor de muncă, vă propunem o soluție modernă de pontaj prin cod QR pe tabletă sau mobil, la 5 € / salariat / lună (redus de la 6 €, minim 50 € / lună / firmă, iar de la 51 angajați - 4.00 € redus de la 5 €; peste 150 angajați tarif negociabil).\n\nPrincipalele avantaje pentru ${name}:\n1. Condică de prezență generată automat, fără semnături pe hârtie.\n2. Export 1-Click direct compatibil cu softul de salarii SAGA.\n3. Conformitate legală & GDPR: acord electronic DPA (Art. 28 GDPR) inclus, date securizate în UE, fără biometrie invazivă.\n4. Fără hardware dedicat: funcționează pe orice tabletă sau smartphone (soluție 100% cloud).\n\nPuteți testa gratuit platforma timp de 15 zile, fără obligații sau date bancare: https://qr.pontaj.app/ro?ref=firmeapi\n\nCu respect,\n${contactName}\nEmail: ${contactEmail}\nTelefon / WhatsApp: ${contactPhone}\nWeb: https://qr.pontaj.app`;
+
+      if (company.caen?.startsWith('56') || company.caen?.startsWith('55') || /restaurant|cafenea|hotel|catering|bar|pizza|pensiune|bistro/i.test(name + ' ' + (company.caenDescription || ''))) {
+        nicheCategory = 'HORECA & Ospitalitate';
+        pitchSubject = 'Pontaj digital QR';
+        pitchBody = `Bună ziua,\n\nEchipa din HORECA lucrează în ture, iar condica pe hârtie creează haos la calculul salariilor și riscuri ITM.\n\nPentru ${name}, QR Pontaj oferă:\n• Kiosk pe tabletă la intrare: personalul scanează în 1 secundă codul QR personal.\n• Evidență impecabilă conform Art. 119 (ore de zi, ore de noapte, weekend).\n• 1-Click Export în SAGA Salarii pentru contabilul dvs.\n• Cost: 5 € / om / lună (redus de la 6 €, minim 50 € / firmă, de la 51 angajați - 4.00 € redus de la 5 €; peste 150 angajați tarif negociabil).\n\nTestați gratuit 15 zile: https://qr.pontaj.app/ro\n\nCu stimă,\n${contactName}\nEmail: ${contactEmail}\nTelefon / WhatsApp: ${contactPhone}\nWeb: https://qr.pontaj.app`;
+      } else if (company.caen?.startsWith('41') || company.caen?.startsWith('42') || company.caen?.startsWith('43') || /construct|instal|constructii|edilitare|antrepriza/i.test(name + ' ' + (company.caenDescription || ''))) {
+        nicheCategory = 'Construcții & Șantiere';
+        pitchSubject = 'Pontaj digital QR';
+        pitchBody = `Bună ziua,\n\nPentru echipele ${name}, colectarea foilor de prezență din teren fără erori este o provocare constantă.\n\nCu QR Pontaj:\n• Muncitorii se pontează prin QR pe telefon sau pe o tabletă de șantier.\n• Geolocație GPS la fiecare pontare.\n• Export direct în SAGA Salarii.\n• Cost: 5 € / om / lună (redus de la 6 €, minim 50 € / firmă, de la 51 angajați - 4.00 € redus de la 5 €; peste 150 angajați tarif negociabil).\n\nTestați gratuit 15 zile: https://qr.pontaj.app/ro\n\nCu respect,\n${contactName}\nEmail: ${contactEmail}\nTelefon / WhatsApp: ${contactPhone}\nWeb: https://qr.pontaj.app`;
+      } else if (company.caen?.startsWith('6920') || /contab|audit|expert/i.test(name + ' ' + (company.caenDescription || ''))) {
+        nicheCategory = 'Contabilitate & SAGA';
+        pitchSubject = 'Pontaj digital QR';
+      }
+
+      return {
+        ...company,
+        nicheCategory,
+        pitchSubject,
+        pitchBody
+      };
+    });
+
+    // Salvăm automat companiile găsite pentru a nu pierde NICIUN credit consumat din FirmeAPI!
+    let autoSavedCount = 0;
+    for (const c of enriched) {
+      if (!c.name) continue;
+      const checkRes = await db.query(
+        'SELECT id FROM sales_leads WHERE (cui IS NOT NULL AND cui != \'\' AND cui != \'Verificat Web\' AND cui = $1) OR LOWER(company_name) = LOWER($2)',
+        [c.cui || '', c.name]
+      );
+      if (checkRes.rows.length === 0) {
+        await db.query(
+          `INSERT INTO sales_leads (
+            company_name, city, country, phone, email, website, cui, address, industry,
+            notes, draft_subject, draft_body, status, source, created_at, updated_at
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW(), NOW())`,
+          [
+            c.name,
+            c.city || c.county || city || 'România',
+            'RO',
+            c.phone || '',
+            c.email || '',
+            c.website || '',
+            c.cui && c.cui !== 'Verificat Web' ? c.cui : '',
+            c.address || '',
+            c.nicheCategory || 'General B2B',
+            `Importat prin FirmeAPI.ro (CAEN: ${c.caen || 'N/A'} ${c.caenDescription || ''}, Reg. Com.: ${c.regCom || 'N/A'})`,
+            c.pitchSubject || `Pontaj digital QR`,
+            c.pitchBody || '',
+            'pending_review',
+            'firmeapi'
+          ]
+        );
+        autoSavedCount++;
+      }
+    }
+
+    res.json({
+      success: true,
+      foundCount: enriched.length,
+      savedCount: autoSavedCount,
+      notFoundCount: notFound.length,
+      found: enriched,
+      notFound,
+      usage,
+      message: `Au fost extrase și salvate automat ${autoSavedCount} companii noi în Harvey SDR!`
+    });
+  } catch (err) {
+    console.error('Eroare firmeapi-batch:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// POST /api/admin/harvey/firmeapi-save
+router.post('/firmeapi-save', checkAdmin, async (req, res) => {
+  try {
+    const { companies } = req.body;
+    if (!Array.isArray(companies) || companies.length === 0) {
+      return res.status(400).json({ success: false, message: 'Furnizați o listă de companii de salvat.' });
+    }
+
+    let inserted = 0;
+    for (const c of companies) {
+      if (!c.name) continue;
+
+      const checkRes = await db.query(
+        'SELECT id FROM sales_leads WHERE (cui IS NOT NULL AND cui != \'Verificat Web\' AND cui = $1) OR LOWER(company_name) = LOWER($2)',
+        [c.cui || '', c.name]
+      );
+
+      if (checkRes.rows.length === 0) {
+        await db.query(
+          `INSERT INTO sales_leads (
+            company_name, city, country, phone, email, website, cui, address, industry,
+            notes, draft_subject, draft_body, status, source, created_at, updated_at
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW(), NOW())`,
+          [
+            c.name,
+            c.city || c.county || 'România',
+            'RO',
+            c.phone || '',
+            c.email || '',
+            c.website || '',
+            c.cui && c.cui !== 'Verificat Web' ? c.cui : '',
+            c.address || '',
+            c.nicheCategory || 'General B2B',
+            `Importat prin FirmeAPI.ro (CAEN: ${c.caen || 'N/A'} ${c.caenDescription || ''}, Reg. Com.: ${c.regCom || 'N/A'})`,
+            c.pitchSubject || `Pontaj digital QR`,
+            c.pitchBody || '',
+            'pending_review',
+            'firmeapi'
+          ]
+        );
+        inserted++;
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `S-au salvat cu succes ${inserted} companii din FirmeAPI.ro în Harvey SDR!`,
+      inserted
+    });
+  } catch (err) {
+    console.error('Eroare firmeapi-save:', err);
     res.status(500).json({ success: false, message: err.message });
   }
 });

@@ -1,7 +1,10 @@
 /**
  * Serviciu oficial pentru interogarea registrului public ANAF
  * Endpoint v9: https://webservicesp.anaf.ro/api/PlatitorTvaRest/v9/tva
+ * Cu fallback automat pe FirmeAPI.ro (100 cereri/zi gratuite) când ANAF nu răspunde.
  */
+
+const { lookupFirmeApiCompany, lookupFirmeApiBatch } = require('./firmeApiService');
 
 async function lookupAnafCompany(rawCui) {
   if (!rawCui) return null;
@@ -12,7 +15,7 @@ async function lookupAnafCompany(rawCui) {
     try {
       const today = new Date().toISOString().split('T')[0];
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000);
+      const timeoutId = setTimeout(() => controller.abort(), 12000);
 
       const anafRes = await fetch('https://webservicesp.anaf.ro/api/PlatitorTvaRest/v9/tva', {
         method: 'POST',
@@ -24,11 +27,11 @@ async function lookupAnafCompany(rawCui) {
 
       if (!anafRes.ok) {
         if (attempt === 1) continue;
-        return null;
+        break;
       }
       const data = await anafRes.json();
       const item = data.found && data.found.length > 0 ? data.found[0] : null;
-      if (!item || !item.date_generale) return null;
+      if (!item || !item.date_generale) break;
 
       const gen = item.date_generale;
       const adr = item.adresa_sediu_social || {};
@@ -53,14 +56,25 @@ async function lookupAnafCompany(rawCui) {
         phone: gen.telefon || '',
         regCom: gen.nrRegCom || '',
         isVatPayer: Boolean(item.inregistrare_scop_Tva?.scpTVA),
-        status: gen.stare_inregistrare || 'ACTIV'
+        status: gen.stare_inregistrare || 'ACTIV',
+        source: 'anaf'
       };
     } catch (err) {
       if (attempt === 1) continue;
-      console.warn('[ANAF] Auto-lookup warning:', err.message);
-      return null;
+      console.warn('[ANAF] Auto-lookup warning, trying FirmeAPI fallback:', err.message);
     }
   }
+
+  // Fallback automat la FirmeAPI.ro dacă ANAF v9 nu a returnat rezultat sau a dat timeout
+  try {
+    const fallbackCompany = await lookupFirmeApiCompany(digitsOnly);
+    if (fallbackCompany && fallbackCompany.name) {
+      return fallbackCompany;
+    }
+  } catch (fbErr) {
+    console.warn('[ANAF -> FirmeAPI Fallback] warning:', fbErr.message);
+  }
+
   return null;
 }
 
@@ -157,7 +171,20 @@ async function lookupAnafBatch(cuiList) {
     }
   }
 
-  console.error('[ANAF Batch] Error querying ANAF v9 after 2 attempts:', lastError?.message);
+  console.warn('[ANAF Batch] Error querying ANAF v9 after 2 attempts, trying FirmeAPI fallback:', lastError?.message);
+  try {
+    const fb = await lookupFirmeApiBatch(cleanCuis);
+    if (fb && Array.isArray(fb.found) && (fb.found.length > 0 || fb.notFound.length > 0)) {
+      return {
+        found: fb.found,
+        notFound: fb.notFound,
+        usage: fb.usage,
+        usedFallback: 'firmeapi'
+      };
+    }
+  } catch (fbErr) {
+    console.warn('[ANAF Batch -> FirmeAPI Fallback] error:', fbErr.message);
+  }
   throw new Error(lastError?.message || 'Serviciul oficial ANAF nu răspunde în timp util. Reîncercați în câteva momente.');
 }
 

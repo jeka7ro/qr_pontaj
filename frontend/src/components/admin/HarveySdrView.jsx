@@ -30,6 +30,9 @@ import {
   Tag,
   MousePointerClick,
   RotateCcw,
+  MapPin,
+  MessageCircle,
+  ChevronDown,
   X
 } from 'lucide-react';
 import HarveySearchModal, { 
@@ -80,6 +83,30 @@ const getLeadEmails = (emailStr) => {
   return list;
 };
 
+// Helper generare URL WhatsApp 1-Click cu mesaj personalizat pentru afaceri
+const getWhatsAppUrl = (lead) => {
+  if (!lead || !lead.phone) return null;
+  let digits = lead.phone.replace(/[^0-9]/g, '');
+  if (digits.startsWith('0') && digits.length === 10) {
+    digits = '40' + digits.substring(1);
+  } else if (!digits.startsWith('40') && digits.length === 9) {
+    digits = '40' + digits;
+  }
+  if (digits.length < 10) return null;
+
+  const company = lead.company_name || 'echipa dvs.';
+  const city = lead.city ? ` din ${lead.city}` : '';
+  const msg = `Bună ziua! Vă contactez din partea QR Pontaj (pontaj.app) pentru ${company}${city}.\n\nAvem o soluție digitală simplificată de pontaj prin cod QR și tabletă pentru echipe, conformă cu cerințele ITM și fără hârtii.\n\nOferim 15 zile test gratuit complet. V-ar ajuta un scurt demo de 2 minute pe WhatsApp?`;
+  return `https://wa.me/${digits}?text=${encodeURIComponent(msg)}`;
+};
+
+// Detectare număr de mobil (România: 07 sau +40 7)
+const isMobilePhone = (phone) => {
+  if (!phone) return false;
+  const digits = phone.replace(/[^0-9]/g, '');
+  return digits.startsWith('07') || digits.startsWith('407');
+};
+
 export default function HarveySdrView({ onConvertToTenant }) {
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -106,6 +133,7 @@ export default function HarveySdrView({ onConvertToTenant }) {
 
   // Filtre și căutare
   const [statusFilter, setStatusFilter] = useState('all');
+  const [sourceFilter, setSourceFilter] = useState('all'); // 'all' | 'google_maps'
   const [countryFilter, setCountryFilter] = useState('all');
   const [cityFilter, setCityFilter] = useState('all');
   const [industryFilter, setIndustryFilter] = useState('all');
@@ -121,12 +149,14 @@ export default function HarveySdrView({ onConvertToTenant }) {
   const [isAddLeadModalOpen, setIsAddLeadModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isAnafModalOpen, setIsAnafModalOpen] = useState(false);
+  const [anafModalProvider, setAnafModalProvider] = useState('anaf');
   const [selectedLeadForReview, setSelectedLeadForReview] = useState(null);
 
   // Modale de confirmare in-app (fără confirm() din browser)
   const [leadToSendConfirm, setLeadToSendConfirm] = useState(null);
+  const [confirmEmailInput, setConfirmEmailInput] = useState('');
   const [isSendingConfirm, setIsSendingConfirm] = useState(false);
-  const [isBulkSendConfirmOpen, setIsBulkSendConfirmOpen] = useState(false);
+  const [showEmailPreviewInConfirm, setShowEmailPreviewInConfirm] = useState(false);
   const [leadToDeleteConfirm, setLeadToDeleteConfirm] = useState(null);
   const [isBulkDeleteConfirmOpen, setIsBulkDeleteConfirmOpen] = useState(false);
 
@@ -328,6 +358,13 @@ export default function HarveySdrView({ onConvertToTenant }) {
           ? lead.status === 'converted'
           : true;
 
+      const matchesSource =
+        sourceFilter === 'all'
+          ? true
+          : sourceFilter === 'google_maps'
+          ? (lead.source === 'google_maps' || lead.source === 'google_places')
+          : lead.source === sourceFilter;
+
       const leadCountry = (lead.country || 'RO').toUpperCase();
       const matchesCountry = countryFilter === 'all' || leadCountry === countryFilter.toUpperCase();
 
@@ -343,11 +380,12 @@ export default function HarveySdrView({ onConvertToTenant }) {
         (lead.company_name && lead.company_name.toLowerCase().includes(q)) ||
         (lead.city && lead.city.toLowerCase().includes(q)) ||
         (lead.email && lead.email.toLowerCase().includes(q)) ||
+        (lead.phone && lead.phone.toLowerCase().includes(q)) ||
         (lead.industry && lead.industry.toLowerCase().includes(q));
 
-      return matchesStatus && matchesCountry && matchesCity && matchesIndustry && matchesSearch;
+      return matchesStatus && matchesSource && matchesCountry && matchesCity && matchesIndustry && matchesSearch;
     });
-  }, [leads, statusFilter, countryFilter, cityFilter, industryFilter, searchQuery, tracking]);
+  }, [leads, statusFilter, sourceFilter, countryFilter, cityFilter, industryFilter, searchQuery, tracking]);
 
   // Paginare date
   const totalItems = filteredLeads.length;
@@ -384,6 +422,14 @@ export default function HarveySdrView({ onConvertToTenant }) {
     return leads.filter((l) => selectedLeadIds.includes(l.id));
   }, [leads, selectedLeadIds]);
 
+  const selectedWithEmailCount = useMemo(() => {
+    return selectedLeadsList.filter((l) => l.email && l.email.trim()).length;
+  }, [selectedLeadsList]);
+
+  const selectedWithoutEmailCount = useMemo(() => {
+    return selectedLeadsList.length - selectedWithEmailCount;
+  }, [selectedLeadsList, selectedWithEmailCount]);
+
   const bulkSendType = useMemo(() => {
     if (selectedLeadsList.length === 0) return 'send';
     const allSent = selectedLeadsList.every((l) => l.status === 'sent');
@@ -393,31 +439,36 @@ export default function HarveySdrView({ onConvertToTenant }) {
     return 'send';
   }, [selectedLeadsList]);
 
-  const handleInitiateBulkSend = () => {
+  const handleBulkSendEmails = async () => {
     if (selectedLeadIds.length === 0) return;
-    setIsBulkSendConfirmOpen(true);
-  };
 
-  const handleConfirmBulkSend = async () => {
-    if (selectedLeadIds.length === 0) return;
-    setIsBulkSendConfirmOpen(false);
+    // Expediem doar către companiile selectate care au o adresă de email validă
+    const leadsWithEmail = selectedLeadsList.filter((l) => l.email && l.email.trim());
+    if (leadsWithEmail.length === 0) {
+      showToast('Nicio companie selectată nu are adresă de email (au doar număr de telefon / WhatsApp).', 'error');
+      return;
+    }
+
+    const targetLeadIds = leadsWithEmail.map((l) => l.id);
     setBulkActionLoading(true);
     try {
       const baseUrl = getApiUrl();
       const res = await fetch(`${baseUrl}/api/admin/harvey/leads/bulk-send`, {
         method: 'POST',
         headers: getAuthHeaders(),
-        body: JSON.stringify({ leadIds: selectedLeadIds })
+        body: JSON.stringify({ leadIds: targetLeadIds })
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
         throw new Error(data.message || 'Trimiterea în lot a eșuat.');
       }
-      showToast(data.message);
+      showToast(data.message || `Au fost trimise cu succes ${targetLeadIds.length} emailuri prin Brevo!`);
+      // Debifăm și închidem bara imediat după expediere
       setSelectedLeadIds([]);
       fetchLeadsAndStats();
     } catch (err) {
-      showToast(err.message, 'error');
+      showToast(err.message || 'Eroare la expedierea emailurilor în lot.', 'error');
+      setSelectedLeadIds([]);
     } finally {
       setBulkActionLoading(false);
     }
@@ -501,21 +552,33 @@ export default function HarveySdrView({ onConvertToTenant }) {
     }
   };
 
-  const handleInitiateSend = (lead) => {
-    const emailList = getLeadEmails(lead.email);
-    if (emailList.length === 0) {
-      setSelectedLeadForReview(lead);
-      showToast('Adăugați o adresă de email validă înainte de trimitere.', 'error');
-      return;
-    }
+  const handleInitiateSend = (lead, openPreview = false) => {
+    setConfirmEmailInput(lead.email || '');
+    setShowEmailPreviewInConfirm(Boolean(openPreview));
     setLeadToSendConfirm(lead);
   };
 
   const handleConfirmSendDirect = async () => {
     if (!leadToSendConfirm) return;
+    const finalEmail = (confirmEmailInput || leadToSendConfirm.email || '').trim();
+    const emailList = getLeadEmails(finalEmail);
+    if (emailList.length === 0) {
+      showToast('Introduceți o adresă de email validă în câmpul Destinatar.', 'error');
+      return;
+    }
+
     setIsSendingConfirm(true);
     try {
       const baseUrl = getApiUrl();
+      // Dacă utilizatorul a introdus sau modificat emailul direct în fereastra de confirmare, îl salvăm mai întâi
+      if (finalEmail !== (leadToSendConfirm.email || '').trim()) {
+        await fetch(`${baseUrl}/api/admin/harvey/leads/${leadToSendConfirm.id}`, {
+          method: 'PUT',
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ email: finalEmail })
+        });
+      }
+
       const res = await fetch(`${baseUrl}/api/admin/harvey/leads/${leadToSendConfirm.id}/send`, {
         method: 'POST',
         headers: getAuthHeaders()
@@ -552,8 +615,8 @@ export default function HarveySdrView({ onConvertToTenant }) {
         </div>
       )}
 
-      {/* Header Executiv Minimal: Titlu + Metrici compacte pe un singur rând */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs">
+      {/* Header Executiv Minimal */}
+      <div className="flex items-center justify-between gap-3 bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs">
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
@@ -566,85 +629,6 @@ export default function HarveySdrView({ onConvertToTenant }) {
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             Identificare automată companii B2B, pitch personalizat și generare lead-uri
           </p>
-        </div>
-
-        {/* Metrici compacte interactive (filtrare la 1-click) */}
-        <div className="flex items-center gap-2 shrink-0 flex-wrap sm:flex-nowrap">
-          <button
-            type="button"
-            onClick={() => { setStatusFilter(statusFilter === 'pending' ? 'all' : 'pending'); setCurrentPage(1); }}
-            className={`px-3 py-1.5 rounded-xl border text-center shrink-0 cursor-pointer transition-all ${
-              statusFilter === 'pending'
-                ? 'bg-amber-50 border-amber-300 dark:bg-amber-950/40 dark:border-amber-700 shadow-xs'
-                : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 hover:border-amber-300'
-            }`}
-            title="Filtrează companiile în așteptare"
-          >
-            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 whitespace-nowrap shrink-0">În Așteptare</div>
-            <div className="text-sm font-black text-amber-600 whitespace-nowrap shrink-0">{stats.pendingReview}</div>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => { setStatusFilter(statusFilter === 'sent' ? 'all' : 'sent'); setCurrentPage(1); }}
-            className={`px-3 py-1.5 rounded-xl border text-center shrink-0 cursor-pointer transition-all ${
-              statusFilter === 'sent'
-                ? 'bg-blue-50 border-blue-300 dark:bg-blue-950/40 dark:border-blue-700 shadow-xs'
-                : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 hover:border-blue-300'
-            }`}
-            title="Filtrează companiile cărora li s-a trimis email"
-          >
-            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 whitespace-nowrap shrink-0">Trimise Azi</div>
-            <div className="text-sm font-black text-slate-800 dark:text-white whitespace-nowrap shrink-0">
-              {stats.sentToday} <span className="text-[10px] font-normal text-slate-400">/ 25</span>
-            </div>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => { setStatusFilter(statusFilter === 'opened' ? 'all' : 'opened'); setCurrentPage(1); }}
-            className={`px-3 py-1.5 rounded-xl border text-center shrink-0 cursor-pointer transition-all ${
-              statusFilter === 'opened'
-                ? 'bg-emerald-50 border-emerald-300 dark:bg-emerald-950/40 dark:border-emerald-700 shadow-xs'
-                : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 hover:border-emerald-300'
-            }`}
-            title="Filtrează companiile care au deschis emailul"
-          >
-            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 whitespace-nowrap shrink-0">Deschise</div>
-            <div className="text-sm font-black text-emerald-600 whitespace-nowrap shrink-0">
-              {tracking.summary.uniqueOpens} <span className="text-[10px] font-normal text-slate-400">({tracking.summary.openRate}%)</span>
-            </div>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => { setStatusFilter(statusFilter === 'clicked' ? 'all' : 'clicked'); setCurrentPage(1); }}
-            className={`px-3 py-1.5 rounded-xl border text-center shrink-0 cursor-pointer transition-all ${
-              statusFilter === 'clicked'
-                ? 'bg-indigo-50 border-indigo-300 dark:bg-indigo-950/40 dark:border-indigo-700 shadow-xs'
-                : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 hover:border-indigo-300'
-            }`}
-            title="Filtrează companiile care au accesat linkul din email"
-          >
-            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 whitespace-nowrap shrink-0">Click Link</div>
-            <div className="text-sm font-black text-indigo-600 whitespace-nowrap shrink-0">
-              {tracking.summary.uniqueClicks} <span className="text-[10px] font-normal text-slate-400">({tracking.summary.clickRate}%)</span>
-            </div>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => { setStatusFilter(statusFilter === 'converted' ? 'all' : 'converted'); setCurrentPage(1); }}
-            className={`px-3 py-1.5 rounded-xl border text-center shrink-0 cursor-pointer transition-all ${
-              statusFilter === 'converted'
-                ? 'bg-emerald-50 border-emerald-300 dark:bg-emerald-950/40 dark:border-emerald-700 shadow-xs'
-                : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 hover:border-emerald-300'
-            }`}
-            title="Filtrează companiile convertite în tenanți activi"
-          >
-            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 whitespace-nowrap shrink-0">Convertite</div>
-            <div className="text-sm font-black text-emerald-600 whitespace-nowrap shrink-0">{stats.converted}</div>
-          </button>
         </div>
       </div>
 
@@ -668,19 +652,34 @@ export default function HarveySdrView({ onConvertToTenant }) {
 
           <div className="flex items-center gap-2 flex-wrap">
             <button
-              onClick={handleInitiateBulkSend}
-              disabled={bulkActionLoading}
+              onClick={handleBulkSendEmails}
+              disabled={bulkActionLoading || selectedWithEmailCount === 0}
               className="px-3.5 h-8 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 disabled:opacity-50 cursor-pointer shadow-xs"
+              title={selectedWithoutEmailCount > 0 ? `${selectedWithoutEmailCount} companii nu au email și vor fi sărite` : 'Trimite email companiilor selectate'}
             >
-              {bulkSendType === 'resend' ? <RotateCcw size={12} className="shrink-0" /> : <Send size={12} className="shrink-0" />}
+              {bulkActionLoading ? (
+                <RefreshCw size={12} className="animate-spin shrink-0" />
+              ) : bulkSendType === 'resend' ? (
+                <RotateCcw size={12} className="shrink-0" />
+              ) : (
+                <Send size={12} className="shrink-0" />
+              )}
               <span>
-                {bulkSendType === 'resend'
-                  ? `Retrimite (${selectedLeadIds.length})`
+                {bulkActionLoading
+                  ? `Se trimit ${selectedWithEmailCount} emailuri...`
+                  : bulkSendType === 'resend'
+                  ? `Retrimite Email (${selectedWithEmailCount})`
                   : bulkSendType === 'mixed'
-                  ? `Trimite / Retrimite (${selectedLeadIds.length})`
-                  : `Trimite (${selectedLeadIds.length})`}
+                  ? `Trimite / Retrimite (${selectedWithEmailCount})`
+                  : `Trimite Email (${selectedWithEmailCount})`}
               </span>
             </button>
+
+            {selectedWithoutEmailCount > 0 && (
+              <span className="text-[11px] font-semibold text-amber-300 bg-amber-950/60 px-2.5 py-1 rounded-full border border-amber-800/60 whitespace-nowrap shrink-0">
+                {selectedWithoutEmailCount} fără email (doar WhatsApp)
+              </span>
+            )}
 
             <button
               onClick={handleBulkGeneratePitch}
@@ -712,115 +711,130 @@ export default function HarveySdrView({ onConvertToTenant }) {
 
       {/* Bară Unificată de Căutare, Filtre și Acțiuni — UN SINGUR RÂND */}
       <div className="bg-white dark:bg-slate-800 p-3 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs space-y-2.5">
-        {/* Rândul 1: Totul pe un singur rând uniform, înălțime identică h-9, fără iconițe în butoane */}
-        <div className="flex items-center gap-2 flex-wrap xl:flex-nowrap">
-          {/* Căutare text */}
-          <div className="relative flex-1 min-w-[170px]">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-              placeholder="Caută companie, oraș, email..."
-              className="w-full pl-8 pr-3 h-9 text-xs rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-1 focus:ring-blue-500 transition-all"
-            />
-          </div>
+        {/* Rândul 1: Layout flexibil și adaptiv, fără depășirea containerului */}
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          {/* Partea stângă: Căutare & Filtre Dropdown */}
+          <div className="flex items-center gap-2 flex-1 min-w-[280px] flex-wrap">
+            {/* Căutare text */}
+            <div className="relative flex-1 min-w-[160px]">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+                placeholder="Caută companie, oraș, email..."
+                className="w-full pl-8 pr-3 h-9 text-xs rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white outline-none focus:ring-1 focus:ring-blue-500 transition-all"
+              />
+            </div>
 
-          {/* Droplist Țară */}
-          <select
-            value={countryFilter}
-            onChange={(e) => { setCountryFilter(e.target.value); setCityFilter('all'); setCurrentPage(1); }}
-            className="h-9 px-3 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 outline-none cursor-pointer shrink-0"
-          >
-            <option value="all">Toate Țările ({leads.length})</option>
-            {existingCountries.map((c) => (
-              <option key={c} value={c}>
-                {COUNTRY_NAMES[c] || c} ({countryCounts[c]})
-              </option>
-            ))}
-          </select>
-
-          {/* Droplist Oraș (dacă sunt disponibile orașe) */}
-          {availableCities.length > 0 && (
+            {/* Droplist Țară */}
             <select
-              value={cityFilter}
-              onChange={(e) => { setCityFilter(e.target.value); setCurrentPage(1); }}
-              className="h-9 px-3 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 outline-none cursor-pointer max-w-[130px] truncate shrink-0"
+              value={countryFilter}
+              onChange={(e) => { setCountryFilter(e.target.value); setCityFilter('all'); setCurrentPage(1); }}
+              className="h-9 px-3 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 outline-none cursor-pointer shrink-0"
             >
-              <option value="all">Toate Orașele</option>
-              {availableCities.map((city) => (
-                <option key={city} value={city}>{city}</option>
+              <option value="all">Toate Țările ({leads.length})</option>
+              {existingCountries.map((c) => (
+                <option key={c} value={c}>
+                  {COUNTRY_NAMES[c] || c} ({countryCounts[c]})
+                </option>
               ))}
             </select>
-          )}
 
-          {/* Droplist Căutări / Nișe (droplist unic și curat) */}
-          <select
-            value={industryFilter}
-            onChange={(e) => { setIndustryFilter(e.target.value); setCurrentPage(1); }}
-            className="h-9 px-3 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 outline-none cursor-pointer max-w-[170px] truncate shrink-0"
-          >
-            <option value="all">Toate Căutările ({leads.length})</option>
-            {availableIndustries.map((ind) => (
-              <option key={ind} value={ind}>
-                {ind} ({industryCounts[ind] || 0})
-              </option>
-            ))}
-          </select>
+            {/* Droplist Oraș (dacă sunt disponibile orașe) */}
+            {availableCities.length > 0 && (
+              <select
+                value={cityFilter}
+                onChange={(e) => { setCityFilter(e.target.value); setCurrentPage(1); }}
+                className="h-9 px-3 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 outline-none cursor-pointer max-w-[130px] truncate shrink-0"
+              >
+                <option value="all">Toate Orașele</option>
+                {availableCities.map((city) => (
+                  <option key={city} value={city}>{city}</option>
+                ))}
+              </select>
+            )}
 
-          {/* Delimitator vertical */}
-          <div className="hidden sm:block h-5 w-px bg-slate-200 dark:bg-slate-700 shrink-0" />
+            {/* Droplist Căutări / Nișe (droplist unic și curat) */}
+            <select
+              value={industryFilter}
+              onChange={(e) => { setIndustryFilter(e.target.value); setCurrentPage(1); }}
+              className="h-9 px-3 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 outline-none cursor-pointer max-w-[160px] truncate shrink-0"
+            >
+              <option value="all">Toate Căutările ({leads.length})</option>
+              {availableIndustries.map((ind) => (
+                <option key={ind} value={ind}>
+                  {ind} ({industryCounts[ind] || 0})
+                </option>
+              ))}
+            </select>
+          </div>
 
-          {/* Butoane Acțiuni — DOAR TEXT, FĂRĂ ICONIȚE, ÎNĂLȚIME IDENTICĂ h-9 */}
-          <button
-            onClick={() => setIsSearchModalOpen(true)}
-            className="h-9 px-4 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold whitespace-nowrap shrink-0 transition-colors cursor-pointer"
-          >
-            Caută companii
-          </button>
+          {/* Partea dreaptă: Butoane Acțiuni & Import */}
+          <div className="flex items-center gap-1.5 flex-wrap shrink-0">
+            {/* Buton Modul Google Maps & Prospectare */}
+            <button
+              onClick={() => setIsSearchModalOpen(true)}
+              className="h-9 px-3.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold whitespace-nowrap shrink-0 transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
+              title="Deschide modulul de prospectare Google Maps & afaceri locale"
+            >
+              <MapPin size={13} className="shrink-0 text-white" />
+              <span>Google Maps</span>
+            </button>
 
-          <button
-            onClick={() => setIsAddLeadModalOpen(true)}
-            className="h-9 px-3.5 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold whitespace-nowrap shrink-0 transition-colors cursor-pointer"
-          >
-            Manual
-          </button>
+            <button
+              onClick={() => setIsAddLeadModalOpen(true)}
+              className="h-9 px-3 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold whitespace-nowrap shrink-0 transition-colors cursor-pointer"
+            >
+              Manual
+            </button>
 
-          <button
-            onClick={() => setIsImportModalOpen(true)}
-            className="h-9 px-3.5 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold whitespace-nowrap shrink-0 transition-colors cursor-pointer"
-          >
-            Import CSV
-          </button>
+            <button
+              onClick={() => setIsImportModalOpen(true)}
+              className="h-9 px-3 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold whitespace-nowrap shrink-0 transition-colors cursor-pointer"
+            >
+              Import CSV
+            </button>
 
-          <button
-            onClick={() => setIsAnafModalOpen(true)}
-            className="h-9 px-3.5 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold whitespace-nowrap shrink-0 transition-colors cursor-pointer"
-          >
-            ANAF (CUI)
-          </button>
+            <button
+              onClick={() => { setAnafModalProvider('firmeapi'); setIsAnafModalOpen(true); }}
+              className="h-9 px-3.5 rounded-full border border-indigo-200 dark:border-indigo-800 bg-indigo-50/70 dark:bg-indigo-950/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 text-xs font-bold whitespace-nowrap shrink-0 transition-colors cursor-pointer flex items-center gap-1"
+              title="Căutare după CAEN sau CUI oficial prin FirmeAPI.ro și ANAF v9"
+            >
+              <ShieldCheck size={13} className="shrink-0" />
+              <span>FirmeAPI &amp; ANAF</span>
+            </button>
 
-          {/* Utilitare Setări și Refresh */}
-          <button
-            onClick={() => setIsSettingsModalOpen(true)}
-            className="w-9 h-9 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center transition-colors shrink-0 cursor-pointer ml-auto sm:ml-0"
-            title="Setări Harvey"
-          >
-            <Settings size={15} />
-          </button>
-          <button
-            onClick={() => fetchLeadsAndStats(false)}
-            className="w-9 h-9 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center transition-colors shrink-0 cursor-pointer"
-            title="Reîmprospătează"
-          >
-            <RefreshCw size={15} className={loading ? 'animate-spin text-blue-600' : ''} />
-          </button>
+            {/* Utilitare Setări și Refresh */}
+            <button
+              onClick={() => setIsSettingsModalOpen(true)}
+              className="w-9 h-9 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center transition-colors shrink-0 cursor-pointer"
+              title="Setări Harvey"
+            >
+              <Settings size={15} />
+            </button>
+            <button
+              onClick={() => fetchLeadsAndStats(false)}
+              className="w-9 h-9 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center transition-colors shrink-0 cursor-pointer"
+              title="Reîmprospătează"
+            >
+              <RefreshCw size={15} className={loading ? 'animate-spin text-blue-600' : ''} />
+            </button>
+          </div>
         </div>
 
         {/* Bară sumară filtre active cu buton de reset */}
-        {(industryFilter !== 'all' || cityFilter !== 'all' || countryFilter !== 'all' || searchQuery || statusFilter !== 'all') && (
+        {(industryFilter !== 'all' || cityFilter !== 'all' || countryFilter !== 'all' || searchQuery || statusFilter !== 'all' || sourceFilter !== 'all') && (
           <div className="flex items-center gap-2 flex-wrap pt-2 border-t border-slate-100 dark:border-slate-700/60">
             <span className="text-[11px] font-semibold text-slate-400">Filtre active:</span>
+            {sourceFilter !== 'all' && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 whitespace-nowrap shrink-0">
+                Sursă: {sourceFilter === 'google_maps' ? 'Google Maps' : sourceFilter === 'firmeapi' ? 'FirmeAPI.ro' : sourceFilter === 'anaf' ? 'ANAF' : sourceFilter}
+                <button type="button" onClick={() => setSourceFilter('all')} className="hover:text-red-500 cursor-pointer">
+                  <X size={12} />
+                </button>
+              </span>
+            )}
             {industryFilter !== 'all' && (
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 whitespace-nowrap shrink-0">
                 Nișă: {industryFilter}
@@ -857,6 +871,7 @@ export default function HarveySdrView({ onConvertToTenant }) {
               type="button"
               onClick={() => {
                 setIndustryFilter('all');
+                setSourceFilter('all');
                 setCityFilter('all');
                 setCountryFilter('all');
                 setStatusFilter('all');
@@ -874,14 +889,43 @@ export default function HarveySdrView({ onConvertToTenant }) {
         <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-700/60">
           <div className="flex items-center gap-1.5 overflow-x-auto">
             <button
-              onClick={() => { setStatusFilter('all'); setCurrentPage(1); }}
+              onClick={() => { setStatusFilter('all'); setSourceFilter('all'); setCurrentPage(1); }}
               className={`px-3 h-8 rounded-full text-xs font-semibold transition-all whitespace-nowrap shrink-0 cursor-pointer ${
-                statusFilter === 'all'
+                statusFilter === 'all' && sourceFilter === 'all'
                   ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs'
                   : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
               }`}
             >
               Toate ({leads.length})
+            </button>
+            <button
+              onClick={() => {
+                setSourceFilter((prev) => (prev === 'google_maps' ? 'all' : 'google_maps'));
+                setCurrentPage(1);
+              }}
+              className={`px-3 h-8 rounded-full text-xs font-bold transition-all whitespace-nowrap shrink-0 cursor-pointer flex items-center gap-1.5 ${
+                sourceFilter === 'google_maps'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/50'
+              }`}
+              title="Filtrează exclusiv lead-urile identificate prin Google Maps"
+            >
+              <MapPin size={11} className="shrink-0" />
+              <span>Google Maps ({leads.filter((l) => l.source === 'google_maps' || l.source === 'google_places').length})</span>
+            </button>
+            <button
+              onClick={() => {
+                setSourceFilter((prev) => (prev === 'firmeapi' ? 'all' : 'firmeapi'));
+                setCurrentPage(1);
+              }}
+              className={`px-3 h-8 rounded-full text-xs font-bold transition-all whitespace-nowrap shrink-0 cursor-pointer flex items-center gap-1.5 ${
+                sourceFilter === 'firmeapi'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/50'
+              }`}
+              title="Filtrează exclusiv lead-urile importate prin FirmeAPI.ro"
+            >
+              <span>FirmeAPI ({leads.filter((l) => l.source === 'firmeapi').length})</span>
             </button>
             <button
               onClick={() => { setStatusFilter('pending'); setCurrentPage(1); }}
@@ -1033,11 +1077,20 @@ export default function HarveySdrView({ onConvertToTenant }) {
                                 target="_blank"
                                 rel="noreferrer"
                                 className="text-slate-400 hover:text-primary-600 transition-colors shrink-0"
-                                title="Deschide website"
+                                title="Deschide website oficial"
                               >
                                 <ExternalLink size={12} />
                               </a>
                             )}
+                            <a
+                              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(lead.company_name + ' ' + (lead.address || lead.city || ''))}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-slate-400 hover:text-emerald-600 transition-colors shrink-0"
+                              title="Vezi profilul pe Google Maps"
+                            >
+                              <MapPin size={12} />
+                            </a>
                           </div>
                           <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mt-1 flex-wrap">
                             <span className="font-semibold text-slate-700 dark:text-slate-200 whitespace-nowrap shrink-0">
@@ -1063,6 +1116,31 @@ export default function HarveySdrView({ onConvertToTenant }) {
                                 CUI: {lead.cui}
                               </span>
                             )}
+                            {(lead.source === 'google_maps' || lead.source === 'google_places') && (
+                              <span
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 whitespace-nowrap shrink-0"
+                                title="Lead identificat direct prin Google Maps"
+                              >
+                                <MapPin size={9} className="shrink-0" />
+                                <span>Google Maps</span>
+                              </span>
+                            )}
+                            {lead.source === 'firmeapi' && (
+                              <span
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 whitespace-nowrap shrink-0"
+                                title="Lead importat prin FirmeAPI.ro"
+                              >
+                                <span>FirmeAPI</span>
+                              </span>
+                            )}
+                            {lead.source === 'anaf' && (
+                              <span
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 whitespace-nowrap shrink-0"
+                                title="Lead importat oficial din ANAF v9"
+                              >
+                                <span>ANAF</span>
+                              </span>
+                            )}
                           </div>
                         </div>
                       </td>
@@ -1073,6 +1151,14 @@ export default function HarveySdrView({ onConvertToTenant }) {
                           {(() => {
                             const emailList = getLeadEmails(lead.email);
                             if (emailList.length === 0) {
+                              if (lead.phone) {
+                                return (
+                                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap shrink-0">
+                                    <MessageCircle size={11} className="shrink-0" />
+                                    <span>WhatsApp / Tel direct</span>
+                                  </span>
+                                );
+                              }
                               return (
                                 <span className="text-amber-600 dark:text-amber-400 font-medium whitespace-nowrap shrink-0">
                                   Email negăsit
@@ -1100,10 +1186,17 @@ export default function HarveySdrView({ onConvertToTenant }) {
                             );
                           })()}
                           {lead.phone && (
-                            <span className="text-slate-400 flex items-center gap-1 mt-0.5" title={lead.phone}>
-                              <Phone size={10} className="shrink-0" />
-                              <span className="truncate max-w-[210px]">{lead.phone}</span>
-                            </span>
+                            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                              <span className="text-slate-600 dark:text-slate-300 font-medium flex items-center gap-1" title={lead.phone}>
+                                <Phone size={10} className="shrink-0 text-slate-400" />
+                                <span className="truncate max-w-[210px]">{lead.phone}</span>
+                              </span>
+                              {isMobilePhone(lead.phone) && (
+                                <span className="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 whitespace-nowrap shrink-0">
+                                  WhatsApp
+                                </span>
+                              )}
+                            </div>
                           )}
                         </div>
                       </td>
@@ -1228,31 +1321,52 @@ export default function HarveySdrView({ onConvertToTenant }) {
                       {/* Acțiuni */}
                       <td className="py-3 px-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
-                          {/* Revizuiește / Editează Email */}
+                          {/* 1-Click WhatsApp Direct Chat */}
+                          {lead.phone && getWhatsAppUrl(lead) && (
+                            <a
+                              href={getWhatsAppUrl(lead)}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="w-8 h-8 rounded-full border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center transition-colors shrink-0 cursor-pointer"
+                              title="Deschide WhatsApp direct cu mesajul pregătit (1-Click)"
+                            >
+                              <MessageCircle size={14} />
+                            </a>
+                          )}
+
+                          {/* Previzualizare Email în fereastra de confirmare */}
                           <button
-                            onClick={() => setSelectedLeadForReview(lead)}
+                            onClick={() => handleInitiateSend(lead, true)}
                             className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-primary-50 hover:text-primary-600 text-slate-500 dark:text-slate-400 flex items-center justify-center transition-colors shrink-0 cursor-pointer"
-                            title="Revizuiește email (Human-in-the-Loop)"
+                            title="Previzualizează și trimite email (Confirmare rapidă)"
                           >
                             <Eye size={14} />
                           </button>
 
                           {/* Trimite sau Retrimite Direct — cu confirmare in-app */}
-                          {lead.status === 'pending_review' ? (
+                          {lead.status === 'sent' ? (
                             <button
-                              onClick={() => handleInitiateSend(lead)}
-                              className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-emerald-50 hover:text-emerald-600 text-slate-500 dark:text-slate-400 flex items-center justify-center transition-colors shrink-0 cursor-pointer"
-                              title="Aprobă și trimite acum (cu confirmare in-app)"
+                              onClick={() => handleInitiateSend(lead, false)}
+                              className="w-8 h-8 rounded-full border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 flex items-center justify-center transition-colors shrink-0 cursor-pointer"
+                              title="Email trimis — click pentru a retrimite (cu confirmare in-app)"
+                            >
+                              <RotateCcw size={13} />
+                            </button>
+                          ) : lead.email ? (
+                            <button
+                              onClick={() => handleInitiateSend(lead, false)}
+                              className="w-8 h-8 rounded-full border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center transition-colors shrink-0 cursor-pointer"
+                              title="Aprobă și trimite email acum (cu confirmare in-app)"
                             >
                               <Send size={13} />
                             </button>
                           ) : (
                             <button
-                              onClick={() => handleInitiateSend(lead)}
-                              className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-blue-50 hover:text-blue-600 text-slate-500 dark:text-slate-400 flex items-center justify-center transition-colors shrink-0 cursor-pointer"
-                              title="Retrimite email către acest lead (cu confirmare in-app)"
+                              onClick={() => handleInitiateSend(lead, false)}
+                              className="w-8 h-8 rounded-full border border-amber-200 dark:border-amber-800 bg-amber-50/60 dark:bg-amber-950/30 hover:bg-amber-100 text-amber-600 dark:text-amber-400 flex items-center justify-center transition-colors shrink-0 cursor-pointer"
+                              title="Fără email salvat — click pentru a introduce emailul și a trimite"
                             >
-                              <RotateCcw size={13} />
+                              <Send size={13} />
                             </button>
                           )}
 
@@ -1382,10 +1496,15 @@ export default function HarveySdrView({ onConvertToTenant }) {
 
       <HarveyAnafLookupModal
         isOpen={isAnafModalOpen}
+        initialProvider={anafModalProvider}
         onClose={() => setIsAnafModalOpen(false)}
-        onImportCompleted={() => {
+        onImportCompleted={(provider) => {
           fetchLeadsAndStats();
-          showToast('Companiile verificate oficial ANAF au fost adăugate în Harvey SDR!');
+          showToast(
+            provider === 'firmeapi'
+              ? 'Companiile din FirmeAPI.ro au fost adăugate în Harvey SDR!'
+              : 'Companiile verificate oficial ANAF au fost adăugate în Harvey SDR!'
+          );
         }}
       />
 
@@ -1414,7 +1533,7 @@ export default function HarveySdrView({ onConvertToTenant }) {
 
       {/* Modal In-App de Confirmare Trimitere / Retrimitere Email Individual */}
       {leadToSendConfirm && (() => {
-        const recipientList = getLeadEmails(leadToSendConfirm.email);
+        const recipientList = getLeadEmails(confirmEmailInput || leadToSendConfirm.email);
         const isMultiple = recipientList.length > 1;
         const isResend = leadToSendConfirm.status === 'sent' || !!leadToSendConfirm.email_sent_at;
 
@@ -1463,29 +1582,57 @@ export default function HarveySdrView({ onConvertToTenant }) {
                     </span>
                   </div>
                 )}
-                <div className="flex items-start justify-between gap-2">
-                  <span className="text-slate-500 dark:text-slate-400 whitespace-nowrap shrink-0">
-                    {isMultiple ? `Destinatari (${recipientList.length}):` : 'Destinatar:'}
-                  </span>
-                  <div className="flex flex-col items-end gap-1 max-w-[230px]">
-                    {recipientList.length > 0 ? (
-                      recipientList.map((em, idx) => (
-                        <span key={idx} className="font-semibold text-emerald-600 dark:text-emerald-400 truncate max-w-full">
-                          {em}
-                        </span>
-                      ))
-                    ) : (
-                      <span className="font-semibold text-slate-400">
-                        {leadToSendConfirm.email}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-slate-500 dark:text-slate-400 whitespace-nowrap shrink-0">
+                      {isMultiple ? `Destinatari (${recipientList.length}):` : 'Destinatar Email:'}
+                    </span>
+                    {recipientList.length > 0 && (
+                      <span className="font-semibold text-emerald-600 dark:text-emerald-400 truncate max-w-[220px]">
+                        {recipientList.join(', ')}
                       </span>
                     )}
                   </div>
+                  <input
+                    type="text"
+                    value={confirmEmailInput}
+                    onChange={(e) => setConfirmEmailInput(e.target.value)}
+                    placeholder="Introdu adresa de email (ex: contact@companie.ro)"
+                    className="w-full h-8 px-3 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-medium text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
+                  />
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-slate-500 dark:text-slate-400">Subiect:</span>
                   <span className="font-medium text-slate-800 dark:text-slate-200 truncate max-w-[210px]">
                     {leadToSendConfirm.draft_subject || 'Pontaj digital QR'}
                   </span>
+                </div>
+
+                {/* Previzualizare Rapidă Inline Text Email */}
+                <div className="pt-2 border-t border-slate-200/80 dark:border-slate-700/80">
+                  <button
+                    type="button"
+                    onClick={() => setShowEmailPreviewInConfirm(!showEmailPreviewInConfirm)}
+                    className="w-full flex items-center justify-between text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 py-0.5 transition-colors cursor-pointer select-none"
+                  >
+                    <span className="flex items-center gap-1.5 whitespace-nowrap shrink-0">
+                      <Eye size={13} className="shrink-0" />
+                      <span>{showEmailPreviewInConfirm ? 'Ascunde previzualizarea' : 'Previzualizează conținutul emailului'}</span>
+                    </span>
+                    <ChevronDown size={14} className={`transform transition-transform shrink-0 ${showEmailPreviewInConfirm ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {showEmailPreviewInConfirm && (
+                    <div className="mt-2.5 p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 max-h-48 overflow-y-auto text-xs text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed shadow-inner">
+                      {leadToSendConfirm.draft_body ? (
+                        leadToSendConfirm.draft_body
+                      ) : (
+                        <span className="italic text-slate-400">
+                          (Textul va fi adaptat și generat automat de Harvey SDR în momentul expedierii)
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1507,26 +1654,38 @@ export default function HarveySdrView({ onConvertToTenant }) {
                     </>
                   ) : (
                     <>
-                      Ești sigur că vrei să expediezi acest email către <strong>{leadToSendConfirm.company_name}</strong>? Mesajul va fi livrat direct pe adresa de contact salvată.
+                      Ești sigur că vrei să expediezi acest email către <strong>{leadToSendConfirm.company_name}</strong>? Mesajul va fi livrat direct pe adresa de contact.
                     </>
                   )
                 )}
               </div>
 
-              <div className="flex items-center justify-end gap-2.5 pt-2">
+              <div className="flex items-center justify-end gap-2 pt-2">
                 <button
                   type="button"
                   onClick={() => setLeadToSendConfirm(null)}
                   disabled={isSendingConfirm}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-full transition-colors whitespace-nowrap shrink-0 cursor-pointer disabled:opacity-50"
+                  className="px-3.5 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-full transition-colors whitespace-nowrap shrink-0 cursor-pointer disabled:opacity-50"
                 >
                   Anulează
                 </button>
+
+                <button
+                  type="button"
+                  onClick={() => setShowEmailPreviewInConfirm(!showEmailPreviewInConfirm)}
+                  disabled={isSendingConfirm}
+                  className="px-3.5 py-2 text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/50 border border-blue-200 dark:border-blue-800 rounded-full transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer disabled:opacity-50"
+                  title="Afișează sau ascunde previzualizarea textului emailului"
+                >
+                  <Eye size={13} className="shrink-0" />
+                  <span>{showEmailPreviewInConfirm ? 'Ascunde Preview' : 'Preview Email'}</span>
+                </button>
+
                 <button
                   type="button"
                   onClick={handleConfirmSendDirect}
                   disabled={isSendingConfirm}
-                  className={`px-5 py-2 text-xs font-semibold text-white rounded-full shadow-sm transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer disabled:opacity-50 ${
+                  className={`px-4.5 py-2 text-xs font-semibold text-white rounded-full shadow-sm transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer disabled:opacity-50 ${
                     isResend ? 'bg-blue-600 hover:bg-blue-700' : 'bg-emerald-600 hover:bg-emerald-700'
                   }`}
                 >
@@ -1547,91 +1706,6 @@ export default function HarveySdrView({ onConvertToTenant }) {
           </div>
         );
       })()}
-
-      {/* Modal In-App de Confirmare Trimitere / Retrimitere în Lot (Bulk Send) */}
-      {isBulkSendConfirmOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 p-6 space-y-5">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 border ${
-                  bulkSendType === 'resend'
-                    ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-800/40'
-                    : 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border-indigo-100 dark:border-indigo-800/40'
-                }`}>
-                  {bulkSendType === 'resend' ? <RotateCcw size={18} /> : <Send size={18} />}
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                    {bulkSendType === 'resend'
-                      ? 'Confirmare Retrimitere în Lot'
-                      : bulkSendType === 'mixed'
-                      ? 'Confirmare Trimitere / Retrimitere în Lot'
-                      : 'Confirmare Trimitere în Lot'}
-                  </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    {bulkSendType === 'resend' ? 'Reexpediere în lot prin Brevo' : 'Trimitere multiplă prin Brevo'}
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setIsBulkSendConfirmOpen(false)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed space-y-2.5">
-              <p>
-                {bulkSendType === 'resend' ? (
-                  <>
-                    Ești pe cale să <strong>retrimiți</strong> email-uri către <strong>{selectedLeadIds.length} companii selectate</strong> (care au mai fost contactate anterior).
-                  </>
-                ) : bulkSendType === 'mixed' ? (
-                  <>
-                    Ești pe cale să expediezi / reexpediezi email-uri către <strong>{selectedLeadIds.length} companii selectate</strong>.
-                  </>
-                ) : (
-                  <>
-                    Ești pe cale să transmiți email-uri către <strong>{selectedLeadIds.length} companii selectate</strong>.
-                  </>
-                )}
-              </p>
-              <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 rounded-xl text-amber-800 dark:text-amber-300 flex items-start gap-2">
-                <AlertCircle size={15} className="shrink-0 mt-0.5" />
-                <span>
-                  {bulkSendType === 'resend'
-                    ? 'Fiecare companie va primi din nou mesajul personalizat pe toate adresele sale de contact salvate.'
-                    : 'Fiecare companie va primi draftul personalizat generat de AI. Asigură-te că adresele sunt verificate.'}
-                </span>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-2.5 pt-2">
-              <button
-                type="button"
-                onClick={() => setIsBulkSendConfirmOpen(false)}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-full transition-colors whitespace-nowrap shrink-0 cursor-pointer"
-              >
-                Anulează
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmBulkSend}
-                className="px-5 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-full shadow-sm transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer"
-              >
-                {bulkSendType === 'resend' ? <RotateCcw size={13} className="shrink-0" /> : <Send size={13} className="shrink-0" />}
-                <span>
-                  {bulkSendType === 'resend'
-                    ? `Confirmă Retrimiterea (${selectedLeadIds.length})`
-                    : `Confirmă Trimiterea (${selectedLeadIds.length})`}
-                </span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Modal In-App de Confirmare Ștergere Lead Individual */}
       {leadToDeleteConfirm && (

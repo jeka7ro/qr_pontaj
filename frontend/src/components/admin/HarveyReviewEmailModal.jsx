@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Mail, Send, Sparkles, RefreshCw, CheckCircle2, AlertCircle, ExternalLink, Globe, Phone, MapPin, Building2, Save, Languages, RotateCcw } from 'lucide-react';
+import { X, Mail, Send, Sparkles, RefreshCw, CheckCircle2, AlertCircle, ExternalLink, Globe, Phone, MapPin, Building2, Save, Languages, RotateCcw, MessageCircle } from 'lucide-react';
 import { getApiUrl, getAuthHeaders } from '../../utils/apiUrl';
 
 // Steaguri vectoriale SVG compacte, clare, fără caractere emoji
@@ -540,6 +540,29 @@ export default function HarveyReviewEmailModal({ isOpen, onClose, lead, onUpdate
             <Mail size={14} className="shrink-0" />
             <span>{sendingTest ? 'Se trimite test...' : 'Trimite Test pe Emailul Meu'}</span>
           </button>
+
+          {lead.phone && (() => {
+            let digits = lead.phone.replace(/[^0-9]/g, '');
+            if (digits.startsWith('0') && digits.length === 10) digits = '40' + digits.substring(1);
+            else if (!digits.startsWith('40') && digits.length === 9) digits = '40' + digits;
+            if (digits.length < 10) return null;
+            const company = lead.company_name || 'echipa dvs.';
+            const city = lead.city ? ` din ${lead.city}` : '';
+            const msg = `Bună ziua! Vă contactez din partea QR Pontaj (pontaj.app) pentru ${company}${city}.\n\nAvem o soluție digitală simplificată de pontaj prin cod QR și tabletă pentru echipe, conformă cu cerințele ITM și fără hârtii.\n\nOferim 15 zile test gratuit complet. V-ar ajuta un scurt demo de 2 minute pe WhatsApp?`;
+            const waUrl = `https://wa.me/${digits}?text=${encodeURIComponent(msg)}`;
+            return (
+              <a
+                href={waUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="px-4 h-10 rounded-full border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 text-xs font-bold transition-colors flex items-center gap-1.5 whitespace-nowrap shrink-0"
+                title="Deschide WhatsApp direct cu mesajul pregătit"
+              >
+                <MessageCircle size={14} className="shrink-0" />
+                <span>WhatsApp Direct</span>
+              </a>
+            );
+          })()}
 
           <div className="flex items-center gap-3">
             <button
