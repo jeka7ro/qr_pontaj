@@ -863,10 +863,10 @@ async function sendLeadNotificationToAdmin({
 
   const text = `LEAD NOU PONTAJ.APP\n\nCompanie: ${companyName}\nCUI: ${cui || '-'}\nContact: ${contactName}\nTelefon: ${phone}\nEmail: ${email}\nAngajati: ${employeesCount || 10}\nMod: ${mode}\nAdresa: ${address || '-'}\nSubdomeniu: ${subdomain}\n\nPanou: ${superadminUrl}`;
 
-  // Notificare Telegram SuperAdmin (instantanee, non-blocantă)
+  // Notificare SuperAdmin: EXCLUSIV pe Telegram (fără trimitere pe email în Gmail)
   try {
     const telegramService = require('./telegramService');
-    telegramService.sendNewAccountAlert({
+    return await telegramService.sendNewAccountAlert({
       companyName,
       contactName,
       phone,
@@ -889,18 +889,11 @@ async function sendLeadNotificationToAdmin({
       isSuspectDuplicate,
       duplicateReason,
       isPersonalAccount
-    }).catch(tgErr => console.warn('[Telegram] Alert error:', tgErr.message));
+    });
   } catch (err) {
-    console.warn('[Telegram] Require error:', err.message);
+    console.warn('[Telegram] Alert error:', err.message);
+    return { success: false, error: err.message };
   }
-
-  return sendEmail({
-    to: adminRecipient,
-    subject,
-    html,
-    text,
-    senderName: 'Pontaj.app Notificări'
-  });
 }
 
 module.exports = {
